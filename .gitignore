@@ -1,0 +1,7 @@
+node_modules/
+dist/
+public/parquet-worker.js
+*.tsbuildinfo
+.env
+.env.local
+.DS_Store
