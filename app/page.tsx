@@ -57,6 +57,12 @@ type LocationState = {
   from?: string;
   trail?: number[];
 };
+const datasetSections = [
+  { name: "Congress", description: "Bills, members & votes" },
+  { name: "Regulation", description: "Agencies, rules & comments" },
+  { name: "Elections", description: "Campaigns & political money" },
+  { name: "Law & courts", description: "Laws, codes & court records" },
+];
 const initial: LocationState = {
   id: "congress_bills",
   filters: [],
@@ -352,13 +358,37 @@ export default function Explorer() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
+      <nav className="section-shortcuts" aria-label="Jump to dataset section">
+        <span className="section-shortcuts-label">JUMP TO SECTION</span>
+        <div>
+          {datasetSections.map(({ name }, index) => (
+            <button
+              type="button"
+              key={name}
+              disabled={!matching.some((t) => t.group === name)}
+              onClick={(event) => {
+                const panel = event.currentTarget.closest(".sidebar, .mobile-sidebar");
+                const list = panel?.querySelector<HTMLElement>(".dataset-list");
+                const section = list?.querySelector<HTMLElement>(`[data-section="${index}"]`);
+                if (!list || !section) return;
+                const top = section.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+                section.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+                list.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+              }}
+            >{name}<span aria-hidden="true">↓</span></button>
+          ))}
+        </div>
+      </nav>
       <div className="dataset-list" ref={listRef}>
-        {["Congress", "Regulation", "Elections", "Law & courts"].map(
-          (group) => {
+        {datasetSections.map(
+          ({ name: group, description }, index) => {
             const items = matching.filter((t) => t.group === group);
             return items.length ? (
-              <section key={group}>
-                <h2>{group}</h2>
+              <section key={group} data-section={index} aria-label={group}>
+                <div className="dataset-section-heading">
+                  <h2 tabIndex={-1}>{group}<span>{items.length}</span></h2>
+                  <p>{description}</p>
+                </div>
                 {items.map((t) => (
                   <button
                     aria-current={t.id === location.id ? "page" : undefined}

@@ -172,13 +172,18 @@ svg {
   flex: 1;
   scrollbar-width: thin;
 }
-.dataset-list h2 {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #6d776a;
-  margin: 20px 10px 9px;
-}
+.section-shortcuts { padding: 18px 0 16px; border-bottom: 1px solid #d2dccb; }
+.section-shortcuts-label { display: block; font-size: 10px; letter-spacing: 1.1px; color: #61705d; margin: 0 5px 9px; }
+.section-shortcuts > div { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.section-shortcuts button { display: flex; justify-content: space-between; gap: 5px; align-items: center; text-align: left; border: 1px solid #d2dccb; background: #fbfcf8; color: #245c3a; border-radius: 4px; padding: 9px 8px; font-size: 12px; transition: background .15s; }
+.section-shortcuts button:hover:not(:disabled) { background: #e0ead7; }
+.section-shortcuts button:disabled { opacity: .4; cursor: default; }
+.dataset-list > section { padding-bottom: 22px; }
+.dataset-section-heading { position: sticky; top: 0; z-index: 1; background: #e5ecdf; border-top: 2px solid #6c865e; padding: 14px 10px 12px; margin-bottom: 6px; }
+.dataset-section-heading h2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: #24432c; margin: 0; }
+.dataset-section-heading h2:focus-visible { outline: 2px solid #245c3a; outline-offset: 4px; }
+.dataset-section-heading h2 span { font-size: 11px; font-weight: 400; color: #52644f; }
+.dataset-section-heading p { font-size: 11px; line-height: 1.5; color: #52644f; margin: 5px 0 0; }
 .dataset-item {
   display: flex;
   align-items: center;
