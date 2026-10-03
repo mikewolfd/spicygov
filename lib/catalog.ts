@@ -36,6 +36,7 @@ export const compact = (n: number) =>
     maximumFractionDigits: 1,
   }).format(n);
 export function groupFor(id: string) {
+  if (id.startsWith("scorecard")) return "Congress";
   if (
     [
       "section_diffs",

@@ -34,3 +34,13 @@ Descriptions and the 84 declared joins are bundled from the SpicyRegs dictionary
 Dataset/filter state is stored in the URL. The mobile drawer, coverage notes, record details, and optional WebMCP browser tools use the same explorer state.
 
 The dedicated MCP connection guide is at `/mcp/`. Vite builds a separate HTML entry so direct links work on GitHub Pages. The public connection endpoint remains `https://mcp.spicygov.ai/mcp`.
+
+Scorecard descriptions and 30 publisher-table joins are refreshed from the committed
+SpicyRegs dictionary at `3f85f28cdf2d1df9a40c1d3bb9ff556c470ca415`.
+Six additional explorer links follow the resolver's documented exact identifiers:
+member/item links back to their source rows include the source snapshot in the
+composite key; resolved Bioguide, bill, vote, and amendment IDs lead to the
+corresponding congressional tables. NULL identifiers are never followed.
+These links browse current published records; `input_pins_json` preserves the
+resolver's historical input identity. Publication discovery is automatic;
+relationship metadata still requires a dictionary refresh.
