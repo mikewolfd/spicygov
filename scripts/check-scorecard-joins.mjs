@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
-import { readFile } from 'node:fs/promises';
 async function compile(path) {
   const { outputFiles } = await build({entryPoints:[path],bundle:true,platform:'node',format:'esm',write:false});
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
-const {loadCatalog} = await compile('lib/catalog.ts');
+const {loadCollection} = await compile('lib/catalog.ts');
 const {readPage} = await compile('lib/reader.ts');
-const catalog = await loadCatalog();
-const {joins} = JSON.parse(await readFile('lib/data/table_joins.json','utf8'));
+const {tables:catalog,joins,metadata} = await loadCollection();
+assert.notEqual(metadata.state, 'unavailable', 'Published metadata is available');
 const scorecardJoins = joins.filter(j=>j.child.startsWith('scorecard'));
 for (const j of scorecardJoins) {
   const child=catalog.find(t=>t.id===j.child), parent=catalog.find(t=>t.id===j.parent);

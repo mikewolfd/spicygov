@@ -6,5 +6,5 @@
     "resolveJsonModule": true, "isolatedModules": true, "noEmit": true,
     "types": ["vite/client", "node"], "paths": {"@/*": ["./*"]}
   },
-  "include": ["app", "components", "lib", "main.tsx", "vite.config.ts"]
+  "include": ["app", "components", "lib", "main.tsx", "sources", "mcp", "vite.config.ts"]
 }

@@ -1,5 +1,6 @@
-import descriptions from "./data/table_metadata.json";
-import relationships from "./data/table_joins.json";
+import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
+export { publicationDate, tableMetadataMessage, metadataMessage } from "./metadata";
+export type { Join, MetadataStatus } from "./metadata";
 export const DATA_BASE = "https://data.spicygov.ai";
 export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string };
@@ -15,19 +16,19 @@ export type Dataset = {
   bytes: number;
   columns: { name: string; type: string; description: string }[];
   members: Member[];
-  published: string;
+  published?: string;
+  artifactDigest?: string;
+  metadataState: TableMetadataState;
+  sources: Source[];
+  inputs: string[];
+  transformation?: string;
+  modelGenerated: boolean;
+  emptyReason?: string;
+  joinAudit?: { status: string; reason: string };
+  connectionNotes: string[];
   group: string;
   family: string;
 };
-export type Join = {
-  child: string;
-  child_columns: string[];
-  parent: string;
-  parent_columns: string[];
-  kind: string;
-  reason: string;
-};
-export const joins: Join[] = relationships.joins;
 export const pretty = (s: string) =>
   s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 export const count = (n: number) => new Intl.NumberFormat("en-US").format(n);
@@ -81,7 +82,6 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
   };
   if (index.version !== 2 || !index.families)
     throw new Error("The published catalog has an unsupported format.");
-  const meta = descriptions as Record<string, any>;
   const tables: Dataset[] = [];
   for (const [familyId, family] of Object.entries(index.families) as [string, any][])
     for (const [key, table] of Object.entries(family.tables) as [
@@ -89,34 +89,104 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
       any,
     ][]) {
       const id = key.replace(/\.parquet$/, "");
-      const m = meta[id] ?? {};
       tables.push({
         id,
         family: familyId,
-        label: m.label ?? pretty(id),
-        summary: m.summary ?? "",
-        coverage: m.coverage ?? "",
-        kind: m.kind ?? "published",
-        quality: m.data_quality,
+        label: pretty(id), summary: "", coverage: "", kind: "published",
+        metadataState: "loading", sources: [], inputs: [], modelGenerated: false, connectionNotes: [], artifactDigest: family.artifactDigest,
         rows: table.rows,
         bytes: table.byteSize,
         columns: table.columns.map(([name, type]: string[]) => ({
           name,
           type,
-          description:
-            m.columns?.find((c: any) => c.column_name === name)?.description ??
-            "",
+          description: "",
         })),
         members: (table.members ?? [{ key, ...table }]).map((member: any) => ({
           url: `${DATA_BASE}/${family.prefix}/${member.key}`,
           rows: member.rows,
           byteSize: member.byteSize,
         })),
-        published: family.publishedAt,
+        published: validDate(family.publishedAt),
         group: groupFor(id),
       });
     }
   return tables.sort((a, b) => a.label.localeCompare(b.label));
+}
+export type Collection = { tables: Dataset[]; joins: Join[]; metadata: MetadataStatus };
+export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collection {
+  const status: MetadataStatus = { ...loadingMetadata, state: "current", generatedAt: bundle.generatedAt };
+  const enriched = tables.map((table): Dataset => {
+    table = { ...table, connectionNotes: [] };
+    const metadata = bundle.tables[table.id];
+    if (!metadata) {
+      status.missingTables++;
+      return { ...table, metadataState: "missing" };
+    }
+    if (metadata.family !== table.family || JSON.stringify(metadata.publicationSchema) !== JSON.stringify(table.columns.map(c => [c.name, c.type]))) {
+      status.staleTables++;
+      return { ...table, metadataState: "incompatible" };
+    }
+    const older = !table.artifactDigest || bundle.publication.families[table.family] !== table.artifactDigest;
+    if (older) status.staleTables++;
+    const undocumented = metadata.metadataStatus === "unknown" || metadata.sourceStatus === "unknown";
+    if (undocumented) status.undocumentedTables++;
+    return {
+      ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
+      kind: metadata.kind ?? "published", quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
+      transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
+      metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
+      columns: table.columns.map(column => ({ ...column, description: metadata.columns?.find(c => c.column_name === column.name)?.description ?? "" })),
+    };
+  });
+  const lookup = new Map(enriched.map(table => [table.id, table]));
+  const joins = bundle.joins.filter((join): join is Join => {
+    let reason = "This connection has invalid or incomplete keys.";
+    const arraysValid = join && typeof join.child === "string" && typeof join.parent === "string" && Array.isArray(join.child_columns) && Array.isArray(join.parent_columns) && join.child_columns.length > 0 && join.child_columns.length === join.parent_columns.length && [...join.child_columns, ...join.parent_columns].every(c => typeof c === "string") && new Set(join.child_columns).size === join.child_columns.length && new Set(join.parent_columns).size === join.parent_columns.length;
+    if (arraysValid) {
+      const child = lookup.get(join.child), parent = lookup.get(join.parent);
+      if (!child || !parent) reason = `Connection to ${pretty(!child ? join.child : join.parent)} is unavailable: that table is not published.`;
+      else if ([child, parent].some(t => ["missing", "incompatible"].includes(t.metadataState))) reason = `Connection between ${child.label} and ${parent.label} is paused until metadata matches both tables.`;
+      else if (!join.child_columns.every(key => child.columns.some(c => c.name === key)) || !join.parent_columns.every(key => parent.columns.some(c => c.name === key))) reason = `Connection between ${child.label} and ${parent.label} refers to fields that are no longer published.`;
+      else return true;
+    }
+    status.rejectedJoins++;
+    for (const id of new Set([join?.child, join?.parent])) {
+      const table = lookup.get(id);
+      if (table && !table.connectionNotes.includes(reason)) table.connectionNotes.push(reason);
+    }
+    return false;
+  }).map(join => ({ ...join, kind: typeof join.kind === "string" ? join.kind : "declared", reason: typeof join.reason === "string" ? join.reason : "" }));
+  for (const omitted of bundle.omittedJoins ?? []) {
+    status.omittedJoins++;
+    for (const id of new Set([omitted.child, omitted.parent])) {
+      const table = lookup.get(id);
+      if (!table) continue;
+      const target = omitted.child === id ? omitted.parent : omitted.child;
+      const reason = lookup.has(target) ? omitted.reason : "That table is not published.";
+      const note = `Connection to ${pretty(target)} is unavailable. ${reason}`;
+      if (!table.connectionNotes.includes(note)) table.connectionNotes.push(note);
+    }
+  }
+  if (status.missingTables || status.staleTables || status.undocumentedTables || status.rejectedJoins) status.state = "partial";
+  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, metadata: status };
+}
+export async function loadCollection(signal?: AbortSignal, onCatalog?: (collection: Collection) => void): Promise<Collection> {
+  // Begin both requests together. Records can load as soon as the catalog arrives.
+  const metadata = fetch(`${DATA_BASE}/explorer-metadata.v1.json`, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000), cache: "no-store",
+  }).then(async response => {
+    if (!response.ok) throw new Error(`Metadata could not be reached (${response.status}).`);
+    return parseMetadata(await response.json());
+  }).catch(() => null);
+  const tables = await loadCatalog(signal);
+  if (signal?.aborted) throw signal.reason;
+  onCatalog?.({ tables, joins: [], metadata: loadingMetadata });
+  const bundle = await metadata;
+  if (signal?.aborted) throw signal.reason;
+  return bundle ? applyMetadata(tables, bundle) : {
+    tables: tables.map(table => ({ ...table, metadataState: "unavailable" })), joins: [],
+    metadata: { ...loadingMetadata, state: "unavailable" },
+  };
 }
 export function display(value: unknown): string {
   if (value == null) return "—";
@@ -127,7 +197,23 @@ export function display(value: unknown): string {
     );
   return String(value);
 }
-export function related(id: string) {
+export function joinTarget(join: Join, id: string) {
+  return join.child === id
+    ? { id: join.parent, local: join.child_columns, remote: join.parent_columns }
+    : { id: join.child, local: join.parent_columns, remote: join.child_columns };
+}
+export function connectionFilters(join: Join, id: string, row: Row): Filter[] | null {
+  if (id !== join.child && id !== join.parent) return null;
+  const target = joinTarget(join, id);
+  if (target.local.some(key => row[key] == null)) return null;
+  return target.remote.map((column, i) => ({ column, value: display(row[target.local[i]]) }));
+}
+export function noConnectionsMessage(table?: Dataset): string | undefined {
+  if (table?.connectionNotes.length) return undefined; // Show the specific unavailable-parent notes instead.
+  if (table && ["loading", "missing", "incompatible", "unavailable"].includes(table.metadataState)) return "Connections are unavailable until this table’s metadata is ready.";
+  return table?.joinAudit?.status !== "connected" && table?.joinAudit?.reason || "No supported connections are declared for this dataset.";
+}
+export function related(id: string, joins: Join[]) {
   return joins.filter((j) => j.child === id || j.parent === id);
 }
 export function defaultColumns(table: Dataset): string[] {

@@ -27,7 +27,9 @@ The site is hosted at the root of its custom domain. It intentionally uses root-
 
 `lib/catalog.ts` loads `publication.v2.json` live, resolving immutable generation paths and all member files for every published table. Metadata-only tables absent from that index are not represented as available. Errors never fall back to example records.
 
-Descriptions and the 84 declared joins are bundled from the SpicyRegs dictionary, revision `014f193112c800ee3e71b3d3459ac8ba21bc4ba4` (October 3, 2026). Refresh `lib/data/table_metadata.json` and `lib/data/table_joins.json` when the dictionary changes. New published tables receive pages and live schemas automatically.
+Descriptions, source attribution, derived inputs, coverage and declared joins load from `https://data.spicygov.ai/explorer-metadata.v1.json` on every page load or refresh. The SpicyRegs publication workflow owns that versioned bundle; new tables and declared connections need no website deployment. The old files in `lib/data/` are retained as historical snapshots and are not imported by the application.
+
+Records load as soon as the publication catalog arrives. Metadata has a separate ten-second timeout. If it fails or its format is unsupported, every published table remains browsable with an explicit notice and no hidden bundled fallback. A table's family and full column schema must match before descriptions or connections are applied. Same-schema metadata for an older publication stays usable but is marked older. Connections require two published endpoints and complete, distinct key columns; unavailable declarations appear as notes instead of clickable connections.
 
 [Hyparquet](https://github.com/hyparam/hyparquet) reads selected fields over HTTP byte ranges. The reader handles multipart tables, exact filters, compound join keys, physical row cursors, and 64-bit integers. Filters apply across the whole table. Large scans may take time and can be stopped. Missing or null join values are not fabricated. Declared relationships do not prove the underlying source data is complete or correctly linked.
 
@@ -35,20 +37,12 @@ Dataset/filter state is stored in the URL. The mobile drawer, coverage notes, re
 
 The dedicated MCP connection guide is at `/mcp/`. Vite builds a separate HTML entry so direct links work on GitHub Pages. The public connection endpoint remains `https://mcp.spicygov.ai/mcp`.
 
-Scorecard descriptions and 30 publisher-table joins are refreshed from the committed
-SpicyRegs dictionary at `3f85f28cdf2d1df9a40c1d3bb9ff556c470ca415`.
-Six additional explorer links follow the resolver's documented exact identifiers:
-member/item links back to their source rows include the source snapshot in the
-composite key; resolved Bioguide, bill, vote, and amendment IDs lead to the
-corresponding congressional tables. NULL identifiers are never followed.
-These links browse current published records; `input_pins_json` preserves the
-resolver's historical input identity. Publication discovery is automatic;
-relationship metadata still requires a dictionary refresh.
+Composite connection filters preserve every declared key in both directions, including edition, cycle, snapshot, dump date, or term when required. NULL or missing identifiers cannot be followed. Connections browse current published records; source fields such as `input_pins_json` retain historical input identity. Declared links are not inferred from matching column names.
+
+`npm test` covers metadata refresh, outage, unsupported formats, schema changes, missing and duplicate join keys, source URL safety, bidirectional composite navigation, missing publication dates, and Parquet reading. `node scripts/check-scorecard-joins.mjs` optionally checks live scorecard schemas and five record traversals.
 
 ## Sources directory
 
-`/sources/` groups every table in the live publication catalog by its publishing
-family. `lib/sources.ts` documents the source routes and derived-table notes from
-SpicyRegs pipeline definitions. New families appear under “Source not yet
-documented” until their origin is mapped; they are never omitted or guessed.
-Search matches table labels, identifiers, source names, and source summaries.
+`/sources/` groups every currently published table by its documented sources or derived inputs. It shows row counts, publication dates, documented coverage and empty-table status. Expanded origin details link to each named publisher and input table; inputs absent from the publication remain named and marked unavailable. Model-generated content is labeled separately. Search matches table labels, identifiers, source names, descriptions and input tables.
+
+Publication dates describe file publication, never record coverage. Missing dates and undocumented coverage are labeled explicitly; zero rows do not establish failure or completeness.

@@ -1,0 +1,137 @@
+{
+  "note": "Representative published audit/connection shapes from the SpicyRegs 2026-10-03 audit. Kept offline to verify client compatibility.",
+  "audits": {
+    "cfr_sections": {
+      "evidence": [
+        "src/spicy_regs/table_joins.py:JOINS"
+      ],
+      "reason": "A declared title/part connection to rule_targets exists, but rule_targets is absent from this publication index. CFR editions and structural rows must remain explicit; matching section labels alone is unsafe.",
+      "reviewedOn": "2026-10-03",
+      "status": "special-handling"
+    },
+    "comment_attributes": {
+      "evidence": [
+        "src/spicy_regs/table_joins.py:JOINS"
+      ],
+      "reason": "The declared comment_id connection points to comments, which is absent from this publication index. This table retains the attributes; it does not supply the missing comment-body endpoint.",
+      "reviewedOn": "2026-10-03",
+      "status": "special-handling"
+    },
+    "fcc_filings": {
+      "evidence": [
+        "src/spicy_regs/relationship_views/fcc_native.py"
+      ],
+      "reason": "Each filing can name several proceedings in proceeding_names_json. Connecting it requires explicit JSON-array expansion; a scalar or title match would drop or invent relationships.",
+      "reviewedOn": "2026-10-03",
+      "status": "special-handling"
+    },
+    "fec_relationships": {
+      "evidence": [
+        "src/spicy_regs/relationship_views/fec.py"
+      ],
+      "reason": "Subject/object IDs are polymorphic and include missing, empty and reported-none observations. Positive edges require value_status, ID status and entity-type guards; collection/source-record keys require JSON extraction. A raw subject_id/object_id equality join is unsafe.",
+      "reviewedOn": "2026-10-03",
+      "status": "special-handling"
+    }
+  },
+  "joins": [
+    {
+      "child": "scorecard_member_links",
+      "child_columns": [
+        "scorecard_id",
+        "publisher_member_key",
+        "source_snapshot_id"
+      ],
+      "parent": "scorecard_members",
+      "parent_columns": [
+        "scorecard_id",
+        "publisher_member_key",
+        "snapshot_id"
+      ],
+      "kind": "scope",
+      "reason": "Matches the publisher identity and the exact source snapshot used for resolution. A newer source snapshot is not interchangeable."
+    },
+    {
+      "child": "court_opinion_pdf_extractions",
+      "child_columns": [
+        "opinion_id",
+        "native_sha1"
+      ],
+      "parent": "court_opinions",
+      "parent_columns": [
+        "opinion_id",
+        "sha1"
+      ],
+      "kind": "complete",
+      "reason": "The original opinion ID and its held native body digest identify the input. Preserve both fields so a later changed source body cannot be presented as the extraction input. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    },
+    {
+      "child": "court_citation_map",
+      "child_columns": [
+        "citing_opinion_id",
+        "dump_date"
+      ],
+      "parent": "court_opinions",
+      "parent_columns": [
+        "opinion_id",
+        "dump_date"
+      ],
+      "kind": "scope",
+      "reason": "CourtListener opinion identity is matched within the same exported edition. Publisher exports can contain a small residue of absent opinion IDs; a newer independent export does not supply a same-edition match. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    },
+    {
+      "child": "court_citation_map",
+      "child_columns": [
+        "cited_opinion_id",
+        "dump_date"
+      ],
+      "parent": "court_opinions",
+      "parent_columns": [
+        "opinion_id",
+        "dump_date"
+      ],
+      "kind": "scope",
+      "reason": "CourtListener opinion identity is matched within the same exported edition. Publisher exports can contain a small residue of absent opinion IDs; a newer independent export does not supply a same-edition match. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    },
+    {
+      "child": "member_vote_terms",
+      "child_columns": [
+        "vote_id",
+        "member_key"
+      ],
+      "parent": "member_votes",
+      "parent_columns": [
+        "vote_id",
+        "member_key"
+      ],
+      "kind": "complete",
+      "reason": "The derived term row retains the complete member-vote key; member_key alone identifies a row only within its roll call. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    },
+    {
+      "child": "member_vote_terms",
+      "child_columns": [
+        "bioguide_id",
+        "term_index"
+      ],
+      "parent": "member_terms",
+      "parent_columns": [
+        "bioguide_id",
+        "term_index"
+      ],
+      "kind": "complete",
+      "reason": "The builder selects one service term by the vote date and chamber. Unresolved or ambiguous terms remain NULL and are not joined. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    },
+    {
+      "child": "house_communications",
+      "child_columns": [
+        "record_package_id"
+      ],
+      "parent": "record_issues",
+      "parent_columns": [
+        "package_id"
+      ],
+      "kind": "empty",
+      "reason": "The communication reconstruction retains the exact Congressional Record package. Only held issues can resolve; a package ID does not imply article text was acquired. No non-null composite keys were present in the measured child; no successful traversal is claimed. Parent keys were unique in the complete selected inputs checked on 2026-10-03; this is a dated observation, not a coverage or future-uniqueness guarantee."
+    }
+  ]
+}

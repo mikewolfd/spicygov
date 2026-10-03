@@ -17,6 +17,8 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
+import { useCollection } from "@/lib/use-collection";
+import { TableProvenance } from "@/components/table-provenance";
 import { useExplorerTools } from "@/lib/webmcp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +38,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  loadCatalog,
+  publicationDate,
+  tableMetadataMessage,
   defaultColumns,
   count,
   compact,
   display,
   related,
+  joinTarget,
+  connectionFilters,
+  noConnectionsMessage,
   pretty,
   type Dataset,
   type Row,
@@ -107,40 +113,14 @@ function makeHref(state: LocationState) {
   return `/?${p}`;
 }
 function shortSummary(table: Dataset) {
-  const brief: Record<string, string> = {
-    congress_bills:
-      "Bills and resolutions, from introduction to their latest action.",
-    bill_actions: "Every recorded action on a congressional bill.",
-    members: "Members of Congress, past and present.",
-    dockets:
-      "Federal rulemaking folders, with their documents and public comments.",
-    documents: "The documents behind federal rulemaking.",
-    federal_register:
-      "Rules, proposed rules, and notices from federal agencies.",
-  };
   return (
-    brief[table.id] ??
     (table.summary.length > 160
       ? table.summary.slice(0, 157).replace(/\s+\S*$/, "") + "…"
-      : table.summary)
+      : table.summary || "Explore the published records and their fields.")
   );
 }
-function joinTarget(join: Join, id: string) {
-  return join.child === id
-    ? {
-        id: join.parent,
-        local: join.child_columns,
-        remote: join.parent_columns,
-      }
-    : {
-        id: join.child,
-        local: join.parent_columns,
-        remote: join.child_columns,
-      };
-}
 export default function Explorer() {
-  const [catalog, setCatalog] = useState<Dataset[]>([]),
-    [location, setLocation] = useState<LocationState>(initial),
+  const [location, setLocation] = useState<LocationState>(initial),
     [search, setSearch] = useState("");
   const [rows, setRows] = useState<Row[]>([]),
     [positions, setPositions] = useState<number[]>([]),
@@ -162,8 +142,9 @@ export default function Explorer() {
   const worker = useRef<Worker | null>(null),
     recordWorker = useRef<Worker | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const { tables: catalog, joins, metadata, error: catalogError } = useCollection(retry);
   const table = catalog.find((t) => t.id === location.id),
-    connections = table ? related(table.id) : [];
+    connections = table ? related(table.id, joins) : [];
   const activeColumns = columns.length
     ? columns
     : table
@@ -200,17 +181,8 @@ export default function Explorer() {
     return () => window.removeEventListener("popstate", pop);
   }, []);
   useEffect(() => {
-    const c = new AbortController();
-    loadCatalog(c.signal)
-      .then(setCatalog)
-      .catch((e) => {
-        if (!c.signal.aborted) {
-          setError(e.message);
-          setBusy(false);
-        }
-      });
-    return () => c.abort();
-  }, [retry]);
+    if (catalogError) { setError(catalogError); setBusy(false); }
+  }, [catalogError]);
   useEffect(() => {
     if (!table) {
       if (catalog.length) {
@@ -258,7 +230,10 @@ export default function Explorer() {
       worker.current = null;
     };
   }, [
-    table,
+    // Descriptions arriving must not cancel or restart an in-progress file scan.
+    table?.id,
+    JSON.stringify(table?.members),
+    catalog.length,
     location.id,
     JSON.stringify(location.filters),
     location.cursor,
@@ -307,16 +282,13 @@ export default function Explorer() {
     const t = joinTarget(join, location.id);
     if (
       !catalog.some((d) => d.id === t.id) ||
-      t.local.some((k) => row[k] == null)
+      !connectionFilters(join, location.id, row)
     )
       return;
     recordWorker.current?.terminate();
     navigate({
       id: t.id,
-      filters: t.remote.map((column, i) => ({
-        column,
-        value: display(row[t.local[i]]),
-      })),
+      filters: connectionFilters(join, location.id, row)!,
       cursor: 0,
       view: "records",
       from: table?.label,
@@ -479,6 +451,7 @@ export default function Explorer() {
                 ? "Choose another dataset to keep exploring."
                 : "Loading the published collection…")}
           </p>
+          {table && tableMetadataMessage(table.metadataState) && <p className="metadata-status" role="status">{tableMetadataMessage(table.metadataState)} {table.metadataState === "unavailable" && <button onClick={() => setRetry(retry + 1)}>Try again</button>}</p>}
           <div className="table-meta">
             <span>{table ? count(table.rows) : "—"} records</span>
             <span>{table?.columns.length ?? "—"} fields</span>
@@ -821,7 +794,7 @@ export default function Explorer() {
                         {j.kind === "complete"
                           ? "Declared join"
                           : j.kind === "empty"
-                            ? "Unmeasured"
+                            ? "No key baseline"
                             : j.kind === "scope"
                               ? "Partial coverage"
                               : "By design"}
@@ -829,12 +802,10 @@ export default function Explorer() {
                     </div>
                   );
                 })}
-                {!connections.length && (
-                  <p className="small-empty">
-                    No joins are declared for this dataset. See field
-                    descriptions for other possible relationships.
-                  </p>
+                {!connections.length && noConnectionsMessage(table) && (
+                  <p className="small-empty">{noConnectionsMessage(table)}</p>
                 )}
+                {table?.connectionNotes.map((note, i) => <p key={i} className="small-empty">{note}</p>)}
               </div>
             </div>
           )}
@@ -843,15 +814,12 @@ export default function Explorer() {
               <div className="about-top">
                 <div>
                   <h2>What’s in this dataset</h2>
-                  <p>{table.summary}</p>
+                  <p>{table.summary || "A description is not yet available for this table."}</p>
                 </div>
                 <div className="publication-info">
                   <span>Published</span>
                   <strong>
-                    {new Date(table.published).toLocaleString("en-US", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+                    {publicationDate(table.published)}
                   </strong>
                   <span>
                     {table.members.length}{" "}
@@ -860,6 +828,8 @@ export default function Explorer() {
                   </span>
                 </div>
               </div>
+              <TableProvenance table={table} catalog={catalog} />
+              {table.rows === 0 && <p className="empty-publication">No rows in this publication. {table.emptyReason || "No reason is documented."}</p>}
               <details className="coverage-note">
                 <summary>
                   Coverage & limitations <span>{table.kind}</span>
@@ -901,8 +871,9 @@ export default function Explorer() {
                 ))}
               </div>
               <p className="metadata-note">
-                Field descriptions and declared joins from the SpicyRegs data
-                dictionary. Publication and record data are loaded live.
+                Records, descriptions, sources and declared connections load from the current publication.
+                {metadata.generatedAt && ` Metadata updated ${publicationDate(metadata.generatedAt)}.`}
+                {" "}Publication dates describe when files were published, not the dates covered by their records.
               </p>
             </div>
           )}

@@ -1185,3 +1185,15 @@ h1 {
   .topbar nav { gap: 14px; }
   .topbar nav a[href="https://docs.spicygov.ai"] { display: none; }
 }
+.metadata-status {margin:0 0 12px;color:#715821;font-size:12px;line-height:1.5;}
+.metadata-status button {color:#245c3a;text-decoration:underline;margin-left:5px;}
+.table-provenance {font-size:13px;line-height:1.6;color:#566258;}
+.table-provenance p {margin:10px 0;}
+.table-provenance strong {font-weight:600;color:#253f2d;margin-right:10px;}
+.table-source-links >span {display:inline;}
+.table-source-links >span +span::before {content:' · ';}
+.table-source-links a,.table-input-links a {color:#245c3a;text-decoration:underline;text-underline-offset:3px;}
+.table-source-links small {font-size:10px;margin-left:5px;color:#64735e;}
+.provenance-source-note {display:block;font-size:11px;color:#657068;margin:2px 0 7px;}
+.table-input-links {display:flex;gap:4px 12px;flex-wrap:wrap;align-items:baseline;}
+.model-label,.empty-publication {font-size:12px;color:#715821;}
