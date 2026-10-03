@@ -396,7 +396,8 @@ export default function Explorer() {
           </span>
         </a>
         <nav aria-label="Main">
-          <span className="nav-active">Explore</span>
+          <span className="nav-active" aria-current="page">Explore</span>
+          <a href="/mcp/">MCP</a>
           <a href="https://docs.spicygov.ai" target="_blank" rel="noreferrer">
             Data docs <ExternalLink size={13} />
           </a>

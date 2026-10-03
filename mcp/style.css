@@ -1,0 +1,42 @@
+.mcp-page { min-height: 100svh; }
+.mcp-content { max-width: 900px; padding: 64px 36px 38px; margin: 0 auto; }
+.mcp-eyebrow { color: var(--primary); font-size: 11px; letter-spacing: 2px; font-weight: 700; margin: 0 0 22px; }
+.mcp-content h1 { font: 60px/1.05 Georgia, serif; letter-spacing: -2px; margin: 0 0 24px; }
+.mcp-content h1 em { color: var(--primary); font-weight: 400; }
+.mcp-intro { max-width: 580px; font-size: 17px; line-height: 1.7; color: #566258; margin: 0 0 38px; }
+.mcp-content h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.mcp-endpoint { background: #eaf0e4; padding: 24px 26px; }
+.mcp-section-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mcp-section-label span { font-size: 12px; color: #52644f; }
+.mcp-copy-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0 12px; }
+.mcp-copy-row > code { font-size: 20px; overflow-wrap: anywhere; min-width: 0; user-select: all; }
+.copy-control { position: relative; flex-shrink: 0; }
+.copy-control button { display: flex; gap: 7px; align-items: center; color: white; background: #245c3a; border: 0; padding: 11px 13px; border-radius: 4px; font-size: 13px; transition: background .15s, transform .15s; }
+.copy-control button:hover { background: #17482b; transform: translateY(-1px); }
+.copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.mcp-endpoint p { font-size: 13px; color: #52644f; margin: 0; }
+.mcp-setup { padding: 32px 0; border-bottom: 1px solid var(--border); }
+.mcp-setup p, .mcp-try p { color: #566258; font-size: 14px; line-height: 1.7; margin: 12px 0 0; max-width: 620px; }
+.mcp-setup details { margin-top: 22px; }
+.mcp-setup summary { cursor: pointer; font-size: 14px; color: var(--primary); padding: 5px 0; }
+.mcp-command { display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #eff2eb; padding: 18px; margin: 16px 0; }
+.mcp-command > code { min-width: 0; overflow-wrap: anywhere; user-select: all; font-size: 13px; line-height: 1.7; }
+.mcp-text-link { display: inline-flex; gap: 5px; align-items: center; font-size: 13px; color: var(--primary); }
+.mcp-try { padding: 30px 0; }
+.mcp-try blockquote { font: 24px/1.4 Georgia, serif; margin: 14px 0; max-width: 610px; }
+.mcp-footer { display: flex; gap: 20px; justify-content: space-between; padding-top: 22px; border-top: 1px solid var(--border); font-size: 13px; color: var(--primary); }
+.mcp-footer a { display: inline-flex; gap: 8px; align-items: center; }
+.mcp-footer a:hover, .mcp-text-link:hover { text-decoration: underline; }
+@media (max-width: 650px) {
+  .mcp-page .topbar { gap: 22px; padding: 0 20px; }
+  .mcp-page .topbar nav { gap: 18px; }
+  .mcp-content { padding: 36px 22px 28px; }
+  .mcp-content h1 { font-size: 47px; }
+  .mcp-intro { font-size: 15px; margin-bottom: 28px; }
+  .mcp-endpoint { padding: 20px; }
+  .mcp-copy-row { align-items: flex-start; flex-direction: column; }
+  .mcp-copy-row > code { font-size: 17px; }
+  .mcp-command { flex-direction: column; align-items: flex-start; }
+  .mcp-footer { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { .copy-control button { transition: none; transform: none; } }
