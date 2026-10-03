@@ -44,3 +44,11 @@ corresponding congressional tables. NULL identifiers are never followed.
 These links browse current published records; `input_pins_json` preserves the
 resolver's historical input identity. Publication discovery is automatic;
 relationship metadata still requires a dictionary refresh.
+
+## Sources directory
+
+`/sources/` groups every table in the live publication catalog by its publishing
+family. `lib/sources.ts` documents the source routes and derived-table notes from
+SpicyRegs pipeline definitions. New families appear under “Source not yet
+documented” until their origin is mapped; they are never omitted or guessed.
+Search matches table labels, identifiers, source names, and source summaries.

@@ -17,6 +17,7 @@ export type Dataset = {
   members: Member[];
   published: string;
   group: string;
+  family: string;
 };
 export type Join = {
   child: string;
@@ -82,7 +83,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
     throw new Error("The published catalog has an unsupported format.");
   const meta = descriptions as Record<string, any>;
   const tables: Dataset[] = [];
-  for (const family of Object.values(index.families) as any[])
+  for (const [familyId, family] of Object.entries(index.families) as [string, any][])
     for (const [key, table] of Object.entries(family.tables) as [
       string,
       any,
@@ -91,6 +92,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
       const m = meta[id] ?? {};
       tables.push({
         id,
+        family: familyId,
         label: m.label ?? pretty(id),
         summary: m.summary ?? "",
         coverage: m.coverage ?? "",

@@ -33,6 +33,7 @@ function McpGuide() {
       <a className="wordmark" href="/">spicygov<span className="brand-star" aria-hidden="true">✳</span></a>
       <nav aria-label="Main">
         <a href="/">Explore</a>
+        <a href="/sources/">Sources</a>
         <span className="nav-active" aria-current="page">MCP</span>
         <a href="https://docs.spicygov.ai" target="_blank" rel="noreferrer">Data docs <ArrowUpRight size={13} /></a>
       </nav>

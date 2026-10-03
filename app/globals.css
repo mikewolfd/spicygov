@@ -1181,3 +1181,7 @@ h1 {
 .data-table th {
   font-size: 12px;
 }
+@media (max-width: 650px) {
+  .topbar nav { gap: 14px; }
+  .topbar nav a[href="https://docs.spicygov.ai"] { display: none; }
+}
