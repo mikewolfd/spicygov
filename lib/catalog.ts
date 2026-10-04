@@ -1,7 +1,8 @@
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
+import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
 export { publicationDate, tableMetadataMessage, metadataMessage } from "./metadata";
 export type { Join, MetadataStatus } from "./metadata";
-export const DATA_BASE = "https://data.spicygov.ai";
+export { DATA_BASE } from './publication-evidence';
 export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string };
 export type Member = { url: string; rows: number; byteSize: number };
@@ -18,6 +19,7 @@ export type Dataset = {
   members: Member[];
   published?: string;
   artifactDigest?: string;
+  publication?: PublicationEvidence;
   metadataState: TableMetadataState;
   sources: Source[];
   inputs: string[];
@@ -94,6 +96,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
         family: familyId,
         label: pretty(id), summary: "", coverage: "", kind: "published",
         metadataState: "loading", sources: [], inputs: [], modelGenerated: false, connectionNotes: [], artifactDigest: family.artifactDigest,
+        publication: generationEvidence(family.prefix, family.etlReceipts, id),
         rows: table.rows,
         bytes: table.byteSize,
         columns: table.columns.map(([name, type]: string[]) => ({

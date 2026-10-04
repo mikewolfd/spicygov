@@ -10,7 +10,8 @@ export function TableProvenance({ table, catalog }: { table: Dataset; catalog: D
     {table.transformation && <p>{table.transformation}</p>}
     {table.inputs.length > 0 && <p className="table-input-links"><strong>Inputs</strong>{table.inputs.map(id => {
       const input = catalog.find(candidate => candidate.id === id);
-      return input ? <a key={id} href={`/?table=${encodeURIComponent(id)}&view=about`}>{input.label}</a> : <span key={id}>{pretty(id)} <small>(not published)</small></span>;
+      const separate = input?.publication && input.publication.kind !== 'generation';
+      return input ? <a key={id} href={separate ? input.members[0]?.url : `/?table=${encodeURIComponent(id)}&view=about`} target={separate ? '_blank' : undefined} rel={separate ? 'noreferrer' : undefined}>{input.label}{separate ? ' (Parquet) ↗' : ''}</a> : <span key={id}>{pretty(id)} <small>(not in this catalog)</small></span>;
     })}</p>}
   </div>;
 }
