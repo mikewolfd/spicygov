@@ -117,11 +117,17 @@ export function sourceCatalogMessage(status: MetadataStatus): string | undefined
   if (status.state === 'unavailable') return 'Source details could not be loaded. Published tables are still listed.';
   if (status.state === 'partial') return 'Some source details are missing or older. See each table’s notes.';
 }
+function sourceFamilyName(family: string): string {
+  return pretty(family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener');
+}
+function searchText(value: string): string {
+  return value.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+}
 export function filterEntries(entries: SourceEntry[], query: string, method: string, evidence: string): SourceEntry[] {
-  const q = query.trim().toLowerCase();
+  const q = searchText(query);
   return entries.filter(entry => {
     const { table, review, source } = entry;
-    if (q && ![table.id, table.label, table.summary, source.name, ...table.inputs, ...(review?.sources.map(s => s.name) ?? []), review?.summary, review?.copy?.summary, review?.copy?.scope, ...(review?.copy?.gaps ?? []), ...(review?.methods.map(m => methodLabels[m] ?? m) ?? [])].join(' ').toLowerCase().includes(q)) return false;
+    if (q && !searchText([table.id, table.family, sourceFamilyName(table.family), table.label, table.summary, source.name, ...table.inputs, ...(review?.sources.map(s => s.name) ?? []), review?.summary, review?.copy?.summary, review?.copy?.scope, ...(review?.copy?.gaps ?? []), ...(review?.methods.map(m => methodLabels[m] ?? m) ?? [])].join(' ')).includes(q)) return false;
     if (method && !review?.methods.includes(method)) return false;
     if (evidence === 'native' && !table.publication?.nativeReceipts || evidence === 'journal' && !reviewedGenerationLinks(entry).length || evidence === 'empty' && table.rows !== 0 || evidence === 'separate' && entry.explorer || evidence === 'unreviewed' && review || evidence === 'source-details' && !sourceMetadataNeedsAttention(entry)) return false;
     return true;
@@ -189,7 +195,7 @@ export function sourceSections(entries: SourceEntry[]): SourceSection[] {
     const id = `${section.id}-${entry.table.family}`;
     let group = section.groups.find(group => group.id === id);
     if (!group) {
-      group = { id, name: pretty(entry.table.family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener'), publishers: [], historical: false, entries: [] };
+      group = { id, name: sourceFamilyName(entry.table.family), publishers: [], historical: false, entries: [] };
       section.groups.push(group);
     }
     group.entries.push(entry);

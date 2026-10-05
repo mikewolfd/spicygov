@@ -170,6 +170,21 @@ test('concise copy changes presentation and search, never published membership',
   assert.equal(parseSourceReview(raw).tables.records.copy, undefined);
 });
 
+test('Sources search finds displayed family headings, raw table IDs and readable titles', () => {
+  const sam = { ...table('sam_entities'), family: 'sam-entities', label: 'Federal entity registrations', rows: 1 };
+  const unrelated = { ...table('other_records'), summary: 'Uses the same source.', rows: 0 };
+  const entries = sourceEntries([sam, unrelated], []);
+  assert.equal(sourceSections(entries).flatMap(section => section.groups).find(group => group.entries.some(entry => entry.table.id === sam.id)).name, 'SAM entities');
+  for (const query of ['SAM entities', 'sam_entities', 'sam-entities', '  SAM   entities  ', 'Federal entity registrations']) {
+    assert.deepEqual(filterEntries(entries, query, '', '').map(entry => entry.table.id), ['sam_entities']);
+  }
+  assert.equal(filterEntries(entries, 'SAM', '', '').length, 2);
+  assert.deepEqual(filterEntries(sourceEntries([{ ...sam, id: 'registration_records' }], []), 'SAM entities', '', '').map(entry => entry.table.id), ['registration_records']);
+  assert.deepEqual(filterEntries(entries, 'SAM entities', '', 'empty'), []);
+  assert.deepEqual(filterEntries(entries, 'SAM entities', 'api', ''), []);
+  assert.equal(filterEntries(entries, '', '', '').length, 2);
+});
+
 test('edited copy matches the reviewed inventory and every shipped table', async () => {
   const copy = JSON.parse(await readFile('content/source-copy.json', 'utf8'));
   const shipped = JSON.parse(await readFile('public/source-inventory.v1.json', 'utf8'));
