@@ -174,3 +174,14 @@ test('compact source notes preserve attribution and input links without repeatin
   assert.match(full, /Long transformation explanation/);
   assert.match(full, /Long source explanation/);
 });
+
+
+test('source-log preview distinguishes saved responses, missing fields and inherited data', async () => {
+  const { parseObservationPreview } = await module('lib/source-observations.ts');
+  const lines = [{event:'lineage'}, {event:'capture', requested_url:'https://example.gov/data', status_code:200, body_retained:true}, {event:'capture', requested_url:'https://other.gov/data', body_retained:false}, {event:'capture', requested_url:'javascript:alert(1)'}].map(JSON.stringify).join('\n');
+  const preview = parseObservationPreview(lines + '\n{"truncated":', true);
+  assert.equal(preview.inherited, true);
+  assert.equal(preview.partial, true);
+  assert.deepEqual(preview.observations.map(row => [row.source, row.saved, row.status]), [['example.gov', true, 200], ['other.gov', false, undefined]]);
+  assert.equal(parseObservationPreview(Array(8).fill(JSON.stringify({event:'capture', requested_url:'https://example.gov'})).join('\n')).observations.length, 5);
+});

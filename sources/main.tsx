@@ -4,6 +4,7 @@ import { count, publicationDate, type Dataset } from '../lib/catalog';
 import { useCollection } from '../lib/use-collection';
 import { useSourceDirectory } from '../lib/use-source-directory';
 import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
+import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
 import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
 import { TableProvenance } from '../components/table-provenance';
 import '../app/globals.css';
@@ -12,37 +13,36 @@ import './style.css';
 function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
   return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
 }
+type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
 function SourceRow({ entry, catalog, loadDetails }: {
   entry: SourceEntry; catalog: Dataset[];
-  loadDetails: (table: Dataset) => Promise<GenerationDetails>;
+  loadDetails: (table: Dataset) => Promise<ReadableDetails>;
 }) {
-  const [open, setOpen] = useState(false), [details, setDetails] = useState<GenerationDetails>();
+  const [open, setOpen] = useState(false), [details, setDetails] = useState<ReadableDetails>();
   const [loading, setLoading] = useState(false), [error, setError] = useState('');
   const { table, review: audit } = entry, publication = table.publication, receipts = publication?.nativeReceipts;
   const reviewedLinks = reviewedGenerationLinks(entry), copy = audit?.copy;
   const titleUrl = entry.explorer ? `/?table=${encodeURIComponent(table.id)}&view=about` : table.members[0]?.url;
   async function inspect() {
     setLoading(true); setError('');
-    try { setDetails(await loadDetails(table)); } catch { setError('Release details could not be loaded. Try again or open publication details.'); }
+    try { setDetails(await loadDetails(table)); } catch { setError('We could not load the recorded inputs. Try again.'); }
     finally { setLoading(false); }
   }
   return <Fragment>
     <tr>
-      <th scope="row"><a className="source-table-title" href={titleUrl} target={entry.explorer ? undefined : '_blank'} rel={entry.explorer ? undefined : 'noreferrer'}>{table.label} ↗</a><code>{table.id}</code>
-        {!entry.explorer && <span className="table-note">Download data (Parquet)</span>}
+      <th scope="row"><span className="source-table-title">{table.label}</span>{entry.explorer && <a className="table-note" href={titleUrl}>Explore records →</a>}<code>{table.id}</code>
+        {!entry.explorer && <span className="table-note">Data available as a download</span>}
         {entry.historicalAttribution && <span className="table-note">Source list may be out of date</span>}
-        <button className="details-toggle" aria-expanded={open} aria-controls={`details-${table.id}`} onClick={() => setOpen(!open)}>{open ? '−' : '+'} Source & limits<span className="sr-only"> for {table.label}</span></button>
+        <button className="details-toggle" aria-expanded={open} aria-controls={`details-${table.id}`} onClick={() => { setOpen(!open); if (!open && !details && !loading && publication?.kind === 'generation') void inspect(); }}>{open ? '−' : '+'} Source & limits<span className="sr-only"> for {table.label}</span></button>
       </th>
       <td><strong className="row-count">{count(table.rows)} rows</strong>{table.rows === 0 && <span className="empty-badge">No rows</span>}
         <span className="table-note">{table.published ? `Published ${publicationDate(table.published)}` : 'Date not recorded'}</span>
         {table.modelGenerated && <span className="empty-badge">AI-generated</span>}
       </td>
       <td><ul className="method-list">{audit?.methods.length ? audit.methods.map(method => <li key={method}>{methodLabels[method] ?? method}</li>) : <li className="muted">Not yet reviewed</li>}</ul></td>
-      <td>{audit?.artifactDigest && table.artifactDigest !== audit.artifactDigest && <span className="table-note">File version differs from review</span>}<EvidenceLinks links={[
-        ...(publication ? [{ label: publication.kind === 'generation' ? 'Publication details' : publication.kind === 'rulemaking' ? 'Files & inputs' : 'Export details', url: publication.recordUrl }] : []),
-        ...(receipts ? [{ label: 'Download receipts (Parquet)', url: receipts.url }] : []),
-        ...reviewedLinks.filter(link => link.label === 'Source observation journal'),
-      ]} /></td>
+      <td><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
+        {copy?.gaps[0] && <p className="table-note"><strong>Watch for:</strong> {copy.gaps[0]}</p>}
+      </td>
     </tr>
     {open && <tr className="source-detail-row"><td colSpan={4} id={`details-${table.id}`}>
       <div className="source-detail-grid"><section><h3>How collected</h3>
@@ -52,22 +52,32 @@ function SourceRow({ entry, catalog, loadDetails }: {
         {audit?.evidence.length ? <details className="code-evidence"><summary>Code references</summary><EvidenceLinks links={audit.evidence.map(link => ({ ...link, label: link.url.split('/').pop() || 'Source code' }))} /></details> : null}
       </section><section><h3>Coverage & limits</h3><p>{copy?.scope ?? 'Coverage has not been reviewed yet.'}</p>
         {copy?.gaps.length ? <ul className="gap-list">{copy.gaps.map(gap => <li key={gap}>{gap}</li>)}</ul> : null}
-        <details className="code-evidence"><summary>Receipt & file details</summary>
-
-        {receipts ? <><p>Match <code>dataset</code>, <code>generation_id</code>, <code>record_id</code> and <code>subject_version</code> to connect a row to its receipt.</p><p className="receipt-id">Release <code>{receipts.generationId}</code></p><p className="review-date">Receipts may identify a processing step rather than an original source document.</p></> : <p>No record receipts are listed. Publication details may still name source files.</p>}
-        {publication?.kind === 'comments' && <p>These file URLs can change. Check the checksum and ETag in the export details when you need an exact file version.</p>}
-        {publication?.kind === 'rulemaking' && <p>Publication details list the files used to build this release.</p>}
-        {publication?.kind === 'generation' && !details && <button className="inspect-button" disabled={loading} onClick={inspect}>{loading ? 'Loading release details…' : error ? 'Retry release details' : 'Load release details'}</button>}
-        {error && <p role="alert">{error}</p>}
-        {details && <div className="generation-details"><EvidenceLinks links={details.links} />
-          {details.identityFields.length > 0 && <p><strong>Record identity fields</strong> {details.identityFields.map(field => <code key={field}>{field} </code>)}</p>}
-          {details.parents.length > 0 && <><h4>Input tables for this release</h4><ul className="input-pins">{details.parents.map(parent => <li key={parent.table}>{parent.url ? <a href={parent.url} target="_blank" rel="noreferrer">{parent.table} · saved version ↗</a> : <code>{parent.table}</code>}{parent.digest && <small>File checksum <code>{parent.digest}</code></small>}</li>)}</ul></>}
-          {details.carriedForward && <p>Copied from an earlier release: <code>{details.carriedForward}</code>.</p>}
-          {!details.links.length && !details.parents.length && <p>No source log or input tables are listed for this release.</p>}
-          <p className="review-date">This page does not check individual receipts or file checksums.</p>
-        </div>}
-        </details>
       </section></div>
+      <section className="readable-evidence"><h3>What we can trace</h3>
+        <p>{receipts ? 'Record receipts are available. They connect records to saved source material or a processing step; they do not always identify an original document.' : 'No record receipts are listed for this table. The collection notes describe its sources, but do not establish each row’s origin.'}</p>
+        {publication?.kind === 'comments' && <p>This export records the file size, row count and checksum. The download can change after publication; it does not provide a source receipt for each comment.</p>}
+        {publication?.kind === 'rulemaking' && <p>This is a calculated dataset. Its publication records the output files; the collection notes above explain the inputs and matching limits.</p>}
+        {loading && <p role="status">Reading the recorded inputs and source observations…</p>}
+        {error && <p role="alert">{error} <button onClick={inspect}>Retry</button></p>}
+        {details && <>
+          {details.parents.length > 0 && <><h4>Built using</h4><ul className="readable-inputs">{details.parents.map(parent => {
+            const input = catalog.find(item => item.id === parent.table);
+            return <li key={parent.table}><strong>{input?.label ?? parent.table.replaceAll('_', ' ')}</strong><span>A saved version was used for this release.</span><small>The current table may contain newer data.</small></li>;
+          })}</ul></>}
+          {details.carriedForward && <p>This table was carried over from an earlier release; publication does not mean the source was collected again.</p>}
+          {details.preview?.inherited && <p>This release also uses earlier source records. Their original coverage has not been checked again.</p>}
+          {!!details.preview?.observations.length && <><h4>Observed source requests</h4><p className="review-date">Examples from this release’s collection log, shared by its tables. These do not prove which request produced an individual row.</p><ul className="readable-inputs">{details.preview.observations.map((item, i) => <li key={i}><strong>{item.source}</strong><span>{item.observedAt ? publicationDate(item.observedAt) : 'Date not recorded'} · {item.status === undefined ? 'Response status unknown' : item.status >= 200 && item.status < 300 ? 'Response received' : `Response status ${item.status}`}</span><small>{item.saved === true ? 'Response content saved' : item.saved === false ? 'Response content not saved' : 'Saved content not documented'}</small></li>)}</ul></>}
+          {details.preview?.partial && <p className="review-date">Showing a limited preview of the source log, not the full collection history.</p>}
+          {details.previewUnavailable && <p>The source log could not be read. The collection notes above remain available.</p>}
+          {!details.previewUnavailable && !details.preview?.observations.length && <p>No source requests are shown in this preview. That does not mean none were made.</p>}
+        </>}
+        <details className="code-evidence"><summary>Technical files & identifiers</summary>
+          <p>For checking exact file versions. This page does not verify individual receipts or file checksums.</p>
+          <EvidenceLinks links={[...(publication ? [{label:'Publication file (JSON)',url:publication.recordUrl}] : []), ...(receipts ? [{label:'Receipt file (Parquet)',url:receipts.url}] : []), ...(details?.links ?? reviewedLinks), ...(!entry.explorer && table.members[0] ? [{label:'Data file (Parquet)',url:table.members[0].url}] : [])]} />
+          {!!details?.identityFields.length && <p>Record identifiers: {details.identityFields.join(', ')}</p>}
+        </details>
+      </section>
+
     </td></tr>}
   </Fragment>;
 }
@@ -88,6 +98,7 @@ function SourcesPage() {
     return [...groups.values()].sort((a, b) => a.source.id === 'unlisted' ? 1 : b.source.id === 'unlisted' ? -1 : a.source.name.localeCompare(b.source.name));
   }, [filtered]);
   const generationCache = useMemo(() => new Map<string, Promise<unknown>>(), [retry]);
+  const observationCache = useMemo(() => new Map<string, Promise<ObservationPreview>>(), [retry]);
   function loadDetails(table: Dataset) {
     const url = table.publication!.recordUrl;
     let request = generationCache.get(url);
@@ -95,7 +106,14 @@ function SourcesPage() {
       request = fetchJson(url).catch(error => { generationCache.delete(url); throw error; });
       generationCache.set(url, request);
     }
-    return request.then(raw => parseGenerationDetails(raw, table)).catch(error => { generationCache.delete(url); throw error; });
+    return request.then(async raw => {
+      const details = parseGenerationDetails(raw, table);
+      const log = details.links.find(link => link.label === 'Source observation journal');
+      if (!log) return details;
+      let preview = observationCache.get(log.url);
+      if (!preview) { preview = loadObservationPreview(log.url).catch(error => { observationCache.delete(log.url); throw error; }); observationCache.set(log.url, preview); }
+      try { return { ...details, preview: await preview }; } catch { return { ...details, previewUnavailable: true }; }
+    }).catch(error => { generationCache.delete(url); throw error; });
   }
   return <div className="sources-page">
     <a href="#sources" className="skip-link">Skip to sources</a>
@@ -110,7 +128,7 @@ function SourcesPage() {
         <button onClick={() => { setQuery(''); setMethod(''); setEvidence(''); }}>Reset</button>
       </div>
       <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filtered.length} of {entries.length} published tables · {filtered.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts{pending ? ' · Checking other tables…' : ''}</p><button onClick={() => setExpanded(!expanded)}>{expanded ? 'Collapse all' : 'Expand all'}</button><button onClick={() => setRetry(retry + 1)}>Refresh</button></div>
-      <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)} · <a href="/source-inventory.v1.json" target="_blank" rel="noreferrer">Full review data ↗</a></> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
+      <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
       {sourceCatalogMessage(metadata) && tables.length > 0 && <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)}</p>}
       {error && <p role="alert">Main table list: {error}</p>}
       {warnings.map(warning => <p className="metadata-status" role="status" key={warning}>{warning}</p>)}
@@ -118,7 +136,7 @@ function SourcesPage() {
       {!!entries.length && !groups.length && <p>No tables match these filters.</p>}
       <div className="source-list">{groups.map(({ source, entries: items }) => <details className="source-group" key={`${source.id}-${expanded}-${!!query || !!method || !!evidence}`} open={expanded || !!query || !!method || !!evidence}>
         <summary><div><h2>{source.name}</h2></div><span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{items.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts</span></span></summary>
-        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Evidence</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} />)}</tbody></table></div></div>
+        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Coverage & limits</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} />)}</tbody></table></div></div>
       </details>)}</div>
       <footer>Counts and receipts do not prove a source is complete. Receipts link records to source files or processing steps. Collection methods describe the process, not each method’s share of rows. Download-only tables open as Parquet data files. <a href="https://docs.spicygov.ai">Data documentation ↗</a></footer>
     </main>
