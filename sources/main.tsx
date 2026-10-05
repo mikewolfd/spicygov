@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { count, publicationDate, type Dataset } from '../lib/catalog';
 import { useCollection } from '../lib/use-collection';
@@ -7,6 +7,8 @@ import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, filterE
 import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
 import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
 import { TableProvenance } from '../components/table-provenance';
+import { TimeGrid, type TimeView } from '../components/time-coverage';
+import { parseTimeInventory, type TimeInventory } from '../lib/time-coverage';
 import '../app/globals.css';
 import './style.css';
 
@@ -14,8 +16,8 @@ function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
   return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
 }
 type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
-function SourceRow({ entry, catalog, loadDetails }: {
-  entry: SourceEntry; catalog: Dataset[];
+function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
+  entry: SourceEntry; catalog: Dataset[]; timeInventory?: TimeInventory; timeView: TimeView;
   loadDetails: (table: Dataset) => Promise<ReadableDetails>;
 }) {
   const [open, setOpen] = useState(false), [details, setDetails] = useState<ReadableDetails>();
@@ -40,7 +42,7 @@ function SourceRow({ entry, catalog, loadDetails }: {
         {table.modelGenerated && <span className="empty-badge">AI-generated</span>}
       </td>
       <td><ul className="method-list">{audit?.methods.length ? audit.methods.map(method => <li key={method}>{methodLabels[method] ?? method}</li>) : <li className="muted">Not yet reviewed</li>}</ul></td>
-      <td><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
+      <td><TimeGrid tables={[table]} inventory={timeInventory} view={timeView} /><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
         {copy?.gaps[0] && <p className="table-note"><strong>Watch for:</strong> {copy.gaps[0]}</p>}
       </td>
     </tr>
@@ -82,8 +84,13 @@ function SourceRow({ entry, catalog, loadDetails }: {
   </Fragment>;
 }
 function SourcesPage() {
+  const [timeInventory, setTimeInventory] = useState<TimeInventory>();
+  const [timeError, setTimeError] = useState(false);
+  const [timeView, setTimeView] = useState<TimeView>({year: new Date().getFullYear(), mode: 'years'});
+
   const [query, setQuery] = useState(''), [method, setMethod] = useState(''), [evidence, setEvidence] = useState('');
   const [expanded, setExpanded] = useState(false), [retry, setRetry] = useState(0);
+  useEffect(() => { const controller = new AbortController(); setTimeError(false); fetchJson('/time-coverage.v1.json', controller.signal).then(parseTimeInventory).then(setTimeInventory).catch(() => { if (!controller.signal.aborted) { setTimeInventory(undefined); setTimeError(true); } }); return () => controller.abort(); }, [retry]);
   const { tables, metadata, error } = useCollection(retry);
   const { extra, review, warnings, pending } = useSourceDirectory(retry);
   const entries = useMemo(() => sourceEntries(tables, extra, review), [tables, extra, review]);
@@ -121,6 +128,13 @@ function SourcesPage() {
     <main id="sources" className="sources-content">
       <h1>Sources</h1>
       <p className="sources-intro">How each table is collected, what it covers, and where to check it.</p>
+      <section className="time-controls" aria-label="Time coverage">
+        <div><h2>Time coverage</h2><p className="time-legend"><span>● Dated rows</span><span>— No dated rows</span><span>? Unknown</span></p></div>
+        <label>View <select value={timeView.mode} onChange={event => setTimeView({...timeView, mode:event.target.value as TimeView['mode']})}><option value="years">Years</option><option value="months">Months</option></select></label>
+        <label>{timeView.mode === 'years' ? 'Through year' : 'Year'} <input aria-label="Coverage year" type="number" min="1700" max={new Date().getFullYear()+1} value={timeView.year} onChange={event => { const year = Number(event.target.value); if (Number.isInteger(year) && year >= 1700 && year <= new Date().getFullYear()+1) setTimeView({...timeView,year}); }} /></label>
+        <details className="time-explanation"><summary>How to read the grid</summary><p>These are dates on the records, not download dates. Counts can include duplicates; missing or explicitly approximate dates are left out. Empty periods do not prove the source had no records. Select a cell for counts. Green does not mean complete source coverage.</p></details>
+        {timeError ? <p role="status">Date counts could not be loaded. Coverage stays unknown.</p> : !timeInventory ? <p role="status">Loading date counts…</p> : <p className="time-caption">Checked {new Date(timeInventory.generatedAt).toLocaleDateString()}. Counts appear only while the published files still match.</p>}
+      </section>
       <div className="sources-controls">
         <label className="source-search"><span>Find a table or source</span><input type="search" placeholder="Try scorecards, bulk, comments…" value={query} onChange={event => setQuery(event.target.value)} /></label>
         <label><span>How collected</span><select value={method} onChange={event => setMethod(event.target.value)}><option value="">All methods</option>{Object.entries(methodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -135,8 +149,8 @@ function SourcesPage() {
       {!entries.length && !error && <p role="status">Loading published tables…</p>}
       {!!entries.length && !groups.length && <p>No tables match these filters.</p>}
       <div className="source-list">{groups.map(({ source, entries: items }) => <details className="source-group" key={`${source.id}-${expanded}-${!!query || !!method || !!evidence}`} open={expanded || !!query || !!method || !!evidence}>
-        <summary><div><h2>{source.name}</h2></div><span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{items.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts</span></span></summary>
-        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Coverage & limits</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} />)}</tbody></table></div></div>
+        <summary><div><h2>{source.name}</h2><TimeGrid tables={items.map(entry => entry.table)} inventory={timeInventory} view={timeView} compact /></div><span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{items.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts</span></span></summary>
+        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Coverage & limits</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} timeInventory={timeInventory} timeView={timeView} />)}</tbody></table></div></div>
       </details>)}</div>
       <footer>Counts and receipts do not prove a source is complete. Receipts link records to source files or processing steps. Collection methods describe the process, not each method’s share of rows. Download-only tables open as Parquet data files. <a href="https://docs.spicygov.ai">Data documentation ↗</a></footer>
     </main>

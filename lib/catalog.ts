@@ -5,7 +5,7 @@ export type { Join, MetadataStatus } from "./metadata";
 export { DATA_BASE } from './publication-evidence';
 export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string };
-export type Member = { url: string; rows: number; byteSize: number };
+export type Member = { url: string; rows: number; byteSize: number; sha256?: string };
 export type Dataset = {
   id: string;
   label: string;
@@ -108,6 +108,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
           url: `${DATA_BASE}/${family.prefix}/${member.key}`,
           rows: member.rows,
           byteSize: member.byteSize,
+          sha256: member.sha256,
         })),
         published: validDate(family.publishedAt),
         group: groupFor(id),

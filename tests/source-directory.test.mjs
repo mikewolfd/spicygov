@@ -185,3 +185,40 @@ test('source-log preview distinguishes saved responses, missing fields and inher
   assert.deepEqual(preview.observations.map(row => [row.source, row.saved, row.status]), [['example.gov', true, 200], ['other.gov', false, undefined]]);
   assert.equal(parseObservationPreview(Array(8).fill(JSON.stringify({event:'capture', requested_url:'https://example.gov'})).join('\n')).observations.length, 5);
 });
+
+test('time coverage shows measured gaps without turning missing measurements into gaps', async () => {
+  const { periodRows, periodState, parseTimeInventory, currentTimeCoverage, timeFingerprint } = await module('lib/time-coverage.ts');
+  const dataset = table(); dataset.rows = 5;
+  const measured = { fingerprint: timeFingerprint(dataset), rows: 5, status: 'measured', field: 'filed_date', granularity: 'month', buckets: {'2024-01': 2, '2024-03': 2}, undatedRows: 1 };
+  assert.equal(periodRows(measured, '2024'), 4);
+  assert.equal(periodRows(measured, '2024-02'), 0);
+  assert.equal(periodState([measured], '2024-02').state, 'empty');
+  assert.equal(periodState([measured, undefined], '2024-02').state, 'unknown');
+  assert.equal(periodState([measured, undefined], '2024-01').state, 'present');
+  assert.equal(periodRows({...measured, granularity:'year', buckets:{'2024':4}}, '2024-01'), undefined);
+  const raw = {format:'spicygov-time-coverage', version:1, generatedAt:'2026-10-04', tables:{records:measured}};
+  const inventory = parseTimeInventory(raw);
+  assert.equal(currentTimeCoverage(dataset, inventory).rows, 5);
+  assert.equal(currentTimeCoverage({...dataset, rows:6}, inventory), undefined);
+  assert.equal(currentTimeCoverage({...dataset, members:[{url:'https://example.gov/new.parquet',rows:5,byteSize:20}]}, inventory), undefined);
+  assert.equal(currentTimeCoverage({...dataset, publication:{sha256:sha}}, inventory), undefined);
+  raw.tables.records.buckets['2024-13'] = 1;
+  assert.deepEqual(parseTimeInventory(raw).tables, {});
+});
+
+
+test('time counts follow identical file content across releases, but not changed content', async () => {
+  const { timeFingerprint, currentTimeCoverage } = await module('lib/time-coverage.ts');
+  const original = {...table(), rows:2, members:[{url:'https://example.gov/old/data.parquet',rows:2,byteSize:20,sha256:sha}]};
+  const coverage = {fingerprint:timeFingerprint(original), rows:2, status:'measured', field:'date', granularity:'month', buckets:{'2024-01':2}, undatedRows:0};
+  const inventory = {generatedAt:'2026-10-04', tables:{records:coverage}};
+  assert.equal(currentTimeCoverage({...original,members:[{...original.members[0],url:'https://example.gov/new/data.parquet'}]},inventory),coverage);
+  assert.equal(currentTimeCoverage({...original,members:[{...original.members[0],sha256:newer}]},inventory),undefined);
+});
+
+test('every generated time entry parses and preserves its reconciled counts', async () => {
+  const { parseTimeInventory } = await module('lib/time-coverage.ts');
+  const raw = JSON.parse(await readFile('public/time-coverage.v1.json', 'utf8'));
+  const parsed = parseTimeInventory(raw);
+  assert.deepEqual(Object.keys(parsed.tables).sort(), Object.keys(raw.tables).sort());
+});

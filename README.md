@@ -56,3 +56,11 @@ To import a newly reviewed inventory, run `node scripts/import-source-inventory.
 Publication dates describe file publication, never record coverage. Missing dates and undocumented scope are labeled explicitly; zero rows do not establish failure or completeness. Acquisition tags describe inspected code and documented history, not measured shares of current rows. Receipts and source journals establish recorded lineage; expected upstream populations still need to be defined before completeness can be measured.
 
 The Sources page renders coverage and limits in the list. Opening a table loads recorded inputs and a bounded preview of source requests (up to 64 KiB and five observations). Logs apply to a release family, not necessarily an individual table or row; this distinction is shown in the page. Raw downloads remain under technical details.
+
+## Time coverage
+
+The Sources year/month grid counts dates in published records. `scripts/build-time-coverage.py` reads only selected Parquet date columns with DuckDB and writes `public/time-coverage.v1.json`. Run it with Python and `duckdb==1.4.4`. Deployment rebuilds counts, and a daily scheduled deployment refreshes them. Matching previous counts are reused.
+
+Each table states its date field. Blank or unusable dates remain counted separately; a year-only field never implies a month. Green means dated rows exist, not that all upstream records were collected. A dash means zero dated rows in the measured files; unknown measurements remain `?`. Source summaries indicate how many tables were measured and cannot establish source completeness. Dates from different tables may describe different events.
+
+Counts are bound to the published file checksums (or exact URLs where no file checksum is provided), sizes and row counts, plus the published checksum for supplementary files. Comment counts come from the published monthly index, reconciled against the full export row count. Mutable comment exports and their index also check the receipt's ETag before and after scanning. Changed files hide previous counts until remeasured. This is a record-date inventory, not proof that a source period was fully acquired.
