@@ -34,8 +34,27 @@ jobs:
       - run: python tests/test_native_receipt_coverage.py
       - run: python tests/test_fec_coverage_maps.py
       - run: python tests/test_congress_coverage_maps.py
+      - name: Restore validated coverage checkpoints
+        id: coverage-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .cache/coverage-maps
+          key: ${{ runner.os }}-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-coverage-v1-
       - name: Verify coverage for every published table
+        id: coverage-scan
+        # A restored checkpoint is only a candidate. The builder rechecks exact
+        # source, schema, policy, scanner, paired exports and UTC month bindings.
         run: python scripts/build-coverage-maps.py
+      - name: Save validated coverage checkpoints
+        if: ${{ always() && steps.coverage-cache.outcome == 'success' && (steps.coverage-scan.outcome == 'success' || steps.coverage-scan.outcome == 'failure') && hashFiles('.cache/coverage-maps/*.json') != '' }}
+        uses: actions/cache/save@v5
+        with:
+          # Preserve completed tables after a failed scan; the builder still
+          # requires every current table before it replaces the served map.
+          path: .cache/coverage-maps
+          key: ${{ steps.coverage-cache.outputs.cache-primary-key }}
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
