@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { count, publicationDate, type Dataset } from '../lib/catalog';
 import { useCollection } from '../lib/use-collection';
 import { useSourceDirectory } from '../lib/use-source-directory';
-import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, sourceMetadataNeedsAttention, sourceSections, collectionSteps, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
+import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, sourceMetadataSummary, sourceSections, collectionSteps, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
 import { loadCoveragePublishers, type CoveragePublishers } from '../lib/coverage-publishers';
 import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
 import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
@@ -115,7 +115,7 @@ function SourcesPage() {
   }, [allTables, coverageMaps, retry]);
   const filtered = useMemo(() => filterEntries(entries, query, method, evidence), [entries, query, method, evidence]);
   const sections = useMemo(() => sourceSections(filtered), [filtered]);
-  const affected = entries.filter(sourceMetadataNeedsAttention).length;
+  const metadataSummary = sourceMetadataSummary(entries);
   const filtering = !!query || !!method || !!evidence;
   function clearFilters() { setQuery(''); setMethod(''); setEvidence(''); setGroupOverrides({}); }
   function changeFilter(action: () => void) { action(); setGroupOverrides({}); setLimits({}); }
@@ -153,12 +153,12 @@ function SourcesPage() {
       <div className="sources-controls">
         <label className="source-search"><span>Find a table or source</span><input type="search" placeholder="Try scorecards, bulk, comments…" value={query} onChange={event => changeFilter(() => setQuery(event.target.value))} /></label>
         <label><span>How collected</span><select value={method} onChange={event => changeFilter(() => setMethod(event.target.value))}><option value="">All methods</option>{Object.entries(methodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">With reviewed source logs</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">Missing or older source details</option></select></label>
+        <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">With reviewed source logs</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">Source descriptions need attention</option></select></label>
         <button onClick={clearFilters}>Clear filters</button>
       </div>
       <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filtered.length} of {entries.length} published tables · {filtered.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{pending ? ' · Checking other tables…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
       <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
-      {affected > 0 ? <p className="metadata-status" role="status">{affected} tables have missing or older source details. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
+      {metadataSummary ? <p className="metadata-status" role="status">{metadataSummary} This concerns descriptions and connections, not record counts. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
       {publisherError && <p className="metadata-status" role="status">Publisher names could not load. Recorded IDs remain visible. <button onClick={() => setRetry(retry + 1)}>Retry publisher names</button></p>}
       {error && <p role="alert">Main table list: {error} <button onClick={() => setRetry(retry + 1)}>Retry table list</button></p>}
       {warnings.map(warning => <p className="metadata-status" role="status" key={warning}>{warning} <button onClick={() => setRetry(retry + 1)}>Retry</button></p>)}

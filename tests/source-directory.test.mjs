@@ -8,7 +8,7 @@ async function module(path) {
   const { outputFiles } = await build({ entryPoints: [path], bundle: true, platform: 'node', format: 'esm', write: false });
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
-const { parseSourceReview, parseRulemaking, parseComments, sourceEntries, reviewedGenerationLinks, filterEntries, parseGenerationDetails, loadOtherPublications, sourceSections, collectionSteps, sourceMetadataNeedsAttention } = await module('lib/source-directory.ts');
+const { parseSourceReview, parseRulemaking, parseComments, sourceEntries, reviewedGenerationLinks, filterEntries, parseGenerationDetails, loadOtherPublications, sourceSections, collectionSteps, sourceMetadataNeedsAttention, sourceMetadataSummary } = await module('lib/source-directory.ts');
 const { generationEvidence, dataUrl } = await module('lib/publication-evidence.ts');
 const sha = 'sha256:' + 'a'.repeat(64), newer = 'sha256:' + 'b'.repeat(64);
 const base = 'https://data.spicygov.ai';
@@ -305,6 +305,14 @@ test('source-detail recovery selects metadata problems separately from unreviewe
   assert.equal(sourceMetadataNeedsAttention(entries.find(e => e.table.id === 'records')), true);
   assert.deepEqual(filterEntries(entries, '', '', 'source-details').map(e => e.table.id), ['records']);
   assert.deepEqual(filterEntries(entries, '', '', 'unreviewed').map(e => e.table.id), ['new_table']);
+});
+test('source warning identifies actual metadata problems without treating them as missing records', () => {
+  const entries = states => sourceEntries(states.map((metadataState, i) => ({...table(`table_${i}`), metadataState})), [], undefined);
+  assert.equal(sourceMetadataSummary(entries([...Array(21).fill('incompatible'), 'older-publication'])), 'Source descriptions need attention for 22 tables: 21 have changed fields; 1 has a newer release.');
+  assert.equal(sourceMetadataSummary(entries(['missing'])), 'Source descriptions need attention for 1 table: 1 has no source descriptions.');
+  assert.equal(sourceMetadataSummary(entries(['loading', 'current'])), undefined);
+  assert.equal(sourceMetadataSummary(sourceEntries([], [{...table(), metadataState:'missing'}])), undefined);
+  assert.match(sourceMetadataSummary(entries(['undocumented', 'unavailable'])), /1 has incomplete source descriptions; 1 could not load source descriptions/);
 });
 test('source request preview preserves recorded endpoint and filters without inventing a purpose', async () => {
   const {parseObservationPreview} = await module('lib/source-observations.ts');

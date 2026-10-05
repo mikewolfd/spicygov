@@ -151,6 +151,22 @@ export function parseGenerationDetails(raw: unknown, table: Dataset): Generation
 export function sourceMetadataNeedsAttention(entry: SourceEntry): boolean {
   return entry.explorer && !['current', 'loading'].includes(entry.table.metadataState);
 }
+export function sourceMetadataSummary(entries: SourceEntry[]): string | undefined {
+  const affected = entries.filter(sourceMetadataNeedsAttention);
+  if (!affected.length) return undefined;
+  const reasons: [TableMetadataState, string, string][] = [
+    ['incompatible', 'has changed fields', 'have changed fields'],
+    ['older-publication', 'has a newer release', 'have newer releases'],
+    ['missing', 'has no source descriptions', 'have no source descriptions'],
+    ['undocumented', 'has incomplete source descriptions', 'have incomplete source descriptions'],
+    ['unavailable', 'could not load source descriptions', 'could not load source descriptions'],
+  ];
+  const details = reasons.flatMap(([state, singular, plural]) => {
+    const total = affected.filter(entry => entry.table.metadataState === state).length;
+    return total ? [`${total} ${total === 1 ? singular : plural}`] : [];
+  });
+  return `Source descriptions need attention for ${affected.length} ${affected.length === 1 ? 'table' : 'tables'}: ${details.join('; ')}.`;
+}
 export function collectionSteps(methods: string[]): { label: string; values: string[] }[] {
   const categories = [
     { label: 'Collection', keys: ['bulk_download', 'structured_download', 'feed_download', 'api', 'web_scraping', 'unknown'] },
