@@ -4,6 +4,7 @@ Missing definitions, schema drift, failed scans and unreconciled dimensions fail
 the build. The previous published inventory is replaced only after every table
 passes. Presence measures retained rows; it never proves publisher completeness.
 """
+from contextlib import ExitStack
 import argparse
 import concurrent.futures
 import datetime
@@ -19,6 +20,7 @@ import duckdb
 
 from coverage_dimensions import binding, definition_digest, scan_dimension, validate_definition
 from coverage_inputs import CoverageInputs, inherit_unique
+from native_legislative_coverage import processing_context, variant
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -26,12 +28,16 @@ OUTPUT = ROOT / 'public/coverage-maps.v1.json'
 CACHE = ROOT / '.cache/coverage-maps'
 
 
-def measurement_revision():
+def measurement_revision(policy=None):
     import hashlib
+    from coverage_revision import legacy_revision
+    if not policy or not policy.get('_nativeProcessing'):
+        revision = legacy_revision(ROOT, __file__)
+        if revision: return revision
     paths = [pathlib.Path(__file__), *(ROOT / 'scripts' / name for name in (
         'coverage_dimensions.py', 'coverage_inputs.py', 'publication_census.py',
         'collection_coverage.py', 'congress_coverage.py', 'regulation_coverage.py', 'fec_coverage.py',
-        'native_receipt_coverage.py'))]
+        'native_receipt_coverage.py', 'native_legislative_coverage.py', 'coverage_revision.py'))]
     return 'sha256:' + hashlib.sha256(b''.join(path.read_bytes() for path in paths)).hexdigest()
 
 
@@ -54,14 +60,14 @@ def validate_plan(tables, policies):
     if missing: raise ValueError('Published tables need coverage review: ' + ', '.join(missing))
     # Old reviewed entries may remain as history, but cannot create runtime tables.
     for id, table in tables.items():
-        policy = policies[id]
+        policy = policies[id] = variant(id, table, policies[id])
         if policy.get('family') != table['family']: raise ValueError('Coverage family changed: ' + id)
         if not isinstance(policy.get('classification'), str) or not policy['classification'].strip():
             raise ValueError('Coverage classification is missing: ' + id)
         expected = schema(policy.get('schema'))
         if table.get('columns') and table['kind'] == 'generation' and expected != schema(table['columns']):
             raise ValueError('Published schema needs coverage review: ' + id)
-        validate_definition(policy, expected)
+        validate_definition(policy, schema(policy.get('processingSchema', expected)))
 
 
 def validate_counts(dimension, rows):
@@ -151,7 +157,7 @@ def validate_members(conn, id, table, expected_schema):
             raise ValueError('Retained member row count differs from its publication: ' + id)
 
 
-def scan_table(id, table, policy):
+def _scan_legacy_table(id, table, policy):
     revision = measurement_revision()
     conn = duckdb.connect()
     try:
@@ -202,9 +208,79 @@ def scan_table(id, table, policy):
     finally: conn.close()
 
 
+def _scan_native_table(id, table, policy):
+    revision = measurement_revision(policy)
+    conn = duckdb.connect()
+    contexts = ExitStack()
+    try:
+        # Render stored instants in UTC, regardless of the host's timezone.
+        conn.execute("SET TimeZone='UTC'")
+        conn.execute('LOAD httpfs')
+        conn.execute("SET memory_limit='512MB'")
+        conn.execute('SET threads=2')
+        conn.execute('SET http_timeout=30')
+        urls = [m['url'] for m in table['members']]
+        def check_mutable():
+            if table.get('coverageInputs'):
+                for entry in table['coverageInputs']:
+                    header_matches(entry['url'], entry['etag'], entry['byteSize'])
+            else:
+                if table.get('etag'): header_matches(urls[0], table['etag'], table['members'][0]['byteSize'])
+                if table.get('dateIndex'): header_matches(table['dateIndex'], table['dateIndexETag'])
+        check_mutable()
+        actual_schema = schema(policy['schema'])
+        validate_members(conn, id, table, actual_schema)
+        validate_definition(policy, schema(policy.get('processingSchema', actual_schema)))
+        table = {**table, 'columns': actual_schema}
+        inputs = CoverageInputs()
+        physical_table = table
+        table, inputs = contexts.enter_context(processing_context(id, table, policy, inputs))
+        urls = table.get('_coverageUrls', urls)
+        table = {**table, 'members': [{**member, 'url': url} for member, url in zip(table['members'], urls)]}
+        # Use one resolver per table, shared by all its axes.
+        result = []
+        for dim in policy['dimensions']:
+            measured = None
+            if dim.get('special') or dim.get('method'):
+                helper = importlib.import_module(policy['_scanner'] + '_coverage')
+                measured = helper.scan_special(conn, id, table, dim, inputs)
+                if measured is None: raise ValueError('Unsupported specialized coverage dimension: ' + dim['id'])
+            elif dim['kind'] == 'inherited':
+                parent = inputs.parent(id, table, dim['parent'])
+                measured = inherit_unique(conn, urls, table['rows'], parent, dim['parent'], dim['dimension'])
+            else:
+                measured = scan_dimension(conn, urls, table['rows'], dim, snapshot={
+                    'publishedAt': table.get('publishedAt'), 'artifactDigest': table.get('artifactDigest'),
+                    'recordUrl': table.get('recordUrl'), 'publicationSha256': table.get('checksum')})
+            validate_counts(measured, table['rows'])
+            measured.update(id=dim['id'], label=dim['label'], meaning=dim['meaning'],
+                            definitionDigest=definition_digest(dim))
+            result.append(measured)
+        check_mutable()
+        if measurement_revision(policy) != revision: raise ValueError('Coverage implementation changed during this table scan')
+        return {**binding(physical_table, policy), 'status': 'measured', 'classification': policy['classification'],
+                'note': policy.get('note', ''), 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'measurementRevision': revision, 'dimensions': result,
+                **({'processingEvidence': {
+                    'dataset': table['_coverageProcessing']['dataset'],
+                    'generationId': table['_coverageProcessing']['generationId'],
+                    'rows': table['_coverageProcessing']['rows'],
+                    'subjects': [{k: v for k, v in member.items() if k != 'path'} for member in table['_coverageProcessing']['selection']['subjects']],
+                    'receipts': {k: v for k, v in table['_coverageProcessing']['selection']['receipts'].items() if k != 'path'},
+                    'qualification': 'Private source values restored by the maintained selected-prior reader.'
+                }} if table.get('_coverageProcessing') else {})}
+    finally:
+        contexts.close()
+        conn.close()
+
+
+def scan_table(id, table, policy):
+    return (_scan_native_table if policy.get('_nativeProcessing') else _scan_legacy_table)(id, table, policy)
+
+
 def cached(table, policy, old):
     if not isinstance(old, dict) or old.get('status') != 'measured': return False
-    if old.get('measurementRevision') != measurement_revision(): return False
+    if old.get('measurementRevision') != measurement_revision(policy): return False
     comparable = {**table, 'columns': policy['schema']}
     if any(old.get(k) != v for k, v in binding(comparable, policy).items()): return False
     dims = old.get('dimensions', [])
