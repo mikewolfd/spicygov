@@ -1,18 +1,20 @@
 import { groupFor, pretty, type Dataset } from './catalog';
-import { validDate, type Source } from './metadata';
+import { validDate, type Source, type MetadataStatus, type TableMetadataState } from './metadata';
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
 
 export const methodLabels: Record<string, string> = {
-  bulk_download: 'Bulk downloads', structured_download: 'Structured files', feed_download: 'RSS / feeds',
-  api: 'API', web_scraping: 'Web scraping', document_extraction: 'Document extraction',
-  retained_input: 'Retained inputs', legacy_carry_forward: 'Legacy carry-forward',
-  derived: 'Calculated', model_generated: 'Model-generated', unknown: 'Not documented',
+  bulk_download: 'Bulk downloads', structured_download: 'Data files', feed_download: 'RSS feeds',
+  api: 'Data service (API)', web_scraping: 'Web pages', document_extraction: 'Document text',
+  retained_input: 'Saved source files', legacy_carry_forward: 'Earlier records',
+  derived: 'Calculated', model_generated: 'AI-generated', unknown: 'Not documented',
 };
+export type SourceCopy = { label: string; summary: string; scope: string; gaps: string[] };
 export type TableReview = {
   family: string; label: string; methods: string[]; summary: string; mixing: string;
   gaps: string[]; scope?: string; evidence: EvidenceLink[]; sources: Source[];
   attributionRevision?: string; artifactDigest?: string; generationLinks: EvidenceLink[];
+  copy?: SourceCopy;
 };
 export type SourceReview = { reviewedAt: string; sourceRevision: string; tables: Record<string, TableReview> };
 export type SourceEntry = { table: Dataset; review?: TableReview; explorer: boolean; source: Source; historicalAttribution: boolean };
@@ -35,6 +37,8 @@ export function parseSourceReview(raw: unknown): SourceReview {
     }) : [];
     tables[id] = { family: item.family, label: item.label, summary: item.summary, mixing: item.mixing,
       methods: strings(item.methods), gaps: strings(item.gaps), scope: typeof item.scope === 'string' ? item.scope : undefined,
+      copy: object(item.copy) && ['label', 'summary', 'scope'].every(key => typeof item.copy[key] === 'string' && item.copy[key].trim()) && Array.isArray(item.copy.gaps) && item.copy.gaps.every((gap: unknown) => typeof gap === 'string')
+        ? { label: item.copy.label, summary: item.copy.summary, scope: item.copy.scope, gaps: item.copy.gaps } : undefined,
       evidence: links(item.evidence), sources, attributionRevision: typeof item.attributionRevision === 'string' ? item.attributionRevision : undefined,
       artifactDigest: digest(item.artifactDigest) ? item.artifactDigest : undefined,
       generationLinks: links(item.generationLinks).filter(link => link.url.startsWith(`${DATA_BASE}/source-evidence/`)),
@@ -79,7 +83,7 @@ export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tab
   ]);
   if (signal?.aborted) throw signal.reason;
   return { tables: results.flatMap(result => result.status === 'fulfilled' ? result.value : []),
-    warnings: results.flatMap((result, i) => result.status === 'rejected' ? [`${i === 0 ? 'Rulemaking' : 'Comments'} publication could not be checked. Its tables may be missing from this list.`] : []) };
+    warnings: results.flatMap((result, i) => result.status === 'rejected' ? [`${i === 0 ? 'Rulemaking' : 'Comments'} files could not be checked. Some tables may be missing here.`] : []) };
 }
 export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: SourceReview): SourceEntry[] {
   // A table that migrates into the main index must not be counted twice.
@@ -91,26 +95,31 @@ export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: Sour
     const historicalAttribution = !table.sources.length && !table.inputs.length && !!audit?.sources.length;
     let source = sourceFor(historicalAttribution ? { ...table, sources: audit!.sources } : table);
     if (!explorer && source.id === 'unlisted') source = table.publication?.kind === 'rulemaking'
-      ? { id: 'rulemaking-publication', name: 'Rulemaking snapshots', kind: 'derived', note: 'Published calculations from regulatory records. See the snapshot for its input files.' }
-      : { id: 'comments-publication', name: 'Public comments exports', kind: 'publication', note: 'Comments and their index, published through a separate export receipt.' };
-    return { table: { ...table, label: table.label === pretty(table.id) && audit ? audit.label : table.label }, review: audit, explorer, source, historicalAttribution };
+      ? { id: 'rulemaking-publication', name: 'Rulemaking data', kind: 'derived', note: 'Calculated from regulatory records.' }
+      : { id: 'comments-publication', name: 'Public comments', kind: 'publication', note: 'Comments and comment counts.' };
+    return { table: { ...table, label: audit?.copy?.label ?? (table.label === pretty(table.id) && audit ? audit.label : table.label) }, review: audit, explorer, source, historicalAttribution };
   }).sort((a, b) => a.table.label.localeCompare(b.table.label));
 }
 export function reviewedGenerationLinks(entry: SourceEntry): EvidenceLink[] {
   return entry.table.artifactDigest && entry.table.artifactDigest === entry.review?.artifactDigest ? entry.review.generationLinks : [];
 }
-export function evidenceLabel(entry: SourceEntry): string {
-  if (entry.table.publication?.nativeReceipts) return 'Row receipts';
-  if (entry.table.publication?.kind === 'rulemaking') return 'Snapshot + inputs';
-  if (entry.table.publication?.kind === 'comments') return 'Export receipt';
-  if (reviewedGenerationLinks(entry).length) return 'Source journal';
-  return 'Generation record';
+export function evidenceLinkLabel(label: string): string {
+  return ({ 'Generation record': 'Publication details', 'Source evidence record': 'Source log details', 'Source observation journal': 'Source log' } as Record<string, string>)[label] ?? label;
+}
+export function sourceMetadataMessage(state: TableMetadataState): string | undefined {
+  return ({ loading: 'Loading source details…', missing: 'Current source details are not available.', incompatible: 'This table has changed since its source details were written.',
+    'older-publication': 'Source details describe an earlier release.', undocumented: 'Some source details are missing.', unavailable: 'Source details could not be loaded.' } as Partial<Record<TableMetadataState, string>>)[state];
+}
+export function sourceCatalogMessage(status: MetadataStatus): string | undefined {
+  if (status.state === 'loading') return 'Loading source details…';
+  if (status.state === 'unavailable') return 'Source details could not be loaded. Published tables are still listed.';
+  if (status.state === 'partial') return 'Some source details are missing or older. See each table’s notes.';
 }
 export function filterEntries(entries: SourceEntry[], query: string, method: string, evidence: string): SourceEntry[] {
   const q = query.trim().toLowerCase();
   return entries.filter(entry => {
     const { table, review, source } = entry;
-    if (q && ![table.id, table.label, table.summary, source.name, ...table.inputs, ...(review?.sources.map(s => s.name) ?? []), review?.summary, ...(review?.methods.map(m => methodLabels[m] ?? m) ?? [])].join(' ').toLowerCase().includes(q)) return false;
+    if (q && ![table.id, table.label, table.summary, source.name, ...table.inputs, ...(review?.sources.map(s => s.name) ?? []), review?.summary, review?.copy?.summary, review?.copy?.scope, ...(review?.copy?.gaps ?? []), ...(review?.methods.map(m => methodLabels[m] ?? m) ?? [])].join(' ').toLowerCase().includes(q)) return false;
     if (method && !review?.methods.includes(method)) return false;
     if (evidence === 'native' && !table.publication?.nativeReceipts || evidence === 'journal' && !reviewedGenerationLinks(entry).length || evidence === 'empty' && table.rows !== 0 || evidence === 'separate' && entry.explorer || evidence === 'unreviewed' && review) return false;
     return true;

@@ -1,0 +1,1597 @@
+{
+  "format": "spicygov-source-copy",
+  "version": 1,
+  "inventorySha256": "1699741f664329e9a1deedb98b9a3a4a243ba0c943d79375172da1a0b4b68662",
+  "tables": {
+    "agency_lifecycle_stats": {
+      "label": "Time to final rule by agency",
+      "summary": "Estimates how the chance of a final rule changes with time after a proposal. The calculation includes rules still open and those withdrawn.",
+      "scope": "Pools all proposal years in the collected docketed proceedings. Agencies remain separate, without combining them into parent departments; groups with fewer than 30 rules are omitted.",
+      "gaps": [
+        "Source upload dates can differ from action dates.",
+        "One rule can span several dockets, so these are not counts of distinct rulemakings."
+      ]
+    },
+    "agency_monthly_volume": {
+      "label": "Agency monthly document counts",
+      "summary": "Counts collected Regulations.gov documents by agency, month and document type. Known removed postings and documents with missing or year-zero dates are excluded.",
+      "scope": "Covers the collected document table, not all agency activity. Other source dates remain unchanged, including dates before 1990 and dates in the future.",
+      "gaps": []
+    },
+    "agency_stats": {
+      "label": "Agency totals",
+      "summary": "Totals collected dockets, documents and public comments for each agency. Known removed postings and their comments are excluded.",
+      "scope": "Covers the records in the docket, document and comment tables; it adds no source records.",
+      "gaps": [
+        "Missing source records also leave gaps in these totals."
+      ]
+    },
+    "agenda_item_proceedings": {
+      "label": "Planned actions linked to proceedings",
+      "summary": "Connects planned regulatory actions to proceedings using regulation identifiers explicitly stated in docket, document or Federal Register records.",
+      "scope": "Includes links supported by the collected source records.",
+      "gaps": [
+        "A shared regulation identifier alone does not establish that two records concern the same action."
+      ]
+    },
+    "amendments": {
+      "label": "Amendments",
+      "summary": "Lists amendments from Congress.gov, including sponsors and the bill or amendment each would change. Updates combine newly fetched records with earlier captures.",
+      "scope": "The reviewed collection covers the 119th Congress, with detailed records for each amendment.",
+      "gaps": [
+        "Older Congresses are outside the reviewed coverage.",
+        "Repeated source entries can hide omissions; page counts alone cannot prove completeness.",
+        "Some House amendments name the Rules Committee rather than a member sponsor."
+      ]
+    },
+    "bill_actions": {
+      "label": "Bill actions",
+      "summary": "Lists actions recorded in GovInfo\u2019s bill-status files and derives each bill\u2019s legislative stage from those actions.",
+      "scope": "Bills read from the 108th Congress onward. Coverage varies by Congress, and earlier captures remain until refreshed.",
+      "gaps": [
+        "Different systems can record the same event. Row counts count entries, not distinct events.",
+        "Filtering by one source or action code can omit unique events.",
+        "A bill with no action rows may be unread; it is not necessarily inactive."
+      ]
+    },
+    "bill_committee_actions": {
+      "label": "Bill actions in committee reports",
+      "summary": "Interprets bill actions described in committee activity reports. Official committee rosters help identify committee names.",
+      "scope": "Actions found in the activity reports we have read, using supported wording patterns.",
+      "gaps": [
+        "Automated readings can attach the wrong action or bill, especially in sentences naming several bills.",
+        "Many actions are missed, so counts understate activity.",
+        "Extracted dates have not been verified as dates of the actions."
+      ]
+    },
+    "bill_committee_activities": {
+      "label": "Committee activity on bills",
+      "summary": "Lists what committees and subcommittees did on each bill, and when, from GovInfo\u2019s bill-status files.",
+      "scope": "Bills reread for committee activities from the 108th Congress onward. Regular updates cover the sitting Congress; older Congresses require separate collection runs.",
+      "gaps": [
+        "Earlier bill captures may lack these rows until reread; absence does not prove no committee action.",
+        "Repeated source entries remain, so row totals may exceed distinct actions.",
+        "Some activities have no stated date."
+      ]
+    },
+    "bill_committees": {
+      "label": "Bill committee referrals",
+      "summary": "Lists committees and subcommittees named in GovInfo\u2019s bill-status files, including their relationship to each bill.",
+      "scope": "Bills read from the 108th Congress onward. Older captures remain until their Congress is refreshed.",
+      "gaps": [
+        "Coverage varies by Congress.",
+        "A missing committee relationship may reflect an unread bill."
+      ]
+    },
+    "bill_cosponsors": {
+      "label": "Bill cosponsors",
+      "summary": "Lists cosponsors from GovInfo\u2019s bill-status files, including sponsorship and withdrawal dates when the source provides them.",
+      "scope": "Bills reread for cosponsor details from the 108th Congress onward. Some Congresses still await that reread.",
+      "gaps": [
+        "A bill with no cosponsor rows may be unread, rather than have no cosponsors."
+      ]
+    },
+    "bill_family_archives": {
+      "label": "Bill archive download checks",
+      "summary": "Records GovInfo bill-status archive listings, including dates and sizes used to detect changes and avoid downloading unchanged files.",
+      "scope": "One record per listed archive folder, identified by Congress and bill type.",
+      "gaps": [
+        "Listing an archive does not prove every bill inside was read successfully.",
+        "These are collection records, not a census of bills."
+      ]
+    },
+    "bill_family_backfill_walks": {
+      "label": "Historical bill collection progress",
+      "summary": "Compares the number of bills Congress.gov reports with the number reached while collecting older Congresses. Retained progress lets collection resume later.",
+      "scope": "One record per Congress and bill type reached in the 82nd\u2013107th Congresses.",
+      "gaps": [
+        "An unvisited Congress has no progress record; that does not mean it has no bills.",
+        "Duplicate list entries can hide missing bills, even when the listed counts agree.",
+        "Completed lists are not routinely rechecked; individual bill details can still be missing."
+      ]
+    },
+    "bill_family_backfills": {
+      "label": "Historical bill read outcomes",
+      "summary": "Records whether each attempted historical bill detail was successfully read. Later runs resume from these outcomes.",
+      "scope": "Attempted bills from the 82nd\u2013107th Congresses.",
+      "gaps": [
+        "Bills not yet attempted have no row.",
+        "A successful detail read does not include every action, committee record or text version."
+      ]
+    },
+    "bill_publisher_summaries": {
+      "label": "Congressional Research Service bill summaries",
+      "summary": "Contains bill summaries written by the Congressional Research Service and distributed in GovInfo\u2019s bill-status files.",
+      "scope": "Summaries available for bills read from the 108th Congress onward, with coverage varying by Congress.",
+      "gaps": [
+        "These are publisher-written summaries; the separate AI summary table serves a different purpose.",
+        "An absent summary may be unwritten or not yet collected."
+      ]
+    },
+    "bill_sections": {
+      "label": "Bill text sections",
+      "summary": "Splits acquired bill text into sections. Text comes from GovInfo bulk downloads or individual document requests; earlier sections remain until refreshed.",
+      "scope": "Sections from bill versions whose full text was downloaded and successfully read.",
+      "gaps": [
+        "Undownloaded, unreadable or PDF-only printings can have no section rows.",
+        "Missing sections do not establish that a bill has no published text."
+      ]
+    },
+    "bill_subjects": {
+      "label": "Bill policy areas and subjects",
+      "summary": "Combines subject assignments already held with bill records, GovInfo bulk bill-status files, and Congress.gov detail requests.",
+      "scope": "Bulk files cover the 108th Congress onward; Congress.gov requests cover the 93rd\u2013107th and cases the bulk reader cannot read.",
+      "gaps": [
+        "Collection grows in bounded runs and is not a complete subject census.",
+        "An empty assignment can mean no subjects were assigned or the source did not hold that bill.",
+        "Some answers are collected once and can become outdated."
+      ]
+    },
+    "bill_summaries": {
+      "label": "AI bill summaries",
+      "summary": "Reserved for AI-generated summaries of acquired bill text. Automatic updates currently leave this feature disabled.",
+      "scope": "Intentionally empty under the current processing policy.",
+      "gaps": [
+        "Official Congressional Research Service summaries appear in a separate table."
+      ]
+    },
+    "bill_versions": {
+      "label": "Bill versions and printings",
+      "summary": "Combines GovInfo\u2019s list of bill printings with downloaded text. Bulk downloads supply text from the 113th Congress onward; individual requests fill earlier or missing printings.",
+      "scope": "Listed printings for bills read from the 108th Congress onward. Coverage includes both downloaded text and listings whose text remains pending.",
+      "gaps": [
+        "A version row does not prove its text was downloaded or read successfully.",
+        "Some law printings retain only publisher links, labels and dates.",
+        "Earlier captures remain when a new download fails or is deferred."
+      ]
+    },
+    "bill_vote_references": {
+      "label": "Votes referenced by bills",
+      "summary": "Lists roll-call votes explicitly named in bill actions from GovInfo\u2019s bill-status files.",
+      "scope": "References from bills read from the 108th Congress onward, with earlier captures retained until refreshed.",
+      "gaps": [
+        "The same vote can appear in several actions or captures; count distinct vote identities, not rows.",
+        "This is not a complete list of chamber votes. A missing reference may reflect an unread bill."
+      ]
+    },
+    "budget_volumes": {
+      "label": "President\u2019s budget volumes",
+      "summary": "Collects supported budget volumes from GovInfo and reads their main PDFs. Previously collected volumes remain available as new ones are added.",
+      "scope": "Selected volumes issued from January 1, 2023 onward, limited to supported types with a main PDF. Citation counts cover only pages read.",
+      "gaps": [
+        "Volumes without a main PDF are excluded, even when separate component PDFs or spreadsheets are available.",
+        "Printed bill numbers omit their Congress, so they cannot directly identify a bill.",
+        "Budget fiscal year and publication year are different."
+      ]
+    },
+    "cbo_cost_estimates": {
+      "label": "Congressional Budget Office estimate index",
+      "summary": "Combines estimate listings in GovInfo\u2019s bill-status files with Congressional Budget Office publication feeds. GovInfo\u2019s entry takes precedence when both identify the same bill and estimate.",
+      "scope": "Collected bills from the 108th Congress onward. Estimates for the 112th and 113th rely on feeds because the bill-status files omit them.",
+      "gaps": [
+        "Estimate documents are not downloaded. Grouped estimates and items without bill links appear only in the feed-items table.",
+        "Publisher bill identifiers can be wrong. A report citation does not prove it contains that estimate.",
+        "Missing estimates or earliest matches do not establish a bill\u2019s complete estimate history."
+      ]
+    },
+    "cbo_feed_items": {
+      "label": "Congressional Budget Office feed items",
+      "summary": "Lists every item in each successfully read Congressional Budget Office cost-estimate feed, including publications that name no bill.",
+      "scope": "Feeds read from the 108th Congress onward. Regular updates cover the sitting Congress; older Congresses require separate collection runs.",
+      "gaps": [
+        "A failed feed read leaves its earlier capture in place.",
+        "Feed contents do not establish a complete history or include the estimate documents.",
+        "An item without a bill name may identify bills only inside its undownloaded document."
+      ]
+    },
+    "cfr_sections": {
+      "label": "Annual regulation index",
+      "summary": "Indexes annual regulatory sections, appendices and other structural units from GovInfo, using volume text to identify their parts.",
+      "scope": "Covers the 2025 annual edition and some 2026 titles. This index does not contain full regulatory text or the continuously updated electronic code.",
+      "gaps": [
+        "Edition coverage varies by title.",
+        "Some retained records may predate corrections to their placement within a part."
+      ]
+    },
+    "comment_attributes": {
+      "label": "Comment details",
+      "summary": "Copies additional fields from Regulations.gov comment records collected through Mirrulations. Full rereads and later updates fill fields missing from earlier versions.",
+      "scope": "Covers comments listed in the collection, not an independent census of all comments on Regulations.gov.",
+      "gaps": [
+        "Fields absent from the source remain blank."
+      ]
+    },
+    "comment_periods": {
+      "label": "Derived submission-date windows",
+      "summary": "Combines Federal Register and Regulations.gov dates into possible submission windows. Explicitly named extensions are joined; reopenings remain separate.",
+      "scope": "Covers collected records with usable dates. Windows that close before opening, placeholder future deadlines and certain older records without opening or posting dates are excluded.",
+      "gaps": [
+        "These are not official deadlines: dates can concern comments, objections, hearings or petitions.",
+        "Sources can disagree; the latest grouped date does not settle the deadline. Read the notice and later amendments.",
+        "Some extensions and duplicate notices remain separate; a missing date does not mean no deadline exists."
+      ]
+    },
+    "comments": {
+      "label": "Public comments",
+      "summary": "Collects Regulations.gov comments through Mirrulations, combining earlier records with later updates. Text may come from the mirror or selected attachment extraction.",
+      "scope": "Reported date coverage starts in 1990, but raw records retain older and invalid dates. Dates describe posting, not receipt.",
+      "gaps": [
+        "Comments on removed postings remain; moved or reposted comments can appear more than once.",
+        "Blank text or fields can reflect incomplete extraction or older reads, not absence in the source."
+      ]
+    },
+    "comments_index": {
+      "label": "Public comment counts",
+      "summary": "Counts the collected public comments by agency, docket and posting month.",
+      "scope": "Covers the same comments as the public comments table. Months reflect posting dates, not receipt dates.",
+      "gaps": [
+        "Includes comments on removed postings and possible reposted duplicates; agency and docket summaries exclude known removed postings."
+      ]
+    },
+    "committee_assignments": {
+      "label": "Committee assignments",
+      "summary": "Reads occupied committee assignments from official House Clerk and Senate roster files. Each successful chamber update replaces its current-Congress assignments.",
+      "scope": "Current-Congress roster captures and the last retained capture for any earlier Congress; this is not a daily membership history.",
+      "gaps": [
+        "Vacancies and placeholder seats have no assignment row.",
+        "Some committee identifiers do not match the committee directory.",
+        "A failed roster read can leave one chamber\u2019s assignments older than the other\u2019s."
+      ]
+    },
+    "committee_meetings": {
+      "label": "Committee meetings",
+      "summary": "Combines Congress.gov meeting listings with separately fetched meeting details. Earlier captures remain while new or changed records are collected.",
+      "scope": "Current and previous Congresses, with up to 1,000 detail reads per run; some rows still contain only listing fields.",
+      "gaps": [
+        "Sources can omit committees and related bills. Linked documents are not downloaded.",
+        "Senate records do not supply witnesses here; an empty list does not mean nobody testified.",
+        "Meeting dates and status can lag rescheduling."
+      ]
+    },
+    "committee_report_reads": {
+      "label": "Report and hearing read outcomes",
+      "summary": "Records the outcome of each selected report or hearing read, including successful reads that found no bill links.",
+      "scope": "Selected GovInfo reports and hearings that the collector attempted to read.",
+      "gaps": [
+        "A completed read applies to that document and reading method, not the entire source archive.",
+        "No bill links can be a valid result of a successful read."
+      ]
+    },
+    "committee_reports": {
+      "label": "Committee reports",
+      "summary": "Collects selected GovInfo committee reports and their parts. It records the publisher\u2019s primary bill and separately interprets text describing or containing Congressional Budget Office estimate letters.",
+      "scope": "A growing selection across multiple Congresses. Accepted report parts are separate rows; older records may await rereading into parts.",
+      "gaps": [
+        "Historical and separately published component coverage is incomplete.",
+        "A report saying it contains an estimate does not prove the letter was extracted.",
+        "Oversized or unreadable documents may retain an earlier capture."
+      ]
+    },
+    "committees": {
+      "label": "Committees",
+      "summary": "Combines Congress.gov\u2019s committee directory with separate detail records. The directory covers all Congresses the service lists.",
+      "scope": "Since September 26, 2026, collection reads the unrestricted directory, including historical committees. Filter for current committees when needed.",
+      "gaps": [
+        "Directory presence does not establish that detailed committee history was collected.",
+        "The source can serve fewer committees than its declared count.",
+        "Some details remain from earlier captures."
+      ]
+    },
+    "congress_bills": {
+      "label": "Congressional bills",
+      "summary": "Combines a retained historical bill index, GovInfo bulk bill-status files, Congress.gov detail requests, and citations from the laws table. Individual fields can retain values from different collection dates.",
+      "scope": "The index includes actions dated as early as December 16, 1799. Bulk enrichment starts at the 108th Congress; older detail collection covers the 82nd\u2013107th.",
+      "gaps": [
+        "Historical detail varies; older collection omits action, committee and text subrecords.",
+        "Some 118th-Congress House and Senate bills may retain incorrect zero cosponsor counts until reread.",
+        "Source labels do not identify every field\u2019s origin; update dates and legislative stages can retain older values."
+      ]
+    },
+    "court_citation_map": {
+      "label": "Which opinions cite which",
+      "summary": "Links citing and cited opinions using CourtListener\u2019s automated citation matching. The depth value counts mentions.",
+      "scope": "Includes the complete June 30, 2026 citation-map export, not every citation in published court opinions.",
+      "gaps": [
+        "Unresolved citations are absent, some opinion links are unmatched, and links to recent decisions can arrive late.",
+        "Mentions do not show whether a court followed, distinguished or overruled a decision.",
+        "Several opinion records can represent one decision; rows are not distinct decisions."
+      ]
+    },
+    "court_citations": {
+      "label": "Court reporter citations",
+      "summary": "Lists the reporter references CourtListener attaches to each decision, preserving its reporter abbreviations.",
+      "scope": "Includes the complete June 30, 2026 citations export.",
+      "gaps": [
+        "Missing references may still appear in printed opinions; this export has no Supreme Court Reporter citations in volumes 143 or 144.",
+        "Some references lack a matching decision record because export times differ or CourtListener merged records."
+      ]
+    },
+    "court_docket_groups": {
+      "label": "Possible duplicate court dockets",
+      "summary": "Groups collected CourtListener docket records that appear to describe the same case, using court, docket number and other case details.",
+      "scope": "Checks repeated docket numbers among the selected dockets present in the source edition.",
+      "gaps": [
+        "Groups are inferred, not official case identities; courts can reuse docket numbers.",
+        "Missing case identifiers, differing case names or records newer than the source edition can leave dockets ungrouped."
+      ]
+    },
+    "court_dockets": {
+      "label": "Agency-challenge court dockets",
+      "summary": "Combines CourtListener search results, bulk docket records and earlier collected records for Administrative Procedure Act suits.",
+      "scope": "Covers dockets filed from 1992 onward under nature-of-suit code 899, mainly in district courts.",
+      "gaps": [
+        "This selection does not cover all agency litigation, including many appeals-court petitions.",
+        "Some party names are missing, and several docket records can describe one case.",
+        "Names alone do not confirm a link to an agency or regulatory action."
+      ]
+    },
+    "court_opinion_clusters": {
+      "label": "Court decisions and opinion groups",
+      "summary": "Combines CourtListener\u2019s June 30, 2026 decision-group export with later search additions. Related docket records supply court details.",
+      "scope": "Includes the complete export; later search results contain fewer fields. Opinion text is separate.",
+      "gaps": [
+        "Several groups can represent one decision; count neither groups nor opinion rows as distinct decisions.",
+        "Later trial-court records and corrections to exported records wait for the next export.",
+        "The source lacks unpublished D.C. Circuit decisions from April 2001 through July 2020."
+      ]
+    },
+    "court_opinion_pdf_extractions": {
+      "label": "Selected court opinion PDF text",
+      "summary": "Extracts text from selected court opinion PDFs, checking each downloaded file against CourtListener\u2019s recorded file.",
+      "scope": "Covers one selected group of PDFs, not the full opinion index. Different file versions remain separate.",
+      "gaps": [
+        "This extracted text is separate from CourtListener\u2019s own text fields.",
+        "An absent opinion does not mean its PDF or text is unavailable elsewhere."
+      ]
+    },
+    "court_opinions": {
+      "label": "Court opinion index",
+      "summary": "Indexes CourtListener opinions by decision, opinion type and author, using its bulk export.",
+      "scope": "Includes the complete June 30, 2026 opinions export without its text fields; opinion text is not included.",
+      "gaps": [
+        "Some opinions lack matching decision records because the exports closed at different times.",
+        "Author names are source text; only source-linked judges have a resolved author identifier."
+      ]
+    },
+    "court_parentheticals": {
+      "label": "How courts describe cited opinions",
+      "summary": "Preserves a citing court\u2019s own words about another opinion, automatically extracted by CourtListener. These passages can describe a holding, a fact or a procedural point.",
+      "scope": "Includes the complete June 30, 2026 parentheticals export.",
+      "gaps": [
+        "The score is a model estimate, not a human review of the passage or holding.",
+        "Several passages can repeat the same point; some links to opinions are unmatched."
+      ]
+    },
+    "crs_reports": {
+      "label": "Congressional Research Service reports",
+      "summary": "Lists report details supplied by Congress.gov. Updates add new versions while preserving earlier report identities.",
+      "scope": "Current report versions dated October 22, 1993 onward; the publication date describes that version, not the report\u2019s first issue.",
+      "gaps": [
+        "Report bodies, authors, available formats and related materials are not collected here."
+      ]
+    },
+    "diff_summaries": {
+      "label": "AI bill-change summaries",
+      "summary": "Reserved for AI-generated explanations of changes between bill versions. Automatic updates currently leave this feature disabled.",
+      "scope": "Intentionally empty under the current processing policy.",
+      "gaps": [
+        "Detailed computed comparisons remain available in the bill comparison tables."
+      ]
+    },
+    "discovery_signals": {
+      "label": "Agency activity spikes",
+      "summary": "Highlights changes in recent agency document counts compared with the prior-year monthly baseline. Known removed postings and future dates are excluded.",
+      "scope": "A snapshot calculated from collected documents at the stated calculation time, not a historical series or a complete measure of agency activity.",
+      "gaps": [
+        "Adding older records or correcting source dates can produce apparent activity spikes."
+      ]
+    },
+    "docket_attributes": {
+      "label": "Docket details",
+      "summary": "Copies additional Regulations.gov docket fields, combining an earlier API capture with full Mirrulations reads and later updates.",
+      "scope": "Covers docket records in the Mirrulations mirror.",
+      "gaps": [
+        "Missing source fields remain blank; records can reflect different update times."
+      ]
+    },
+    "dockets": {
+      "label": "Rulemaking dockets",
+      "summary": "Collects Regulations.gov dockets through Mirrulations, combining earlier records, selected historical repairs and later updates.",
+      "scope": "Covers the accumulated collection, not a fresh census of Regulations.gov.",
+      "gaps": [
+        "The modification date records a source update, not when the docket opened or was collected."
+      ]
+    },
+    "document_attributes": {
+      "label": "Document details",
+      "summary": "Copies additional Regulations.gov document fields, combining an earlier API capture with full Mirrulations reads and later updates.",
+      "scope": "Covers document records in the Mirrulations mirror.",
+      "gaps": [
+        "Missing source fields remain blank; records can reflect different update times."
+      ]
+    },
+    "document_citation_reads": {
+      "label": "Selected text citation checks",
+      "summary": "Records completed citation searches in selected text we already hold, including searches that found no citations.",
+      "scope": "Individually selected bill or report sections, comments, lobbying descriptions, communications and extracted court text.",
+      "gaps": [
+        "Texts not selected or whose searches failed or stopped early have no row.",
+        "A completed field search does not establish that the whole document was searched.",
+        "Report and budget PDF reads are recorded with those documents instead."
+      ]
+    },
+    "document_citations": {
+      "label": "Document citations",
+      "summary": "Combines citations extracted from committee activity reports and budget PDFs with searches of selected text already held in other tables. Earlier findings remain when a new read fails.",
+      "scope": "Accepted activity reports and budget volumes, plus selected bill/report sections, lobbying descriptions, inline comments, communications and court text.",
+      "gaps": [
+        "Select a text version before counting; repeated mentions and retained versions produce separate rows.",
+        "No rows can mean the text was never searched. Comment attachments are excluded.",
+        "Unresolved targets are not necessarily wrong citations; some links rely on interpreted names.",
+        "A missing index comparison means not compared, not absent from the index."
+      ]
+    },
+    "documents": {
+      "label": "Docket documents",
+      "summary": "Collects Regulations.gov documents through Mirrulations, combining earlier records, selected historical repairs and later updates.",
+      "scope": "An accumulated collection, not a fresh census. Repairs added metadata and links, not body text; the full comment collection is separate.",
+      "gaps": [
+        "Source dates can be missing, invalid or future; docket links can be missing or unmatched.",
+        "A date field alone does not establish submission purpose or the current official deadline.",
+        "Removed and moved postings remain; reposts can duplicate records. An unchecked status does not confirm a posting is still available."
+      ]
+    },
+    "fcc_filings": {
+      "label": "FCC filings",
+      "summary": "Collects filings from the Federal Communications Commission\u2019s comment system through recent-date updates and selected older proceeding searches, retaining earlier records.",
+      "scope": "Covers filings received from August 24, 2026 onward, plus earlier filings from selected proceedings. The newest day is partial; proceeding counts are not complete archive totals.",
+      "gaps": [
+        "Filings released more than a week after receipt can be missed, and later docket assignments can be stale.",
+        "Attachment text is available for only a few selected PDFs."
+      ]
+    },
+    "fcc_proceedings": {
+      "label": "FCC proceedings",
+      "summary": "Reads dated proceedings from the Federal Communications Commission\u2019s comment system, refreshing their closing dates and status on each full read.",
+      "scope": "Covers proceedings created from 1991 onward, keeping one preferred record per docket name.",
+      "gaps": [
+        "Proceedings without a creation date cannot be reached by the date-based search; unnamed records are also omitted.",
+        "Open proceedings can have placeholder closing dates; check the notice for filing deadlines."
+      ]
+    },
+    "fec_account_transfers": {
+      "label": "Reported account transfers",
+      "summary": "Records transfers and account activity reported in Schedules H3 and H5 of saved electronic filings. Amounts keep their reported signs.",
+      "scope": "Selected filings only; reporting periods and amendment coverage vary by collection.",
+      "gaps": [
+        "Both sides of a transfer may appear; adding them can double-count the same money.",
+        "Review amendments, repeated records, and memo or subtotal flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_agency_mapping_dispositions": {
+      "label": "Agency report processing outcomes",
+      "summary": "Records which facts from saved agency reports were mapped into tables, left unmapped, or rejected.",
+      "scope": "Selected XML reports, webpages, and Word documents; a processing log for saved material.",
+      "gaps": [
+        "PDF text processing is deferred.",
+        "Complete report history has not been established."
+      ]
+    },
+    "fec_agency_report_documents": {
+      "label": "Agency report document links",
+      "summary": "Lists document links found in saved agency and oversight reports, with the recorded availability of their contents.",
+      "scope": "Selected report and oversight pages; complete report history has not been established.",
+      "gaps": [
+        "A link does not mean the document was downloaded.",
+        "PDF text processing is deferred."
+      ]
+    },
+    "fec_agency_report_text": {
+      "label": "Agency report text",
+      "summary": "Extracts paragraphs from saved Word reports and supported agency narratives. Narrative text remains text rather than inferred statistics.",
+      "scope": "Selected saved reports and supported text sections.",
+      "gaps": [
+        "PDF text processing is deferred.",
+        "Complete report history has not been established."
+      ]
+    },
+    "fec_agency_reports": {
+      "label": "Agency report editions",
+      "summary": "Describes saved Freedom of Information Act reports in XML, oversight webpages, and Word agency reports.",
+      "scope": "Selected report editions and supported document formats.",
+      "gaps": [
+        "Complete report history has not been established.",
+        "PDF text processing is deferred."
+      ]
+    },
+    "fec_allocated_disbursements": {
+      "label": "Reported allocated spending",
+      "summary": "Reads spending allocations from Schedules H4 and H6 in saved filings and supported Schedule H4 responses from the FEC data service. Amounts keep their reported signs.",
+      "scope": "Selected filings and saved responses only; periods and amendment coverage vary by collection.",
+      "gaps": [
+        "Allocation totals and their components describe overlapping amounts; keep them separate.",
+        "Review amendments, repeated records, and memo or subtotal flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_allocation_bases": {
+      "label": "Reported spending allocation bases",
+      "summary": "Records the ratios and supporting bases used to allocate spending in Schedules H1 and H2 of saved filings.",
+      "scope": "Selected filings and supported form versions.",
+      "gaps": [
+        "Interpret each ratio with its reported basis and period; these are not spending totals.",
+        "Amendments and repeated filings remain separate until reviewed.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_api_response_controls": {
+      "label": "FEC response counts and limits",
+      "summary": "Keeps response counts, page limits, and completeness statements from saved candidate and committee queries to the FEC data service.",
+      "scope": "Selected saved responses; these rows describe requests and responses rather than candidates or committees.",
+      "gaps": [
+        "Reported counts and page limits do not prove every page was collected."
+      ]
+    },
+    "fec_audit_findings": {
+      "label": "Reported audit findings",
+      "summary": "Records findings, categories, and supporting-document references from saved FEC audit case records.",
+      "scope": "Selected audit records; complete case history has not been established.",
+      "gaps": [
+        "Repeated reports remain separate and may describe different stages of an audit.",
+        "Document links do not establish that the contents were downloaded."
+      ]
+    },
+    "fec_bundled_contributions": {
+      "label": "Reported bundled contributions",
+      "summary": "Records identified bundlers and recipients from Schedule A-L and other supported saved filing records. Bulk recipient totals appear separately in reported financial summaries.",
+      "scope": "Selected filing records only; periods and amendment coverage vary by collection.",
+      "gaps": [
+        "Review amendments, repeated records, and memo or attribution flags before calculating totals.",
+        "Keep individual records separate from overlapping recipient summaries.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_candidate_api_observations": {
+      "label": "Candidate data service records",
+      "summary": "Preserves candidate results as returned by the FEC data service, including repeated appearances and lists within each response.",
+      "scope": "Selected saved responses, kept separately from the candidate bulk history.",
+      "gaps": [
+        "These records do not select a single current profile for each candidate.",
+        "Complete candidate history has not been established."
+      ]
+    },
+    "fec_candidate_history": {
+      "label": "Candidates by election cycle",
+      "summary": "Rebuilds candidate records from complete official bulk master files for each two-year election cycle. The current cycle\u2019s file is refreshed daily and can change.",
+      "scope": "Every cycle from 1980 through the current cycle; the reviewed publication covers 1980\u20132026.",
+      "gaps": [
+        "A candidate can appear in multiple cycles; rows are not a count of distinct people.",
+        "The review did not independently compare every row with its original file."
+      ]
+    },
+    "fec_collection_selection": {
+      "label": "Contribution file selections",
+      "summary": "Records which saved version of individual-contribution data was selected when a main file and files split by date represent overlapping records.",
+      "scope": "Selected bulk contribution files and their recorded equivalence checks.",
+      "gaps": [
+        "These are file-selection decisions, not additional contributions.",
+        "Selection checks do not establish complete FEC history."
+      ]
+    },
+    "fec_collections": {
+      "label": "Saved FEC collections",
+      "summary": "Describes the scope and outcome of selected FEC queries, files, database exports, and documents. Use these records to identify what was requested and saved.",
+      "scope": "Selected collections only; supported source types do not prove that every source was collected.",
+      "gaps": [
+        "Bulk directory entries describe files, not the records inside them.",
+        "Rows without a profile may describe scope, refusals, or context, not successfully parsed collections.",
+        "A refused request does not establish that a source has no records."
+      ]
+    },
+    "fec_committee_history": {
+      "label": "Committees by election cycle",
+      "summary": "Rebuilds committee records from complete official bulk master files for each two-year election cycle. The current cycle\u2019s file is refreshed daily and can change.",
+      "scope": "Every cycle from 1980 through the current cycle; the reviewed publication covers 1980\u20132026.",
+      "gaps": [
+        "A committee can appear in multiple cycles; rows are not a count of distinct committees.",
+        "The review did not independently compare every row with its original file."
+      ]
+    },
+    "fec_committee_master_observations": {
+      "label": "Saved committee master records",
+      "summary": "Preserves committee records from selected saved bulk master files, including repeated appearances across files and snapshots.",
+      "scope": "Selected committee master files, with each file\u2019s cycle and field definitions retained.",
+      "gaps": [
+        "These records do not select a single current committee profile.",
+        "Full historical coverage requires checking the selected files."
+      ]
+    },
+    "fec_committee_observations": {
+      "label": "Committee data service records",
+      "summary": "Preserves committee results from saved FEC data service responses. These records remain separate from the accumulated committee registry and bulk histories.",
+      "scope": "Selected saved committee queries and response pages.",
+      "gaps": [
+        "Repeated results may describe the same committee at different times.",
+        "Complete history and current profiles have not been established."
+      ]
+    },
+    "fec_committees": {
+      "label": "Political committees",
+      "summary": "The scheduled collector checks the FEC committee registry weekly and recent filers daily. Updated rows replace earlier rows for the same committee; committees absent from newer results remain.",
+      "scope": "Each Sunday, the collector walks the full registry; daily checks cover the previous seven days of filing activity.",
+      "gaps": [
+        "The published evidence does not establish which collection method produced these rows or how fresh each row is.",
+        "First and last filing dates describe filing activity, not when the data was collected."
+      ]
+    },
+    "fec_communication_costs": {
+      "label": "Reported communication costs",
+      "summary": "Reads communication costs from selected saved FEC bulk files, preserving reported amounts and their signs.",
+      "scope": "Selected files and reporting periods only.",
+      "gaps": [
+        "Review amendments, repeated records, and memo or subtotal flags before calculating totals.",
+        "Rows do not establish reconciled current, gross, or net spending.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_contribution_aggregates": {
+      "label": "Reported contribution summaries",
+      "summary": "Reads FEC bulk summaries by ZIP code and contribution size, plus inaugural contributor totals from saved data service responses.",
+      "scope": "Selected summary files and responses, with their own reporting periods and populations.",
+      "gaps": [
+        "These are source-reported aggregates, not individual donations.",
+        "Different groupings can overlap; do not combine them without checking their definitions and periods."
+      ]
+    },
+    "fec_coordinated_party_expenditures": {
+      "label": "Reported coordinated party spending",
+      "summary": "Reads coordinated party expenditures from saved Schedule F filings and supported FEC data service responses. Amounts keep their reported signs.",
+      "scope": "Selected filings and responses only; reporting periods and amendment coverage vary by collection.",
+      "gaps": [
+        "Review amendments, repeated records, and memo or subtotal flags before calculating totals.",
+        "Rows do not establish reconciled current, gross, or net spending.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_debts": {
+      "label": "Reported debts by period",
+      "summary": "Records debt balances and activity reported in Schedule D filings and saved FEC data service responses.",
+      "scope": "Selected filings and responses, preserving each reported period.",
+      "gaps": [
+        "Balances can repeat across periods; adding them does not measure new debt.",
+        "Review amendments, repeated records, and source flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_disbursements": {
+      "label": "Reported payments and expenses",
+      "summary": "Reads operating expenses from saved bulk files and payments from Schedule B and special-account filing records. Amounts keep their reported signs.",
+      "scope": "Selected files and filings only; periods and amendment coverage vary by collection.",
+      "gaps": [
+        "Payment data service contributions are described in documentation but remain unverified.",
+        "Review amendments, repeated records, and memo, subtotal, or attribution flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_electioneering_communications": {
+      "label": "Reported electioneering communications",
+      "summary": "Reads candidate-associated electioneering spending from saved FEC bulk files, preserving both reported disbursements and the source\u2019s candidate shares.",
+      "scope": "Selected files and reporting periods only.",
+      "gaps": [
+        "The full disbursement repeats across candidate associations; records may not identify which associations belong to the same event.",
+        "Keep disbursements separate from candidate shares. Review amendments, repeated records and source flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_filing_definition_evidence": {
+      "label": "Filing field definition sources",
+      "summary": "Links filing field definitions to the cells in saved specification workbooks that support them.",
+      "scope": "Selected workbooks and field definitions, with their source locations.",
+      "gaps": [
+        "A documented field format does not establish that filings using it were collected.",
+        "The saved workbooks do not establish coverage of every historical form version."
+      ]
+    },
+    "fec_filing_definitions": {
+      "label": "Filing field definitions",
+      "summary": "Describes fields and layouts from saved electronic, paper-format, and Senate filing specifications.",
+      "scope": "Selected specification workbooks and supported form versions.",
+      "gaps": [
+        "Definitions describe file formats, not the number or completeness of collected filings.",
+        "Paper-format definitions do not establish that scanned documents were read."
+      ]
+    },
+    "fec_filing_header_associations": {
+      "label": "Original file to filing links",
+      "summary": "Links headers in saved original files to separately collected filing records using supported original-document URLs.",
+      "scope": "Selected original files and filing records with evidence supporting the match.",
+      "gaps": [
+        "A numeric Senate filename is not automatically an official FEC filing identifier.",
+        "These links do not establish a complete filing or amendment history."
+      ]
+    },
+    "fec_filing_links": {
+      "label": "Reported filing version links",
+      "summary": "Preserves amendment and related-file references reported by the FEC data service.",
+      "scope": "Selected saved filing records and the references they contain.",
+      "gaps": [
+        "A reference does not establish which filing supersedes another or which version is current.",
+        "Linked files and PDFs may not have been downloaded.",
+        "Complete amendment history has not been established."
+      ]
+    },
+    "fec_filing_report_observations": {
+      "label": "Filing covers and summaries",
+      "summary": "Reads cover, summary, and supplement records from saved electronic filings, publisher-defined paper formats, and unofficial Senate files.",
+      "scope": "Selected archives and supported form versions; the format catalog alone does not establish which filings were collected.",
+      "gaps": [
+        "Paper format does not mean text was extracted from scanned pages.",
+        "Keep source versions and amendments separate before interpreting financial summaries."
+      ]
+    },
+    "fec_filing_text_observations": {
+      "label": "Original filing narratives",
+      "summary": "Extracts narrative fields and text fragments from saved original filings, preserving references to separately stored content.",
+      "scope": "Selected filing formats and saved text only.",
+      "gaps": [
+        "A reference does not establish that the linked content was downloaded.",
+        "PDF text processing and complete filing narratives have not been established."
+      ]
+    },
+    "fec_filings": {
+      "label": "Filing records and document links",
+      "summary": "Preserves filing descriptions, file numbers, and original-document URLs from saved FEC data service responses.",
+      "scope": "Selected filing queries and response pages.",
+      "gaps": [
+        "These records do not establish complete amendment history or select the current filing.",
+        "Document links do not establish that original files or PDFs were downloaded."
+      ]
+    },
+    "fec_historical_ie_statistics": {
+      "label": "Historical independent-expenditure statistics",
+      "summary": "Reads statistics from saved FEC spreadsheets, preserving each source\u2019s reporting period, population, methodology, and stated values.",
+      "scope": "Selected historical statistical workbooks.",
+      "gaps": [
+        "Rows include details, headings and subtotals, not individual transactions. Select compatible row types and populations before arithmetic.",
+        "Compare periods and definitions before combining statistics; complete historical coverage has not been established."
+      ]
+    },
+    "fec_inaugural_donations": {
+      "label": "Reported inaugural donations and refunds",
+      "summary": "Reads itemized inaugural donations and refunds from saved original filings. Contributor totals from the FEC data service appear separately in contribution summaries.",
+      "scope": "Selected inaugural filings and supported form versions.",
+      "gaps": [
+        "Itemized donor data service contributions remain unverified.",
+        "Review amendments, repeated records, reported signs, and source flags before calculating gross or net totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_independent_expenditures": {
+      "label": "Reported independent expenditures",
+      "summary": "Combines the FEC\u2019s independent-expenditure bulk file with Schedule E and Form 5 entries from saved electronic filings. Amounts remain as reported.",
+      "scope": "Bulk records cover the 2024 election cycle. Saved filing archives are dated June 8\u20139 and July 2, 2026; these are archive dates, not expenditure coverage dates. Their source cycle is unspecified.",
+      "gaps": [
+        "Source filings contain implausible billion-dollar amounts; inspect outliers before summing.",
+        "Review amendments, repeated records, and memo or subtotal flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_intercommittee_transactions": {
+      "label": "Reported committee-to-committee transactions",
+      "summary": "Reads committee-to-committee and committee-to-candidate transactions from selected saved FEC bulk files. Amounts keep their reported signs.",
+      "scope": "Selected bulk files and reporting periods only.",
+      "gaps": [
+        "Two sides of a transfer can describe the same money; avoid counting both.",
+        "Review amendments, repeated records, and source flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_legal_documents": {
+      "label": "Legal and audit document links",
+      "summary": "Lists documents referenced in saved FEC legal and audit records, preserving their reported descriptions and URLs.",
+      "scope": "Selected legal and audit records.",
+      "gaps": [
+        "These rows contain document references, not downloaded document text.",
+        "Repeated references remain separate; complete document history has not been established."
+      ]
+    },
+    "fec_legal_events": {
+      "label": "Reported legal events",
+      "summary": "Preserves reported dates, votes, amounts, and other event details from saved FEC legal and audit records.",
+      "scope": "Selected advisory opinions, enforcement matters, disputes, fines, rulemaking, and audits.",
+      "gaps": [
+        "Repeated or conflicting reports remain separate; they do not establish a single current case state.",
+        "Document links do not establish that the contents were downloaded.",
+        "Complete event history has not been established."
+      ]
+    },
+    "fec_legal_matters": {
+      "label": "Reported legal matters",
+      "summary": "Describes advisory opinions, enforcement matters, administrative fines, dispute resolution, rulemaking, and audits as reported in saved FEC records.",
+      "scope": "Selected legal and audit collections.",
+      "gaps": [
+        "Repeated or conflicting reports remain separate; they do not establish a single current case state.",
+        "Document links do not establish that the contents were downloaded.",
+        "Complete case history has not been established."
+      ]
+    },
+    "fec_legal_parties": {
+      "label": "Reported legal parties and roles",
+      "summary": "Preserves parties and their roles as listed in saved FEC legal matters and document records, including their original order.",
+      "scope": "Selected legal records and document references.",
+      "gaps": [
+        "Repeated names are not merged into verified people or organizations.",
+        "Roles describe the source record, not a single current case state.",
+        "Complete case history has not been established."
+      ]
+    },
+    "fec_loan_guarantors": {
+      "label": "Reported loan guarantors",
+      "summary": "Records guarantors and their reported loan associations from Schedule C2 in saved original filings.",
+      "scope": "Selected filings and supported form versions.",
+      "gaps": [
+        "Repeated or amended associations do not establish distinct guarantors or a current guarantee.",
+        "Guarantor records cannot be added to loan balances as additional debt.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_loan_terms": {
+      "label": "Reported loan and credit terms",
+      "summary": "Records loan agreements and credit-line terms from Schedule C1 in saved original filings, including supported historical formats.",
+      "scope": "Selected filings and form versions, preserving their reported periods and terms.",
+      "gaps": [
+        "Repeated or amended terms do not establish the current agreement.",
+        "Keep credit limits, loan amounts, and reported balances separate.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_loans": {
+      "label": "Reported loans by period",
+      "summary": "Records loan balances and activity from Schedule C filings and saved FEC data service responses.",
+      "scope": "Selected filings and responses, preserving each reported period.",
+      "gaps": [
+        "Balances can repeat across periods; adding them does not measure new lending.",
+        "Review amendments, repeated records, and source flags before calculating totals.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_lobbyist_registrations": {
+      "label": "Reported lobbyist registrations",
+      "summary": "Reads committee identifiers, dates, and document-image links from the FEC\u2019s saved bulk lobbyist registry.",
+      "scope": "Selected saved registry records.",
+      "gaps": [
+        "Image links do not establish that the documents were downloaded.",
+        "Complete registration history or current status has not been established."
+      ]
+    },
+    "fec_oversight_recommendations": {
+      "label": "Reported oversight recommendations",
+      "summary": "Preserves recommendations and their reported statuses from saved oversight webpages.",
+      "scope": "Selected saved recommendation tables.",
+      "gaps": [
+        "A saved status may differ from the recommendation\u2019s current status.",
+        "PDF text processing is deferred; complete report history has not been established."
+      ]
+    },
+    "fec_postgres_committee_history_observations": {
+      "label": "Committee database history records",
+      "summary": "Reads committee history from selected saved FEC database exports, preserving original fields and repeated appearances across snapshots.",
+      "scope": "Selected PostgreSQL exports and their documented fields.",
+      "gaps": [
+        "These records do not select a single current committee profile.",
+        "Complete historical coverage requires checking the selected exports."
+      ]
+    },
+    "fec_quality_notices": {
+      "label": "FEC filing quality notices",
+      "summary": "Preserves FEC notices about false or fictitious filings and other reported data-quality concerns from saved source files.",
+      "scope": "Selected saved notices and their stated scope.",
+      "gaps": [
+        "A notice does not automatically exclude related financial records.",
+        "Image links do not establish that the documents were downloaded.",
+        "Complete notice history has not been established."
+      ]
+    },
+    "fec_receipts": {
+      "label": "Reported contributions and other receipts",
+      "summary": "Reads individual contributions from selected bulk files, receipt schedules in original filings, and supported national party data service responses.",
+      "scope": "Each selected contribution bulk file contributes all its records; each selected original filing contributes only receipt records. Other cycles, filings, and query scopes are absent.",
+      "gaps": [
+        "Review amendments, repeated records, signed amounts, and memo or attribution flags before calculating totals.",
+        "Records are not reconciled current, gross, or net receipts.",
+        "Quality notices flag records without automatically removing them."
+      ]
+    },
+    "fec_record_evidence": {
+      "label": "Record-to-source evidence links",
+      "summary": "Links published records to their saved source records or collection context, preserving repeated supporting references and the source version.",
+      "scope": "Selected legal, agency, identity, data service, history, and narrative records.",
+      "gaps": [
+        "Some links identify collection context rather than one original source row.",
+        "A stored source location does not establish that its contents were freshly rechecked."
+      ]
+    },
+    "fec_registration_statements": {
+      "label": "Candidate and committee registrations",
+      "summary": "Reads reported candidate and committee registration details from the FEC\u2019s saved Form 1 and Form 2 bulk files.",
+      "scope": "Selected registration files and supported fields.",
+      "gaps": [
+        "Image links do not establish that original statements were downloaded.",
+        "Complete amendment history and current registration status have not been established."
+      ]
+    },
+    "fec_relationships": {
+      "label": "Reported FEC relationships",
+      "summary": "Preserves relationships reported in candidate and committee data, bulk files, and original filings. Conflicting and amended statements remain separate.",
+      "scope": "Selected saved sources only; rows retain each source\u2019s stated relationship and its presence or absence.",
+      "gaps": [
+        "Missing, empty, and reported-none values remain rows; row counts are not relationship counts.",
+        "Names and identifier formatting do not verify identity or establish organizational affiliations.",
+        "Repeated statements do not select a single current relationship."
+      ]
+    },
+    "fec_report_metrics": {
+      "label": "Reported agency statistics",
+      "summary": "Reads defined statistics from saved Freedom of Information Act XML reports and supported numerical fields on oversight webpages. Values retain their source definitions.",
+      "scope": "Selected reports, definitions, and supported numerical fields.",
+      "gaps": [
+        "Keep measures and reporting periods separate when comparing or combining values.",
+        "PDF text processing is deferred; complete report history has not been established."
+      ]
+    },
+    "fec_reported_financial_summaries": {
+      "label": "Reported financial summaries",
+      "summary": "Reads source-reported candidate, committee, presidential, leadership, and recipient bundling summaries from saved bulk files.",
+      "scope": "Selected summary files, preserving each measure and reporting period.",
+      "gaps": [
+        "The all-candidate file and its House/Senate subset repeat the same candidate totals.",
+        "Committee totals repeat once per linked candidate.",
+        "Keep one row per source format, entity, cycle, and period before summing; overlapping measures still need separate treatment."
+      ]
+    },
+    "fec_research_context_dispositions": {
+      "label": "Research source processing outcomes",
+      "summary": "Records how saved reference material was handled, including definitions, archive listings, unsupported formats, rejected processing, and deferred PDF text.",
+      "scope": "Selected source documentation, responses, research references, and statistical material.",
+      "gaps": [
+        "An archive listing does not establish that its contents were collected.",
+        "Processing outcomes do not establish complete source coverage."
+      ]
+    },
+    "fec_research_document_observations": {
+      "label": "Research document and case references",
+      "summary": "Preserves court-case and report references, including search results from the third-party DocumentCloud service. These records provide leads for further research.",
+      "scope": "Selected saved reference records and DocumentCloud search results.",
+      "gaps": [
+        "A verified match to an FEC legal matter has not been established.",
+        "Document contents and complete search coverage have not been established."
+      ]
+    },
+    "fec_research_filing_feed_items": {
+      "label": "Filing feed items",
+      "summary": "Reads filing announcements from saved FEC news feeds, joining saved parts of each item while retaining their source references.",
+      "scope": "Selected saved RSS feed captures.",
+      "gaps": [
+        "Feed items do not establish complete filing or amendment history.",
+        "An announcement or document link does not establish that the filing contents were downloaded."
+      ]
+    },
+    "fec_research_meeting_observations": {
+      "label": "Reported FEC meetings",
+      "summary": "Preserves meeting dates, statuses, and links from saved tables on official FEC webpages.",
+      "scope": "Selected saved meeting pages and their reported values.",
+      "gaps": [
+        "Saved dates and statuses may differ from the current schedule.",
+        "Complete meeting history has not been established."
+      ]
+    },
+    "fec_research_response_outcomes": {
+      "label": "FEC query outcomes",
+      "summary": "Records outcomes of saved FEC data service queries, including empty responses, rejected formats, and stated limits, even when they produced no data rows.",
+      "scope": "Selected saved queries and response records.",
+      "gaps": [
+        "No output can mean a failed or unsupported response, rather than no matching FEC records.",
+        "Response limits and completeness statements do not independently prove full collection."
+      ]
+    },
+    "fec_research_source_pages": {
+      "label": "FEC reference pages",
+      "summary": "Extracts supported facts and references from saved form, court-case, legal-document, and oversight webpages.",
+      "scope": "Selected saved reference pages and supported fields.",
+      "gaps": [
+        "This is not a complete crawl of FEC documentation.",
+        "A reference does not establish that the linked document was downloaded."
+      ]
+    },
+    "fec_retained_csv_observations": {
+      "label": "Records from saved CSV portions",
+      "summary": "Keeps only complete records confirmed by the provider within saved portions of CSV files. Incomplete trailing content remains context rather than data rows.",
+      "scope": "Selected saved file portions and their confirmed complete records.",
+      "gaps": [
+        "Complete individual records do not establish that the whole file was collected.",
+        "Complete source coverage has not been established."
+      ]
+    },
+    "fec_source_catalog": {
+      "label": "FEC sources and access routes",
+      "summary": "Lists official Federal Election Commission sources and their access routes from saved source definitions. It describes available routes without querying them.",
+      "scope": "All source families in the packaged registry used for this publication.",
+      "gaps": [
+        "A listed source does not mean its records were collected; consult the saved collection records.",
+        "The catalog does not establish current source availability or complete FEC data coverage."
+      ]
+    },
+    "fec_source_records": {
+      "label": "Saved FEC source records",
+      "summary": "Keeps source records from selected FEC data service responses, bulk files, database exports, and documents. Rows preserve original fields and source locations.",
+      "scope": "Selected saved collections only. Main files, date partitions, and corrections can overlap; row counts do not represent unique transactions.",
+      "gaps": [
+        "Review amendments and each source\u2019s inclusion rules before selecting current records or calculating totals.",
+        "Memo, subtotal, and attribution flags have source-specific meanings; no universal memo exclusion applies.",
+        "Joint-fundraising transfers and attribution records can overlap without exact links between them.",
+        "Exact original amount text may require the saved source file."
+      ]
+    },
+    "federal_register": {
+      "label": "Federal Register documents",
+      "summary": "Combines FederalRegister.gov API records with earlier collected records, refreshing recent publications.",
+      "scope": "Covers the API\u2019s publication span from January 3, 1994 onward.",
+      "gaps": [
+        "Document numbers can be reused: use number and publication date together. Some older records may be missing where a number was reused.",
+        "Older records can lack newer fields, and many records lack regulation identifiers.",
+        "A shared title or regulation identifier can include corrections and delays, not just one final rule."
+      ]
+    },
+    "feed_summary": {
+      "label": "Docket summaries",
+      "summary": "Summarizes each collected docket using its documents and public comment counts. Known removed postings and their comments are excluded.",
+      "scope": "One summary per docket in the collected docket, document and comment tables.",
+      "gaps": [
+        "Missing source records also leave gaps in these summaries."
+      ]
+    },
+    "financial_changes": {
+      "label": "Matched dollar-amount changes",
+      "summary": "Reserved for matching dollar amounts across bill versions. That feature is disabled; the bill comparison items still retain the individual amounts found in each version.",
+      "scope": "Intentionally empty under the current processing policy.",
+      "gaps": [
+        "An empty table does not mean the bills contain no financial amounts."
+      ]
+    },
+    "fr_docket_links": {
+      "label": "Federal Register links to dockets",
+      "summary": "Connects each dated Federal Register publication to docket references it prints or links on Regulations.gov.",
+      "scope": "Covers the collected Federal Register records, whose publication dates start January 3, 1994.",
+      "gaps": [
+        "Older records may include printed docket labels only, because linked references had not yet been collected.",
+        "These are source-stated references; a shared title or regulation identifier does not create a link."
+      ]
+    },
+    "gao_decisions": {
+      "label": "GAO legal decisions",
+      "summary": "Collects Government Accountability Office decisions from its monthly and annual web listings and decision pages, retaining earlier records.",
+      "scope": "Covers completed listing periods from 2009 onward, including numbered legal and Contract Appeals Board decisions. Major-rule reports are separate.",
+      "gaps": [
+        "Unnumbered entries are omitted; a missing month can mean no listed decisions or an unread period.",
+        "Release dates differ from decision dates; decision dates remain blank when the page does not establish them.",
+        "One page can carry several case numbers. Row counts do not reproduce GAO\u2019s bid-protest totals or sustain rates."
+      ]
+    },
+    "gao_recommendations": {
+      "label": "GAO recommendations",
+      "summary": "Collects GAO\u2019s daily export of open recommendations and retains recommendations that later disappear from it.",
+      "scope": "Covers recommendations observed open since collection began, including recommendations on products issued as far back as 2001.",
+      "gaps": [
+        "Recommendations closed before collection began are absent.",
+        "Leaving the open list does not prove closure or implementation; edits to a recommendation can have the same effect.",
+        "First seen means first observed in this collection, not when GAO made the recommendation."
+      ]
+    },
+    "gao_reports": {
+      "label": "GAO reports",
+      "summary": "Combines GAO\u2019s recent feed and website listings, GovInfo\u2019s archive, earlier feed copies, targeted additions and the CetiAlphaFive/gao research dataset.",
+      "scope": "GovInfo covers November 15, 1989\u2013September 18, 2008; website listings start in 2009. The research dataset adds older reports from 1922, mainly from the 1970s\u20131990s.",
+      "gaps": [
+        "Major-rule reports from 1996\u20132008 are absent; unread listings and missed feed items leave other gaps.",
+        "Research-dataset details stop at the September 26, 2026 copy until separately filled.",
+        "Fields in one row can come from several sources even when its source label names only one."
+      ]
+    },
+    "hearing_bill_links": {
+      "label": "Hearing-to-bill links",
+      "summary": "Lists bills explicitly named in GovInfo\u2019s descriptive records for selected hearings. Congress.gov hearing details help link hearings to meeting records.",
+      "scope": "References stated in the descriptive records accompanying the hearing documents we collected.",
+      "gaps": [
+        "Bills mentioned only in transcript text, agendas or separate component records are excluded.",
+        "Missing links do not establish that a hearing discussed no bills.",
+        "Dates on a combined volume do not identify which bill was discussed on each date."
+      ]
+    },
+    "hearing_transcripts": {
+      "label": "Hearing transcripts",
+      "summary": "Combines selected GovInfo hearing documents and descriptive records with meeting identifiers from Congress.gov. Previously collected hearings remain available.",
+      "scope": "Selected hearing publications across the Congresses reached by collection; text is not divided into speaker turns.",
+      "gaps": [
+        "Historical coverage is incomplete.",
+        "A meeting link can be wrong even when it points to an existing meeting.",
+        "Some published text is a PDF-availability notice rather than the full transcript."
+      ]
+    },
+    "house_activity_reports": {
+      "label": "Committee activity reports (House and Senate)",
+      "summary": "Collects House and Senate committee activity reports identified by their titles in GovInfo, then reads their PDFs. Pages read and publisher-stated page counts remain separate.",
+      "scope": "Selected reports issued from January 1, 2023 onward; earlier archive coverage has not been assessed.",
+      "gaps": [
+        "Title-based selection can miss reports outside the supported wording.",
+        "Ambiguous committee names can produce incorrect chamber assignments.",
+        "Printed bill references can correct the publisher\u2019s Congress; extra matches do not necessarily identify additional bills."
+      ]
+    },
+    "house_communications": {
+      "label": "House executive communications",
+      "summary": "Combines Congress.gov communication listings with detailed records, then identifies regulatory tracking numbers stated in the descriptions.",
+      "scope": "The 119th Congress\u2019s listed communication types. New details arrive in bounded updates; earlier captures remain available.",
+      "gaps": [
+        "Some rows contain only listing fields; links do not establish that full documents were downloaded.",
+        "Historical communications have not been reconstructed from the Congressional Record.",
+        "Regulatory tracking numbers are interpreted from text and can be false matches."
+      ]
+    },
+    "law_code_sections": {
+      "label": "Laws affecting U.S. Code sections",
+      "summary": "Reads the Office of the Law Revision Counsel\u2019s classification webpages to identify which Code sections each public law affects.",
+      "scope": "Complete pages reached through the classification index for selected Congresses; the index currently links only the current Congress\u2019s session tables.",
+      "gaps": [
+        "This is not a complete historical classification archive.",
+        "Blocked or failed reads preserve earlier data; a new publication can contain an older source capture.",
+        "A law can appear in a later session\u2019s classification table."
+      ]
+    },
+    "law_sections": {
+      "label": "Enacted-law sections",
+      "summary": "Extracts sections from verified GovInfo public and private law files. Successful rereads replace a law\u2019s sections; failed reads preserve the earlier text.",
+      "scope": "Laws whose structured text files were successfully acquired and read, including amendment instructions and quoted sections.",
+      "gaps": [
+        "PDF-only laws are excluded.",
+        "Missing rows do not establish that a law has no text.",
+        "These are enacted-law sections, not the consolidated U.S. Code."
+      ]
+    },
+    "laws": {
+      "label": "Enacted laws",
+      "summary": "Combines Congress.gov\u2019s public and private law listings with citations extracted from verified GovInfo law files. Earlier verified details remain when a new file cannot be read.",
+      "scope": "Laws listed for selected Congresses, defaulting to the sitting Congress. Document details are added through bounded updates.",
+      "gaps": [
+        "Listed laws may lack text because collection or publisher publication is pending.",
+        "A private law\u2019s source file can omit its Statutes at Large citation.",
+        "These are original enacted laws, not the consolidated U.S. Code."
+      ]
+    },
+    "lifecycle_events": {
+      "label": "Rulemaking lifecycle events",
+      "summary": "Interprets collected documents as proposal, final-rule or withdrawal events for docketed proceedings.",
+      "scope": "One event per qualifying document; excludes undated records and dates after the calculation day.",
+      "gaps": [
+        "These are derived classifications, not an official event feed.",
+        "Source upload dates can differ from the dates of the rulemaking actions."
+      ]
+    },
+    "lobbying_activities": {
+      "label": "Lobbying activities",
+      "summary": "Lists the activities reported in Senate Lobbying Disclosure Act filings, combining recent API updates with earlier collected filing years.",
+      "scope": "One row per reported activity in the collected filings. Filings that list no activity contribute no rows.",
+      "gaps": [
+        "Coverage follows the collected filing years; earlier uncollected years are absent."
+      ]
+    },
+    "lobbying_activity_lobbyists": {
+      "label": "Lobbyists named on activities",
+      "summary": "Lists lobbyists named on each activity in Senate Lobbying Disclosure Act filings, combining recent API updates with earlier collected filing years.",
+      "scope": "One row per named lobbyist per activity; an activity naming no lobbyist contributes no rows.",
+      "gaps": [
+        "Earlier extraction omitted lobbyist names, so historical name coverage depends on which filings have been reread.",
+        "The same person can appear on several activities; rows are not distinct people."
+      ]
+    },
+    "lobbying_filings": {
+      "label": "Lobbying disclosure filings",
+      "summary": "Collects Senate Lobbying Disclosure Act filings from its API, combining recent updates with full reads of earlier filing years.",
+      "scope": "Covers every filing in the collected years, from the earliest year loaded through the latest read.",
+      "gaps": [
+        "Earlier years not yet collected are absent."
+      ]
+    },
+    "member_party_affiliations": {
+      "label": "Member party-affiliation periods",
+      "summary": "Lists party-affiliation periods recorded within legislators\u2019 terms in the community-maintained congress-legislators files. The documented publication reuses saved source files.",
+      "scope": "Complete saved community files from September 25, 2026, reread and published September 27.",
+      "gaps": [
+        "These are community records, not independently verified official rosters.",
+        "Reprocessing a saved file does not make its information newly observed.",
+        "Positions within a source file can change when that file changes."
+      ]
+    },
+    "member_terms": {
+      "label": "Legislator terms",
+      "summary": "Lists service terms from the community-maintained congress-legislators current and historical files. Earlier recorded terms survive later updates.",
+      "scope": "All terms in the complete September 22, 2026 source captures, together with previously retained term identities.",
+      "gaps": [
+        "The community files have not been checked for completeness against an official roster.",
+        "One party value per term omits mid-term affiliation changes; those appear separately.",
+        "A term\u2019s position in the source file can change."
+      ]
+    },
+    "member_vote_terms": {
+      "label": "Votes matched to service terms",
+      "summary": "Matches each member vote to the legislator\u2019s recorded service term using member identity, chamber and vote date. Unresolved matches remain visible.",
+      "scope": "One row for every member-vote record available to the calculation.",
+      "gaps": [
+        "Missing identities or dates can prevent a match.",
+        "Successful matching does not establish completeness of the underlying vote or term collections."
+      ]
+    },
+    "member_votes": {
+      "label": "Member vote positions",
+      "summary": "Extracts each member\u2019s recorded position from official House and Senate vote files. Community legislator records help connect Senate identifiers to members.",
+      "scope": "Collected roll calls, including retained earlier captures. Party labels describe the chamber\u2019s vote record; dated affiliation history is recorded separately.",
+      "gaps": [
+        "House votes before 2003 use names that may identify different people; some Senate identities also remain unresolved.",
+        "The Speaker appears only when voting; missing rows do not measure absence.",
+        "Exclude non-voting delegates and the Resident Commissioner when ranking voting Representatives."
+      ]
+    },
+    "members": {
+      "label": "Legislators",
+      "summary": "Combines current and historical congress-legislators community files, preserving identifiers, names, aliases and service information. Earlier recorded identities can survive later updates.",
+      "scope": "Complete September 22, 2026 source captures; an October 3 rebuild verified additional identifiers and aliases against saved originals.",
+      "gaps": [
+        "This is a community-maintained collection, not an independently complete official roster.",
+        "Some identifiers are missing or shared; aliases do not establish a unique identity.",
+        "A rebuild date is not a fresh source-observation date."
+      ]
+    },
+    "native_legal_reference_reads": {
+      "label": "Legal-reference read outcomes",
+      "summary": "Records complete reads of selected saved legal-text files, including reads that find no references. The process reuses those files without checking the publisher again.",
+      "scope": "Explicitly selected saved files; the documented collection uses Title 1 of the electronic Code of Federal Regulations and Title 1 of the U.S. Code.",
+      "gaps": [
+        "These checks do not cover all legal titles.",
+        "A read date does not establish when the source was last checked for changes."
+      ]
+    },
+    "native_legal_references": {
+      "label": "References in legal text",
+      "summary": "Finds legal references and source citations in selected saved regulatory and statutory files. It attempts to link them to records in other selected tables.",
+      "scope": "Electronic Code of Federal Regulations Title 1 requested as of August 10, 2026, and U.S. Code Title 1 release 119-103.",
+      "gaps": [
+        "Other titles are outside the documented selection.",
+        "A saved-file reread is not a fresh publisher check.",
+        "Unmatched, unsupported and unchecked references remain distinct."
+      ]
+    },
+    "nominations": {
+      "label": "Nominations",
+      "summary": "Lists nominations and their latest recorded action from saved Congress.gov listing pages. Earlier observations remain as the list changes.",
+      "scope": "Distinct nomination records captured for the 119th Congress.",
+      "gaps": [
+        "Repeated or disappearing source records prevent a completeness claim based on page counts.",
+        "Nominee details and full action histories are not collected.",
+        "Latest-action text does not establish a separately verified confirmation outcome."
+      ]
+    },
+    "org_committee_links": {
+      "label": "Commenter organizations matched to committees",
+      "summary": "Matches commenter organization names to Federal Election Commission committee names and shows the commission\u2019s stated sponsor alongside each match.",
+      "scope": "Only the small share of comments naming an organization can be matched. Candidate committees and leadership political action committees are excluded.",
+      "gaps": [
+        "Name matches can be wrong; they are not official affiliations. Confidence grades the matching rule, not a measured probability.",
+        "A missing link does not establish that no affiliation exists.",
+        "Matches can include terminated committees; check the dates and stated sponsor."
+      ]
+    },
+    "press_releases": {
+      "label": "Appropriations press releases",
+      "summary": "Collects House and Senate Appropriations committee publication feeds and infers bill links from release titles and descriptions. Releases remain after they leave a feed.",
+      "scope": "House and Senate Appropriations feeds captured since September 19, 2026, including older items then present. Other committees and earlier feed history are excluded.",
+      "gaps": [
+        "Full release webpages are not collected; Senate matching uses titles only.",
+        "Inferred bill links can be wrong; their accuracy has not been measured.",
+        "A missing link can mean matching was never attempted or the bill was unavailable."
+      ]
+    },
+    "proceedings": {
+      "label": "Rulemaking proceedings",
+      "summary": "Groups docket, document and Federal Register records into regulatory proceedings, preserving earlier proceeding identities where supported.",
+      "scope": "Covers collected dockets and Federal Register documents without a docket, using source references to connect records.",
+      "gaps": [
+        "These are derived groupings, not official counts of distinct rules.",
+        "A shared regulation identifier alone does not combine records into one proceeding."
+      ]
+    },
+    "public_activity_events": {
+      "label": "Changes detected in bill records",
+      "summary": "Records changes between successive captures of bill details, versions and summaries. Previously detected changes remain available.",
+      "scope": "Bills compared across collection runs from the 108th Congress onward.",
+      "gaps": [
+        "This is not the bill\u2019s complete historical action sequence.",
+        "The date a change was detected here can differ from the date it happened.",
+        "Earlier legislative stages are recalculated and can differ from values published at the time."
+      ]
+    },
+    "record_issues": {
+      "label": "Daily Congressional Record issues",
+      "summary": "Combines Congress.gov\u2019s issue listings with separately fetched issue details and document links. Earlier captures remain while missing details are added.",
+      "scope": "Listed session volumes for selected Congresses, with up to 1,000 detailed issue reads per run.",
+      "gaps": [
+        "Issue presence does not establish that its full text or articles were downloaded.",
+        "Some listed issues may still lack detailed records.",
+        "An issue with no chamber section can contain only the Daily Digest."
+      ]
+    },
+    "regulatory_agenda_items": {
+      "label": "Planned regulatory actions",
+      "summary": "Combines Unified Agenda observations with regulation identifiers stated in dockets, documents and Federal Register records.",
+      "scope": "One item per regulation identifier observed in those collected sources, including identifiers not found in the collected agenda editions.",
+      "gaps": [
+        "An identifier describes a planned regulatory action; it does not establish that a rule was finalized."
+      ]
+    },
+    "report_sections": {
+      "label": "Committee report text sections",
+      "summary": "Extracts headings and text blocks from collected committee-report parts. Original headings are preserved as earlier reports are retained and reread.",
+      "scope": "Sections in the report documents we have acquired and successfully read.",
+      "gaps": [
+        "Agency identifiers are unresolved.",
+        "HTML text has no inferred page numbers.",
+        "Coverage follows the report collection; older records may still await separation into report parts."
+      ]
+    },
+    "roll_call_votes": {
+      "label": "House and Senate roll-call votes",
+      "summary": "Combines official House Clerk and Senate vote files with bill-action references to identify related bills. Each chamber updates independently and retains earlier votes.",
+      "scope": "Regular collection covers the sitting Congress; historical collection is separate. Publisher files reach the 101st Congress, with House files beginning in 1990, its second session.",
+      "gaps": [
+        "Publisher archive range does not establish complete local coverage.",
+        "Bill links can conflict; some amendment and procedural votes have no bill link.",
+        "Failed updates retain earlier captures; closed-Congress votes are normally kept without repeated source checks."
+      ]
+    },
+    "rule_targets": {
+      "label": "Docket references to regulations",
+      "summary": "Links dockets to Code of Federal Regulations provisions and regulation identifiers when the collected source records support the reference.",
+      "scope": "Covers references in collected docket, document and Federal Register records.",
+      "gaps": [
+        "A shared regulation identifier alone does not establish an action-specific link."
+      ]
+    },
+    "rulemaking_lifecycles": {
+      "label": "Rulemaking lifecycles",
+      "summary": "Pairs proposal, final-rule and withdrawal events for docketed proceedings. Unfinished proceedings remain open through the last day covered by their inputs.",
+      "scope": "Covers collected docketed proceedings; Federal Register items without dockets are excluded.",
+      "gaps": [
+        "Legacy upload dates can differ from action dates.",
+        "Petition notices can serve as proposals, and some final rules remain unmatched across dockets.",
+        "One rule can span several dockets, so rows are not distinct rulemakings."
+      ]
+    },
+    "sam_entities": {
+      "label": "Federal entity registrations",
+      "summary": "Public registrations come from SAM.gov bulk downloads; the collection can also retain selected API results and earlier records. Different registration years are refreshed at different times.",
+      "scope": "Covers public active registrations dated 1996\u20132026 and two older registrations from 1949 and 1968, as observed when each year was read.",
+      "gaps": [
+        "This is not a single current census; retained registrations can be older than the latest refresh.",
+        "An entity can have several registrations, so its entity identifier alone is not unique."
+      ]
+    },
+    "scorecard_item_links": {
+      "label": "Scorecard links to bills & votes",
+      "summary": "Matches publisher-scored actions to congressional bills, amendments and votes using exact identifiers.",
+      "scope": "Links between the scorecard and congressional data versions used to build this table.",
+      "gaps": [
+        "Unresolved or ambiguous references remain visible; similar names do not establish a match.",
+        "Links may refer to older input data rather than the latest published tables."
+      ]
+    },
+    "scorecard_items": {
+      "label": "Scored bills, votes & actions",
+      "summary": "Records the actions each publisher chose to score. Separate actions on the same bill remain separate items.",
+      "scope": "Items from selected scorecard editions, collected from data feeds, files, web pages and PDFs.",
+      "gaps": [
+        "Scores and preferred actions express each publisher\u2019s views; scales are not converted for comparison.",
+        "The reviewed release reused saved files; it did not fetch new publisher records.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_member_item_results": {
+      "label": "Results for each scored action",
+      "summary": "Records each person\u2019s result on a scored action, as reported by the publisher. A result can appear without a stated connection to an overall score.",
+      "scope": "Results from selected editions, collected from data feeds, files, web pages and PDFs.",
+      "gaps": [
+        "Scores and preferred actions express each publisher\u2019s views; scales are not converted for comparison.",
+        "The reviewed release reused saved files; it did not fetch new publisher records.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_member_links": {
+      "label": "Scorecard links to members of Congress",
+      "summary": "Matches people in scorecards to congressional records using exact identifiers and their historical service context.",
+      "scope": "Links between the scorecard and congressional data versions used to build this table.",
+      "gaps": [
+        "Unresolved or ambiguous identities remain visible; names alone do not establish a match.",
+        "Links may refer to older input data rather than the latest published tables."
+      ]
+    },
+    "scorecard_member_ratings": {
+      "label": "Member scores, grades & ranks",
+      "summary": "Preserves each publisher\u2019s scores, grades and ranks for members. Different types of rating remain separate.",
+      "scope": "Ratings from selected publishers and editions; availability varies by publisher and year.",
+      "gaps": [
+        "Scores and preferred actions express each publisher\u2019s views; scales are not converted for comparison.",
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_members": {
+      "label": "People listed in scorecards",
+      "summary": "Records the people each publisher lists in an edition, including people it did not grade or chose to exclude.",
+      "scope": "People in selected editions; names and context remain as the publisher reported them.",
+      "gaps": [
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_methodologies": {
+      "label": "Scoring rules",
+      "summary": "Records publishers\u2019 explanations of how they score members, including the chamber and group each set of rules applies to.",
+      "scope": "Rules stated in the collected editions; missing rules are not filled in.",
+      "gaps": [
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_metric_components": {
+      "label": "How scores combine",
+      "summary": "Records how smaller measures contribute to an overall measure when a publisher explains that relationship.",
+      "scope": "Only relationships stated in the collected editions; most editions do not describe how measures combine.",
+      "gaps": [
+        "An empty table means no such relationships were collected; other editions may contain them.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_metric_items": {
+      "label": "Actions used in each score",
+      "summary": "Links scored actions to the measures they contribute to, using the publisher\u2019s stated scoring rules.",
+      "scope": "Only action-to-measure relationships stated by the collected editions.",
+      "gaps": [
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_metrics": {
+      "label": "Score and rating definitions",
+      "summary": "Records what each publisher measures and the chamber, group and time period the measure applies to.",
+      "scope": "Measures defined in selected scorecard editions.",
+      "gaps": [
+        "Scores and preferred actions express each publisher\u2019s views; scales are not converted for comparison.",
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecard_publishers": {
+      "label": "Scorecard publishers",
+      "summary": "Identifies the organizations behind the collected scorecards. Edition records preserve the publisher names used at the time.",
+      "scope": "Publishers represented in the collected editions, rather than a complete directory of rating organizations.",
+      "gaps": [
+        "Coverage varies by publisher and edition. Incomplete updates can leave older records in place.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "scorecards": {
+      "label": "Scorecard editions",
+      "summary": "Collects editions of publishers\u2019 congressional scorecards from data feeds, files, web pages and PDFs. Saved records remain when an update is incomplete.",
+      "scope": "Selected publishers and editions; coverage varies by publisher and year.",
+      "gaps": [
+        "Scores and preferred actions express each publisher\u2019s views; scales are not converted for comparison.",
+        "The reviewed release reused saved files; it did not fetch new publisher records.",
+        "Original source text may be unavailable; some evidence keeps only a source reference and a file fingerprint."
+      ]
+    },
+    "section_classifications": {
+      "label": "AI bill-section classifications",
+      "summary": "Reserved for AI-generated classifications of bill sections. Automatic updates currently leave this feature disabled.",
+      "scope": "Intentionally empty under the current processing policy.",
+      "gaps": [
+        "An empty classification table does not mean the bill text is missing."
+      ]
+    },
+    "section_diff_items": {
+      "label": "Bill comparison details",
+      "summary": "Lists the matched sections and changes found by comparing consecutive bill printings. Earlier comparisons remain available as new text arrives.",
+      "scope": "Items from comparisons where both bill versions were acquired and successfully read.",
+      "gaps": [
+        "Missing or unreadable versions cannot produce comparisons.",
+        "A dollar-amount change flag can reflect an added or removed section, not a changed amount within one.",
+        "Amount comparisons exclude floor-amendment annotations."
+      ]
+    },
+    "section_diffs": {
+      "label": "Bill-version comparisons",
+      "summary": "Compares consecutive printings of each bill using their section structure and text. New comparisons can use previously acquired versions.",
+      "scope": "Pairs of consecutive versions whose text was both acquired and successfully read.",
+      "gaps": [
+        "Listed versions with missing or unreadable text leave comparison gaps.",
+        "Procedural printings can make most text appear removed or readded without a comparable policy change."
+      ]
+    },
+    "senate_expenditures": {
+      "label": "Selected Senate expenditure report pages",
+      "summary": "Extracts tables from Senate expenditure reports distributed by GovInfo, preserving printed cells rather than assuming each row is an individual payment.",
+      "scope": "Reports issued from January 1, 2024 onward; only the first 80 pages of each selected file are read.",
+      "gaps": [
+        "Covers selected offices and sections only, not Senate-wide spending. Member-compensation and mail-allocation sections are outside the page window.",
+        "Most rows are multiline text blocks, not itemized payments; summaries can repeat across report parts.",
+        "Continuation-page headings can be blank, and some extracted text has interleaved characters."
+      ]
+    },
+    "table3_records": {
+      "label": "U.S. Code Table III records",
+      "summary": "Relates public laws to U.S. Code provisions using the Office of the Law Revision Counsel\u2019s bulk Table III file. This replaces earlier webpage collection while preserving prior data when a download fails.",
+      "scope": "Public laws for Congresses represented in the laws table or explicitly selected. The source file reaches 1789, beyond the Congresses extracted here.",
+      "gaps": [
+        "Other Congresses, private laws and pre-1957 session-law chapters are excluded.",
+        "Table III can lag enactment by months and omit records within its stated release.",
+        "A published update can retain older data after a failed source download."
+      ]
+    },
+    "treaties": {
+      "label": "Treaty document records",
+      "summary": "Combines Congress.gov treaty listings with detailed descriptive records. Earlier captures remain while new details are added.",
+      "scope": "Treaty records captured for the 119th Congress.",
+      "gaps": [
+        "Treaty bodies, full action histories and older Congresses are outside reviewed coverage.",
+        "Suffixed treaty parts can appear in listings, but their details are not collected.",
+        "These records do not independently determine a treaty\u2019s legal or in-force status."
+      ]
+    },
+    "unified_agenda": {
+      "label": "Unified Agenda editions",
+      "summary": "Collects semiannual plans for agency regulatory actions from RegInfo.gov\u2019s structured edition files, combining the latest edition with earlier editions.",
+      "scope": "Covers readable editions from fall 1995 through the latest collected edition.",
+      "gaps": [
+        "No editions are held for 2004 or spring 2012.",
+        "A rule appears once per edition that lists it; repeated rows are observations over time, not additional rules."
+      ]
+    },
+    "usaspending_recipients": {
+      "label": "Federal award recipients",
+      "summary": "Collects USAspending recipient rankings, combining weekly reads of all recipients with positive awards over the trailing 12 months, daily updates to top recipients and older retained rows.",
+      "scope": "Covers recipients selected by those reads, not all recipients across federal spending history.",
+      "gaps": [
+        "Parent, child and recipient totals overlap; do not add them together.",
+        "Amounts can describe different 12-month periods; older records can lack an observation date.",
+        "An absent recipient may still have awards in USAspending."
+      ]
+    }
+  }
+}

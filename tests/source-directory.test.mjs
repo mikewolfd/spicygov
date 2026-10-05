@@ -140,3 +140,37 @@ test('origin inputs link separate exports directly and do not claim unknown inpu
   assert.doesNotMatch(html, /not published/);
   assert.match(html, /not in this catalog/);
 });
+
+
+test('concise copy changes presentation and search, never published membership', () => {
+  const raw = review();
+  raw.tables.records.copy = { label: 'Clear title', summary: 'Searchable explanation', scope: 'Selected records', gaps: ['Duplicates occur.'] };
+  const parsed = parseSourceReview(raw);
+  const entries = sourceEntries([table()], [], parsed);
+  assert.equal(entries[0].table.label, 'Clear title');
+  assert.equal(filterEntries(entries, 'Searchable explanation', '', '').length, 1);
+  assert.deepEqual(sourceEntries([], [], parsed), []);
+  raw.tables.records.copy.gaps = [42];
+  assert.equal(parseSourceReview(raw).tables.records.copy, undefined);
+});
+
+test('edited copy matches the reviewed inventory and every shipped table', async () => {
+  const copy = JSON.parse(await readFile('content/source-copy.json', 'utf8'));
+  const shipped = JSON.parse(await readFile('public/source-inventory.v1.json', 'utf8'));
+  assert.equal(copy.inventorySha256, shipped.inputSha256);
+  assert.deepEqual(Object.keys(copy.tables).sort(), Object.keys(shipped.tables).sort());
+  for (const [id, text] of Object.entries(copy.tables)) assert.deepEqual(shipped.tables[id].copy, text);
+});
+
+test('compact source notes preserve attribution and input links without repeating long notes', async () => {
+  const { TableProvenance } = await module('components/table-provenance.tsx');
+  const parent = { ...table(), inputs: ['comments'], transformation: 'Long transformation explanation', sources: [{ id: 'original', name: 'Original publisher', url: 'https://example.gov', kind: 'government', note: 'Long source explanation' }] };
+  const props = { table: parent, catalog: parseComments(comments()) };
+  const compact = renderToStaticMarkup(createElement(TableProvenance, { ...props, compact: true }));
+  assert.match(compact, /Original publisher/);
+  assert.match(compact, /https:\/\/data.spicygov.ai\/comments.parquet/);
+  assert.doesNotMatch(compact, /Long (transformation|source) explanation/);
+  const full = renderToStaticMarkup(createElement(TableProvenance, props));
+  assert.match(full, /Long transformation explanation/);
+  assert.match(full, /Long source explanation/);
+});
