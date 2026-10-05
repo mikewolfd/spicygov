@@ -90,6 +90,22 @@ def native_schema(dataset):
     return bridge(["--schema", dataset])
 
 
+def validate_native_implementations(policies):
+    for dataset, policy in policies.items():
+        if not policy.get("_nativeProcessing"):
+            continue
+        current = bridge(["--schema", dataset])
+        if (
+            current.get("implementationSha256")
+            != policy.get("restorationImplementationSha256")
+            or current.get("nativeSchema") != policy["schema"]
+            or current.get("receiptOnly") is not False
+        ):
+            raise ValueError(
+                "Native coverage reader changed during the build: " + dataset
+            )
+
+
 def variant(dataset, table, policy):
     if table.get("columns") == policy["schema"]:
         return policy

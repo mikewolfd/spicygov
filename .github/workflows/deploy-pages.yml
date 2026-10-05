@@ -14,8 +14,28 @@ jobs:
   build:
     timeout-minutes: 90
     runs-on: ubuntu-latest
+    env:
+      SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
+      SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
     steps:
       - uses: actions/checkout@v4
+      - name: Check out the qualified native receipt reader
+        uses: actions/checkout@v4
+        with:
+          repository: mikewolfd/spicy-regs
+          ref: d8573ca1dc4e5a602992c7a158edf06f0399f079
+          path: .coverage-backend
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: .coverage-backend/uv.lock
+      - name: Install the locked native receipt reader
+        working-directory: .coverage-backend
+        run: uv sync --frozen --no-default-groups --group source-readers
+      - name: Check the pinned legislative and Congress readers
+        run: |
+          "$SPICYGOV_NATIVE_COVERAGE_PYTHON" "$SPICYGOV_NATIVE_COVERAGE_BRIDGE" --schema bill_versions > /dev/null
+          "$SPICYGOV_NATIVE_COVERAGE_PYTHON" "$SPICYGOV_NATIVE_COVERAGE_BRIDGE" --schema congress_bills > /dev/null
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -34,6 +54,7 @@ jobs:
       - run: python tests/test_native_receipt_coverage.py
       - run: python tests/test_fec_coverage_maps.py
       - run: python tests/test_congress_coverage_maps.py
+      - run: python tests/test_native_legislative_coverage.py
       - name: Restore validated coverage checkpoints
         id: coverage-cache
         uses: actions/cache/restore@v5

@@ -21,6 +21,7 @@ import duckdb
 from coverage_dimensions import binding, definition_digest, scan_dimension, validate_definition
 from coverage_inputs import CoverageInputs, inherit_unique
 from native_legislative_coverage import processing_context, variant
+from native_legislative_coverage import validate_native_implementations
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -336,7 +337,8 @@ def main():
         raise ValueError('Partial scans require a separate output file')
     setup = duckdb.connect(); setup.execute('INSTALL httpfs'); setup.close()
     _, tables = load()
-    policies = definitions()
+    reviewed_policies = definitions()
+    policies = dict(reviewed_policies)
     validate_plan(tables, policies)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -351,6 +353,7 @@ def main():
     as_of_month = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m')
     selected = {id: {**table, '_coverageAsOfMonth': as_of_month}
                 for id, table in tables.items() if not args.only or id in args.only}
+    revisions = {id: measurement_revision(policies[id]) for id in selected}
     if args.only and set(args.only) != set(selected): raise ValueError('Requested table is not currently published')
     results, failures = {}, []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -366,9 +369,10 @@ def main():
             except Exception as error:
                 failures.append(str(error)); print(str(error), file=sys.stderr, flush=True)
     if failures: raise ValueError('Coverage build failed; published maps kept unchanged:\n' + '\n'.join(failures))
-    if definitions() != policies:
+    if definitions() != reviewed_policies:
         raise ValueError('Coverage definitions changed during the build; rerun the reviewed policies')
-    if measurement_revision() != revision or any(result.get('measurementRevision') != revision for result in results.values()):
+    validate_native_implementations({id: policies[id] for id in selected})
+    if measurement_revision() != revision or any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items()):
         raise ValueError('Coverage implementation changed during the build; rerun the reviewed code')
     if set(results) != set(selected): raise ValueError('Coverage build omitted a published table')
     # Confirm membership/bindings still match after all scans, including mutable receipts.

@@ -31,6 +31,7 @@ def legacy_revision(root, driver):
     extra_imports = {
         ("contextlib", ("ExitStack",)),
         ("native_legislative_coverage", ("processing_context", "variant")),
+        ("native_legislative_coverage", ("validate_native_implementations",)),
     }
     top = [
         node
@@ -71,6 +72,26 @@ def legacy_revision(root, driver):
             body = body.replace(
                 "validate_definition(policy, schema(policy.get('processingSchema', expected)))",
                 "validate_definition(policy, expected)",
+            )
+        if name == "main":
+            body = body.replace(
+                "reviewed_policies = definitions()\n    policies = dict(reviewed_policies)",
+                "policies = definitions()",
+            )
+            body = body.replace(
+                "definitions() != reviewed_policies", "definitions() != policies"
+            )
+            body = body.replace(
+                "    revisions = {id: measurement_revision(policies[id]) for id in selected}\n",
+                "",
+            )
+            body = body.replace(
+                "    validate_native_implementations({id: policies[id] for id in selected})\n",
+                "",
+            )
+            body = body.replace(
+                "any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items())",
+                "any(result.get('measurementRevision') != revision for result in results.values())",
             )
         if hashlib.sha256(body.encode()).hexdigest() != expected:
             return None

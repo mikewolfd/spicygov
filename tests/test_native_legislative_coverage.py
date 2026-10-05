@@ -173,6 +173,31 @@ class NativeCoverageTests(unittest.TestCase):
                     "generation", {"byteSize": True}
                 )
 
+    def test_end_of_build_checks_fresh_backend_identity_without_cached_schema(self):
+        policy = {
+            "_nativeProcessing": True,
+            "schema": [["printing_id", "VARCHAR"]],
+            "restorationImplementationSha256": "qualified",
+        }
+        current = {
+            "nativeSchema": policy["schema"],
+            "receiptOnly": False,
+            "implementationSha256": "qualified",
+        }
+        with patch.object(native, "bridge", return_value=current) as reader:
+            native.validate_native_implementations(
+                {"bill_versions": policy, "comments": {}}
+            )
+            reader.assert_called_once_with(["--schema", "bill_versions"])
+        for changed in (
+            {**current, "implementationSha256": "changed"},
+            {**current, "nativeSchema": [["other", "VARCHAR"]]},
+            {**current, "receiptOnly": True},
+        ):
+            with patch.object(native, "bridge", return_value=changed):
+                with self.assertRaisesRegex(ValueError, "reader changed"):
+                    native.validate_native_implementations({"bill_versions": policy})
+
 
 class WarmCoverageTests(unittest.TestCase):
     @classmethod
@@ -183,6 +208,107 @@ class WarmCoverageTests(unittest.TestCase):
         )
         cls.driver = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.driver)
+
+    def test_complete_mixed_native_and_legacy_inventory_uses_each_tables_revision(self):
+        legacy_schema = [["source", "VARCHAR"]]
+        physical_schema = [["printing_id", "VARCHAR"]]
+        dimension = {
+            "id": "source",
+            "kind": "category",
+            "fields": ["source"],
+            "label": "Source",
+            "meaning": "Recorded source.",
+        }
+        reviewed = {
+            id: {
+                "family": "bill-family",
+                "classification": "categorical",
+                "schema": legacy_schema,
+                "dimensions": [dimension],
+            }
+            for id in ("legacy", "bill_versions")
+        }
+        tables = {
+            id: {
+                "family": "bill-family",
+                "kind": "generation",
+                "columns": columns,
+                "rows": 1,
+            }
+            for id, columns in (
+                ("legacy", legacy_schema),
+                ("bill_versions", physical_schema),
+            )
+        }
+        native_policy = {
+            **reviewed["bill_versions"],
+            "schema": physical_schema,
+            "processingSchema": legacy_schema,
+            "_nativeProcessing": True,
+            "restorationImplementationSha256": "qualified",
+        }
+        revisions = {}
+
+        def scan(item):
+            id, _, policy, _ = item
+            revisions[id] = self.driver.measurement_revision(policy)
+            return id, {"measurementRevision": revisions[id], "dimensions": [dimension]}
+
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "maps.json"
+            with (
+                patch.object(
+                    sys, "argv", ["build-coverage-maps", "--output", str(output)]
+                ),
+                patch.object(self.driver.duckdb, "connect"),
+                patch.object(self.driver, "load", return_value=({}, tables)),
+                patch.object(
+                    self.driver, "definitions", side_effect=lambda: dict(reviewed)
+                ),
+                patch.object(
+                    self.driver,
+                    "variant",
+                    side_effect=lambda id, table, policy: (
+                        native_policy if id == "bill_versions" else policy
+                    ),
+                ),
+                patch.object(self.driver, "timed_scan", side_effect=scan),
+                patch.object(
+                    self.driver, "validate_native_implementations"
+                ) as final_reader,
+                patch.object(self.driver, "census_digest", return_value="exact-census"),
+                patch.object(self.driver.subprocess, "run") as checker,
+                patch.object(self.driver, "CACHE", Path(folder) / "cache"),
+            ):
+                self.driver.main()
+                self.assertTrue(output.exists())
+                self.assertNotEqual(revisions["legacy"], revisions["bill_versions"])
+                checker.assert_called_once()
+                self.assertEqual(
+                    final_reader.call_args.args[0]["bill_versions"], native_policy
+                )
+                self.assertEqual(reviewed["bill_versions"]["schema"], legacy_schema)
+                saved = json.loads(output.read_text())["tables"]
+                self.assertEqual(
+                    {id: result["measurementRevision"] for id, result in saved.items()},
+                    revisions,
+                )
+
+                previous = output.read_text()
+                with patch.object(
+                    self.driver,
+                    "timed_scan",
+                    side_effect=lambda item: (
+                        item[0],
+                        {
+                            "measurementRevision": revisions["legacy"],
+                            "dimensions": [dimension],
+                        },
+                    ),
+                ):
+                    with self.assertRaisesRegex(ValueError, "implementation changed"):
+                        self.driver.main()
+                self.assertEqual(output.read_text(), previous)
 
     def test_real_26_million_comment_checkpoint_remains_bound_without_scanning(self):
         root = Path(__file__).parents[1]
