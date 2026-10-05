@@ -394,6 +394,20 @@ class WarmCoverageTests(unittest.TestCase):
             shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
             driver.write_text(driver.read_text() + "\nCHANGED_GLOBAL = True\n")
             self.assertIsNone(legacy_revision(target, driver))
+            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
+            driver.write_text(
+                driver.read_text().replace(
+                    "def scan_table(id, table, policy):",
+                    "def scan_table(id, table, policy):\n    table['rows'] = 0",
+                )
+            )
+            self.assertIsNone(legacy_revision(target, driver))
+            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
+            driver.write_text(
+                driver.read_text()
+                + "\ndef unexpected_legacy_helper():\n    return None\n"
+            )
+            self.assertIsNone(legacy_revision(target, driver))
 
 
 if __name__ == "__main__":

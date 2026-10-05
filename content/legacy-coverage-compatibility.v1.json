@@ -25,5 +25,12 @@
     "main": "6b6fd34a9590030b1becb8f1218bcfd4d8f0d093a597e99e87022ed3aabf9562"
   },
   "topLevelSha256": "2cf48cf33f7777b821bf8211b7cc0daddef0d00f58831d7b4fd3862e2a9e37a9",
-  "nativeLegacyGuardSha256": "4eb0f4c212f5dedc67f1e3fa00363f239565f4a19480268d0f890606662e123d"
+  "nativeLegacyGuardSha256": "4eb0f4c212f5dedc67f1e3fa00363f239565f4a19480268d0f890606662e123d",
+  "reviewedRoutingFunctions": {
+    "measurement_revision": "5cffe3028b766b4071332317129ddb64a213a978ec6cf6e8b2f8ef2312a9855a",
+    "scan_table": "581e8b74a3cfc7e530563aaf0ded4147593a473d5f82bda70d31133be950dabf"
+  },
+  "nativeOnlyFunctions": [
+    "_scan_native_table"
+  ]
 }

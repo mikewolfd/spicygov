@@ -54,6 +54,16 @@ def legacy_revision(root, driver):
     ):
         return None
     nodes = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    reviewed = proof["reviewedRoutingFunctions"]
+    if set(nodes) != set(proof["functions"]) | set(reviewed) | set(
+        proof["nativeOnlyFunctions"]
+    ):
+        return None
+    for name, expected in reviewed.items():
+        node = nodes[name]
+        body = "\n".join(lines[node.lineno - 1 : node.end_lineno]) + "\n"
+        if hashlib.sha256(body.encode()).hexdigest() != expected:
+            return None
     for name, expected in proof["functions"].items():
         if name not in nodes:
             return None
