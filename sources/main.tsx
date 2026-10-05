@@ -18,8 +18,8 @@ function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
   return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
 }
 type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
-function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView, publishers, onRetry }: {
-  entry: SourceEntry; catalog: Dataset[]; coverageMaps?: CoverageMaps; timeView: TimeView; publishers?: CoveragePublishers; onRetry: () => void;
+function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView, publishers, onRetry, coverageLoading }: {
+  entry: SourceEntry; catalog: Dataset[]; coverageMaps?: CoverageMaps; timeView: TimeView; publishers?: CoveragePublishers; onRetry: () => void; coverageLoading: boolean;
   loadDetails: (table: Dataset) => Promise<ReadableDetails>;
 }) {
   const [open, setOpen] = useState(false), [details, setDetails] = useState<ReadableDetails>();
@@ -47,7 +47,7 @@ function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView, publis
       </td>
       <td data-label="Collection"><dl className="method-list">{audit?.methods.length ? collectionSteps(audit.methods).map(step => <div key={step.label}><dt>{step.label}</dt><dd>{step.values.join(' · ')}</dd></div>) : <div><dt>Collection</dt><dd>Not yet reviewed</dd></div>}</dl></td>
       <td data-label="Coverage"><p className="coverage-summary"><strong>Data held:</strong> {copy?.scope ?? 'Collection scope has not been reviewed.'}</p>
-        <p className="coverage-gap"><strong>Missing or unknown:</strong> {copy?.gaps[0] ?? 'Source completeness has not been established.'}</p><TableCoverageMap table={table} maps={coverageMaps} view={timeView} publishers={publishers} onRetry={onRetry} />
+        <p className="coverage-gap"><strong>Missing or unknown:</strong> {copy?.gaps[0] ?? 'Source completeness has not been established.'}</p>{coverageLoading ? <p className="coverage-unavailable">Loading coverage counts…</p> : <TableCoverageMap table={table} maps={coverageMaps} view={timeView} publishers={publishers} onRetry={onRetry} />}
       </td>
     </tr>
     {open && <tr className="source-detail-row"><td colSpan={4} id={`details-${table.id}`}>
@@ -174,11 +174,11 @@ function SourcesPage() {
           return <div className="source-group" key={group.id}>
             <button className="source-group-toggle" aria-expanded={isOpen} aria-controls={`${group.id}-body`} onClick={() => setGroupOverrides(previous => ({...previous, [group.id]: !isOpen}))}>
               <span><h3>{group.name}</h3><span className="publisher-caption">{group.publishers.length ? `Sources: ${group.publishers[0].name}${group.publishers.length > 1 ? ` + ${group.publishers.length - 1} other ${group.publishers.length === 2 ? 'source' : 'sources'}` : ''}` : 'Publisher not recorded'}{group.historical ? ' · includes earlier source notes' : ''}</span></span>
-              <span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{measured} with coverage maps</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+              <span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{coverageMaps ? `${measured} with coverage maps` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
             </button>
             {isOpen && <div className="source-body" id={`${group.id}-body`}>
               {group.publishers.length > 1 && <details className="publisher-list"><summary>Recorded source names</summary>{group.historical && <p>Some names come from an earlier review and may be incomplete.</p>}<ul>{group.publishers.map(source => <li key={`${source.id}-${source.name}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a> : source.name}</li>)}</ul></details>}
-              <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">Coverage</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} />)}</tbody></table></div>
+              <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">Coverage</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} coverageLoading={!coverageMaps && !timeError} />)}</tbody></table></div>
               {items.length > limit && <button className="show-more" onClick={() => setLimits(previous => ({...previous, [group.id]: limit + 8}))}>Show {Math.min(8, items.length-limit)} more tables ({items.length-limit} remaining)</button>}
             </div>}
           </div>;
