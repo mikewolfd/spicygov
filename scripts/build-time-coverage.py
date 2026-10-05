@@ -11,12 +11,11 @@ YEARS = ['edition_year', 'filing_year', 'fiscal_year', 'year_text', 'year']
 # Ambiguous names are selected only for tables whose field meaning was checked.
 OVERRIDES = {'fcc_proceedings': 'date_created', 'scorecards': 'year_text',
              'bill_vote_references': 'date', 'member_vote_terms': 'vote_day',
-             'fec_registration_statements': 'receipt_date'}
+             'fec_registration_statements': 'receipt_date', 'unified_agenda': 'agenda_edition'}
 UNMEASURED_REASONS = {
     'public_activity_events': 'Event dates can fall back to collection time; historical dates are not yet separated.',
     'committee_assignments': 'Roster snapshots are available; their dates do not show every month a member held a seat.',
     'scorecard_items': 'Item dates mix full dates and years; date precision is not yet measured.',
-    'unified_agenda': 'Spring and fall editions are available; edition coverage is not yet measured.',
     'fec_candidate_history': 'Election cycles and election years are recorded; monthly coverage is not measured.',
     'fec_committee_history': 'Election cycles are recorded; monthly coverage is not measured.',
     'usaspending_recipients': 'Recipient rows have no date field; historical coverage cannot be read from this file.',
@@ -32,7 +31,7 @@ def select_field(id, columns):
         f = OVERRIDES[id]
     else:
         f = next((f for f in DATES + YEARS if f in names), None)
-    return f, ('year' if f in YEARS else 'month')
+    return f, ('season' if id == 'unified_agenda' and f == 'agenda_edition' else 'year' if f in YEARS else 'month')
 def measure(item):
     id, table = item
     base = {'fingerprint': fingerprint(table['members']), 'rows': table['rows']}
@@ -45,6 +44,14 @@ def measure(item):
         conn.execute('SET http_timeout=30')
         urls = [m['url'] for m in table['members']]
         columns = table.get('columns') or [(r[0], r[1]) for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?)', [urls]).fetchall()]
+        if id == 'fec_collections':
+            # These outcomes describe collection observations, not source-wide completeness.
+            rows = conn.execute('SELECT record_outcome, count(*) FROM read_parquet(?) GROUP BY 1', [urls]).fetchall()
+            if sum(n for _, n in rows) != table['rows']: raise ValueError('Collection counts do not match publication')
+            outcomes = {k if k else 'unknown': n for k, n in rows}
+            if sum(outcomes.values()) != table['rows']: raise ValueError('Ambiguous collection outcome labels')
+            return id, {**base, 'status': 'unmeasured', 'reason': 'Collection results are recorded below; calendar coverage is not measured.',
+                        'collectionOutcomes': outcomes, 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat()}
         field, granularity = select_field(id, columns)
         if not field:
             return id, {**base, 'status': 'unmeasured', 'reason': UNMEASURED_REASONS.get(id, 'No record date selected for this table.')}
@@ -71,6 +78,9 @@ def measure(item):
             date = "CASE WHEN month BETWEEN 1 AND 12 THEN printf('%04d-%02d', year, month) END"
         elif field == 'year + month':
             date = "CASE WHEN month BETWEEN 1 AND 12 THEN printf('%04d-%02d', year, month) END"
+        elif granularity == 'season':
+            # The publisher's edition code identifies spring/fall, not April/October activity.
+            date = f"CASE WHEN regexp_full_match(cast({quoted} AS VARCHAR), '[0-9]{{4}}(04|10)') THEN substr({quoted}, 1, 4) || CASE WHEN right({quoted}, 2) = '04' THEN '-spring' ELSE '-fall' END END"
         elif granularity == 'year':
             date = f"CASE WHEN regexp_full_match(trim(cast({quoted} AS VARCHAR)), '[0-9]{{4}}') THEN trim(cast({quoted} AS VARCHAR)) END"
         else:

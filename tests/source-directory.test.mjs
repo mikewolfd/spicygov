@@ -222,3 +222,28 @@ test('every generated time entry parses and preserves its reconciled counts', as
   const parsed = parseTimeInventory(raw);
   assert.deepEqual(Object.keys(parsed.tables).sort(), Object.keys(raw.tables).sort());
 });
+
+
+test('edition gaps remain visible without inventing calendar months', async () => {
+  const { parseTimeInventory, periodRows, periodState } = await module('lib/time-coverage.ts');
+  const edition = {fingerprint:'edition', rows:3, status:'measured', field:'agenda_edition', granularity:'season', buckets:{'2011-spring':1,'2011-fall':1,'2012-fall':1}, undatedRows:0};
+  const raw = {format:'spicygov-time-coverage', version:1, generatedAt:'2026-10-04', tables:{agenda:edition}};
+  assert.equal(parseTimeInventory(raw).tables.agenda.granularity, 'season');
+  assert.equal(periodRows(edition, '2011'), 2);
+  assert.equal(periodRows(edition, '2012-spring'), 0);
+  assert.equal(periodState([edition], '2012-spring').state, 'empty');
+  assert.equal(periodRows(edition, '2012-10'), undefined);
+  assert.equal(periodRows({...edition, granularity:'month'}, '2012-fall'), undefined);
+  assert.deepEqual(parseTimeInventory({...raw, tables:{agenda:{...edition,buckets:{'2012-winter':3}}}}).tables, {});
+});
+
+test('collection outcomes reconcile to the file and never imply dated coverage', async () => {
+  const { parseTimeInventory, periodRows, currentTimeCoverage, timeFingerprint } = await module('lib/time-coverage.ts');
+  const dataset = {...table(), rows:3};
+  const coverage = {fingerprint:timeFingerprint(dataset), rows:3, status:'unmeasured', collectionOutcomes:{empty:1,refused:1,selection_context:1}};
+  const raw = {format:'spicygov-time-coverage', version:1, generatedAt:'2026-10-04', tables:{records:coverage}};
+  assert.deepEqual(parseTimeInventory(raw).tables.records.collectionOutcomes, coverage.collectionOutcomes);
+  assert.equal(periodRows(coverage, '2024'), undefined);
+  assert.equal(currentTimeCoverage({...dataset,rows:4}, parseTimeInventory(raw)), undefined);
+  assert.equal(parseTimeInventory({...raw,tables:{records:{...coverage,collectionOutcomes:{empty:4}}}}).tables.records.collectionOutcomes, undefined);
+});

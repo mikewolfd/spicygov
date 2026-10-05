@@ -51,6 +51,32 @@ class TimeCoverageTest(unittest.TestCase):
                 self.assertEqual(result['undatedRows'], 1)
         self.assertIsNone(coverage.select_field('unreviewed', [('date', 'VARCHAR'), ('vote_day', 'VARCHAR'), ('receipt_date', 'VARCHAR')])[0])
 
+    def test_agenda_editions_are_seasons_not_calendar_months(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / 'agenda.parquet'
+            conn = duckdb.connect()
+            conn.execute("CREATE TABLE agenda(agenda_edition VARCHAR)")
+            conn.execute("INSERT INTO agenda VALUES ('201104'),('201110'),('201210'),('201201'),('000004'),(NULL)")
+            conn.execute('COPY agenda TO ? (FORMAT PARQUET)', [str(path)])
+            conn.close()
+            _, result = coverage.measure(('unified_agenda', {'rows':6, 'members':[{'url':str(path),'rows':6,'byteSize':path.stat().st_size}]}))
+            self.assertEqual(result['granularity'], 'season')
+            self.assertEqual(result['buckets'], {'2011-spring':1, '2011-fall':1, '2012-fall':1})
+            self.assertEqual(result['undatedRows'], 3)
+
+    def test_collection_results_do_not_become_calendar_coverage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / 'collections.parquet'
+            conn = duckdb.connect()
+            conn.execute("CREATE TABLE collections(record_outcome VARCHAR)")
+            conn.execute("INSERT INTO collections VALUES ('empty'),('refused'),('inventory_only'),('selection_context'),(NULL)")
+            conn.execute('COPY collections TO ? (FORMAT PARQUET)', [str(path)])
+            conn.close()
+            _, result = coverage.measure(('fec_collections', {'rows':5, 'members':[{'url':str(path),'rows':5,'byteSize':path.stat().st_size}]}))
+            self.assertEqual(result['status'], 'unmeasured')
+            self.assertNotIn('buckets', result)
+            self.assertEqual(result['collectionOutcomes'], {'empty':1,'refused':1,'inventory_only':1,'selection_context':1,'unknown':1})
+
     def test_operational_dates_are_not_record_coverage(self):
         self.assertEqual(coverage.select_field('test', [('update_date','VARCHAR'),('dump_date','VARCHAR')])[0], None)
 if __name__ == '__main__': unittest.main()
