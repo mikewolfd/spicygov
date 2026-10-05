@@ -68,6 +68,55 @@ class CoverageGateTest(unittest.TestCase):
                     'dimensions':[{**measured,'id':'day','definitionDigest':builder.definition_digest(policy['dimensions'][0])}]}
         self.assertFalse(builder.cached(table,policy,original))
 
+    def test_scan_table_counts_typed_instants_in_utc_and_preserves_literal_source_dates(self):
+        connect = duckdb.connect
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder, 'records.parquet')
+            with connect() as writer:
+                writer.execute("CREATE TABLE records(instant TIMESTAMPTZ, source_date VARCHAR)")
+                writer.executemany("INSERT INTO records VALUES (?, ?)", [
+                    ('2026-03-01T00:15:00Z', '2026-03-01T00:15:00+14:00'),
+                    ('2026-01-01T00:15:00Z', '2026-01-01T00:15:00+14:00'),
+                    ('2026-01-31T23:45:00Z', '2026-01-31T23:45:00-12:00'),
+                    ('2025-12-31T23:45:00Z', '2025-12-31T23:45:00-12:00'),
+                    (None, None),
+                ])
+                writer.execute('COPY records TO ? (FORMAT PARQUET)', [str(path)])
+            columns = [['instant', 'TIMESTAMP WITH TIME ZONE'], ['source_date', 'VARCHAR']]
+            table = {'family': 'test', 'kind': 'generation', 'columns': columns, 'rows': 5,
+                     'publishedAt': '2026-02-01T00:00:00Z',
+                     'members': [{'url': str(path), 'rows': 5, 'byteSize': path.stat().st_size}]}
+            policy = {'family': 'test', 'classification': 'record-dates', 'schema': columns,
+                      '_scanner': 'regulation', 'dimensions': [
+                {'id': 'instants', 'kind': 'date', 'fields': ['instant'],
+                 'label': 'Event instants', 'meaning': 'Stored UTC event instants.'},
+                {'id': 'literal-dates', 'kind': 'date', 'fields': ['source_date'],
+                 'label': 'Source dates', 'meaning': 'Calendar dates stated in source text.'},
+                {'id': 'activity', 'kind': 'date', 'fields': ['instant'],
+                 'label': 'Activity instants', 'meaning': 'Stored UTC activity instants.',
+                 'special': 'literal-date-anomalies'},
+            ]}
+            expected = {'2025-12': 1, '2026-01': 2, '2026-03': 1}
+            for zone in ('UTC', 'America/Los_Angeles', 'Asia/Tokyo'):
+                def connect_in_zone(*args, **kwargs):
+                    conn = connect(*args, **kwargs)
+                    conn.execute('SET TimeZone = ?', [zone])
+                    return conn
+                with self.subTest(initial_zone=zone), \
+                     mock.patch.object(builder.duckdb, 'connect', side_effect=connect_in_zone):
+                    result = builder.scan_table('records', table, policy)
+                    dimensions = {d['id']: d for d in result['dimensions']}
+                    for id in ('instants', 'literal-dates'):
+                        self.assertEqual(dimensions[id]['buckets'], expected)
+                        self.assertEqual(dimensions[id]['placedRows'], 4)
+                        self.assertEqual(dimensions[id]['unplacedRows'], 1)
+                    activity = dimensions['activity']
+                    self.assertEqual(activity['buckets'], {'2025-12': 1, '2026-01': 2})
+                    self.assertEqual(activity['placedRows'], 3)
+                    self.assertEqual(activity['unplacedRows'], 2)
+                    self.assertEqual(activity['activityBoundary'], {'month': '2026-02', 'basis': 'publication-month'})
+                    self.assertEqual(activity['anomalies']['futureActivityBuckets'], {'2026-03': 1})
+
     def test_policy_edit_during_scanning_preserves_the_published_inventory(self):
         table, policy, measured = fixture()
         changed = copy.deepcopy(policy)

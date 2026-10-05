@@ -15,7 +15,7 @@ export function TableCoverageMap({ table, maps, view }: { table: Dataset; maps?:
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
   return <div className="coverage-map">
     {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Coverage by</span><select aria-label={`Coverage dimension for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{dim.label}</option>)}</select></label> : <p className="time-caption"><strong>{dimension.label}</strong></p>}
-    <DimensionGrid key={dimension.id} dimension={dimension} view={view} />
+    <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} />
     <p className="time-caption">{dimension.meaning}</p>
     {table.id === 'court_opinion_clusters' && (dimension.fields?.includes('date_filed') || dimension.fields?.includes('date_filed_is_approximate')) && <p className="time-caption">CourtListener’s precision flag does not verify a date’s accuracy. Unusually early source dates remain unchanged and need source review.</p>}
     {['comments', 'comments_index'].includes(table.id) && ['comment-posting-months', 'indexed-comment-posting-months'].includes(dimension.id) && Object.keys(dimension.buckets).some(key => Number(key.slice(0, 4)) < 1900) && <p className="time-caption">These months come from the saved index. Unusually early dates remain unchanged and need source review.</p>}

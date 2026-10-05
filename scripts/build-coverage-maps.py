@@ -155,6 +155,8 @@ def scan_table(id, table, policy):
     revision = measurement_revision()
     conn = duckdb.connect()
     try:
+        # Render stored instants in UTC, regardless of the host's timezone.
+        conn.execute("SET TimeZone='UTC'")
         conn.execute('LOAD httpfs')
         conn.execute("SET memory_limit='512MB'")
         conn.execute('SET threads=2')

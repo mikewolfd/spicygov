@@ -1409,7 +1409,7 @@
       "summary": "Matches publisher-scored actions to congressional bills, amendments and votes using exact identifiers.",
       "scope": "Links between the scorecard and congressional data versions used to build this table.",
       "gaps": [
-        "Unresolved or ambiguous references remain visible; similar names do not establish a match.",
+        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release’s receipts, outside these row counts. Similar names do not establish a match.",
         "Links may refer to older input data rather than the latest published tables."
       ]
     },
@@ -1438,7 +1438,7 @@
       "summary": "Matches people in scorecards to congressional records using exact identifiers and their historical service context.",
       "scope": "Links between the scorecard and congressional data versions used to build this table.",
       "gaps": [
-        "Unresolved or ambiguous identities remain visible; names alone do not establish a match.",
+        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release’s receipts, outside these row counts. Names alone do not establish a match.",
         "Links may refer to older input data rather than the latest published tables."
       ]
     },
