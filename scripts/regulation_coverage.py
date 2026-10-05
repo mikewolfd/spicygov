@@ -254,13 +254,31 @@ def stage_events(conn, table, dim):
             'notes': ['Events date source publication or upload. They do not establish legal effective dates or observations between events.']}
 
 
+def activity_boundary(table):
+    """Choose one explicit UTC month for classifying later-month activity."""
+    publication = table.get('publishedAt')
+    if publication is not None:
+        try: stamp = source_instant(publication)
+        except ValueError as error:
+            raise ValueError('Recorded publication timestamp is invalid') from error
+        return {'month': f'{stamp.year:04d}-{stamp.month:02d}', 'basis': 'publication-month'}
+    if '_coverageAsOfMonth' in table:
+        month = table['_coverageAsOfMonth']
+        if (not isinstance(month, str) or not re.fullmatch(r'[0-9]{4}-(?:0[1-9]|1[0-2])', month)
+                or month.startswith('0000-')):
+            raise ValueError('Coverage as-of month must be a valid YYYY-MM')
+    else:
+        stamp = datetime.datetime.now(datetime.timezone.utc)
+        month = f'{stamp.year:04d}-{stamp.month:02d}'
+    return {'month': month, 'basis': 'measurement-month'}
+
+
 def flag_future(result, dim, table):
     """Place distant-future activity literals in a visible anomaly bin, not history."""
     if result.get('overlapping'):
         raise ValueError('Future activity filtering requires scalar row memberships; overlapping coverage must deduplicate retained rows')
-    stamp = table.get('publishedAt')
-    try: boundary = datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00')).strftime('%Y-%m')
-    except (AttributeError, ValueError): boundary = datetime.date.today().strftime('%Y-%m')
+    result['activityBoundary'] = activity_boundary(table)
+    boundary = result['activityBoundary']['month']
     future = {key: n for key, n in result['buckets'].items() if key > boundary}
     if future:
         result['anomalies'] = {'futureActivityRows': sum(future.values()), 'futureActivityBuckets': future,

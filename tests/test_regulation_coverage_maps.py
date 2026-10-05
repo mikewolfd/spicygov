@@ -62,6 +62,45 @@ class RegulationCoverageTests(unittest.TestCase):
             flag_future(result, {'kind': 'list'}, {'publishedAt': '2026-10-03T00:00:00Z'})
         self.assertEqual(result['yearBuckets'], {'2020': 1, '4018': 1})
 
+    def test_explicit_activity_month_controls_filter_and_is_recorded(self):
+        result = {'rows': 3, 'placedRows': 3, 'unplacedRows': 0,
+                  'buckets': {'2020-01': 1, '2020-02': 1, '2020-03': 1}}
+        measured = flag_future(result, {'kind': 'date'}, {'_coverageAsOfMonth': '2020-02'})
+        self.assertEqual(measured['buckets'], {'2020-01': 1, '2020-02': 1})
+        self.assertEqual((measured['placedRows'], measured['unplacedRows']), (2, 1))
+        self.assertEqual(measured['activityBoundary'], {'month': '2020-02', 'basis': 'measurement-month'})
+        self.assertEqual(measured['anomalies']['boundaryMonth'], '2020-02')
+
+    def test_activity_boundary_is_present_without_future_anomalies(self):
+        for table, expected in [
+                ({'_coverageAsOfMonth': '2020-02'}, {'month': '2020-02', 'basis': 'measurement-month'}),
+                ({'publishedAt': '2020-01-31T23:30:00-02:00'}, {'month': '2020-02', 'basis': 'publication-month'})]:
+            with self.subTest(table=table):
+                result = {'rows': 1, 'placedRows': 1, 'unplacedRows': 0, 'buckets': {'2020-01': 1}}
+                measured = flag_future(result, {'kind': 'date'}, table)
+                self.assertEqual(measured['activityBoundary'], expected)
+                self.assertNotIn('anomalies', measured)
+                self.assertEqual(measured['buckets'], {'2020-01': 1})
+
+    def test_malformed_publication_or_explicit_month_cannot_fall_back_to_clock(self):
+        for table in [{'publishedAt': value} for value in [
+                '', '2026-10', '2026-02-30T00:00:00Z', '2026-10-03T00:00:00',
+                '2026-10-03T00:00:00+00:60', '2026-10-03T00:00:00+24:00']] + [
+                {'_coverageAsOfMonth': value} for value in ['2026-0', '2026-13', '0000-01', 202610]]:
+            with self.subTest(table=table), self.assertRaises(ValueError):
+                flag_future({'rows': 0, 'placedRows': 0, 'unplacedRows': 0, 'buckets': {}},
+                            {'kind': 'date'}, table)
+
+    def test_unpinned_activity_month_uses_utc_clock(self):
+        import datetime
+        stamp = datetime.datetime(2026, 11, 1, 0, 30, tzinfo=datetime.timezone.utc)
+        with patch('regulation_coverage.datetime.datetime') as clock:
+            clock.now.return_value = stamp
+            measured = flag_future({'rows': 0, 'placedRows': 0, 'unplacedRows': 0, 'buckets': {}},
+                                   {'kind': 'date'}, {})
+            self.assertEqual(measured['activityBoundary'], {'month': '2026-11', 'basis': 'measurement-month'})
+            clock.now.assert_called_once_with(datetime.timezone.utc)
+
     def test_native_timetable_keeps_all_milestones_precision_and_unresolved_literals(self):
         rows = [
             [{'action': 'NPRM', 'date': '01/01/2020'}, {'action': 'Comments', 'date': '01/12/2020'},

@@ -1,9 +1,11 @@
 import copy
+import concurrent.futures
 import importlib.util
 import json
 import pathlib
 import sys
 import tempfile
+import threading
 import unittest
 import duckdb
 from unittest import mock
@@ -134,6 +136,60 @@ class CoverageGateTest(unittest.TestCase):
             expected={table['tableId']:table for table in reviewed['tables']}
             self.assertEqual(set(document['tables']),set(expected))
             for id, policy in document['tables'].items(): self.assertEqual(policy['schema'],expected[id]['schema'])
+
+    def test_parallel_readers_cannot_remove_each_others_spill_files(self):
+        ready = threading.Barrier(2)
+        first_finished = threading.Event()
+        with tempfile.TemporaryDirectory() as shared:
+            directories = []
+            def reader(command, **options):
+                id = json.loads(options['input'])['id']
+                directory = pathlib.Path(options.get('cwd', shared))
+                directories.append(directory)
+                scratch = directory / '.tmp'
+                scratch.mkdir(exist_ok=True)
+                spill = scratch / 'duckdb_temp_storage_DEFAULT-0.tmp'
+                spill.write_bytes(b'active reader data')
+                ready.wait(timeout=5)
+                if id == 'first':
+                    spill.unlink()
+                    first_finished.set()
+                else:
+                    self.assertTrue(first_finished.wait(timeout=5))
+                    self.assertTrue(spill.exists(), 'The first reader removed the second reader\'s active spill file')
+                return mock.Mock(stdout=json.dumps({'reader': id}))
+            with mock.patch.object(builder, 'cached', return_value=False), \
+                 mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
+                 concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                futures = [pool.submit(builder.timed_scan, (id, {}, {}, None)) for id in ('first', 'second')]
+                self.assertEqual([future.result()[0] for future in futures], ['first', 'second'])
+            self.assertEqual(len(set(directories)), 2)
+            self.assertTrue(all(not directory.exists() for directory in directories))
+
+    def test_clock_dependent_counts_expire_even_without_future_anomalies(self):
+        table, policy, measured = fixture()
+        policy['dimensions'][0]['special'] = 'literal-date-anomalies'
+        table['_coverageAsOfMonth'] = '2026-10'
+        original = {**builder.binding(table, policy), 'status': 'measured', 'measurementRevision': 'fixed',
+                    'dimensions': [{**measured, 'id': 'day', 'definitionDigest': builder.definition_digest(policy['dimensions'][0]),
+                                    'activityBoundary': {'month': '2026-10', 'basis': 'measurement-month'}}]}
+        with mock.patch.object(builder, 'measurement_revision', return_value='fixed'):
+            self.assertTrue(builder.cached(table, policy, original))
+            self.assertFalse(builder.cached({**table, '_coverageAsOfMonth': '2026-11'}, policy, original))
+
+    def test_timed_out_reader_cleans_up_its_private_spill_directory(self):
+        directories = []
+        with tempfile.TemporaryDirectory() as shared:
+            def timeout(command, **options):
+                directory = pathlib.Path(options.get('cwd', shared))
+                directories.append(directory)
+                (directory / 'spill').write_bytes(b'unfinished reader data')
+                raise builder.subprocess.TimeoutExpired(command, options['timeout'])
+            with mock.patch.object(builder, 'cached', return_value=False), \
+                 mock.patch.object(builder.subprocess, 'run', side_effect=timeout):
+                with self.assertRaisesRegex(ValueError, 'time limit'):
+                    builder.timed_scan(('records', {}, {}, None))
+            self.assertTrue(all(not directory.exists() for directory in directories))
 
 
 if __name__ == '__main__': unittest.main()

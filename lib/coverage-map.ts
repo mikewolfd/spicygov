@@ -11,6 +11,7 @@ export type CoverageDimension = {
   snapshot?: { publishedAt?: string; artifactDigest?: string; recordUrl?: string; asOf?: string; facts?: { label: string; value: string }[] };
   matchedRows?: number; unmatchedRows?: number; notes?: string[];
   anomalies?: unknown; parent?: unknown; evidence?: unknown;
+  activityBoundary?: { month: string; basis: 'publication-month' | 'measurement-month' };
 };
 export type CoverageMap = {
   fingerprint: string; rows: number; family: string; artifactDigest?: string;
@@ -32,6 +33,14 @@ const instant = (value: unknown): value is string => {
   return year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
 };
 const digest = (value: unknown): value is string => typeof value === 'string' && /^sha256:[a-f0-9]{64}$/.test(value);
+const validActivityBoundary = (boundary: unknown, publishedAt: unknown): boolean => {
+  if (boundary === undefined) return true;
+  if (!object(boundary) || typeof boundary.month !== 'string'
+      || !/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(boundary.month) || boundary.month.startsWith('0000')) return false;
+  if (boundary.basis === 'publication-month') return instant(publishedAt)
+    && boundary.month === new Date(publishedAt).toISOString().slice(0, 7);
+  return boundary.basis === 'measurement-month' && publishedAt == null;
+};
 
 export function parseCoverageMaps(raw: unknown): CoverageMaps {
   if (!object(raw) || raw.format !== 'spicygov-coverage-maps' || raw.version !== 1 || raw.partial !== false
@@ -71,6 +80,7 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
       if (pattern && !Object.keys(dim.buckets).every(key => pattern.test(key) && key.slice(0, 4) !== '0000')) throw new Error('Invalid coverage period: ' + id);
       if (dim.yearBuckets !== undefined && (!object(dim.yearBuckets) || !Object.entries(dim.yearBuckets).every(([year, n]) => /^[0-9]{4}$/.test(year) && year !== '0000' && integer(n) && n > 0 && n <= value.rows))) throw new Error('Invalid annual coverage counts: ' + id);
       if (dim.notes !== undefined && (!Array.isArray(dim.notes) || !dim.notes.every((note: unknown) => typeof note === 'string'))) throw new Error('Invalid coverage notes: ' + id);
+      if (!validActivityBoundary(dim.activityBoundary, value.publishedAt)) throw new Error('Invalid activity boundary: ' + id);
       dimensions.push(dim as CoverageDimension);
     }
     tables[id] = { ...value, dimensions } as CoverageMap;
@@ -85,6 +95,8 @@ export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): Coverag
     && map.inputsFingerprint === JSON.stringify([...(table.coverageInputs ?? [])].sort((a, b) => a.id.localeCompare(b.id)).map(i => [i.id, i.url, i.rows, i.byteSize, i.sha256, i.etag]))
     && (map.artifactDigest ?? undefined) === table.artifactDigest
     && (map.publicationSha256 ?? undefined) === table.publication?.sha256
+    && !map.dimensions.some(dim => !validActivityBoundary(dim.activityBoundary, map.publishedAt)
+      || (dim.activityBoundary?.basis === 'measurement-month' && dim.activityBoundary.month !== new Date().toISOString().slice(0, 7)))
     && (!table.columns.length || JSON.stringify(map.schema) === JSON.stringify(table.columns.map(c => [c.name, c.type]))) ? map : undefined;
 }
 

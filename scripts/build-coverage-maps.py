@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 import duckdb
 
@@ -82,6 +83,13 @@ def validate_counts(dimension, rows):
     if pattern and any(not re.fullmatch(pattern, key) or key[:4] == '0000' for key in buckets):
         raise ValueError('Coverage has an invalid period key')
     if grain == 'snapshot' and buckets: raise ValueError('Snapshot cannot claim historical buckets')
+    if 'activityBoundary' in dimension:
+        boundary = dimension['activityBoundary']
+        if (not isinstance(boundary, dict) or boundary.get('basis') not in ('publication-month', 'measurement-month')
+                or not isinstance(boundary.get('month'), str)
+                or not re.fullmatch(r'[0-9]{4}-(0[1-9]|1[0-2])', boundary['month'])
+                or boundary['month'].startswith('0000')):
+            raise ValueError('Invalid activity boundary')
     if 'snapshot' in dimension:
         snapshot = dimension['snapshot']
         if not isinstance(snapshot, dict): raise ValueError('Invalid snapshot facts')
@@ -203,6 +211,9 @@ def cached(table, policy, old):
         for dim, measured in zip(policy['dimensions'], dims):
             if measured.get('id') != dim['id'] or measured.get('definitionDigest') != definition_digest(dim): return False
             validate_counts(measured, table['rows'])
+            if dim.get('special') == 'literal-date-anomalies':
+                from regulation_coverage import activity_boundary
+                if measured.get('activityBoundary') != activity_boundary(table): return False
         if table.get('coverageInputs'):
             for entry in table['coverageInputs']:
                 header_matches(entry['url'], entry['etag'], entry['byteSize'])
@@ -220,9 +231,12 @@ def timed_scan(item):
     # table budget; keep the larger allowance limited to this measured case.
     timeout_seconds = 3600 if id in ('comments', 'fec_receipts') else 900
     try:
-        process = subprocess.run([sys.executable, __file__, '--scan'],
-            input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
-            capture_output=True, timeout=timeout_seconds, check=True)
+        # DuckDB's default spill directory is relative to the working directory.
+        # Keep concurrent readers separate and clean up even after a timeout.
+        with tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
+            process = subprocess.run([sys.executable, __file__, '--scan'],
+                input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
+                capture_output=True, timeout=timeout_seconds, check=True, cwd=workdir)
         return id, json.loads(process.stdout.splitlines()[-1])
     except subprocess.CalledProcessError as error:
         raise ValueError(id + ': ' + error.stderr[-1500:]) from error
@@ -254,7 +268,11 @@ def main():
             try: previous[id] = json.loads(checkpoint.read_text())
             except (OSError, ValueError): pass
     revision = measurement_revision()
-    selected = {id: table for id, table in tables.items() if not args.only or id in args.only}
+    # A build has one UTC reference month; it is measurement context, not a
+    # substitute publication date or part of the source census.
+    as_of_month = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m')
+    selected = {id: {**table, '_coverageAsOfMonth': as_of_month}
+                for id, table in tables.items() if not args.only or id in args.only}
     if args.only and set(args.only) != set(selected): raise ValueError('Requested table is not currently published')
     results, failures = {}, []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:

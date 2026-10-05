@@ -20,6 +20,37 @@ test('coverage maps bind exact publication, schema and family, including carried
   for (const changed of [{...table,artifactDigest:'sha256:'+'b'.repeat(64)},{...table,rows:4},{...table,family:'other'},{...table,columns:[{name:'date',type:'VARCHAR'}]}]) assert.equal(currentCoverageMap(changed,maps),undefined);
 });
 
+test('measurement-month coverage expires at a UTC rollover even without anomalies', t => {
+  t.mock.timers.enable({apis:['Date'],now:new Date('2026-10-31T23:59:59Z').getTime()});
+  const raw=document();
+  raw.tables.records.dimensions[0].activityBoundary={month:'2026-10',basis:'measurement-month'};
+  const maps=parseCoverageMaps(raw);
+  assert.ok(currentCoverageMap(table,maps));
+  t.mock.timers.setTime(new Date('2026-11-01T00:00:00Z').getTime());
+  assert.equal(currentCoverageMap(table,maps),undefined);
+  raw.tables.records.publishedAt='2026-09-30T23:30:00-02:00';
+  raw.tables.records.dimensions[0].activityBoundary.basis='publication-month';
+  assert.ok(currentCoverageMap({...table,published:raw.tables.records.publishedAt},parseCoverageMaps(raw)));
+});
+
+test('activity month basis must match the bound publication timestamp', () => {
+  for (const [publishedAt,boundary] of [
+    [null,{month:'2026-10',basis:'publication-month'}],
+    ['2026-09-30T23:30:00-02:00',{month:'2026-09',basis:'publication-month'}],
+    ['2026-10-05T00:00:00Z',{month:'2026-10',basis:'measurement-month'}],
+    ['2026-02-30T00:00:00Z',{month:'2026-03',basis:'publication-month'}],
+    ['2026-10-05',{month:'2026-10',basis:'publication-month'}],
+  ]) {
+    const raw=document();raw.tables.records.publishedAt=publishedAt;
+    raw.tables.records.dimensions[0].activityBoundary=boundary;
+    assert.throws(()=>parseCoverageMaps(raw),/activity boundary/);
+    const maps=parseCoverageMaps(document());
+    maps.tables.records.publishedAt=publishedAt;
+    maps.tables.records.dimensions[0].activityBoundary=boundary;
+    assert.equal(currentCoverageMap({...table,published:publishedAt},maps),undefined);
+  }
+});
+
 test('text summaries retain blank versus unsaved values and refuse stale or unclassified results', () => {
   const raw = document();
   raw.tables.records.dimensions = [{...dimension,id:'saved-inline-text',granularity:'category',placedRows:3,unplacedRows:0,buckets:{'["saved_nonblank_text"]':1,'["no_saved_text"]':1,'["saved_blank_text"]':1}}];
