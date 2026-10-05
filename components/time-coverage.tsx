@@ -7,7 +7,7 @@ const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 export function TimeGrid({ tables, inventory, view, compact = false }: { tables: Dataset[]; inventory?: TimeInventory; view: TimeView; compact?: boolean }) {
   const [selected, setSelected] = useState('');
   const coverages = tables.map(table => currentTimeCoverage(table, inventory));
-  const periods = Array.from({ length: 12 }, (_, i) => view.mode === 'years' ? String(view.year - 11 + i) : `${view.year}-${String(i + 1).padStart(2, '0')}`);
+  const periods = Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 12 }, (_, i) => view.mode === 'years' ? String(Math.max(1, view.year - 11) + i).padStart(4, '0') : `${String(view.year).padStart(4, '0')}-${String(i + 1).padStart(2, '0')}`);
   const dates = coverages.flatMap(c => c?.status === 'measured' ? Object.keys(c.buckets ?? {}).map(key => tables.length === 1 ? key : key.slice(0, 4)) : []).sort();
   const measured = coverages.filter(c => c?.status === 'measured').length;
   const single = tables.length === 1 ? coverages[0] : undefined;

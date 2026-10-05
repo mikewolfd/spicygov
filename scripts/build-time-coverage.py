@@ -39,7 +39,7 @@ def measure(item):
         names = {c[0] for c in columns}
         precision_checked = 'date_precision' in names or (field == 'date_filed' and 'date_filed_is_approximate' in names)
         if table.get('dateIndex'): field, granularity = 'posted_date (monthly index)', 'month'
-        base.update(field=field, granularity=granularity)
+        base.update(field=field, granularity=granularity, allYears=True)
         if precision_checked: base['precisionChecked'] = True
         old = previous.get(id, {})
         if all(old.get(k) == base.get(k) for k in base) and old.get('status') == 'measured': return id, old
@@ -72,7 +72,7 @@ def measure(item):
         if table.get('etag'): check_etag()
         total = sum(n for _, n in rows)
         if total != table['rows']: raise ValueError('Published row count does not match scanned files')
-        buckets = {k: n for k, n in rows if k is not None and '1700' <= k[:4] <= str(datetime.datetime.now(datetime.timezone.utc).year + 1)}
+        buckets = {k: n for k, n in rows if k is not None and '0001' <= k[:4] <= '9999'}
         missing = total - sum(buckets.values())
         return id, {**base, 'status': 'measured', 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'buckets': dict(sorted(buckets.items())), 'undatedRows': missing}
     except Exception as e:
@@ -88,7 +88,7 @@ def timed_measure(item):
         if table.get('dateIndex'): field, granularity = 'posted_date (monthly index)', 'month'
         old = previous.get(id, {})
         precision_checked = any(c[0] == 'date_precision' for c in columns) or (field == 'date_filed' and any(c[0] == 'date_filed_is_approximate' for c in columns))
-        if old.get('status') == 'measured' and old.get('fingerprint') == fingerprint(table['members']) and old.get('rows') == table['rows'] and old.get('publicationSha256') == table.get('checksum') and old.get('field') == field and old.get('granularity') == granularity and (not precision_checked or old.get('precisionChecked')):
+        if old.get('status') == 'measured' and old.get('fingerprint') == fingerprint(table['members']) and old.get('rows') == table['rows'] and old.get('publicationSha256') == table.get('checksum') and old.get('field') == field and old.get('granularity') == granularity and (not precision_checked or old.get('precisionChecked')) and (old.get('allYears') or old.get('undatedRows') == 0):
             return id, old
     try:
         child = subprocess.run([sys.executable, __file__, '--measure'], input=json.dumps({'item': item, 'previous': previous.get(id, {})}), text=True, capture_output=True, timeout=120, check=True)
