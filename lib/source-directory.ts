@@ -48,7 +48,7 @@ export function parseSourceReview(raw: unknown): SourceReview {
 }
 function extraTable(id: string, family: string, rows: number, bytes: number, url: string): Dataset {
   return { id, family, label: pretty(id), rows, bytes, columns: [], members: [{ url, rows, byteSize: bytes }],
-    group: groupFor(id), summary: '', coverage: '', kind: 'published', metadataState: 'missing', sources: [], inputs: [], modelGenerated: false, connectionNotes: [] };
+    group: groupFor(id), summary: '', coverage: '', kind: 'published', recordsAvailable: false, metadataState: 'missing', sources: [], inputs: [], modelGenerated: false, connectionNotes: [] };
 }
 export function parseRulemaking(pointer: unknown, manifest: unknown): Dataset[] {
   if (!object(pointer) || pointer.format_version !== 2 || pointer.dataset !== 'rulemaking' || !/^snapshot_[a-zA-Z0-9]+$/.test(pointer.snapshot_id)) throw new Error('Rulemaking pointer has an unsupported format.');
@@ -71,6 +71,7 @@ export function parseComments(raw: unknown): Dataset[] {
     return [{ id: key.replace(/\.parquet$/, ''), url: dataUrl(key)!, rows: file.rows, byteSize: file.bytes, sha256: file.sha256, etag: file.etag }];
   }).sort((a, b) => a.id.localeCompare(b.id));
   return coverageInputs.map(file => ({ ...extraTable(file.id, 'comments', file.rows, file.byteSize, file.url), coverageInputs,
+    members: [{url: file.url, rows: file.rows, byteSize: file.byteSize, etag: file.etag}],
     publication: { kind: 'comments' as const, recordUrl: `${DATA_BASE}/comments-publication.json`, sha256: file.sha256, etag: file.etag } }));
 }
 export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tables: Dataset[]; warnings: string[] }> {
@@ -88,7 +89,7 @@ export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tab
 }
 export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: SourceReview): SourceEntry[] {
   // A table that migrates into the main index must not be counted twice.
-  const current = new Map(tables.map(table => [table.id, { table, explorer: true }]));
+  const current = new Map(tables.map(table => [table.id, { table, explorer: table.recordsAvailable !== false }]));
   for (const table of extra) if (!current.has(table.id)) current.set(table.id, { table, explorer: false });
   return [...current.values()].map(({ table, explorer }) => {
     const candidate = review?.tables[table.id];

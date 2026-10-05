@@ -10,7 +10,7 @@ export function TableProvenance({ table, catalog, compact = false }: { table: Da
     {!compact && table.transformation && <p>{table.transformation}</p>}
     {table.inputs.length > 0 && <p className="table-input-links"><strong>{compact ? 'Uses these tables' : 'Inputs'}</strong>{table.inputs.map(id => {
       const input = catalog.find(candidate => candidate.id === id);
-      const separate = input?.publication && input.publication.kind !== 'generation';
+      const separate = input?.recordsAvailable === false;
       return input ? <a key={id} href={separate ? input.members[0]?.url : `/?table=${encodeURIComponent(id)}&view=about`} target={separate ? '_blank' : undefined} rel={separate ? 'noreferrer' : undefined}>{input.label}{separate ? ' (Parquet) ↗' : ''}</a> : <span key={id}>{pretty(id)} <small>(not in this catalog)</small></span>;
     })}</p>}
   </div>;

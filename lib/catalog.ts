@@ -1,11 +1,12 @@
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
 import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
+import { bindExtraTables, extraMetadataMatches } from './separate-publications';
 export { publicationDate, tableMetadataMessage, metadataMessage } from "./metadata";
 export type { Join, MetadataStatus } from "./metadata";
 export { DATA_BASE } from './publication-evidence';
 export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string };
-export type Member = { url: string; rows: number; byteSize: number; sha256?: string };
+export type Member = { url: string; rows: number; byteSize: number; sha256?: string; etag?: string };
 export type CoverageInput = { id: string; url: string; rows: number; byteSize: number; sha256: string; etag: string };
 export type Dataset = {
   id: string;
@@ -22,6 +23,8 @@ export type Dataset = {
   published?: string;
   artifactDigest?: string;
   publication?: PublicationEvidence;
+  publicationIdentity?: string;
+  recordsAvailable?: boolean;
   metadataState: TableMetadataState;
   sources: Source[];
   inputs: string[];
@@ -121,7 +124,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
     }
   return tables.sort((a, b) => a.label.localeCompare(b.label));
 }
-export type Collection = { tables: Dataset[]; joins: Join[]; metadata: MetadataStatus };
+export type Collection = { tables: Dataset[]; joins: Join[]; metadata: MetadataStatus; warnings?: string[]; publicationsPending?: boolean };
 export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collection {
   const status: MetadataStatus = { ...loadingMetadata, state: "current", generatedAt: bundle.generatedAt };
   const enriched = tables.map((table): Dataset => {
@@ -131,11 +134,12 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
       status.missingTables++;
       return { ...table, metadataState: "missing" };
     }
-    if (metadata.family !== table.family || JSON.stringify(metadata.publicationSchema) !== JSON.stringify(table.columns.map(c => [c.name, c.type]))) {
+    const separate = table.publication?.kind === 'rulemaking' || table.publication?.kind === 'comments';
+    if (metadata.family !== table.family || JSON.stringify(metadata.publicationSchema) !== JSON.stringify(table.columns.map(c => [c.name, c.type])) || separate && !extraMetadataMatches(table, bundle)) {
       status.staleTables++;
-      return { ...table, metadataState: "incompatible" };
+      return { ...table, ...(separate ? {recordsAvailable: false, columns: []} : {}), metadataState: "incompatible" };
     }
-    const older = !table.artifactDigest || bundle.publication.families[table.family] !== table.artifactDigest;
+    const older = separate ? false : !table.artifactDigest || bundle.publication.families[table.family] !== table.artifactDigest;
     if (older) status.staleTables++;
     const undocumented = metadata.metadataStatus === "unknown" || metadata.sourceStatus === "unknown";
     if (undocumented) status.undocumentedTables++;
@@ -187,15 +191,17 @@ export async function loadCollection(signal?: AbortSignal, onCatalog?: (collecti
     if (!response.ok) throw new Error(`Metadata could not be reached (${response.status}).`);
     return parseMetadata(await response.json());
   }).catch(() => null);
+  const separate = import('./source-directory').then(({loadOtherPublications}) => loadOtherPublications(signal)).catch(() => ({tables: [] as Dataset[], warnings: ['Separately published files could not be checked. Reload the catalog to try again.']}));
   const tables = await loadCatalog(signal);
   if (signal?.aborted) throw signal.reason;
-  onCatalog?.({ tables, joins: [], metadata: loadingMetadata });
-  const bundle = await metadata;
+  onCatalog?.({ tables, joins: [], metadata: loadingMetadata, publicationsPending: true });
+  const [bundle, others] = await Promise.all([metadata, separate]);
   if (signal?.aborted) throw signal.reason;
-  return bundle ? applyMetadata(tables, bundle) : {
-    tables: tables.map(table => ({ ...table, metadataState: "unavailable" })), joins: [],
-    metadata: { ...loadingMetadata, state: "unavailable" },
-  };
+  const extra = await bindExtraTables(others.tables.filter(table => !tables.some(main => main.id === table.id)), bundle);
+  if (signal?.aborted) throw signal.reason;
+  const combined = [...tables, ...extra];
+  const collection = bundle ? applyMetadata(combined, bundle) : {tables: combined.map(table => ({...table, metadataState: 'unavailable' as const})), joins: [], metadata: {...loadingMetadata, state: 'unavailable' as const}};
+  return {...collection, warnings: others.warnings, publicationsPending: false};
 }
 export function display(value: unknown): string {
   if (value == null) return "—";

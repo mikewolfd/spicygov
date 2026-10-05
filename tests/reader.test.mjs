@@ -17,17 +17,21 @@ const files = [0, 1].map((n) =>
   readFileSync(new URL(`./fixtures/part${n}.parquet`, import.meta.url)),
 );
 const server = createServer((req, res) => {
-  const file = files[Number(req.url.slice(1))];
+  const url = new URL(req.url, 'http://127.0.0.1'), index = Number(url.pathname.slice(1)), mode = url.searchParams.get('mode');
+  const file = files[index];
   if (!file) {
     res.writeHead(404).end();
     return;
   }
+  const etag = `"fixture-${index}"`;
+  if (req.headers['if-match'] && req.headers['if-match'] !== etag) {res.writeHead(412).end();return;}
+  res.setHeader('ETag', mode === 'wrong-etag' ? '"changed"' : etag);
   const match = /bytes=(\d+)-(\d+)/.exec(req.headers.range ?? "");
-  if (match) {
+  if (match && mode !== 'whole') {
     const start = Number(match[1]),
       end = Number(match[2]);
     res.writeHead(206, {
-      "Content-Range": `bytes ${start}-${end}/${file.length}`,
+      "Content-Range": `bytes ${mode === 'wrong-offset' ? start + 1 : start}-${end}/${mode === 'wrong-size' ? file.length + 1 : file.length}`,
       "Content-Length": end - start + 1,
     });
     res.end(file.subarray(start, end + 1));
@@ -52,6 +56,17 @@ const table = {
   })),
 };
 try {
+  await test('mutable published files require the matching ETag and exact bounded byte range', async () => {
+    const guarded={...table,members:table.members.map((member,index)=>({...member,etag:`"fixture-${index}"`}))};
+    const result=await readPage({table:guarded,columns:['id'],filters:[],cursor:0,limit:1});assert.equal(result.rows[0].id,'0');
+    for(const mode of ['wrong-etag','wrong-size','wrong-offset','whole']) {
+      const changed={...guarded,members:guarded.members.map(member=>({...member,url:member.url+`?mode=${mode}`}))};
+      await assert.rejects(readPage({table:changed,columns:['id'],filters:[],cursor:0,limit:1}),/identity could not be checked/);
+    }
+    const replaced={...guarded,members:guarded.members.map(member=>({...member,etag:'"previous"'}))};
+    await assert.rejects(readPage({table:replaced,columns:['id'],filters:[],cursor:0,limit:1}),/identity could not be checked/);
+    await assert.rejects(readPage({table:{...guarded,recordsAvailable:false},columns:['id'],filters:[],cursor:0,limit:1}),/physical fields match/);
+  });
   await test("paging crosses file boundaries without duplicates or skipped rows", async () => {
     let cursor = 0;
     const ids = [];
