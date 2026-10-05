@@ -5,6 +5,14 @@ on:
   schedule:
     - cron: "23 6 * * *"
   workflow_dispatch:
+    inputs:
+      runner:
+        description: GitHub-hosted runner for build and deployment
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
 permissions:
   contents: read
 concurrency:
@@ -13,7 +21,7 @@ concurrency:
 jobs:
   build:
     timeout-minutes: 90
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     env:
       SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
       SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
@@ -83,7 +91,7 @@ jobs:
           path: dist
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     permissions:
       pages: write
       id-token: write
