@@ -88,7 +88,7 @@ def timed_measure(item):
         if table.get('dateIndex'): field, granularity = 'posted_date (monthly index)', 'month'
         old = previous.get(id, {})
         precision_checked = any(c[0] == 'date_precision' for c in columns) or (field == 'date_filed' and any(c[0] == 'date_filed_is_approximate' for c in columns))
-        if old.get('status') == 'measured' and old.get('fingerprint') == fingerprint(table['members']) and old.get('rows') == table['rows'] and old.get('field') == field and old.get('granularity') == granularity and (not precision_checked or old.get('precisionChecked')):
+        if old.get('status') == 'measured' and old.get('fingerprint') == fingerprint(table['members']) and old.get('rows') == table['rows'] and old.get('publicationSha256') == table.get('checksum') and old.get('field') == field and old.get('granularity') == granularity and (not precision_checked or old.get('precisionChecked')):
             return id, old
     try:
         child = subprocess.run([sys.executable, __file__, '--measure'], input=json.dumps({'item': item, 'previous': previous.get(id, {})}), text=True, capture_output=True, timeout=120, check=True)
