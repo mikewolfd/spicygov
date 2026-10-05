@@ -37,6 +37,20 @@ class TimeCoverageTest(unittest.TestCase):
             self.assertEqual(coverage.timed_measure(('comments',table))[1]['publicationSha256'], 'new')
             scan.assert_called_once()
         coverage.previous = {}
+    def test_reviewed_date_fields_count_months_without_using_capture_dates(self):
+        for table_id, field in [('bill_vote_references', 'date'), ('member_vote_terms', 'vote_day'), ('fec_registration_statements', 'receipt_date')]:
+            with self.subTest(table=table_id), tempfile.TemporaryDirectory() as folder:
+                path = pathlib.Path(folder) / 'records.parquet'
+                conn = duckdb.connect()
+                conn.execute(f'CREATE TABLE records("{field}" VARCHAR, observed_at VARCHAR)')
+                conn.execute("INSERT INTO records VALUES ('2024-02-03', '2026-10-04'), (NULL, '2026-10-04')")
+                conn.execute('COPY records TO ? (FORMAT PARQUET)', [str(path)])
+                conn.close()
+                _, result = coverage.measure((table_id, {'rows': 2, 'members': [{'url': str(path), 'rows': 2, 'byteSize': path.stat().st_size}]}))
+                self.assertEqual(result['buckets'], {'2024-02': 1})
+                self.assertEqual(result['undatedRows'], 1)
+        self.assertIsNone(coverage.select_field('unreviewed', [('date', 'VARCHAR'), ('vote_day', 'VARCHAR'), ('receipt_date', 'VARCHAR')])[0])
+
     def test_operational_dates_are_not_record_coverage(self):
         self.assertEqual(coverage.select_field('test', [('update_date','VARCHAR'),('dump_date','VARCHAR')])[0], None)
 if __name__ == '__main__': unittest.main()

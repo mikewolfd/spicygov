@@ -8,7 +8,20 @@ OUT = ROOT / 'public/time-coverage.v1.json'
 # always published with the counts; periods are counted at their stated end only.
 DATES = ['transaction_date', 'expenditure_date', 'disbursement_date', 'action_date', 'activity_date', 'sponsorship_date', 'version_date', 'introduced_date', 'vote_date', 'publication_date', 'published_date', 'pub_date', 'date_issued', 'date_filed', 'filed_date', 'posted_date', 'released_date', 'meeting_date', 'held_date', 'received_date', 'date_received', 'issue_date', 'approved_date', 'act_date', 'proposed_date', 'transmitted_date', 'congressional_record_date', 'stated_date', 'event_date', 'document_date', 'reported_date', 'incurred_date', 'period_end', 'to_version_date', 'postmark_date', 'author_date', 'registration_date']
 YEARS = ['edition_year', 'filing_year', 'fiscal_year', 'year_text', 'year']
-OVERRIDES = {'fcc_proceedings': 'date_created', 'scorecards': 'year_text'}
+# Ambiguous names are selected only for tables whose field meaning was checked.
+OVERRIDES = {'fcc_proceedings': 'date_created', 'scorecards': 'year_text',
+             'bill_vote_references': 'date', 'member_vote_terms': 'vote_day',
+             'fec_registration_statements': 'receipt_date'}
+UNMEASURED_REASONS = {
+    'public_activity_events': 'Event dates can fall back to collection time; historical dates are not yet separated.',
+    'committee_assignments': 'Roster snapshots are available; their dates do not show every month a member held a seat.',
+    'scorecard_items': 'Item dates mix full dates and years; date precision is not yet measured.',
+    'unified_agenda': 'Spring and fall editions are available; edition coverage is not yet measured.',
+    'fec_candidate_history': 'Election cycles and election years are recorded; monthly coverage is not measured.',
+    'fec_committee_history': 'Election cycles are recorded; monthly coverage is not measured.',
+    'usaspending_recipients': 'Recipient rows have no date field; historical coverage cannot be read from this file.',
+}
+
 def fetch(path):
     return json.loads(subprocess.check_output(['curl', '-fsSL', '--max-time', '60', BASE + '/' + path]))
 def fingerprint(members):
@@ -34,7 +47,7 @@ def measure(item):
         columns = table.get('columns') or [(r[0], r[1]) for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?)', [urls]).fetchall()]
         field, granularity = select_field(id, columns)
         if not field:
-            return id, {**base, 'status': 'unmeasured', 'reason': 'No record date selected for this table.'}
+            return id, {**base, 'status': 'unmeasured', 'reason': UNMEASURED_REASONS.get(id, 'No record date selected for this table.')}
         if id in ['agency_monthly_volume', 'comments_index']: field, granularity = 'year + month', 'month'
         names = {c[0] for c in columns}
         precision_checked = 'date_precision' in names or (field == 'date_filed' and 'date_filed_is_approximate' in names)

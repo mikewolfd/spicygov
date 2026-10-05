@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { count, type Dataset } from '../lib/catalog';
 import { currentTimeCoverage, periodRows, periodState, type TimeInventory } from '../lib/time-coverage';
 export type TimeView = { year: number; mode: 'years' | 'months' };
-const dateLabels: Record<string, string> = { year_text: 'publisher year', 'year + month': 'recorded year and month', period_end: 'reporting period end', pub_date: 'publication date' };
+const dateLabels: Record<string, string> = { year_text: 'publisher year', 'year + month': 'recorded year and month', period_end: 'reporting period end', pub_date: 'publication date', date: 'vote reference date', vote_day: 'vote date', receipt_date: 'date received by FEC' };
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 export function TimeGrid({ tables, inventory, view, compact = false }: { tables: Dataset[]; inventory?: TimeInventory; view: TimeView; compact?: boolean }) {
   const [selected, setSelected] = useState('');
