@@ -155,5 +155,7 @@ if __name__ == '__main__':
         for id, data in pool.map(timed_measure, tables.items()):
             result[id] = data
             print(f'{id}: {data["status"]} {data.get("field", "")}', flush=True)
+    from collection_coverage import enrich
+    enrich(index, tables, result, previous)
     OUT.write_text(json.dumps({'format': 'spicygov-time-coverage', 'version': 1, 'generatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'tables': result}, separators=(',', ':')) + '\n')
     print(f'Measured {sum(t["status"] == "measured" for t in result.values())}/{len(result)} tables', flush=True)

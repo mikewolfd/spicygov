@@ -7,6 +7,7 @@ import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, filterE
 import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
 import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
 import { TableProvenance } from '../components/table-provenance';
+import { CollectionCoverage } from '../components/collection-coverage';
 import { TimeGrid, type TimeView } from '../components/time-coverage';
 import { parseTimeInventory, type TimeInventory } from '../lib/time-coverage';
 import '../app/globals.css';
@@ -42,7 +43,7 @@ function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
         {table.modelGenerated && <span className="empty-badge">AI-generated</span>}
       </td>
       <td><ul className="method-list">{audit?.methods.length ? audit.methods.map(method => <li key={method}>{methodLabels[method] ?? method}</li>) : <li className="muted">Not yet reviewed</li>}</ul></td>
-      <td><TimeGrid tables={[table]} inventory={timeInventory} view={timeView} /><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
+      <td><TimeGrid tables={[table]} inventory={timeInventory} view={timeView} /><CollectionCoverage table={table} inventory={timeInventory} year={timeView.year} /><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
         {copy?.gaps[0] && <p className="table-note"><strong>Watch for:</strong> {copy.gaps[0]}</p>}
       </td>
     </tr>

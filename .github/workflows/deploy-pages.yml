@@ -26,6 +26,7 @@ jobs:
           python-version: '3.12'
       - run: pip install duckdb==1.4.4
       - run: python tests/test_time_coverage.py
+      - run: python tests/test_collection_coverage.py
       - name: Measure published date coverage
         run: python scripts/build-time-coverage.py
       - run: npm test

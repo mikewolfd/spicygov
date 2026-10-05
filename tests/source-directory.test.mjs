@@ -221,6 +221,7 @@ test('every generated time entry parses and preserves its reconciled counts', as
   const raw = JSON.parse(await readFile('public/time-coverage.v1.json', 'utf8'));
   const parsed = parseTimeInventory(raw);
   assert.deepEqual(Object.keys(parsed.tables).sort(), Object.keys(raw.tables).sort());
+  for (const [id, entry] of Object.entries(raw.tables)) if (entry.collectionEvidence) assert.deepEqual(parsed.tables[id].collectionEvidence, entry.collectionEvidence);
 });
 
 
@@ -246,4 +247,22 @@ test('collection outcomes reconcile to the file and never imply dated coverage',
   assert.equal(periodRows(coverage, '2024'), undefined);
   assert.equal(currentTimeCoverage({...dataset,rows:4}, parseTimeInventory(raw)), undefined);
   assert.equal(parseTimeInventory({...raw,tables:{records:{...coverage,collectionOutcomes:{empty:4}}}}).tables.records.collectionOutcomes, undefined);
+});
+
+
+test('collection links refuse a different release even when table bytes match', async () => {
+  const {parseCollectionEvidence, currentCollectionEvidence} = await module('lib/collection-coverage.ts');
+  const publication = `${base}/generations/fec-query/${'a'.repeat(64)}/artifact.json`;
+  const raw = {policy:1, publication, status:'matched', input:{url:`${base}/generations/fec-observations/${'b'.repeat(64)}/fec_collections.parquet`,generation:newer,sha256:sha,rows:2,owner:publication},matchedRows:2,unmatchedRows:1,collections:1,unmatchedCollections:1,outcomes:{'no-record-rejections':1},cycleRows:{'2026':2},unscopedRows:1,sources:{fec_receipts:{rows:2,collections:1}}};
+  const parsed = parseCollectionEvidence(raw,3);
+  assert.ok(parsed);
+  assert.equal(currentCollectionEvidence({...table(),publication:{recordUrl:publication}},parsed),parsed);
+  assert.equal(currentCollectionEvidence({...table(),publication:{recordUrl:publication.replace('a'.repeat(64),'c'.repeat(64))}},parsed),undefined);
+  assert.equal(parseCollectionEvidence({...raw,matchedRows:3},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,cycleRows:{'2026':3}},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,outcomes:{empty:2}},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,input:{...raw.input,generation:sha}},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,input:{...raw.input,url:raw.input.url.replace('/generations/', '/generations/../')}},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,queryResults:[{status:'refused',reason:'missing timestamp',completeness:'not-asserted',records:2}]},3),undefined);
+  assert.equal(parseCollectionEvidence({...raw,queryResults:[{status:'refused',reason:'missing timestamp',completeness:'not-asserted',records:3}]},3).queryResults[0].status,'refused');
 });

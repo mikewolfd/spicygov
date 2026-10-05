@@ -1,6 +1,7 @@
+import { parseCollectionEvidence, type CollectionEvidence } from './collection-coverage';
 import type { Dataset } from './catalog';
 import { object } from './publication-evidence';
-export type TimeCoverage = { fingerprint: string; publicationSha256?: string; rows: number; status: 'measured' | 'unmeasured'; field?: string; granularity?: 'month' | 'year' | 'season'; buckets?: Record<string, number>; undatedRows?: number; measuredAt?: string; reason?: string; collectionOutcomes?: Record<string, number> };
+export type TimeCoverage = { fingerprint: string; publicationSha256?: string; rows: number; status: 'measured' | 'unmeasured'; field?: string; granularity?: 'month' | 'year' | 'season'; buckets?: Record<string, number>; undatedRows?: number; measuredAt?: string; reason?: string; collectionOutcomes?: Record<string, number>; collectionEvidence?: CollectionEvidence };
 export type TimeInventory = { generatedAt: string; tables: Record<string, TimeCoverage> };
 export function timeFingerprint(table: Dataset): string {
   return JSON.stringify(table.members.map(member => [member.sha256 ?? member.url, member.rows, member.byteSize]));
@@ -10,13 +11,14 @@ export function parseTimeInventory(raw: unknown): TimeInventory {
   const tables: Record<string, TimeCoverage> = {};
   for (const [id, value] of Object.entries(raw.tables)) {
     if (!object(value) || typeof value.fingerprint !== 'string' || !Number.isSafeInteger(value.rows) || value.rows < 0) continue;
+    const collectionEvidence = parseCollectionEvidence(value.collectionEvidence, value.rows);
     const outcomes = object(value.collectionOutcomes) && Object.entries(value.collectionOutcomes).every(([key, n]) => key.length > 0 && key.length <= 100 && Number.isSafeInteger(n) && Number(n) > 0) && Object.values(value.collectionOutcomes).reduce((sum: number, n) => sum + Number(n), 0) === value.rows ? value.collectionOutcomes as Record<string, number> : undefined;
-    if (value.status === 'unmeasured') { tables[id] = { fingerprint: value.fingerprint, publicationSha256: typeof value.publicationSha256 === 'string' ? value.publicationSha256 : undefined, rows: value.rows, status: 'unmeasured', collectionOutcomes: outcomes, reason: typeof value.reason === 'string' ? value.reason : undefined }; continue; }
+    if (value.status === 'unmeasured') { tables[id] = { fingerprint: value.fingerprint, publicationSha256: typeof value.publicationSha256 === 'string' ? value.publicationSha256 : undefined, rows: value.rows, status: 'unmeasured', collectionEvidence, collectionOutcomes: outcomes, reason: typeof value.reason === 'string' ? value.reason : undefined }; continue; }
     if (value.status !== 'measured' || !['month', 'year', 'season'].includes(value.granularity) || typeof value.field !== 'string' || !object(value.buckets) || !Number.isSafeInteger(value.undatedRows) || value.undatedRows < 0) continue;
     const pattern = value.granularity === 'month' ? /^\d{4}-(0[1-9]|1[0-2])$/ : value.granularity === 'season' ? /^\d{4}-(spring|fall)$/ : /^\d{4}$/;
     if (!Object.entries(value.buckets).every(([key, n]) => key.slice(0, 4) !== '0000' && pattern.test(key) && Number.isSafeInteger(n) && Number(n) > 0)) continue;
     if (Object.values(value.buckets).reduce((sum: number, n) => sum + Number(n), value.undatedRows) !== value.rows) continue;
-    tables[id] = { ...value, collectionOutcomes: outcomes } as TimeCoverage;
+    tables[id] = { ...value, collectionEvidence, collectionOutcomes: outcomes } as TimeCoverage;
   }
   return { generatedAt: raw.generatedAt, tables };
 }

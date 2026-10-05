@@ -1,3 +1,4 @@
+import { collectionOutcomeLabels } from '../lib/collection-coverage';
 import { useState } from 'react';
 import { count, type Dataset } from '../lib/catalog';
 import { currentTimeCoverage, periodRows, periodState, type TimeCoverage, type TimeInventory } from '../lib/time-coverage';
@@ -47,21 +48,13 @@ function EditionGrid({ coverage, view, compact }: { coverage: TimeCoverage; view
     {selection.startsWith(`${view.mode}:${view.year}|`) && <p className="time-selection" role="status">{selection.split('|')[1]}</p>}
   </div>;
 }
-const outcomeLabels: Record<string, [string, string]> = {
-  'no-record-rejections': ['Read without rejected records', 'Records passed the collection checks; this does not prove the source is complete.'],
-  empty: ['Checked: no records', 'The requested collection returned no records; this does not mean the source has none.'],
-  refused: ['Not accepted', 'The collection was refused by its processing checks.'],
-  unresolved: ['Unresolved', 'The collection result could not be resolved.'],
-  inventory_only: ['Inventory only', 'An inventory entry, not proof that its records were collected.'],
-  selection_context: ['Selection records', 'Records explaining which inputs were selected, not separate collection attempts.'],
-};
 function CollectionResults({ outcomes, compact }: { outcomes: Record<string, number>; compact: boolean }) {
   return <div className="collection-results">
     <p className="time-caption"><strong>Collection results</strong></p>
     <dl>{Object.entries(outcomes).sort(([a], [b]) => a.localeCompare(b)).map(([key, n]) => <div key={key}>
-      <dt title={outcomeLabels[key]?.[1]}>{outcomeLabels[key]?.[0] ?? key.replaceAll('_', ' ')}</dt><dd>{count(n)}</dd>
+      <dt title={collectionOutcomeLabels[key]?.[1]}>{collectionOutcomeLabels[key]?.[0] ?? key.replaceAll('_', ' ')}</dt><dd>{count(n)}</dd>
     </div>)}</dl>
     <p className="time-caption">Counts describe collection records, not years or complete datasets.</p>
-    {!compact && <details onClick={event => event.stopPropagation()}><summary>What these results mean</summary><ul>{Object.entries(outcomes).map(([key]) => <li key={key}><strong>{outcomeLabels[key]?.[0] ?? key}:</strong> {outcomeLabels[key]?.[1] ?? 'A source-reported outcome; its meaning has not been reviewed.'}</li>)}</ul></details>}
+    {!compact && <details onClick={event => event.stopPropagation()}><summary>What these results mean</summary><ul>{Object.entries(outcomes).map(([key]) => <li key={key}><strong>{collectionOutcomeLabels[key]?.[0] ?? key}:</strong> {collectionOutcomeLabels[key]?.[1] ?? 'A source-reported outcome; its meaning has not been reviewed.'}</li>)}</ul></details>}
   </div>;
 }
