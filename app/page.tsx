@@ -16,10 +16,15 @@ import {
   Columns3,
   Download,
   RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { useCollection } from "@/lib/use-collection";
 import { TableProvenance } from "@/components/table-provenance";
 import { useExplorerTools } from "@/lib/webmcp";
+import { initial, readLocation, makeHref, type LocationState, type View } from '@/lib/explorer-location';
+import type { RecordSort } from '@/lib/record-sort';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -54,64 +59,12 @@ import {
   type Filter,
   type Join,
 } from "@/lib/catalog";
-type View = "records" | "connections" | "about";
-type LocationState = {
-  id: string;
-  filters: Filter[];
-  cursor: number;
-  view: View;
-  from?: string;
-  trail?: number[];
-};
 const datasetSections = [
   { name: "Congress", description: "Bills, members & votes" },
   { name: "Regulation", description: "Agencies, rules & comments" },
   { name: "Elections", description: "Campaigns & political money" },
   { name: "Law & courts", description: "Laws, codes & court records" },
 ];
-const initial: LocationState = {
-  id: "congress_bills",
-  filters: [],
-  cursor: 0,
-  view: "records",
-};
-function readLocation(): LocationState {
-  const p = new URLSearchParams(window.location.search);
-  let filters: Filter[] = [];
-  try {
-    const f = JSON.parse(p.get("where") ?? "[]");
-    if (
-      Array.isArray(f) &&
-      f.every(
-        (x) => typeof x.column === "string" && typeof x.value === "string",
-      )
-    )
-      filters = f;
-  } catch {}
-  return {
-    id: p.get("table") ?? initial.id,
-    filters,
-    cursor: Math.max(0, Number(p.get("at")) || 0),
-    view: ["records", "connections", "about"].includes(p.get("view") ?? "")
-      ? (p.get("view") as View)
-      : "records",
-    from: p.get("from") ?? undefined,
-    trail: (p.get("prev") ?? "")
-      .split(",")
-      .filter(Boolean)
-      .map(Number)
-      .filter((n) => Number.isSafeInteger(n) && n >= 0),
-  };
-}
-function makeHref(state: LocationState) {
-  const p = new URLSearchParams({ table: state.id });
-  if (state.filters.length) p.set("where", JSON.stringify(state.filters));
-  if (state.cursor) p.set("at", String(state.cursor));
-  if (state.view !== "records") p.set("view", state.view);
-  if (state.from) p.set("from", state.from);
-  if (state.trail?.length) p.set("prev", state.trail.join(","));
-  return `/?${p}`;
-}
 function shortSummary(table: Dataset) {
   return (
     (table.summary.length > 160
@@ -153,7 +106,8 @@ export default function Explorer() {
   function navigate(state: LocationState) {
     if (
       state.id !== location.id ||
-      JSON.stringify(state.filters) !== JSON.stringify(location.filters)
+      JSON.stringify(state.filters) !== JSON.stringify(location.filters) ||
+      JSON.stringify(state.sort) !== JSON.stringify(location.sort)
     )
       state = { ...state, trail: [] };
     window.history.pushState({}, "", makeHref(state));
@@ -169,6 +123,13 @@ export default function Explorer() {
   }
   function choose(id: string) {
     navigate({ id, filters: [], cursor: 0, view: "records" });
+  }
+  function sortBy(column: string) {
+    const current = location.sort;
+    const sort: RecordSort | undefined = current?.column !== column
+      ? {column, direction: 'asc'}
+      : current.direction === 'asc' ? {column, direction: 'desc'} : undefined;
+    navigate({...location, sort, cursor: 0});
   }
   useEffect(() => {
     setLocation(readLocation());
@@ -196,7 +157,7 @@ export default function Explorer() {
     setBusy(true);
     setRows([]);
     setError("");
-    setProgress(location.cursor);
+    setProgress(location.sort ? 0 : location.cursor);
     setDone(false);
     const w = new Worker("/parquet-worker.js", { type: "module" });
     worker.current = w;
@@ -224,6 +185,7 @@ export default function Explorer() {
       columns: activeColumns,
       filters: location.filters,
       cursor: location.cursor,
+      sort: location.sort,
     });
     return () => {
       w.terminate();
@@ -237,6 +199,8 @@ export default function Explorer() {
     location.id,
     JSON.stringify(location.filters),
     location.cursor,
+    location.sort?.column,
+    location.sort?.direction,
     JSON.stringify(activeColumns),
     retry,
   ]);
@@ -309,6 +273,7 @@ export default function Explorer() {
       error,
       rows,
       columns: activeColumns,
+      sort: location.sort,
     },
     (id, filters) => navigate({ id, filters, cursor: 0, view: "records" }),
   );
@@ -561,6 +526,12 @@ export default function Explorer() {
                   </Popover>
                 </div>
               </div>
+              {location.sort && (
+                <div className="sort-status">
+                  <span>Sorted by <strong>{location.sort.column}</strong> · {location.sort.direction === 'asc' ? 'Ascending' : 'Descending'} · Missing values last</span>
+                  <button onClick={() => navigate({...location, sort: undefined, cursor: 0})} aria-label="Clear sort">Clear <X size={13} /></button>
+                </div>
+              )}
               {!!location.filters.length && (
                 <div className="filter-chips">
                   {location.filters.map((f) => (
@@ -598,12 +569,20 @@ export default function Explorer() {
                         <th
                           key={c}
                           scope="col"
+                          aria-sort={location.sort?.column === c ? location.sort.direction === 'asc' ? 'ascending' : 'descending' : 'none'}
                           title={
                             table?.columns.find((x) => x.name === c)
                               ?.description
                           }
                         >
-                          {c}
+                          <button
+                            className="column-sort"
+                            aria-label={location.sort?.column === c && location.sort.direction === 'desc' ? `Restore original order for ${c}` : `Sort ${c} ${location.sort?.column === c ? 'descending' : 'ascending'}`}
+                            onClick={() => sortBy(c)}
+                          >
+                            {c}
+                            {location.sort?.column === c ? location.sort.direction === 'asc' ? <ArrowUp size={13} aria-hidden="true" /> : <ArrowDown size={13} aria-hidden="true" /> : <ArrowUpDown size={13} aria-hidden="true" />}
+                          </button>
                           {connections.some((j) =>
                             joinTarget(j, location.id).local.includes(c),
                           ) && <Link2 size={12} className="column-link" />}
@@ -667,7 +646,9 @@ export default function Explorer() {
                   <div className="loading-state" role="status">
                     <span className="loader" />
                     <span>
-                      {location.filters.length
+                      {location.sort
+                        ? `Sorting ${location.filters.length ? 'matching' : 'all'} records · ${count(progress)} of ${table ? count(table.rows) : '…'} rows checked`
+                        : location.filters.length
                         ? `Finding matches · ${count(progress)} of ${table ? count(table.rows) : "…"} rows checked`
                         : "Reading Parquet…"}
                     </span>

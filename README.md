@@ -33,6 +33,8 @@ Records load as soon as the publication catalog arrives. Metadata has a separate
 
 [Hyparquet](https://github.com/hyparam/hyparquet) reads selected fields over HTTP byte ranges. The reader handles multipart tables, exact filters, compound join keys, physical row cursors, and 64-bit integers. Filters apply across the whole table. Large scans may take time and can be stopped. Missing or null join values are not fabricated. Declared relationships do not prove the underlying source data is complete or correctly linked.
 
+Click a Records column header to cycle through ascending, descending, and original order. Sorting applies across every published file and respects active filters. Numbers and dates keep their value order, text uses lexicographic order, structured values use their JSON text, and missing values stay last. The URL retains the field and direction. Each sorted page scans the sort and filter fields in a worker, keeps only its next page of candidates, and then reads their visible fields. Large tables require a full scan for each page; progress and Stop remain available. Sorted cursors identify the last record's physical position, with position breaking equal-value ties, so paging and record details retain exact row identity.
+
 Dataset/filter state is stored in the URL. The mobile drawer, coverage notes, record details, and optional WebMCP browser tools use the same explorer state.
 
 The dedicated MCP connection guide is at `/mcp/`. Vite builds a separate HTML entry so direct links work on GitHub Pages. The public connection endpoint remains `https://mcp.spicygov.ai/mcp`.

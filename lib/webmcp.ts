@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { Dataset, Filter, Row } from "./catalog";
+import type { RecordSort } from './record-sort';
 type State = {
   id: string;
   filters: Filter[];
@@ -8,6 +9,7 @@ type State = {
   error: string;
   rows: Row[];
   columns: string[];
+  sort?: RecordSort;
 };
 type Tool = {
   name: string;
@@ -55,7 +57,7 @@ export function useExplorerTools(
       {
         name: "read_explorer",
         description:
-          "Read the visible dataset, filters, loading state, first five visible records, and available datasets.",
+          "Read the visible dataset, filters, sort order, loading state, first five visible records, and available datasets.",
         inputSchema: {
           type: "object",
           properties: {},

@@ -138,6 +138,59 @@ try {
     assert.equal(p.cursor, 140);
     assert.equal(p.done, true);
   });
+  await test('text sorting covers every file, not just the visible page', async () => {
+    const sort = {column: 'id', direction: 'asc'};
+    const p = await readPage({table, columns: ['id'], filters: [], cursor: 0, sort});
+    const expected = Array.from({length: 140}, (_, i) => String(i)).sort();
+    assert.deepEqual(p.rows.map(row => row.id), expected.slice(0, 40));
+    assert.equal(p.done, false);
+    assert.deepEqual(p.positions, expected.slice(0, 40).map(Number));
+  });
+  await test('descending numeric sorting preserves adjacent 64-bit integers and record identity', async () => {
+    const p = await readPage({table, columns: ['id', 'large'], filters: [], cursor: 0, sort: {column: 'large', direction: 'desc'}});
+    assert.deepEqual(p.positions, Array.from({length: 40}, (_, i) => 139 - i));
+    assert.deepEqual(p.rows.map(row => String(row.large)), Array.from({length: 40}, (_, i) => String(9007199254740993n + BigInt(139 - i))));
+    const detail = await readPage({table, columns: ['id', 'large'], filters: [], cursor: p.positions[0], limit: 1});
+    assert.deepEqual(detail.rows, [p.rows[0]]);
+  });
+  await test('sorted pagination keeps tied and null values across files without losing filtered records', async () => {
+    const source = await readPage({table, columns: ['id', 'key', 'group'], filters: [], cursor: 0, limit: 200});
+    for (const direction of ['asc', 'desc']) {
+      const expected = source.rows.filter(row => row.group === 'a').sort((a, b) => {
+        if (a.key == null && b.key != null) return 1;
+        if (a.key != null && b.key == null) return -1;
+        const comparison = a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+        return (direction === 'asc' ? comparison : -comparison) || Number(a.id) - Number(b.id);
+      });
+      let cursor = 0, done = false;
+      const actual = [];
+      while (!done) {
+        const p = await readPage({table, columns: ['id', 'key'], filters: [{column: 'group', value: 'a'}], cursor, limit: 17, sort: {column: 'key', direction}});
+        assert.equal(p.positions.length, p.rows.length);
+        actual.push(...p.rows.map(row => row.id));
+        cursor = p.cursor;
+        done = p.done;
+        assert.ok(actual.length <= expected.length);
+      }
+      assert.deepEqual(actual, expected.map(row => row.id));
+      assert.equal(new Set(actual).size, expected.length);
+    }
+  });
+  await test('sorted scans report full progress, support hidden sort fields, and finish zero matches', async () => {
+    const progress = [];
+    const p = await readPage({table, columns: ['id'], filters: [], cursor: 0, limit: 1, sort: {column: 'large', direction: 'desc'}}, n => progress.push(n));
+    assert.equal(p.rows[0].id, '139');
+    assert.equal('large' in p.rows[0], false);
+    assert.equal(progress.at(-1), 140);
+    const empty = await readPage({table, columns: ['id'], filters: [{column: 'id', value: 'absent'}], cursor: 0, sort: {column: 'id', direction: 'asc'}});
+    assert.deepEqual(empty.rows, []);
+    assert.equal(empty.done, true);
+  });
+  await test('unknown sort fields and invalid sorted boundaries are rejected', async () => {
+    await assert.rejects(readPage({table, columns: ['id'], filters: [], cursor: 0, sort: {column: 'missing', direction: 'asc'}}), /Unknown field/);
+    await assert.rejects(readPage({table, columns: ['id'], filters: [], cursor: 141, sort: {column: 'id', direction: 'asc'}}), /Invalid sort/);
+    await assert.rejects(readPage({table, columns: ['id'], filters: [], cursor: 0, sort: {column: 'id', direction: 'sideways'}}), /Invalid sort/);
+  });
 } finally {
   server.close();
 }

@@ -375,6 +375,11 @@ h1 {
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+.column-sort {display:inline-flex;align-items:center;gap:7px;color:inherit;font:inherit;cursor:pointer;background:none;border:0;padding:0;min-height:24px;}
+.column-sort:hover,.data-table th[aria-sort="ascending"],.data-table th[aria-sort="descending"] {color:#245c3a;}
+.column-sort:focus-visible {outline:2px solid #245c3a;outline-offset:5px;border-radius:2px;}
+.sort-status {display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;font-size:12px;color:#566258;}
+.sort-status button {display:inline-flex;align-items:center;gap:5px;color:#245c3a;cursor:pointer;}
 .data-table td {
   padding: 14px 18px;
   border-bottom: 1px solid #edf0e8;

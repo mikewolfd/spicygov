@@ -1,24 +1,107 @@
 import { asyncBufferFromUrl, parquetReadObjects, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
+import { compareEntries, retainEntry, sortValue, type RecordSort, type SortEntry } from "./record-sort";
 export type ReadRequest = {
   table: Dataset;
   columns: string[];
   filters: Filter[];
   cursor: number;
   limit?: number;
+  sort?: RecordSort;
 };
+export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; done: boolean };
+
+async function remoteFile(member: Dataset['members'][number]) {
+  const remote = await asyncBufferFromUrl({ url: member.url, byteLength: member.byteSize });
+  const cache = new Map<string, ArrayBuffer>();
+  let cacheBytes = 0;
+  return {
+    byteLength: remote.byteLength,
+    async slice(start: number, end?: number) {
+      const key = `${start}:${end}`;
+      if (cache.has(key)) return cache.get(key)!;
+      const buffer = await remote.slice(start, end);
+      if (buffer.byteLength <= 16 * 1024 * 1024) {
+        while (cacheBytes + buffer.byteLength > 16 * 1024 * 1024 && cache.size) {
+          const k = cache.keys().next().value!;
+          cacheBytes -= cache.get(k)!.byteLength;
+          cache.delete(k);
+        }
+        cache.set(key, buffer);
+        cacheBytes += buffer.byteLength;
+      }
+      return buffer;
+    },
+  };
+}
+
+async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: number }, onProgress: (n: number) => void): Promise<ReadResult> {
+  const { table, columns, filters, cursor, sort, limit } = request;
+  if (cursor > table.rows || !['asc', 'desc'].includes(sort.direction)) throw new Error('Invalid sort or record position.');
+  if (limit > 1000) throw new Error('Sorted pages are limited to 1,000 records.');
+  let boundary: SortEntry | undefined;
+  if (cursor) {
+    const page = await readPage({ table, columns: [sort.column], filters: [], cursor: cursor - 1, limit: 1 });
+    if (page.positions[0] !== cursor - 1) throw new Error('The sorted page boundary is no longer available.');
+    boundary = { value: sortValue(page.rows[0][sort.column]), position: cursor - 1 };
+  }
+  const heap: SortEntry[] = [];
+  let offset = 0, remaining = 0;
+  const scanColumns = [...new Set([sort.column, ...filters.map(f => f.column)])];
+  for (const member of table.members) {
+    if (!member.rows) continue;
+    const file = await remoteFile(member);
+    for (let start = 0; start < member.rows; start += 50000) {
+      const end = Math.min(member.rows, start + 50000);
+      const rows = await parquetReadObjects({ file, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+      for (const row of rows) {
+        if (!filters.every(f => row[f.column] != null && String(row[f.column]) === f.value)) continue;
+        const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
+        if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
+        remaining++;
+        retainEntry(heap, entry, limit, sort);
+      }
+      onProgress(offset + end);
+    }
+    offset += member.rows;
+  }
+  heap.sort((a, b) => compareEntries(a, b, sort));
+  // Read full visible fields only for the selected records, preserving their identities.
+  const selected = [...heap].sort((a, b) => a.position - b.position);
+  const records = new Map<number, Row>();
+  offset = 0;
+  for (const member of table.members) {
+    const positions = selected.filter(entry => entry.position >= offset && entry.position < offset + member.rows).map(entry => entry.position - offset);
+    if (positions.length) {
+      const file = await remoteFile(member);
+      for (let i = 0; i < positions.length;) {
+        const start = positions[i];
+        let end = start + 1;
+        while (++i < positions.length && positions[i] === end) end++;
+        const rows = await parquetReadObjects({ file, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+        for (const row of rows) records.set(offset + row[rowIndex]!, row);
+      }
+    }
+    offset += member.rows;
+  }
+  if (records.size !== heap.length) throw new Error('Some sorted records could not be read. Retry this dataset.');
+  return { rows: heap.map(entry => records.get(entry.position)!), positions: heap.map(entry => entry.position), cursor: heap.length ? heap.at(-1)!.position + 1 : cursor, done: remaining <= limit };
+}
 export async function readPage(
-  { table, columns, filters, cursor, limit = 40 }: ReadRequest,
+  { table, columns, filters, cursor, limit = 40, sort }: ReadRequest,
   onProgress: (n: number) => void = () => {},
-) {
+): Promise<ReadResult> {
   if (!Number.isSafeInteger(cursor) || cursor < 0)
     throw new Error("Invalid record position.");
+  if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid page size.');
   if (
     columns.some((n) => !table.columns.some((c) => c.name === n)) ||
-    filters.some((f) => !table.columns.some((c) => c.name === f.column))
+    filters.some((f) => !table.columns.some((c) => c.name === f.column)) ||
+    (sort && !table.columns.some((c) => c.name === sort.column))
   )
     throw new Error("Unknown field in this dataset.");
+  if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort }, onProgress);
   let offset = 0,
     position = cursor;
   const results: Row[] = [],
@@ -36,33 +119,7 @@ export async function readPage(
       offset += member.rows;
       continue;
     }
-    const remote = await asyncBufferFromUrl({
-      url: member.url,
-      byteLength: member.byteSize,
-    });
-    const cache = new Map<string, ArrayBuffer>();
-    let cacheBytes = 0;
-    const file = {
-      byteLength: remote.byteLength,
-      async slice(start: number, end?: number) {
-        const key = `${start}:${end}`;
-        if (cache.has(key)) return cache.get(key)!;
-        const buffer = await remote.slice(start, end);
-        if (buffer.byteLength <= 16 * 1024 * 1024) {
-          while (
-            cacheBytes + buffer.byteLength > 16 * 1024 * 1024 &&
-            cache.size
-          ) {
-            const k = cache.keys().next().value!;
-            cacheBytes -= cache.get(k)!.byteLength;
-            cache.delete(k);
-          }
-          cache.set(key, buffer);
-          cacheBytes += buffer.byteLength;
-        }
-        return buffer;
-      },
-    };
+    const file = await remoteFile(member);
     let local = Math.max(0, position - offset);
     while (local < member.rows && results.length < limit) {
       const end = Math.min(
