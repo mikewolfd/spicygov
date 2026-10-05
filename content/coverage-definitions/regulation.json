@@ -4989,7 +4989,7 @@
           "id": "comment-posting-months",
           "kind": "date",
           "label": "Comment posting months",
-          "meaning": "Number of comments in each posting month, calculated from the matching index. These are comment counts, not index-group counts. Missing or invalid dates remain unplaced; questionable activity dates are flagged.",
+          "meaning": "Number of comments in each posting month, calculated from the matching index. These are comment counts, not index-group counts. Missing or invalid dates remain unplaced; unusually early source dates remain unchanged and need review.",
           "fields": [
             "posted_date"
           ],

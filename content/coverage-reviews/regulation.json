@@ -11302,7 +11302,7 @@
           "id": "comment-posting-months",
           "kind": "date",
           "label": "Comment posting months",
-          "meaning": "Number of comments in each posting month, calculated from the matching index. These are comment counts, not index-group counts. Missing or invalid dates remain unplaced; questionable activity dates are flagged.",
+          "meaning": "Number of comments in each posting month, calculated from the matching index. These are comment counts, not index-group counts. Missing or invalid dates remain unplaced; unusually early source dates remain unchanged and need review.",
           "fields": [
             "posted_date"
           ],
@@ -15718,6 +15718,27 @@
             "observedBytes": "422630",
             "expectedBytes": 422630,
             "etagMatches": true
+          }
+        },
+        "postingMonthCopyCorrection": {
+          "reason": "The weighted index retains source month literals and does not emit an anomaly flag. Unusually early dates therefore require source review, without asserting machine flags or verified historical accuracy.",
+          "retainedIndexLiteralBuckets": {
+            "1753-01": 1,
+            "1894-05": 1
+          },
+          "countingRulesChanged": false,
+          "actualCommentColumnAudit": "/tmp/spicygov-coverage-audit-20261005/regulation/independent-comment-posting.json",
+          "actualCommentColumnAuditStatus": "All 26,418,078 raw posted_date values independently grouped and parsed; every month and unplaced count exactly matches the weighted index. Both paired file identities and ETags matched before/after; index bytes SHA verified.",
+          "actualCommentColumnCounts": {
+            "rows": 26418078,
+            "placedRows": 26415904,
+            "unplacedRows": 2174,
+            "nullRows": 2157,
+            "zeroYearLiteralRows": 17
+          },
+          "confirmedEarlyLiterals": {
+            "1753-01-01T04:56:02Z": 1,
+            "1894-05-25T05:00:00Z": 1
           }
         }
       }

@@ -9,7 +9,7 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function TableCoverageMap({ table, maps, view }: { table: Dataset; maps?: CoverageMaps; view: TimeView }) {
   const [axis, setAxis] = useState('');
   const map = currentCoverageMap(table, maps);
-  if (!map) return <p className="time-caption">{maps?.tables[table.id] ? 'Published files changed; coverage needs recounting.' : 'Coverage map is not available.'}</p>;
+  if (!map) return <p className="time-caption">{maps?.tables[table.id] ? 'Coverage needs refreshing for the current files or time period.' : 'Coverage map is not available.'}</p>;
   const preferred = map.dimensions.find(dim => ['month', 'year', 'season'].includes(dim.granularity) && dim.placedRows > 0)
     ?? map.dimensions.find(dim => dim.granularity !== 'snapshot' && dim.placedRows > 0) ?? map.dimensions[0];
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
@@ -18,6 +18,7 @@ export function TableCoverageMap({ table, maps, view }: { table: Dataset; maps?:
     <DimensionGrid key={dimension.id} dimension={dimension} view={view} />
     <p className="time-caption">{dimension.meaning}</p>
     {table.id === 'court_opinion_clusters' && (dimension.fields?.includes('date_filed') || dimension.fields?.includes('date_filed_is_approximate')) && <p className="time-caption">CourtListener’s precision flag does not verify a date’s accuracy. Unusually early source dates remain unchanged and need source review.</p>}
+    {['comments', 'comments_index'].includes(table.id) && ['comment-posting-months', 'indexed-comment-posting-months'].includes(dimension.id) && Object.keys(dimension.buckets).some(key => Number(key.slice(0, 4)) < 1900) && <p className="time-caption">These months come from the saved index. Unusually early dates remain unchanged and need source review.</p>}
     {dimension.unplacedRows > 0 && <p className="time-caption">{count(dimension.unplacedRows)} rows are not counted in this view.</p>}
     {(dimension.partialRows ?? 0) > 0 && <p className="time-caption">{count(dimension.partialRows ?? 0)} rows also have values that could not be placed.</p>}
     {(dimension.unmatchedRows ?? 0) > 0 && <p className="time-caption">{count(dimension.unmatchedRows ?? 0)} rows could not be matched to the recorded parent.</p>}
@@ -53,9 +54,10 @@ function DimensionFacts({ dimension }: { dimension: CoverageDimension }) {
   const refusals = Array.isArray(evidence?.refusals) ? evidence.refusals.filter(object) : [];
   const anomalies = object(dimension.anomalies) ? dimension.anomalies : undefined;
   const futureRows = typeof anomalies?.futureActivityRows === 'number' ? anomalies.futureActivityRows : 0;
+  const boundaryMonth = typeof anomalies?.boundaryMonth === 'string' ? anomalies.boundaryMonth : undefined;
   return <>
     {typeof evidence?.usedCollections === 'number' && <p className="time-caption">{count(evidence.usedCollections)} matched collections.</p>}
-    {futureRows > 0 && <p className="time-caption">{count(futureRows)} source values have future activity dates and are excluded from the historical grid.</p>}
+    {futureRows > 0 && <p className="time-caption">{count(futureRows)} source dates {boundaryMonth ? `fall after ${boundaryMonth}` : 'fall in the future'} and are excluded from this view.</p>}
     {empty.length > 0 && <details className="coverage-facts"><summary>{count(empty.length)} checked-empty requests</summary><p>These exact requests returned no records. They do not prove a whole year or source is empty.</p><ul>{empty.map((request, i) => <li key={i}>{request.scope}</li>)}</ul></details>}
     {refusals.length > 0 && <details className="coverage-facts"><summary>{count(refusals.length)} refusals or unresolved selections</summary><ul>{refusals.map((item, i) => <li key={i}>{typeof item.sourceFamily === 'string' && <strong>{item.sourceFamily.replaceAll('_', ' ')}: </strong>}{typeof item.reason === 'string' ? item.reason : 'No reason recorded.'}</li>)}</ul></details>}
   </>;

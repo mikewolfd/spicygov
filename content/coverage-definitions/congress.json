@@ -6073,7 +6073,7 @@
         ],
         [
           "congress",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "chamber",
@@ -6081,11 +6081,11 @@
         ],
         [
           "session",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "roll_number",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "vote_id",
@@ -6098,58 +6098,10 @@
         [
           "amendment_id",
           "VARCHAR"
-        ],
-        [
-          "source_snapshot_id",
-          "VARCHAR"
-        ],
-        [
-          "resolution_status",
-          "VARCHAR"
-        ],
-        [
-          "resolution_rule",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "candidate_count",
-          "VARCHAR"
-        ],
-        [
-          "candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "reason",
-          "VARCHAR"
-        ],
-        [
-          "source_context_json",
-          "VARCHAR"
-        ],
-        [
-          "input_pins_json",
-          "VARCHAR"
-        ],
-        [
-          "capture_id",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_path",
-          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records. Analysis uses its original saved editions. Period labels remain as written, including multi-year, lifetime and relative periods.",
+      "note": "Counts include resolved links only. Unresolved, ambiguous and conflicting attempts remain in this release’s receipts, outside these row counts. Edition periods come from the exact source release used for analysis; lifetime and relative labels stay as written. A bill or amendment link does not establish a roll-call link.",
       "dimensions": [
         {
           "id": "congress",
@@ -6160,15 +6112,6 @@
             "congress"
           ],
           "syntax": "positive-integer"
-        },
-        {
-          "id": "reference-resolution",
-          "kind": "category",
-          "label": "Reference resolution",
-          "meaning": "Whether an item’s reference was resolved. A link to a bill does not establish a roll-call link.",
-          "fields": [
-            "resolution_status"
-          ]
         },
         {
           "id": "inherited-publisher-id",
@@ -6330,6 +6273,105 @@
           ],
           "label": "Congress, chamber and session",
           "meaning": "Congress, chamber and session recorded together. Rows missing any of these values stay unplaced."
+        },
+        {
+          "id": "inherited-publisher-item-dates",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id",
+            "item_id"
+          ],
+          "label": "Publisher item dates",
+          "meaning": "Item date labels as written, including years, prose and full dates. These labels do not all have day precision. From the exact publisher source used to resolve these links.",
+          "parent": {
+            "table": "scorecard_items",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "item_id",
+                "item_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "publisher-item-dates",
+            "kind": "category",
+            "label": "Publisher item dates",
+            "meaning": "Item date labels as written, including years, prose and full dates. These labels do not all have day precision.",
+            "fields": [
+              "item_date_text"
+            ]
+          }
+        },
+        {
+          "id": "inherited-literal-item-years",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id",
+            "item_id"
+          ],
+          "label": "Year-only item labels",
+          "meaning": "Exact four-digit source item labels retain year precision. From the exact publisher source used to resolve these links.",
+          "parent": {
+            "table": "scorecard_items",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "item_id",
+                "item_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "literal-item-years",
+            "kind": "year",
+            "fields": [
+              "item_date_text"
+            ],
+            "label": "Year-only item labels",
+            "meaning": "Exact four-digit source item labels retain year precision."
+          }
+        },
+        {
+          "id": "inherited-iso-item-dates",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id",
+            "item_id"
+          ],
+          "label": "Item dates (YYYY-MM-DD)",
+          "meaning": "Full source dates written as YYYY-MM-DD. Prose, year-only labels and anomalous dates remain separate. From the exact publisher source used to resolve these links.",
+          "parent": {
+            "table": "scorecard_items",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "item_id",
+                "item_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "iso-item-dates",
+            "kind": "date",
+            "fields": [
+              "item_date_text"
+            ],
+            "label": "Item dates (YYYY-MM-DD)",
+            "meaning": "Full source dates written as YYYY-MM-DD. Prose, year-only labels and anomalous dates remain separate."
+          }
         }
       ]
     },
@@ -6347,76 +6389,11 @@
         [
           "bioguide_id",
           "VARCHAR"
-        ],
-        [
-          "term_candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "override_version",
-          "VARCHAR"
-        ],
-        [
-          "source_snapshot_id",
-          "VARCHAR"
-        ],
-        [
-          "resolution_status",
-          "VARCHAR"
-        ],
-        [
-          "resolution_rule",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "candidate_count",
-          "VARCHAR"
-        ],
-        [
-          "candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "reason",
-          "VARCHAR"
-        ],
-        [
-          "source_context_json",
-          "VARCHAR"
-        ],
-        [
-          "input_pins_json",
-          "VARCHAR"
-        ],
-        [
-          "capture_id",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_path",
-          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records. Analysis uses its original saved editions. Period labels remain as written, including multi-year, lifetime and relative periods.",
+      "note": "Counts include resolved links only. Unresolved, ambiguous and conflicting attempts remain in this release’s receipts, outside these row counts. Edition periods come from the exact source release used for analysis; lifetime and relative labels stay as written.",
       "dimensions": [
-        {
-          "id": "member-resolution",
-          "kind": "category",
-          "label": "Member resolution",
-          "meaning": "Resolved, ambiguous and unresolved publisher member identities.",
-          "fields": [
-            "resolution_status"
-          ]
-        },
         {
           "id": "inherited-publisher-id",
           "kind": "inherited",
@@ -6555,6 +6532,72 @@
             ],
             "label": "Edition timespans",
             "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
+        },
+        {
+          "id": "inherited-member-rating-periods",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id",
+            "publisher_member_key"
+          ],
+          "label": "Member rating periods",
+          "meaning": "Source-stated period; may differ from the edition period. From the exact publisher source used to resolve these links.",
+          "parent": {
+            "table": "scorecard_members",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "publisher_member_key",
+                "publisher_member_key"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "member-rating-periods",
+            "kind": "category",
+            "label": "Member rating periods",
+            "meaning": "Source-stated period; may differ from the edition period.",
+            "fields": [
+              "period_text"
+            ]
+          }
+        },
+        {
+          "id": "inherited-literal-years-period-text",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id",
+            "publisher_member_key"
+          ],
+          "label": "Year-only source period labels",
+          "meaning": "Exact four-digit year labels. Prose, relative periods and lifetime labels stay in the separate source-label views. From the exact publisher source used to resolve these links.",
+          "parent": {
+            "table": "scorecard_members",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "publisher_member_key",
+                "publisher_member_key"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "literal-years-period-text",
+            "kind": "year",
+            "fields": [
+              "period_text"
+            ],
+            "label": "Year-only source period labels",
+            "meaning": "Exact four-digit year labels. Prose, relative periods and lifetime labels stay in the separate source-label views."
           }
         }
       ]

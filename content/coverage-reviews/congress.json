@@ -28577,7 +28577,7 @@
         ],
         [
           "congress",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "chamber",
@@ -28585,11 +28585,11 @@
         ],
         [
           "session",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "roll_number",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "vote_id",
@@ -28602,86 +28602,103 @@
         [
           "amendment_id",
           "VARCHAR"
-        ],
-        [
-          "source_snapshot_id",
-          "VARCHAR"
-        ],
-        [
-          "resolution_status",
-          "VARCHAR"
-        ],
-        [
-          "resolution_rule",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "candidate_count",
-          "VARCHAR"
-        ],
-        [
-          "candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "reason",
-          "VARCHAR"
-        ],
-        [
-          "source_context_json",
-          "VARCHAR"
-        ],
-        [
-          "input_pins_json",
-          "VARCHAR"
-        ],
-        [
-          "capture_id",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_path",
-          "VARCHAR"
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
-        "artifactDigest": "sha256:4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46",
-        "sha256": "sha256:6a061c114dd83e07a7fb45691508753240a2fff0f7521bea5dfbb100c7e71051",
-        "members": [],
-        "rows": 406,
-        "byteSize": 63285,
+        "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/artifact.json",
+        "artifactDigest": "sha256:766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81",
+        "publishedAt": "2026-10-05T14:50:54Z",
+        "sha256": "sha256:376f93e9f6f7c5fd60b03cb6c4d3940511e8eb59a2b6c342c46ec8aebf0562e9",
+        "members": [
+          {
+            "key": "scorecard_item_links.parquet",
+            "byteSize": 98481,
+            "columns": [
+              [
+                "scorecard_id",
+                "VARCHAR"
+              ],
+              [
+                "item_id",
+                "VARCHAR"
+              ],
+              [
+                "reference_id",
+                "VARCHAR"
+              ],
+              [
+                "source_reference_id",
+                "VARCHAR"
+              ],
+              [
+                "congress",
+                "INTEGER"
+              ],
+              [
+                "chamber",
+                "VARCHAR"
+              ],
+              [
+                "session",
+                "INTEGER"
+              ],
+              [
+                "roll_number",
+                "INTEGER"
+              ],
+              [
+                "vote_id",
+                "VARCHAR"
+              ],
+              [
+                "bill_id",
+                "VARCHAR"
+              ],
+              [
+                "amendment_id",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 8881,
+            "sha256": "sha256:376f93e9f6f7c5fd60b03cb6c4d3940511e8eb59a2b6c342c46ec8aebf0562e9",
+            "url": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/scorecard_item_links.parquet"
+          }
+        ],
+        "rows": 8881,
+        "byteSize": 98481,
         "memberCount": 1
       },
       "recommendedDimensions": [
         {
+          "id": "congress",
           "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
           "fields": [
             "congress"
           ],
-          "label": "Congress",
-          "meaning": "Numbered Congress represented by retained rows, not proof every publisher record was acquired.",
-          "conditions": "Accept only a complete positive integer; count blank/prose values separately.",
-          "readerPolicy": {
-            "syntax": "complete positive integer literal",
-            "coercion": "none; prose remains separate unknown/category scope"
-          }
+          "syntax": "positive-integer"
         },
         {
+          "id": "scope-congress-chamber",
           "kind": "category",
           "fields": [
-            "resolution_status"
+            "congress",
+            "chamber"
           ],
-          "label": "Reference resolution",
-          "meaning": "Resolved and unresolved item references; resolving a bill does not imply a roll call."
+          "label": "Congress and chamber",
+          "meaning": "Congress and chamber recorded together. Rows missing any of these values stay unplaced."
+        },
+        {
+          "id": "scope-congress-chamber-session",
+          "kind": "category",
+          "fields": [
+            "congress",
+            "chamber",
+            "session"
+          ],
+          "label": "Congress, chamber and session",
+          "meaning": "Congress, chamber and session recorded together. Rows missing any of these values stay unplaced."
         }
       ],
       "parentLinks": [
@@ -28692,11 +28709,10 @@
             "scorecard_id",
             "year_text",
             "congress_text",
-            "timespan_text",
-            "periods"
+            "timespan_text"
           ],
           "label": "Publisher edition scope",
-          "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period.",
+          "meaning": "Exact recorded source labels; item/member scope may differ from edition scope. Literal periods are not converted into guessed calendar spans.",
           "inheritance": {
             "parentTable": "scorecards",
             "parentFamily": "scorecards",
@@ -28708,104 +28724,262 @@
             ],
             "binding": "spec.parents exact producing generation",
             "pin": {
-              "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
-              "byteSize": 5378,
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 30304,
               "family": "scorecards",
-              "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+              "sha256": "sha256:a7be19d69671e349402814e12a70acc4c413df357e3572209b39369599705238"
             },
             "requiredChecks": [
               "unique parent keys",
               "left join row count unchanged",
               "unmatched/undated child rows separate",
               "member hashes and pin verified"
+            ]
+          }
+        },
+        {
+          "kind": "inherited",
+          "fields": [
+            "item_date_text",
+            "congress_text",
+            "chamber_text",
+            "session_text"
+          ],
+          "label": "Publisher item dates",
+          "meaning": "Exact recorded source labels; item/member scope may differ from edition scope. Literal periods are not converted into guessed calendar spans.",
+          "inheritance": {
+            "parentTable": "scorecard_items",
+            "parentFamily": "scorecards",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "item_id",
+                "item_id"
+              ]
             ],
-            "condition": null
+            "binding": "spec.parents exact producing generation",
+            "pin": {
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 1164990,
+              "family": "scorecards",
+              "sha256": "sha256:4dee64e665c9175df82d47b2be419e2aec1c8f95c9eed56b9dd8a3d4d534c771"
+            },
+            "requiredChecks": [
+              "unique parent keys",
+              "left join row count unchanged",
+              "unmatched/undated child rows separate",
+              "member hashes and pin verified"
+            ]
           }
         }
       ],
       "probe": {
-        "fullRowCount": 406,
-        "expectedRows": 406,
+        "fullRowCount": 8881,
+        "expectedRows": 8881,
         "reconciled": true,
         "columns": {
-          "congress": {
-            "distinct": 3,
-            "blankRows": 110,
-            "counts": [
-              [
-                "119",
-                169
-              ],
-              [
-                "118",
-                127
-              ],
-              [
-                null,
-                110
-              ]
-            ],
-            "min": "118",
-            "max": "119",
-            "validTimestampRows": 0,
-            "invalidTimestampRows": 296,
-            "invalidExamples": [
-              [
-                "119",
-                169
-              ],
-              [
-                "118",
-                127
-              ]
-            ]
+          "scorecard_id": {
+            "distinct": 125,
+            "blankRows": 0,
+            "nonblankRows": 8881,
+            "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.columns.scorecard_id.counts"
           },
-          "resolution_status": {
-            "distinct": 2,
+          "congress": {
+            "distinct": 14,
             "blankRows": 0,
             "counts": [
               [
-                "resolved",
-                236
+                117,
+                4199
               ],
               [
-                "unresolved",
-                170
-              ]
-            ],
-            "min": "resolved",
-            "max": "unresolved",
-            "validTimestampRows": 0,
-            "invalidTimestampRows": 406,
-            "invalidExamples": [
-              [
-                "resolved",
-                236
+                119,
+                1494
               ],
               [
-                "unresolved",
-                170
+                115,
+                839
+              ],
+              [
+                118,
+                806
+              ],
+              [
+                116,
+                712
+              ],
+              [
+                114,
+                324
+              ],
+              [
+                113,
+                158
+              ],
+              [
+                112,
+                113
+              ],
+              [
+                107,
+                107
+              ],
+              [
+                108,
+                49
+              ],
+              [
+                110,
+                37
+              ],
+              [
+                111,
+                24
+              ],
+              [
+                106,
+                17
+              ],
+              [
+                109,
+                2
               ]
             ]
+          },
+          "chamber": {
+            "distinct": 3,
+            "blankRows": 4761,
+            "counts": [
+              [
+                null,
+                4761
+              ],
+              [
+                "house",
+                2481
+              ],
+              [
+                "senate",
+                1639
+              ]
+            ]
+          },
+          "session": {
+            "distinct": 3,
+            "blankRows": 5976,
+            "counts": [
+              [
+                null,
+                5976
+              ],
+              [
+                1,
+                1764
+              ],
+              [
+                2,
+                1141
+              ]
+            ]
+          },
+          "roll_number": {
+            "distinct": 600,
+            "blankRows": 6189,
+            "nonblankRows": 2692,
+            "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.columns.roll_number.counts"
           }
         },
-        "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard_item_links.json",
-        "editionRows": [
+        "schema": [
           [
-            "afp:3933",
-            122
+            "scorecard_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ],
           [
-            "hrc:118-final",
-            127
+            "item_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ],
           [
-            "ijm:3995",
-            91
+            "reference_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ],
           [
-            "lcv:2025",
-            66
+            "source_reference_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "congress",
+            "INTEGER",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "chamber",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "session",
+            "INTEGER",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "roll_number",
+            "INTEGER",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "vote_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "bill_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
+          ],
+          [
+            "amendment_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ]
         ],
         "parentJoins": [
@@ -28813,10 +28987,10 @@
             "child": "scorecard_item_links",
             "parentTable": "scorecards",
             "parentPin": {
-              "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
-              "byteSize": 5378,
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 30304,
               "family": "scorecards",
-              "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+              "sha256": "sha256:a7be19d69671e349402814e12a70acc4c413df357e3572209b39369599705238"
             },
             "keys": [
               [
@@ -28824,32 +28998,334 @@
                 "scorecard_id"
               ]
             ],
-            "parentRows": 4,
+            "parentRows": 391,
             "duplicateParentKeys": 0,
-            "joinedRows": 406,
-            "matchedRows": 406,
+            "joinedRows": 8881,
+            "matchedRows": 8881,
             "unmatchedRows": 0,
-            "predicate": null,
             "dimensions": {
+              "publisher_id": {
+                "distinct": 42,
+                "nonblankRows": 8881,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecards.dimensions.publisher_id.counts"
+              },
+              "scorecard_id": {
+                "distinct": 125,
+                "nonblankRows": 8881,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecards.dimensions.scorecard_id.counts"
+              },
               "year_text": {
-                "distinct": 2,
-                "counts": [
-                  [
-                    null,
-                    340
-                  ],
-                  [
-                    "2025",
-                    66
-                  ]
-                ]
+                "distinct": 21,
+                "nonblankRows": 3830,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecards.dimensions.year_text.counts"
               },
               "congress_text": {
+                "distinct": 21,
+                "nonblankRows": 7279,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecards.dimensions.congress_text.counts"
+              },
+              "timespan_text": {
+                "distinct": 41,
+                "nonblankRows": 5262,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecards.dimensions.timespan_text.counts"
+              }
+            }
+          },
+          {
+            "child": "scorecard_item_links",
+            "parentTable": "scorecard_items",
+            "parentPin": {
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 1164990,
+              "family": "scorecards",
+              "sha256": "sha256:4dee64e665c9175df82d47b2be419e2aec1c8f95c9eed56b9dd8a3d4d534c771"
+            },
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "item_id",
+                "item_id"
+              ]
+            ],
+            "parentRows": 19527,
+            "duplicateParentKeys": 0,
+            "joinedRows": 8881,
+            "matchedRows": 8881,
+            "unmatchedRows": 0,
+            "dimensions": {
+              "item_date_text": {
+                "distinct": 687,
+                "nonblankRows": 2065,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecard_items.dimensions.item_date_text.counts"
+              },
+              "congress_text": {
+                "distinct": 19,
+                "nonblankRows": 8625,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecard_items.dimensions.congress_text.counts"
+              },
+              "chamber_text": {
+                "distinct": 6,
+                "nonblankRows": 4905,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecard_items.dimensions.chamber_text.counts"
+              },
+              "session_text": {
+                "distinct": 7,
+                "nonblankRows": 3181,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_item_links.parentJoins.scorecard_items.dimensions.session_text.counts"
+              }
+            }
+          }
+        ],
+        "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json",
+        "columnRangeMeaning": "Counts preserve exact native values; no acquisition completeness follows from observed source labels."
+      },
+      "evidence": [
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/subject_shapes.py",
+          "role": "native domain schema and moved receipt fields",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/etl.py",
+          "role": "write_family accepts resolved links only; other attempts produce refused receipts",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/resolution.py",
+          "role": "exact resolution and source context meaning",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/transforms/build_scorecard_analysis.py",
+          "role": "immutable source/official input selection",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/rollups/scorecard_analysis.py",
+          "role": "all recorded parents verified before analysis",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_receipts.py",
+          "role": "complete native shared reader admission used for this probe",
+          "exists": true
+        },
+        {
+          "url": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/artifact.json",
+          "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-artifact.json",
+          "role": "producing generation, native policies, receipts and exact retained parents"
+        },
+        {
+          "path": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json",
+          "role": "all subject/member/footer/SHA checks, complete receipt admission, full unique-parent joins and raw distributions"
+        }
+      ],
+      "limits": [
+        "Counts cover resolved subject links only; unresolved, ambiguous and conflicting attempts remain in the exact pinned receipts and are excluded from subject buckets.",
+        "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
+        "Only source item/member labels from declared exact recorded parents are inherited; edition, item and member periods remain separate.",
+        "Refused receipt totals describe this processing run, not all publisher data or a target-resolution completeness rate.",
+        "Resolving a bill or amendment does not establish a roll-call link; native Congress/chamber/session blanks remain unplaced."
+      ],
+      "unresolved": [],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_item_links",
+      "executableDimensions": [
+        "congress",
+        "inherited-publisher-id",
+        "inherited-scorecard-id",
+        "inherited-year-text",
+        "inherited-congress-text",
+        "inherited-timespan-text",
+        "scope-congress-chamber",
+        "scope-congress-chamber-session",
+        "inherited-publisher-item-dates",
+        "inherited-literal-item-years",
+        "inherited-iso-item-dates"
+      ],
+      "history": [
+        {
+          "tableId": "scorecard_item_links",
+          "family": "scorecard-analysis",
+          "schema": [
+            [
+              "scorecard_id",
+              "VARCHAR"
+            ],
+            [
+              "item_id",
+              "VARCHAR"
+            ],
+            [
+              "reference_id",
+              "VARCHAR"
+            ],
+            [
+              "source_reference_id",
+              "VARCHAR"
+            ],
+            [
+              "congress",
+              "VARCHAR"
+            ],
+            [
+              "chamber",
+              "VARCHAR"
+            ],
+            [
+              "session",
+              "VARCHAR"
+            ],
+            [
+              "roll_number",
+              "VARCHAR"
+            ],
+            [
+              "vote_id",
+              "VARCHAR"
+            ],
+            [
+              "bill_id",
+              "VARCHAR"
+            ],
+            [
+              "amendment_id",
+              "VARCHAR"
+            ],
+            [
+              "source_snapshot_id",
+              "VARCHAR"
+            ],
+            [
+              "resolution_status",
+              "VARCHAR"
+            ],
+            [
+              "resolution_rule",
+              "VARCHAR"
+            ],
+            [
+              "rule_version",
+              "VARCHAR"
+            ],
+            [
+              "candidate_count",
+              "VARCHAR"
+            ],
+            [
+              "candidates_json",
+              "VARCHAR"
+            ],
+            [
+              "reason",
+              "VARCHAR"
+            ],
+            [
+              "source_context_json",
+              "VARCHAR"
+            ],
+            [
+              "input_pins_json",
+              "VARCHAR"
+            ],
+            [
+              "capture_id",
+              "VARCHAR"
+            ],
+            [
+              "source_url",
+              "VARCHAR"
+            ],
+            [
+              "source_path",
+              "VARCHAR"
+            ]
+          ],
+          "publication": {
+            "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
+            "artifactDigest": "sha256:4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46",
+            "sha256": "sha256:6a061c114dd83e07a7fb45691508753240a2fff0f7521bea5dfbb100c7e71051",
+            "members": [],
+            "rows": 406,
+            "byteSize": 63285,
+            "memberCount": 1
+          },
+          "recommendedDimensions": [
+            {
+              "kind": "category",
+              "fields": [
+                "congress"
+              ],
+              "label": "Congress",
+              "meaning": "Numbered Congress represented by retained rows, not proof every publisher record was acquired.",
+              "conditions": "Accept only a complete positive integer; count blank/prose values separately.",
+              "readerPolicy": {
+                "syntax": "complete positive integer literal",
+                "coercion": "none; prose remains separate unknown/category scope"
+              }
+            },
+            {
+              "kind": "category",
+              "fields": [
+                "resolution_status"
+              ],
+              "label": "Reference resolution",
+              "meaning": "Resolved and unresolved item references; resolving a bill does not imply a roll call."
+            }
+          ],
+          "parentLinks": [
+            {
+              "kind": "inherited",
+              "fields": [
+                "publisher_id",
+                "scorecard_id",
+                "year_text",
+                "congress_text",
+                "timespan_text",
+                "periods"
+              ],
+              "label": "Publisher edition scope",
+              "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period.",
+              "inheritance": {
+                "parentTable": "scorecards",
+                "parentFamily": "scorecards",
+                "keys": [
+                  [
+                    "scorecard_id",
+                    "scorecard_id"
+                  ]
+                ],
+                "binding": "spec.parents exact producing generation",
+                "pin": {
+                  "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
+                  "byteSize": 5378,
+                  "family": "scorecards",
+                  "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+                },
+                "requiredChecks": [
+                  "unique parent keys",
+                  "left join row count unchanged",
+                  "unmatched/undated child rows separate",
+                  "member hashes and pin verified"
+                ],
+                "condition": null
+              }
+            }
+          ],
+          "probe": {
+            "fullRowCount": 406,
+            "expectedRows": 406,
+            "reconciled": true,
+            "columns": {
+              "congress": {
                 "distinct": 3,
+                "blankRows": 110,
                 "counts": [
                   [
                     "119",
-                    213
+                    169
                   ],
                   [
                     "118",
@@ -28857,64 +29333,255 @@
                   ],
                   [
                     null,
-                    66
+                    110
+                  ]
+                ],
+                "min": "118",
+                "max": "119",
+                "validTimestampRows": 0,
+                "invalidTimestampRows": 296,
+                "invalidExamples": [
+                  [
+                    "119",
+                    169
+                  ],
+                  [
+                    "118",
+                    127
                   ]
                 ]
               },
-              "timespan_text": {
-                "distinct": 1,
+              "resolution_status": {
+                "distinct": 2,
+                "blankRows": 0,
                 "counts": [
                   [
-                    null,
-                    406
+                    "resolved",
+                    236
+                  ],
+                  [
+                    "unresolved",
+                    170
+                  ]
+                ],
+                "min": "resolved",
+                "max": "unresolved",
+                "validTimestampRows": 0,
+                "invalidTimestampRows": 406,
+                "invalidExamples": [
+                  [
+                    "resolved",
+                    236
+                  ],
+                  [
+                    "unresolved",
+                    170
                   ]
                 ]
               }
+            },
+            "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard_item_links.json",
+            "editionRows": [
+              [
+                "afp:3933",
+                122
+              ],
+              [
+                "hrc:118-final",
+                127
+              ],
+              [
+                "ijm:3995",
+                91
+              ],
+              [
+                "lcv:2025",
+                66
+              ]
+            ],
+            "parentJoins": [
+              {
+                "child": "scorecard_item_links",
+                "parentTable": "scorecards",
+                "parentPin": {
+                  "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
+                  "byteSize": 5378,
+                  "family": "scorecards",
+                  "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+                },
+                "keys": [
+                  [
+                    "scorecard_id",
+                    "scorecard_id"
+                  ]
+                ],
+                "parentRows": 4,
+                "duplicateParentKeys": 0,
+                "joinedRows": 406,
+                "matchedRows": 406,
+                "unmatchedRows": 0,
+                "predicate": null,
+                "dimensions": {
+                  "year_text": {
+                    "distinct": 2,
+                    "counts": [
+                      [
+                        null,
+                        340
+                      ],
+                      [
+                        "2025",
+                        66
+                      ]
+                    ]
+                  },
+                  "congress_text": {
+                    "distinct": 3,
+                    "counts": [
+                      [
+                        "119",
+                        213
+                      ],
+                      [
+                        "118",
+                        127
+                      ],
+                      [
+                        null,
+                        66
+                      ]
+                    ]
+                  },
+                  "timespan_text": {
+                    "distinct": 1,
+                    "counts": [
+                      [
+                        null,
+                        406
+                      ]
+                    ]
+                  }
+                }
+              }
+            ],
+            "columnRangeMeaning": "min/max are literal string lexical bounds, not normalized calendar or numeric bounds. Counts and source labels are authoritative."
+          },
+          "evidence": [
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/docs/tables/scorecard_item_links.md",
+              "role": "source semantics or declared identity",
+              "exists": true
+            },
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_policies/scorecard_item_links.json",
+              "role": "source semantics or declared identity",
+              "exists": true
+            },
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/rollups/scorecard_analysis.py",
+              "role": "producer family and input boundary",
+              "exists": true
+            },
+            {
+              "url": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
+              "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard-analysis-artifact.json",
+              "role": "immutable producing generation, recorded parent pins and readSnapshot"
             }
-          }
-        ],
-        "columnRangeMeaning": "min/max are literal string lexical bounds, not normalized calendar or numeric bounds. Counts and source labels are authoritative."
-      },
-      "evidence": [
-        {
-          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/docs/tables/scorecard_item_links.md",
-          "role": "source semantics or declared identity",
-          "exists": true
-        },
-        {
-          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_policies/scorecard_item_links.json",
-          "role": "source semantics or declared identity",
-          "exists": true
-        },
-        {
-          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/rollups/scorecard_analysis.py",
-          "role": "producer family and input boundary",
-          "exists": true
-        },
-        {
-          "url": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
-          "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard-analysis-artifact.json",
-          "role": "immutable producing generation, recorded parent pins and readSnapshot"
+          ],
+          "limits": [
+            "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
+            "Analysis is pinned to an older retained scorecards parent, not current larger source release; resolved Congress is not full item coverage.",
+            "Exact historical scorecards parent has 4 edition rows; all output rows attach to those 4 unique editions."
+          ],
+          "unresolved": [],
+          "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_item_links",
+          "executableDimensions": [
+            "congress",
+            "reference-resolution",
+            "inherited-publisher-id",
+            "inherited-scorecard-id",
+            "inherited-year-text",
+            "inherited-congress-text",
+            "inherited-timespan-text",
+            "scope-congress-chamber",
+            "scope-congress-chamber-session"
+          ]
         }
       ],
-      "limits": [
-        "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
-        "Analysis is pinned to an older retained scorecards parent, not current larger source release; resolved Congress is not full item coverage.",
-        "Exact historical scorecards parent has 4 edition rows; all output rows attach to those 4 unique editions."
-      ],
-      "unresolved": [],
-      "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_item_links",
-      "executableDimensions": [
-        "congress",
-        "reference-resolution",
-        "inherited-publisher-id",
-        "inherited-scorecard-id",
-        "inherited-year-text",
-        "inherited-congress-text",
-        "inherited-timespan-text",
-        "scope-congress-chamber",
-        "scope-congress-chamber-session"
-      ]
+      "receiptScope": {
+        "generationId": "scorecard-build:04dffbcee6b04aa98bd1c190a90ee66b",
+        "rows": 249284,
+        "member": {
+          "byteSize": 48234863,
+          "mediaType": "application/vnd.apache.parquet",
+          "objectKey": "etl_receipts.parquet",
+          "recordCount": 249284,
+          "role": "table",
+          "sha256": "sha256:94f334d7029ce749a4aaeee5ced16a23d792333f40135b92ca4f58d03fde20c6"
+        },
+        "policy": {
+          "dataset": "scorecard_item_links",
+          "identity_fields": [
+            "scorecard_id",
+            "item_id",
+            "reference_id"
+          ],
+          "nullable_identity_fields": [],
+          "policy_version": "scorecards-etl-v1",
+          "receipt_fields": [
+            "source_snapshot_id",
+            "resolution_status",
+            "resolution_rule",
+            "rule_version",
+            "candidate_count",
+            "candidates_json",
+            "reason",
+            "source_context_json",
+            "input_pins_json",
+            "capture_id",
+            "source_url",
+            "source_path",
+            "conversion_inputs",
+            "raw_source"
+          ],
+          "receipt_only": false,
+          "subject_schema": "/////4gCAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAsAAAAgAgAA5AEAALABAAB4AQAAKAEAAPwAAADIAAAAkAAAAGQAAAA4AAAABAAAALj+//8AAAEFEAAAACAAAAAEAAAAAAAAAAwAAABhbWVuZG1lbnRfaWQAAAAADP7//+j+//8AAAEFEAAAABgAAAAEAAAAAAAAAAcAAABiaWxsX2lkADT+//8Q////AAABBRAAAAAYAAAABAAAAAAAAAAHAAAAdm90ZV9pZABc/v//OP///wAAAQIQAAAAHAAAAAQAAAAAAAAACwAAAHJvbGxfbnVtYmVyAHT///8AAAABIAAAAGz///8AAAECEAAAABgAAAAEAAAAAAAAAAcAAABzZXNzaW9uAKT///8AAAABIAAAAJz///8AAAEFEAAAABgAAAAEAAAAAAAAAAcAAABjaGFtYmVyAOj+///E////AAABAhAAAAAkAAAABAAAAAAAAAAIAAAAY29uZ3Jlc3MAAAAACAAMAAgABwAIAAAAAAAAASAAAAAQABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAJAAAAAQAAAAAAAAAEwAAAHNvdXJjZV9yZWZlcmVuY2VfaWQAaP///6j///8AAAAFEAAAACAAAAAEAAAAAAAAAAwAAAByZWZlcmVuY2VfaWQAAAAAmP///9j///8AAAAFEAAAABgAAAAEAAAAAAAAAAcAAABpdGVtX2lkAMD///8QABQACAAAAAcADAAAABAAEAAAAAAAAAUQAAAAJAAAAAQAAAAAAAAADAAAAHNjb3JlY2FyZF9pZAAAAAAEAAQABAAAAAAAAAA="
+        },
+        "qualification": "Complete native shared reader validation: canonical receipts, exact policy/generation/subject schemas and one-to-one natural identity/content-version/identity_json matching; refused receipts separately validated.",
+        "outcomes": [
+          [
+            "scorecard_item_links",
+            "accepted",
+            8881
+          ],
+          [
+            "scorecard_item_links",
+            "refused",
+            37764
+          ]
+        ],
+        "resolutionStatuses": [
+          [
+            "scorecard_item_links",
+            "accepted",
+            "resolved",
+            8881
+          ],
+          [
+            "scorecard_item_links",
+            "refused",
+            "conflict",
+            8
+          ],
+          [
+            "scorecard_item_links",
+            "refused",
+            "unresolved",
+            37756
+          ]
+        ],
+        "meaning": "Subject rows are resolved links only. Validated refused attempts are processing evidence, not rows in this logical table; their counts must not be mixed into subject coverage."
+      }
     },
     {
       "tableId": "scorecard_member_links",
@@ -28931,83 +29598,41 @@
         [
           "bioguide_id",
           "VARCHAR"
-        ],
-        [
-          "term_candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "override_version",
-          "VARCHAR"
-        ],
-        [
-          "source_snapshot_id",
-          "VARCHAR"
-        ],
-        [
-          "resolution_status",
-          "VARCHAR"
-        ],
-        [
-          "resolution_rule",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "candidate_count",
-          "VARCHAR"
-        ],
-        [
-          "candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "reason",
-          "VARCHAR"
-        ],
-        [
-          "source_context_json",
-          "VARCHAR"
-        ],
-        [
-          "input_pins_json",
-          "VARCHAR"
-        ],
-        [
-          "capture_id",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_path",
-          "VARCHAR"
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
-        "artifactDigest": "sha256:4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46",
-        "sha256": "sha256:9518b0013bf8a23021d0a73aae045a032b6d9f4c0b77f45ccf2f7966e8d93e8f",
-        "members": [],
-        "rows": 2102,
-        "byteSize": 175788,
+        "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/artifact.json",
+        "artifactDigest": "sha256:766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81",
+        "publishedAt": "2026-10-05T14:50:54Z",
+        "sha256": "sha256:272faee9b4103d5d1c24f05f635023d75624858412245f3fb69c277c6d526367",
+        "members": [
+          {
+            "key": "scorecard_member_links.parquet",
+            "byteSize": 663395,
+            "columns": [
+              [
+                "scorecard_id",
+                "VARCHAR"
+              ],
+              [
+                "publisher_member_key",
+                "VARCHAR"
+              ],
+              [
+                "bioguide_id",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 98731,
+            "sha256": "sha256:272faee9b4103d5d1c24f05f635023d75624858412245f3fb69c277c6d526367",
+            "url": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/scorecard_member_links.parquet"
+          }
+        ],
+        "rows": 98731,
+        "byteSize": 663395,
         "memberCount": 1
       },
-      "recommendedDimensions": [
-        {
-          "kind": "category",
-          "fields": [
-            "resolution_status"
-          ],
-          "label": "Member resolution",
-          "meaning": "Resolved, ambiguous and unresolved publisher member identities."
-        }
-      ],
+      "recommendedDimensions": [],
       "parentLinks": [
         {
           "kind": "inherited",
@@ -29016,11 +29641,10 @@
             "scorecard_id",
             "year_text",
             "congress_text",
-            "timespan_text",
-            "periods"
+            "timespan_text"
           ],
           "label": "Publisher edition scope",
-          "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period.",
+          "meaning": "Exact recorded source labels; item/member scope may differ from edition scope. Literal periods are not converted into guessed calendar spans.",
           "inheritance": {
             "parentTable": "scorecards",
             "parentFamily": "scorecards",
@@ -29032,72 +29656,92 @@
             ],
             "binding": "spec.parents exact producing generation",
             "pin": {
-              "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
-              "byteSize": 5378,
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 30304,
               "family": "scorecards",
-              "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+              "sha256": "sha256:a7be19d69671e349402814e12a70acc4c413df357e3572209b39369599705238"
             },
             "requiredChecks": [
               "unique parent keys",
               "left join row count unchanged",
               "unmatched/undated child rows separate",
               "member hashes and pin verified"
+            ]
+          }
+        },
+        {
+          "kind": "inherited",
+          "fields": [
+            "period_text",
+            "chamber_text"
+          ],
+          "label": "Publisher member periods",
+          "meaning": "Exact recorded source labels; item/member scope may differ from edition scope. Literal periods are not converted into guessed calendar spans.",
+          "inheritance": {
+            "parentTable": "scorecard_members",
+            "parentFamily": "scorecards",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "publisher_member_key",
+                "publisher_member_key"
+              ]
             ],
-            "condition": null
+            "binding": "spec.parents exact producing generation",
+            "pin": {
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 6467910,
+              "family": "scorecards",
+              "sha256": "sha256:7eef91928036cfac2a4f2fe5888e0655747513a25c37b5954df24bc1559b9d69"
+            },
+            "requiredChecks": [
+              "unique parent keys",
+              "left join row count unchanged",
+              "unmatched/undated child rows separate",
+              "member hashes and pin verified"
+            ]
           }
         }
       ],
       "probe": {
-        "fullRowCount": 2102,
-        "expectedRows": 2102,
+        "fullRowCount": 98731,
+        "expectedRows": 98731,
         "reconciled": true,
         "columns": {
-          "resolution_status": {
-            "distinct": 2,
+          "scorecard_id": {
+            "distinct": 252,
             "blankRows": 0,
-            "counts": [
-              [
-                "resolved",
-                1782
-              ],
-              [
-                "unresolved",
-                320
-              ]
-            ],
-            "min": "resolved",
-            "max": "unresolved",
-            "validTimestampRows": 0,
-            "invalidTimestampRows": 2102,
-            "invalidExamples": [
-              [
-                "resolved",
-                1782
-              ],
-              [
-                "unresolved",
-                320
-              ]
-            ]
+            "nonblankRows": 98731,
+            "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.columns.scorecard_id.counts"
           }
         },
-        "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard_member_links.json",
-        "editionRows": [
+        "schema": [
           [
-            "afp:3933",
-            531
+            "scorecard_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ],
           [
-            "hrc:118-final",
-            540
+            "publisher_member_key",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ],
           [
-            "ijm:3995",
-            480
-          ],
-          [
-            "lcv:2025",
-            551
+            "bioguide_id",
+            "VARCHAR",
+            "YES",
+            null,
+            null,
+            null
           ]
         ],
         "parentJoins": [
@@ -29105,10 +29749,10 @@
             "child": "scorecard_member_links",
             "parentTable": "scorecards",
             "parentPin": {
-              "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
-              "byteSize": 5378,
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 30304,
               "family": "scorecards",
-              "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+              "sha256": "sha256:a7be19d69671e349402814e12a70acc4c413df357e3572209b39369599705238"
             },
             "keys": [
               [
@@ -29116,94 +29760,509 @@
                 "scorecard_id"
               ]
             ],
-            "parentRows": 4,
+            "parentRows": 391,
             "duplicateParentKeys": 0,
-            "joinedRows": 2102,
-            "matchedRows": 2102,
+            "joinedRows": 98731,
+            "matchedRows": 98731,
             "unmatchedRows": 0,
-            "predicate": null,
             "dimensions": {
+              "publisher_id": {
+                "distinct": 44,
+                "nonblankRows": 98731,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecards.dimensions.publisher_id.counts"
+              },
+              "scorecard_id": {
+                "distinct": 252,
+                "nonblankRows": 98731,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecards.dimensions.scorecard_id.counts"
+              },
               "year_text": {
-                "distinct": 2,
-                "counts": [
-                  [
-                    null,
-                    1551
-                  ],
-                  [
-                    "2025",
-                    551
-                  ]
-                ]
+                "distinct": 57,
+                "nonblankRows": 64033,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecards.dimensions.year_text.counts"
               },
               "congress_text": {
-                "distinct": 3,
-                "counts": [
-                  [
-                    "119",
-                    1011
-                  ],
-                  [
-                    null,
-                    551
-                  ],
-                  [
-                    "118",
-                    540
-                  ]
-                ]
+                "distinct": 25,
+                "nonblankRows": 54208,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecards.dimensions.congress_text.counts"
               },
               "timespan_text": {
-                "distinct": 1,
-                "counts": [
-                  [
-                    null,
-                    2102
-                  ]
-                ]
+                "distinct": 43,
+                "nonblankRows": 18653,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecards.dimensions.timespan_text.counts"
+              }
+            }
+          },
+          {
+            "child": "scorecard_member_links",
+            "parentTable": "scorecard_members",
+            "parentPin": {
+              "artifactDigest": "sha256:87a6e35800a9f983ade179b8d55e3bbdb56548fa52e955afc659d1eac8e18447",
+              "byteSize": 6467910,
+              "family": "scorecards",
+              "sha256": "sha256:7eef91928036cfac2a4f2fe5888e0655747513a25c37b5954df24bc1559b9d69"
+            },
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ],
+              [
+                "publisher_member_key",
+                "publisher_member_key"
+              ]
+            ],
+            "parentRows": 202639,
+            "duplicateParentKeys": 0,
+            "joinedRows": 98731,
+            "matchedRows": 98731,
+            "unmatchedRows": 0,
+            "dimensions": {
+              "period_text": {
+                "distinct": 72,
+                "nonblankRows": 53878,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecard_members.dimensions.period_text.counts"
+              },
+              "chamber_text": {
+                "distinct": 9,
+                "nonblankRows": 94157,
+                "fullCountsReference": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json#tables.scorecard_member_links.parentJoins.scorecard_members.dimensions.chamber_text.counts"
               }
             }
           }
         ],
-        "columnRangeMeaning": "min/max are literal string lexical bounds, not normalized calendar or numeric bounds. Counts and source labels are authoritative."
+        "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json",
+        "columnRangeMeaning": "Counts preserve exact native values; no acquisition completeness follows from observed source labels."
       },
       "evidence": [
         {
-          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/docs/tables/scorecard_member_links.md",
-          "role": "source semantics or declared identity",
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/subject_shapes.py",
+          "role": "native domain schema and moved receipt fields",
           "exists": true
         },
         {
-          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_policies/scorecard_member_links.json",
-          "role": "source semantics or declared identity",
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/etl.py",
+          "role": "write_family accepts resolved links only; other attempts produce refused receipts",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/scorecards/resolution.py",
+          "role": "exact resolution and source context meaning",
+          "exists": true
+        },
+        {
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/transforms/build_scorecard_analysis.py",
+          "role": "immutable source/official input selection",
           "exists": true
         },
         {
           "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/rollups/scorecard_analysis.py",
-          "role": "producer family and input boundary",
+          "role": "all recorded parents verified before analysis",
           "exists": true
         },
         {
-          "url": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
-          "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard-analysis-artifact.json",
-          "role": "immutable producing generation, recorded parent pins and readSnapshot"
+          "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_receipts.py",
+          "role": "complete native shared reader admission used for this probe",
+          "exists": true
+        },
+        {
+          "url": "https://data.spicygov.ai/generations/scorecard-analysis/766a7cbb4c1f9ae08830618360906855b38b35a983010c2efd141da55ab8fc81/artifact.json",
+          "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-artifact.json",
+          "role": "producing generation, native policies, receipts and exact retained parents"
+        },
+        {
+          "path": "/tmp/spicygov-coverage-audit-20261005/congress/analysis-766a7cbb-full-probe.json",
+          "role": "all subject/member/footer/SHA checks, complete receipt admission, full unique-parent joins and raw distributions"
         }
       ],
       "limits": [
+        "Counts cover resolved subject links only; unresolved, ambiguous and conflicting attempts remain in the exact pinned receipts and are excluded from subject buckets.",
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
-        "Analysis pins older source edition generation; exact match on current source is insufficient history proof.",
-        "Exact historical scorecards parent has 4 edition rows; all output rows attach to those 4 unique editions."
+        "Only source item/member labels from declared exact recorded parents are inherited; edition, item and member periods remain separate.",
+        "Refused receipt totals describe this processing run, not all publisher data or a target-resolution completeness rate."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_member_links",
       "executableDimensions": [
-        "member-resolution",
         "inherited-publisher-id",
         "inherited-scorecard-id",
         "inherited-year-text",
         "inherited-congress-text",
-        "inherited-timespan-text"
-      ]
+        "inherited-timespan-text",
+        "inherited-member-rating-periods",
+        "inherited-literal-years-period-text"
+      ],
+      "history": [
+        {
+          "tableId": "scorecard_member_links",
+          "family": "scorecard-analysis",
+          "schema": [
+            [
+              "scorecard_id",
+              "VARCHAR"
+            ],
+            [
+              "publisher_member_key",
+              "VARCHAR"
+            ],
+            [
+              "bioguide_id",
+              "VARCHAR"
+            ],
+            [
+              "term_candidates_json",
+              "VARCHAR"
+            ],
+            [
+              "override_version",
+              "VARCHAR"
+            ],
+            [
+              "source_snapshot_id",
+              "VARCHAR"
+            ],
+            [
+              "resolution_status",
+              "VARCHAR"
+            ],
+            [
+              "resolution_rule",
+              "VARCHAR"
+            ],
+            [
+              "rule_version",
+              "VARCHAR"
+            ],
+            [
+              "candidate_count",
+              "VARCHAR"
+            ],
+            [
+              "candidates_json",
+              "VARCHAR"
+            ],
+            [
+              "reason",
+              "VARCHAR"
+            ],
+            [
+              "source_context_json",
+              "VARCHAR"
+            ],
+            [
+              "input_pins_json",
+              "VARCHAR"
+            ],
+            [
+              "capture_id",
+              "VARCHAR"
+            ],
+            [
+              "source_url",
+              "VARCHAR"
+            ],
+            [
+              "source_path",
+              "VARCHAR"
+            ]
+          ],
+          "publication": {
+            "artifactUrl": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
+            "artifactDigest": "sha256:4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46",
+            "sha256": "sha256:9518b0013bf8a23021d0a73aae045a032b6d9f4c0b77f45ccf2f7966e8d93e8f",
+            "members": [],
+            "rows": 2102,
+            "byteSize": 175788,
+            "memberCount": 1
+          },
+          "recommendedDimensions": [
+            {
+              "kind": "category",
+              "fields": [
+                "resolution_status"
+              ],
+              "label": "Member resolution",
+              "meaning": "Resolved, ambiguous and unresolved publisher member identities."
+            }
+          ],
+          "parentLinks": [
+            {
+              "kind": "inherited",
+              "fields": [
+                "publisher_id",
+                "scorecard_id",
+                "year_text",
+                "congress_text",
+                "timespan_text",
+                "periods"
+              ],
+              "label": "Publisher edition scope",
+              "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period.",
+              "inheritance": {
+                "parentTable": "scorecards",
+                "parentFamily": "scorecards",
+                "keys": [
+                  [
+                    "scorecard_id",
+                    "scorecard_id"
+                  ]
+                ],
+                "binding": "spec.parents exact producing generation",
+                "pin": {
+                  "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
+                  "byteSize": 5378,
+                  "family": "scorecards",
+                  "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+                },
+                "requiredChecks": [
+                  "unique parent keys",
+                  "left join row count unchanged",
+                  "unmatched/undated child rows separate",
+                  "member hashes and pin verified"
+                ],
+                "condition": null
+              }
+            }
+          ],
+          "probe": {
+            "fullRowCount": 2102,
+            "expectedRows": 2102,
+            "reconciled": true,
+            "columns": {
+              "resolution_status": {
+                "distinct": 2,
+                "blankRows": 0,
+                "counts": [
+                  [
+                    "resolved",
+                    1782
+                  ],
+                  [
+                    "unresolved",
+                    320
+                  ]
+                ],
+                "min": "resolved",
+                "max": "unresolved",
+                "validTimestampRows": 0,
+                "invalidTimestampRows": 2102,
+                "invalidExamples": [
+                  [
+                    "resolved",
+                    1782
+                  ],
+                  [
+                    "unresolved",
+                    320
+                  ]
+                ]
+              }
+            },
+            "rawProbe": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard_member_links.json",
+            "editionRows": [
+              [
+                "afp:3933",
+                531
+              ],
+              [
+                "hrc:118-final",
+                540
+              ],
+              [
+                "ijm:3995",
+                480
+              ],
+              [
+                "lcv:2025",
+                551
+              ]
+            ],
+            "parentJoins": [
+              {
+                "child": "scorecard_member_links",
+                "parentTable": "scorecards",
+                "parentPin": {
+                  "artifactDigest": "sha256:8692fd934f8d1ec15ac0e426e8775f36c904872caa11eee48599b5dbddbf7109",
+                  "byteSize": 5378,
+                  "family": "scorecards",
+                  "sha256": "sha256:4296e1b033870e597673d09efc19fa5b4577db70a1d0f6082a05d8c795899412"
+                },
+                "keys": [
+                  [
+                    "scorecard_id",
+                    "scorecard_id"
+                  ]
+                ],
+                "parentRows": 4,
+                "duplicateParentKeys": 0,
+                "joinedRows": 2102,
+                "matchedRows": 2102,
+                "unmatchedRows": 0,
+                "predicate": null,
+                "dimensions": {
+                  "year_text": {
+                    "distinct": 2,
+                    "counts": [
+                      [
+                        null,
+                        1551
+                      ],
+                      [
+                        "2025",
+                        551
+                      ]
+                    ]
+                  },
+                  "congress_text": {
+                    "distinct": 3,
+                    "counts": [
+                      [
+                        "119",
+                        1011
+                      ],
+                      [
+                        null,
+                        551
+                      ],
+                      [
+                        "118",
+                        540
+                      ]
+                    ]
+                  },
+                  "timespan_text": {
+                    "distinct": 1,
+                    "counts": [
+                      [
+                        null,
+                        2102
+                      ]
+                    ]
+                  }
+                }
+              }
+            ],
+            "columnRangeMeaning": "min/max are literal string lexical bounds, not normalized calendar or numeric bounds. Counts and source labels are authoritative."
+          },
+          "evidence": [
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/docs/tables/scorecard_member_links.md",
+              "role": "source semantics or declared identity",
+              "exists": true
+            },
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/etl_policies/scorecard_member_links.json",
+              "role": "source semantics or declared identity",
+              "exists": true
+            },
+            {
+              "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/rollups/scorecard_analysis.py",
+              "role": "producer family and input boundary",
+              "exists": true
+            },
+            {
+              "url": "https://data.spicygov.ai/generations/scorecard-analysis/4a99801a8a935e1dbe617ddaf219e959b32d46061fa196a36b693806121a8b46/artifact.json",
+              "localRaw": "/tmp/spicygov-coverage-audit-20261005/congress/scorecard-analysis-artifact.json",
+              "role": "immutable producing generation, recorded parent pins and readSnapshot"
+            }
+          ],
+          "limits": [
+            "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
+            "Analysis pins older source edition generation; exact match on current source is insufficient history proof.",
+            "Exact historical scorecards parent has 4 edition rows; all output rows attach to those 4 unique editions."
+          ],
+          "unresolved": [],
+          "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_member_links",
+          "executableDimensions": [
+            "member-resolution",
+            "inherited-publisher-id",
+            "inherited-scorecard-id",
+            "inherited-year-text",
+            "inherited-congress-text",
+            "inherited-timespan-text"
+          ]
+        }
+      ],
+      "receiptScope": {
+        "generationId": "scorecard-build:04dffbcee6b04aa98bd1c190a90ee66b",
+        "rows": 249284,
+        "member": {
+          "byteSize": 48234863,
+          "mediaType": "application/vnd.apache.parquet",
+          "objectKey": "etl_receipts.parquet",
+          "recordCount": 249284,
+          "role": "table",
+          "sha256": "sha256:94f334d7029ce749a4aaeee5ced16a23d792333f40135b92ca4f58d03fde20c6"
+        },
+        "policy": {
+          "dataset": "scorecard_member_links",
+          "identity_fields": [
+            "scorecard_id",
+            "publisher_member_key"
+          ],
+          "nullable_identity_fields": [],
+          "policy_version": "scorecards-etl-v1",
+          "receipt_fields": [
+            "term_candidates_json",
+            "override_version",
+            "source_snapshot_id",
+            "resolution_status",
+            "resolution_rule",
+            "rule_version",
+            "candidate_count",
+            "candidates_json",
+            "reason",
+            "source_context_json",
+            "input_pins_json",
+            "capture_id",
+            "source_url",
+            "source_path",
+            "raw_source"
+          ],
+          "receipt_only": false,
+          "subject_schema": "//////gAAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAMAAACQAAAARAAAABQAAAAQABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGJpb2d1aWRlX2lkAIj////I////AAAABRAAAAAoAAAABAAAAAAAAAAUAAAAcHVibGlzaGVyX21lbWJlcl9rZXkAAAAAwP///xAAFAAIAAAABwAMAAAAEAAQAAAAAAAABRAAAAAkAAAABAAAAAAAAAAMAAAAc2NvcmVjYXJkX2lkAAAAAAQABAAEAAAAAAAAAA=="
+        },
+        "qualification": "Complete native shared reader validation: canonical receipts, exact policy/generation/subject schemas and one-to-one natural identity/content-version/identity_json matching; refused receipts separately validated.",
+        "outcomes": [
+          [
+            "scorecard_member_links",
+            "accepted",
+            98731
+          ],
+          [
+            "scorecard_member_links",
+            "refused",
+            103908
+          ]
+        ],
+        "resolutionStatuses": [
+          [
+            "scorecard_member_links",
+            "accepted",
+            "resolved",
+            98731
+          ],
+          [
+            "scorecard_member_links",
+            "refused",
+            "ambiguous",
+            37
+          ],
+          [
+            "scorecard_member_links",
+            "refused",
+            "conflict",
+            28
+          ],
+          [
+            "scorecard_member_links",
+            "refused",
+            "unresolved",
+            103843
+          ]
+        ],
+        "meaning": "Subject rows are resolved links only. Validated refused attempts are processing evidence, not rows in this logical table; their counts must not be mixed into subject coverage."
+      }
     },
     {
       "tableId": "scorecard_items",
