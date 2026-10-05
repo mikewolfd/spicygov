@@ -1,6 +1,7 @@
 """Measure date buckets in published Parquet files; never infer source completeness."""
 import concurrent.futures, datetime, json, pathlib, subprocess, sys
 import duckdb
+from publication_census import load as load_publications, census_digest
 BASE = 'https://data.spicygov.ai'
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / 'public/time-coverage.v1.json'
@@ -132,24 +133,7 @@ if __name__ == '__main__':
     setup.execute('INSTALL httpfs')
     setup.close()
     previous = json.loads(OUT.read_text()).get('tables', {}) if OUT.exists() else {}
-    index = fetch('publication.v2.json'); tables = {}
-    for family in index['families'].values():
-        for file, table in family['tables'].items():
-            members = table.get('members') or [{'key': file, **table}]
-            tables[file.removesuffix('.parquet')] = {**table, 'members': [{'url': BASE + '/' + family['prefix'] + '/' + m['key'], 'rows': m['rows'], 'byteSize': m['byteSize'], 'sha256': m.get('sha256')} for m in members]}
-    # The two supplementary publications use the same URL/size/count identity as the site.
-    try:
-        pointer = fetch('materialized/rulemaking/latest.json'); manifest = fetch(pointer['manifest_key'])
-        for file, t in manifest['artifacts'].items():
-            if t.get('visibility') == 'public': tables[file.removesuffix('.parquet')] = {'rows': t['rows'], 'members': [{'url': BASE + '/' + t['remote_key'], 'rows': t['rows'], 'byteSize': t['bytes']}], 'checksum': t['sha256']}
-    except Exception as e: print('Rulemaking inventory unavailable:', str(e)[:100], flush=True)
-    try:
-        comments = fetch('comments-publication.json')
-        for file in ['comments.parquet', 'comments_index.parquet']:
-            t = comments['files'][file]; tables[file.removesuffix('.parquet')] = {'rows': t['rows'], 'members': [{'url': BASE + '/' + file, 'rows': t['rows'], 'byteSize': t['bytes']}], 'checksum': t['sha256'], 'etag': t['etag']}
-            if file == 'comments.parquet':
-                tables['comments'].update(columns=[('posted_date', 'VARCHAR')], dateIndex=BASE + '/comments_index.parquet', dateIndexETag=comments['files']['comments_index.parquet']['etag'])
-    except Exception as e: print('Comments inventory unavailable:', str(e)[:100], flush=True)
+    index, tables = load_publications()
     result = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         for id, data in pool.map(timed_measure, tables.items()):
@@ -157,5 +141,6 @@ if __name__ == '__main__':
             print(f'{id}: {data["status"]} {data.get("field", "")}', flush=True)
     from collection_coverage import enrich
     enrich(index, tables, result, previous)
-    OUT.write_text(json.dumps({'format': 'spicygov-time-coverage', 'version': 1, 'generatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'tables': result}, separators=(',', ':')) + '\n')
+    if set(result) != set(tables): raise ValueError('Coverage output does not account for every published table')
+    OUT.write_text(json.dumps({'format': 'spicygov-time-coverage', 'version': 1, 'generatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'censusDigest': census_digest(tables), 'tables': result}, separators=(',', ':')) + '\n')
     print(f'Measured {sum(t["status"] == "measured" for t in result.values())}/{len(result)} tables', flush=True)

@@ -66,8 +66,14 @@ test('comments partitions are not double-counted and missing exports stay absent
   assert.equal(tables.length, 2);
   assert.equal(tables[0].publication.etag, '"current"');
   assert.equal(tables[0].published, undefined);
+  const expected=[
+    {id:'comments',url:`${base}/comments.parquet`,rows:100,byteSize:1000,sha256:sha,etag:'"current"'},
+    {id:'comments_index',url:`${base}/comments_index.parquet`,rows:5,byteSize:100,sha256:sha,etag:'"index"'},
+  ];
+  for (const table of tables) assert.deepEqual(table.coverageInputs,expected);
   delete raw.files['comments_index.parquet'];
   assert.equal(parseComments(raw).length, 1);
+  assert.deepEqual(parseComments(raw)[0].coverageInputs,[expected[0]]);
   raw.files['comments.parquet'].rows = -1;
   assert.throws(() => parseComments(raw));
 });

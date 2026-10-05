@@ -6,6 +6,8 @@ from unittest.mock import patch
 from types import SimpleNamespace
 import json
 import duckdb
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'scripts'))
 spec = importlib.util.spec_from_file_location('time_coverage', pathlib.Path(__file__).resolve().parents[1] / 'scripts/build-time-coverage.py')
 coverage = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(coverage)

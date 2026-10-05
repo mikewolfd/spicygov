@@ -7,9 +7,9 @@ import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, filterE
 import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
 import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
 import { TableProvenance } from '../components/table-provenance';
-import { CollectionCoverage } from '../components/collection-coverage';
-import { TimeGrid, type TimeView } from '../components/time-coverage';
-import { parseTimeInventory, type TimeInventory } from '../lib/time-coverage';
+import type { TimeView } from '../components/time-coverage';
+import { SourceCoverageSummary, TableCoverageMap } from '../components/coverage-map';
+import { parseCoverageMaps, textAvailabilityDetails, type CoverageMaps } from '../lib/coverage-map';
 import '../app/globals.css';
 import './style.css';
 
@@ -17,13 +17,14 @@ function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
   return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
 }
 type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
-function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
-  entry: SourceEntry; catalog: Dataset[]; timeInventory?: TimeInventory; timeView: TimeView;
+function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView }: {
+  entry: SourceEntry; catalog: Dataset[]; coverageMaps?: CoverageMaps; timeView: TimeView;
   loadDetails: (table: Dataset) => Promise<ReadableDetails>;
 }) {
   const [open, setOpen] = useState(false), [details, setDetails] = useState<ReadableDetails>();
   const [loading, setLoading] = useState(false), [error, setError] = useState('');
   const { table, review: audit } = entry, publication = table.publication, receipts = publication?.nativeReceipts;
+  const textDetails = textAvailabilityDetails(table, coverageMaps);
   const reviewedLinks = reviewedGenerationLinks(entry), copy = audit?.copy;
   const titleUrl = entry.explorer ? `/?table=${encodeURIComponent(table.id)}&view=about` : table.members[0]?.url;
   async function inspect() {
@@ -41,9 +42,10 @@ function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
       <td><strong className="row-count">{count(table.rows)} rows</strong>{table.rows === 0 && <span className="empty-badge">No rows</span>}
         <span className="table-note">{table.published ? `Published ${publicationDate(table.published)}` : 'Date not recorded'}</span>
         {table.modelGenerated && <span className="empty-badge">AI-generated</span>}
+        {textDetails.map(detail => <span className="table-note" key={detail.label}><strong>{detail.label}:</strong> {detail.rows === 0 ? 'No rows' : detail.notSaved === detail.rows ? 'Not saved' : <>{count(detail.withText)} with text{detail.notSaved > 0 && <> · {count(detail.notSaved)} not saved</>}{detail.blank > 0 && <> · {count(detail.blank)} blank</>}</>}</span>)}
       </td>
       <td><ul className="method-list">{audit?.methods.length ? audit.methods.map(method => <li key={method}>{methodLabels[method] ?? method}</li>) : <li className="muted">Not yet reviewed</li>}</ul></td>
-      <td><TimeGrid tables={[table]} inventory={timeInventory} view={timeView} /><CollectionCoverage table={table} inventory={timeInventory} year={timeView.year} /><p className="coverage-summary">{copy?.scope ?? 'Coverage not yet reviewed.'}</p>
+      <td><TableCoverageMap table={table} maps={coverageMaps} view={timeView} /><p className="coverage-summary">{copy?.scope ?? 'Collection scope notes are not available.'}</p>
         {copy?.gaps[0] && <p className="table-note"><strong>Watch for:</strong> {copy.gaps[0]}</p>}
       </td>
     </tr>
@@ -53,7 +55,7 @@ function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
         <p>{copy?.summary ?? 'Collection notes have not been reviewed yet.'}</p>
         {entry.historicalAttribution ? <><p className="review-date">Source names come from an earlier review and may be incomplete.</p><EvidenceLinks links={audit?.sources.flatMap(source => source.url ? [{ label: source.name, url: source.url }] : []) ?? []} /></> : entry.explorer ? <TableProvenance table={table} catalog={catalog} compact /> : null}
         {audit?.evidence.length ? <details className="code-evidence"><summary>Code references</summary><EvidenceLinks links={audit.evidence.map(link => ({ ...link, label: link.url.split('/').pop() || 'Source code' }))} /></details> : null}
-      </section><section><h3>Coverage & limits</h3><p>{copy?.scope ?? 'Coverage has not been reviewed yet.'}</p>
+      </section><section><h3>Coverage & limits</h3><p>{copy?.scope ?? 'Collection scope notes are not available.'}</p>
         {copy?.gaps.length ? <ul className="gap-list">{copy.gaps.map(gap => <li key={gap}>{gap}</li>)}</ul> : null}
       </section></div>
       <section className="readable-evidence"><h3>What we can trace</h3>
@@ -68,7 +70,7 @@ function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
             return <li key={parent.table}><strong>{input?.label ?? parent.table.replaceAll('_', ' ')}</strong><span>A saved version was used for this release.</span><small>The current table may contain newer data.</small></li>;
           })}</ul></>}
           {details.carriedForward && <p>This table was carried over from an earlier release; publication does not mean the source was collected again.</p>}
-          {details.preview?.inherited && <p>This release also uses earlier source records. Their original coverage has not been checked again.</p>}
+          {details.preview?.inherited && <p>Earlier source records remain in this release. These request examples do not describe their full collection history.</p>}
           {!!details.preview?.observations.length && <><h4>Observed source requests</h4><p className="review-date">Examples from this release’s collection log, shared by its tables. These do not prove which request produced an individual row.</p><ul className="readable-inputs">{details.preview.observations.map((item, i) => <li key={i}><strong>{item.source}</strong><span>{item.observedAt ? publicationDate(item.observedAt) : 'Date not recorded'} · {item.status === undefined ? 'Response status unknown' : item.status >= 200 && item.status < 300 ? 'Response received' : `Response status ${item.status}`}</span><small>{item.saved === true ? 'Response content saved' : item.saved === false ? 'Response content not saved' : 'Saved content not documented'}</small></li>)}</ul></>}
           {details.preview?.partial && <p className="review-date">Showing a limited preview of the source log, not the full collection history.</p>}
           {details.previewUnavailable && <p>The source log could not be read. The collection notes above remain available.</p>}
@@ -85,13 +87,17 @@ function SourceRow({ entry, catalog, loadDetails, timeInventory, timeView }: {
   </Fragment>;
 }
 function SourcesPage() {
-  const [timeInventory, setTimeInventory] = useState<TimeInventory>();
+  const [coverageMaps, setCoverageMaps] = useState<CoverageMaps>();
   const [timeError, setTimeError] = useState(false);
   const [timeView, setTimeView] = useState<TimeView>({year: new Date().getFullYear(), mode: 'years'});
 
   const [query, setQuery] = useState(''), [method, setMethod] = useState(''), [evidence, setEvidence] = useState('');
   const [expanded, setExpanded] = useState(false), [retry, setRetry] = useState(0);
-  useEffect(() => { const controller = new AbortController(); setTimeError(false); fetchJson('/time-coverage.v1.json', controller.signal).then(parseTimeInventory).then(setTimeInventory).catch(() => { if (!controller.signal.aborted) { setTimeInventory(undefined); setTimeError(true); } }); return () => controller.abort(); }, [retry]);
+  useEffect(() => {
+    const controller = new AbortController(); setTimeError(false);
+    void fetchJson('/coverage-maps.v1.json', controller.signal).then(parseCoverageMaps).then(setCoverageMaps).catch(() => { if (!controller.signal.aborted) { setCoverageMaps(undefined); setTimeError(true); } });
+    return () => controller.abort();
+  }, [retry]);
   const { tables, metadata, error } = useCollection(retry);
   const { extra, review, warnings, pending } = useSourceDirectory(retry);
   const entries = useMemo(() => sourceEntries(tables, extra, review), [tables, extra, review]);
@@ -130,11 +136,11 @@ function SourcesPage() {
       <h1>Sources</h1>
       <p className="sources-intro">How each table is collected, what it covers, and where to check it.</p>
       <section className="time-controls" aria-label="Time coverage">
-        <div><h2>Time coverage</h2><p className="time-legend"><span>● Dated rows</span><span>— No dated rows</span><span>? Unknown</span></p></div>
+        <div><h2>Coverage</h2><p className="time-legend"><span>● Retained rows</span><span>— No placed rows</span><span>? Not measured for this view</span></p></div>
         <label>View <select value={timeView.mode} onChange={event => setTimeView({...timeView, mode:event.target.value as TimeView['mode']})}><option value="years">Years</option><option value="months">Months</option></select></label>
         <label>{timeView.mode === 'years' ? 'Through year' : 'Year'} <input aria-label="Coverage year" type="number" min="1" max="9999" value={timeView.year} onChange={event => { const year = Number(event.target.value); if (Number.isInteger(year) && year >= 1 && year <= 9999) setTimeView({...timeView,year}); }} /></label>
-        <details className="time-explanation"><summary>How to read the grid</summary><p>These are dates on the records, not download dates. Counts can include duplicates; missing or explicitly approximate dates are left out. Empty periods do not prove the source had no records. Agenda cells show spring/fall editions; collection results appear separately. Select a cell for counts. Green does not mean complete source coverage.</p></details>
-        {timeError ? <p role="status">Date counts could not be loaded. Coverage stays unknown.</p> : !timeInventory ? <p role="status">Loading date counts…</p> : <p className="time-caption">Checked {new Date(timeInventory.generatedAt).toLocaleDateString()}. Counts appear only while the published files still match.</p>}
+        <details className="time-explanation"><summary>How to read coverage</summary><p>Each table uses its own meaningful dates, cycles, editions, scopes, or snapshot. Select “Coverage by” to compare its views. Missing, invalid, and approximate values stay separate. A blank period means no placed rows in this file; it does not prove the source had no records. Counts can include duplicates. Green shows presence, not complete source coverage.</p></details>
+        {timeError ? <p role="status">Coverage maps could not be loaded.</p> : !coverageMaps ? <p role="status">Loading coverage maps…</p> : <p className="time-caption">Checked {new Date(coverageMaps.generatedAt).toLocaleDateString()}. Maps appear only while the published files still match.</p>}
       </section>
       <div className="sources-controls">
         <label className="source-search"><span>Find a table or source</span><input type="search" placeholder="Try scorecards, bulk, comments…" value={query} onChange={event => setQuery(event.target.value)} /></label>
@@ -150,8 +156,8 @@ function SourcesPage() {
       {!entries.length && !error && <p role="status">Loading published tables…</p>}
       {!!entries.length && !groups.length && <p>No tables match these filters.</p>}
       <div className="source-list">{groups.map(({ source, entries: items }) => <details className="source-group" key={`${source.id}-${expanded}-${!!query || !!method || !!evidence}`} open={expanded || !!query || !!method || !!evidence}>
-        <summary><div><h2>{source.name}</h2><TimeGrid tables={items.map(entry => entry.table)} inventory={timeInventory} view={timeView} compact /></div><span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{items.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts</span></span></summary>
-        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Coverage & limits</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} timeInventory={timeInventory} timeView={timeView} />)}</tbody></table></div></div>
+        <summary><div><h2>{source.name}</h2><SourceCoverageSummary tables={items.map(entry => entry.table)} maps={coverageMaps} view={timeView} /></div><span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{items.filter(entry => entry.table.publication?.nativeReceipts).length} with record receipts</span></span></summary>
+        <div className="source-body"><div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table</th><th scope="col">Available data</th><th scope="col">How collected</th><th scope="col">Coverage & limits</th></tr></thead><tbody>{items.map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} />)}</tbody></table></div></div>
       </details>)}</div>
       <footer>Counts and receipts do not prove a source is complete. Receipts link records to source files or processing steps. Collection methods describe the process, not each method’s share of rows. Download-only tables open as Parquet data files. <a href="https://docs.spicygov.ai">Data documentation ↗</a></footer>
     </main>

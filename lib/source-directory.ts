@@ -1,4 +1,4 @@
-import { groupFor, pretty, type Dataset } from './catalog';
+import { groupFor, pretty, type Dataset, type CoverageInput } from './catalog';
 import { validDate, type Source, type MetadataStatus, type TableMetadataState } from './metadata';
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
@@ -64,13 +64,14 @@ export function parseRulemaking(pointer: unknown, manifest: unknown): Dataset[] 
 export function parseComments(raw: unknown): Dataset[] {
   if (!object(raw) || raw.format_version !== 1 || !object(raw.files) || !object(raw.source)) throw new Error('Comments export receipt has an unsupported format.');
   // Agency partitions repeat the same records; list the two logical tables once.
-  return ['comments.parquet', 'comments_index.parquet'].flatMap(key => {
+  const coverageInputs: CoverageInput[] = ['comments.parquet', 'comments_index.parquet'].flatMap(key => {
     const file = raw.files[key];
     if (file === undefined) return [];
     if (!object(file) || !size(file.rows) || !size(file.bytes) || !digest(file.sha256) || typeof file.etag !== 'string') throw new Error('Comments receipt contains an invalid public file.');
-    return [{ ...extraTable(key.replace(/\.parquet$/, ''), 'comments', file.rows, file.bytes, dataUrl(key)!),
-      publication: { kind: 'comments' as const, recordUrl: `${DATA_BASE}/comments-publication.json`, sha256: file.sha256, etag: file.etag } }];
-  });
+    return [{ id: key.replace(/\.parquet$/, ''), url: dataUrl(key)!, rows: file.rows, byteSize: file.bytes, sha256: file.sha256, etag: file.etag }];
+  }).sort((a, b) => a.id.localeCompare(b.id));
+  return coverageInputs.map(file => ({ ...extraTable(file.id, 'comments', file.rows, file.byteSize, file.url), coverageInputs,
+    publication: { kind: 'comments' as const, recordUrl: `${DATA_BASE}/comments-publication.json`, sha256: file.sha256, etag: file.etag } }));
 }
 export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tables: Dataset[]; warnings: string[] }> {
   const results = await Promise.allSettled([

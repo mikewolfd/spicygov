@@ -6,3 +6,4 @@ public/parquet-worker.js
 .env.local
 .DS_Store
 __pycache__/
+.cache/

@@ -6,6 +6,7 @@ export { DATA_BASE } from './publication-evidence';
 export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string };
 export type Member = { url: string; rows: number; byteSize: number; sha256?: string };
+export type CoverageInput = { id: string; url: string; rows: number; byteSize: number; sha256: string; etag: string };
 export type Dataset = {
   id: string;
   label: string;
@@ -17,6 +18,7 @@ export type Dataset = {
   bytes: number;
   columns: { name: string; type: string; description: string }[];
   members: Member[];
+  coverageInputs?: CoverageInput[];
   published?: string;
   artifactDigest?: string;
   publication?: PublicationEvidence;

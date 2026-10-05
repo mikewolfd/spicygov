@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    timeout-minutes: 20
+    timeout-minutes: 90
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,11 +24,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install duckdb==1.4.4
+      - run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14
       - run: python tests/test_time_coverage.py
       - run: python tests/test_collection_coverage.py
-      - name: Measure published date coverage
-        run: python scripts/build-time-coverage.py
+      - run: python tests/test_publication_census.py
+      - run: python tests/test_coverage_dimensions.py
+      - run: python tests/test_coverage_gate.py
+      - run: python tests/test_regulation_coverage_maps.py
+      - run: python tests/test_native_receipt_coverage.py
+      - run: python tests/test_fec_coverage_maps.py
+      - run: python tests/test_congress_coverage_maps.py
+      - name: Verify coverage for every published table
+        run: python scripts/build-coverage-maps.py
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
