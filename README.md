@@ -35,6 +35,8 @@ Records load as soon as the publication catalog arrives. Metadata has a separate
 
 Click a Records column header to cycle through ascending, descending, and original order. Sorting applies across every published file and respects active filters. Numbers and dates keep their value order, text uses lexicographic order, structured values use their JSON text, and missing values stay last. The URL retains the field and direction. Each sorted page scans the sort and filter fields in a worker, keeps only its next page of candidates, and then reads their visible fields. Large tables require a full scan for each page; progress and Stop remain available. Sorted cursors identify the last record's physical position, with position breaking equal-value ties, so paging and record details retain exact row identity.
 
+Vite gives the explorer's worker a content-based filename, so each deployment loads the matching reader instead of reusing a cached older version.
+
 Dataset/filter state is stored in the URL. The mobile drawer, coverage notes, record details, and optional WebMCP browser tools use the same explorer state.
 
 The dedicated MCP connection guide is at `/mcp/`. Vite builds a separate HTML entry so direct links work on GitHub Pages. The public connection endpoint remains `https://mcp.spicygov.ai/mcp`.

@@ -159,7 +159,7 @@ export default function Explorer() {
     setError("");
     setProgress(location.sort ? 0 : location.cursor);
     setDone(false);
-    const w = new Worker("/parquet-worker.js", { type: "module" });
+    const w = new Worker(new URL('../lib/parquet.worker.ts', import.meta.url), { type: "module" });
     worker.current = w;
     w.onmessage = (e) => {
       const d = e.data;
@@ -212,7 +212,7 @@ export default function Explorer() {
     setRecordError("");
     setRecordBusy(true);
     recordWorker.current?.terminate();
-    const w = new Worker("/parquet-worker.js", { type: "module" });
+    const w = new Worker(new URL('../lib/parquet.worker.ts', import.meta.url), { type: "module" });
     recordWorker.current = w;
     w.onmessage = (e) => {
       if (e.data.type === "result") {
