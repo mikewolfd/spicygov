@@ -1,13 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 async function module(path) {
   const {outputFiles} = await build({entryPoints:[path],bundle:true,platform:'node',format:'esm',write:false});
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
 
-const {parseCoverageMaps, currentCoverageMap, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails} = await module('lib/coverage-map.ts');
+const {parseCoverageMaps, currentCoverageMap, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
 const {parseComments} = await module('lib/source-directory.ts');
+const {publisherNames, loadCoveragePublishers, coveragePublisherNames} = await module('lib/coverage-publishers.ts');
 const hash = 'sha256:' + 'a'.repeat(64);
 const table = {id:'records',family:'test',rows:3,artifactDigest:hash, columns:[{name:'date',type:'DATE'}],members:[{url:'https://example.test/file',rows:3,byteSize:100,sha256:hash}]};
 const dimension = {id:'date',label:'Event date',meaning:'Source-stated event dates.',status:'measured',granularity:'month',rows:3,placedRows:2,unplacedRows:1,buckets:{'2024-01':1,'2024-02':1}};
@@ -170,4 +176,172 @@ test('known source classes use readable labels only within their stated fields',
   assert.equal(scopeLabel('["f"]', ['date_filed_is_approximate']), 'Marked exact');
   assert.equal(coverageFieldLabel('interpretation_status'), 'Reading result');
   assert.equal(coverageFieldLabel('edition'), 'edition');
+});
+
+test('cycle labels explain their period without converting other source years or unusual cycles', () => {
+  const cycle = {...dimension, label:'Source election cycle',granularity:'year'};
+  assert.equal(coveragePeriodLabel(cycle,'2026'), 'Cycle ending 2026 (2025–2026)');
+  assert.equal(coveragePeriodLabel(cycle,'2025'), 'Cycle label 2025');
+  assert.equal(coveragePeriodLabel({...cycle,label:'Fiscal year'},'2026'), '2026');
+  assert.equal(coveragePeriodLabel({...cycle,label:'Edition years'},'2026'), '2026');
+  assert.equal(coveragePeriodLabel({...dimension,label:'Receipt dates'},'2026-01'), '2026-01');
+  assert.equal(coverageStatement({...dimension,meaning:'Regulations.gov dates describe postings. Receipt dates remain separate.'}), 'Regulations.gov dates describe postings.');
+});
+
+test('primary meaning keeps U.S. Code together and preserves the edition qualification in checks', async () => {
+  const {TableCoverageMap}=await coverageComponent();
+  const raw=document();
+  const meaning='Saved electronic regulation and U.S. Code selections, grouped by source record and stated edition. Editions can be release identifiers or requested dates, rather than calendar years.';
+  Object.assign(raw.tables.records.dimensions[0],{label:'Selected source records and editions',meaning});
+  assert.equal(coverageStatement(raw.tables.records.dimensions[0]),'Saved electronic regulation and U.S. Code selections, grouped by source record and stated edition.');
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw),view:{year:2024,mode:'years'}}));
+  const [visible,checks]=html.split('<details class="coverage-checks">');
+  assert.match(visible,/U\.S\. Code selections, grouped by source record and stated edition\./);
+  assert.match(checks,/Editions can be release identifiers or requested dates, rather than calendar years\./);
+});
+
+test('short category labels retain exact request scopes and never fabricate publisher names', () => {
+  const selected={...dimension,id:'selected_source_scopes',fields:[]};
+  const key=JSON.stringify(['fec_access','no-record-rejections','https://api.open.fec.gov/v1/schedules/schedule_c/?loan_source_name=BANK&min_incurred_date=2025-01-01']);
+  const before=structuredClone(selected);
+  const shown=coverageCategoryDisplay(selected,key);
+  assert.ok(!shown.label.includes('https://'));
+  assert.match(shown.label,/schedule c/);assert.match(shown.label,/BANK/);
+  assert.match(shown.label,/Selected records parsed/);
+  assert.equal(shown.exact,scopeLabel(key,[]));
+  assert.deepEqual(selected,before);
+  assert.equal(coverageItemNoun(selected),'selected files and requests');
+  const publisher={...dimension,fields:['publisher_id']};
+  assert.deepEqual(coverageCategoryDisplay(publisher,'["afp"]'),{label:'Publisher ID: afp',exact:'afp'});
+  assert.equal(scopeLabel('["selection_context"]',['record_outcome']),'Selection notes');
+  assert.equal(scopeLabel('["selection_context"]',['publisher_period']),'selection_context');
+});
+
+async function coverageComponent() {
+  const require=createRequire(import.meta.url);
+  const {outputFiles}=await build({entryPoints:['components/coverage-map.tsx'],bundle:true,platform:'node',format:'esm',write:false,loader:{'.css':'empty'},plugins:[{name:'shared-react',setup(builder){
+    builder.onResolve({filter:/^react(?:\/jsx-runtime|\/jsx-dev-runtime)?$/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));
+  }}]});
+  return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+}
+
+test('default coverage keeps checks collapsed and preserves exclusions and source cautions inside', async () => {
+  const {TableCoverageMap}=await coverageComponent();
+  const raw=document();const dim=raw.tables.records.dimensions[0];
+  dim.meaning='Source-stated event dates. Missing dates do not establish missing records.';
+  dim.notes=['0 rows have invalid dates.'];
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw),view:{year:2024,mode:'years'}}));
+  const [visible,checks]=html.split('<details class="coverage-checks">');
+  assert.match(visible,/Source-stated event dates/);assert.doesNotMatch(visible,/0 rows have invalid dates|Missing dates do not|Rows not counted/);
+  assert.match(checks,/How this count was checked/);assert.match(checks,/0 rows have invalid dates/);assert.match(checks,/Missing dates do not establish missing records/);
+  assert.match(checks,/Rows not counted for this field/);assert.match(checks,/<dd>1<\/dd>/);
+  assert.doesNotMatch(html,/<details class="coverage-checks" open/);
+});
+
+test('month view explains missing precision rather than showing twelve misleading empty months', async () => {
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  Object.assign(raw.tables.records.dimensions[0],{granularity:'year',buckets:{'2024':2}});
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw),view:{year:2024,mode:'months'}}));
+  assert.match(html,/Month counts are unavailable/);assert.match(html,/years/);
+  assert.match(html,/2 rows counted for 2024/);assert.doesNotMatch(html,/time-empty|2024-01/);
+});
+
+test('snapshot primary text contains no calendar warning and preserves its calculation facts', async () => {
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  Object.assign(raw.tables.records.dimensions[0],{label:'Agency totals',meaning:'Totals from the saved source inputs. This is one saved release.',granularity:'snapshot',buckets:{},placedRows:3,unplacedRows:0,snapshot:{asOf:'2026-10-03T21:53:05Z',facts:[{label:'Measure',value:'Saved agency totals'}]}});
+  raw.tables.records.note='An empty period does not establish source completeness.';
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw),view:{year:2024,mode:'years'}}));
+  const visible=html.split('<details class="coverage-checks">')[0];
+  assert.match(visible,/3 rows/);assert.match(visible,/Saved agency totals/);assert.match(visible,/UTC/);
+  assert.doesNotMatch(visible,/empty period|future|time-cell/);
+});
+
+const publisherRows=[{publisher_id:'afp',name:'Americans for Prosperity'},{publisher_id:'aauw',name:'American Association of University Women'}];
+const publisherBytes=new TextEncoder().encode(JSON.stringify(publisherRows)).buffer;
+const publisherHash='sha256:'+createHash('sha256').update(new Uint8Array(publisherBytes)).digest('hex');
+function publisherFixture() {
+  const source={...table,id:'scorecard_publishers',family:'scorecards',rows:2,columns:[{name:'publisher_id',type:'VARCHAR'},{name:'name',type:'VARCHAR'}],members:[{...table.members[0],rows:2,byteSize:publisherBytes.byteLength,sha256:publisherHash}]};
+  const dim={...dimension,id:'publishers',label:'Publishers',fields:['publisher_id'],granularity:'category',rows:2,placedRows:2,unplacedRows:0,buckets:{'["afp"]':1,'["aauw"]':1}};
+  const raw=document();raw.tables={scorecard_publishers:{...map,family:'scorecards',rows:2,fingerprint:JSON.stringify([[publisherHash,2,publisherBytes.byteLength]]),schema:[['publisher_id','VARCHAR'],['name','VARCHAR']],dimensions:[dim]}};
+  return {source,dim,maps:parseCoverageMaps(raw)};
+}
+
+test('publisher lookup reads only the small bound publisher list and retains actual names', async () => {
+  const {source,maps}=publisherFixture();let calls=0;
+  const publishers=await loadCoveragePublishers([source],maps,undefined,{fetchMember:async member=>{calls++;assert.equal(member,source.members[0]);return publisherBytes.slice(0);},decode:async (buffer,rows)=>{
+    assert.equal(buffer.byteLength,publisherBytes.byteLength);assert.equal(rows,2);return publisherRows;
+  }});
+  assert.equal(calls,1);assert.equal(publishers.names.get('afp'),'Americans for Prosperity');
+  const dim=maps.tables.scorecard_publishers.dimensions[0];
+  const names=coveragePublisherNames(source,maps,dim,publishers);
+  assert.deepEqual(coverageCategoryDisplay(dim,'["afp"]',names),{label:'Americans for Prosperity',exact:'afp'});
+  assert.deepEqual(coverageCategoryDisplay(dim,'["unknown"]',names),{label:'Publisher ID: unknown',exact:'unknown'});
+  assert.equal(coverageCategoryMatches(dim,'["afp"]','Americans for Prosperity',names),true);
+  assert.equal(coverageCategoryMatches(dim,'["afp"]',' afp ',names),true);
+  assert.equal(coverageCategoryMatches(dim,'["afp"]','University Women',names),false);
+  assert.equal(coverageCategoryMatches(dim,'["afp"]','Americans for Prosperity'),false);
+});
+
+test('coverage renders recorded publisher names only while its lookup remains bound', async () => {
+  const {TableCoverageMap}=await coverageComponent();const {source,maps}=publisherFixture();
+  const publishers={source,names:new Map([['afp','Americans for Prosperity'],['aauw','American Association of University Women']])};
+  const props={table:source,maps,publishers,view:{year:2026,mode:'years'}};
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,props));
+  assert.match(html,/Americans for Prosperity/);assert.match(html,/American Association of University Women/);
+  const unbound=renderToStaticMarkup(createElement(TableCoverageMap,{...props,publishers:{...publishers,source:{...source,artifactDigest:'sha256:'+'b'.repeat(64)}}}));
+  assert.doesNotMatch(unbound,/Americans for Prosperity/);assert.match(unbound,/Publisher ID: afp/);
+});
+
+test('unavailable maps offer nearby reloading without implying a new measurement', async () => {
+  const {TableCoverageMap}=await coverageComponent();const maps=parseCoverageMaps(document());
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:{...table,rows:4},maps,onRetry:()=>{},view:{year:2026,mode:'years'}}));
+  assert.match(html,/Coverage counts are unavailable for this data release or measurement month/);
+  assert.match(html,/Reload published counts/);assert.doesNotMatch(html,/recalculate|scan records/i);
+});
+
+test('publisher lookup refuses stale maps, large lists, incomplete reads and conflicting names', async () => {
+  const {source,maps}=publisherFixture();let calls=0;const readers={fetchMember:async()=>{calls++;return publisherBytes.slice(0);},decode:async()=>[]};
+  assert.equal(await loadCoveragePublishers([{...source,artifactDigest:'sha256:'+'b'.repeat(64)}],maps,undefined,readers),undefined);
+  assert.equal(await loadCoveragePublishers([{...source,rows:201}],maps,undefined,readers),undefined);assert.equal(calls,0);
+  for (const capped of [
+    {...source,rows:201,members:[{...source.members[0],rows:201}]},
+    {...source,members:[{...source.members[0],byteSize:1048577}]},
+    {...source,members:[{...source.members[0],sha256:undefined}]},
+  ]) {
+    const boundMap={...maps.tables[source.id],rows:capped.rows,fingerprint:JSON.stringify(capped.members.map(member=>[member.sha256??member.url,member.rows,member.byteSize])),dimensions:[{...maps.tables[source.id].dimensions[0],rows:capped.rows,placedRows:capped.rows,buckets:{'["afp"]':capped.rows}}]};
+    const bound=parseCoverageMaps({...document(),tables:{[source.id]:boundMap}});
+    assert.ok(currentCoverageMap(capped,bound));
+    assert.equal(await loadCoveragePublishers([capped],bound,undefined,readers),undefined);
+  }
+  assert.equal(calls,0);
+  await assert.rejects(loadCoveragePublishers([source],maps,undefined,readers),/read in full/);
+  assert.throws(()=>publisherNames([{publisher_id:'a',name:'One'},{publisher_id:'a',name:'Another'}]),/conflicting names/);
+  assert.equal(publisherNames([{publisher_id:'a',name:'One'},{publisher_id:'a',name:'One'}]).get('a'),'One');
+  assert.equal(publisherNames([{publisher_id:'a',name:null}]).has('a'),false);
+});
+
+test('publisher names require a current target and the exact held generation, never latest-to-old matching', () => {
+  const {source,maps}=publisherFixture(), held=source.artifactDigest, other='sha256:'+'b'.repeat(64);
+  const target={...source,id:'scorecard_item_links',family:'scorecard-analysis',artifactDigest:other};
+  const dim={...maps.tables.scorecard_publishers.dimensions[0],parent:{family:'scorecards',artifactDigest:held}};
+  maps.tables[target.id]={...maps.tables[source.id],family:target.family,artifactDigest:other,dimensions:[dim]};
+  const publishers={source,names:new Map([['afp','Americans for Prosperity']])};
+  assert.equal(coveragePublisherNames(target,maps,dim,publishers),publishers.names);
+  dim.parent.artifactDigest=other;assert.equal(coveragePublisherNames(target,maps,dim,publishers),undefined);
+  dim.parent={family:'unrelated',artifactDigest:held};assert.equal(coveragePublisherNames(target,maps,dim,publishers),undefined);
+  delete dim.parent;assert.equal(coveragePublisherNames(target,maps,dim,publishers),undefined);
+  assert.equal(coveragePublisherNames({...target,rows:3},maps,dim,publishers),undefined);
+  assert.equal(coveragePublisherNames(target,maps,{...dim},publishers),undefined);
+  assert.equal(coveragePublisherNames(target,{...maps,tables:{[target.id]:maps.tables[target.id]}},dim,publishers),undefined);
+});
+
+test('publisher checksum is verified before decoding and tampered bytes never supply names', async () => {
+  const {source,maps}=publisherFixture();let decoded=0;
+  const altered=publisherBytes.slice(0);new Uint8Array(altered)[0]^=1;
+  await assert.rejects(loadCoveragePublishers([source],maps,undefined,{fetchMember:async()=>altered,decode:async()=>{decoded++;return publisherRows;}}),/checksum does not match/);
+  assert.equal(decoded,0);
+  await assert.rejects(loadCoveragePublishers([source],maps,undefined,{fetchMember:async()=>publisherBytes.slice(1),decode:async()=>{decoded++;return publisherRows;}}),/size does not match/);
+  assert.equal(decoded,0);
+  const valid=await loadCoveragePublishers([source],maps,undefined,{fetchMember:async()=>publisherBytes.slice(0),decode:async buffer=>{decoded++;assert.deepEqual(new Uint8Array(buffer),new Uint8Array(publisherBytes));return publisherRows;}});
+  assert.equal(decoded,1);assert.equal(valid.names.get('afp'),'Americans for Prosperity');
 });

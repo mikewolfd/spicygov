@@ -1,51 +1,53 @@
 import { useState } from 'react';
 import { count, type Dataset } from '../lib/catalog';
-import { coverageFieldLabel, currentCoverageMap, dimensionPeriodRows, scopeLabel, type CoverageDimension, type CoverageMaps } from '../lib/coverage-map';
+import { coverageCategoryDisplay, coverageCategoryMatches, coverageFieldLabel, coverageItemNoun, coveragePeriodLabel, coveragePeriodNoun, coverageStatement, currentCoverageMap, dimensionPeriodRows, scopeLabel, type CoverageDimension, type CoverageMaps } from '../lib/coverage-map';
 import { object } from '../lib/publication-evidence';
+import { coveragePublisherNames, type CoveragePublishers } from '../lib/coverage-publishers';
 import type { TimeView } from './time-coverage';
+import './coverage-map.css';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const unitLabel = (rows: number, unit = 'rows') => rows === 1 ? ({rows: 'row', comments: 'comment', 'index groups': 'index group'} as Record<string, string>)[unit] ?? unit : unit;
+const rowsLabel = (rows: number) => `${count(rows)} ${rows === 1 ? 'row' : 'rows'}`;
 
-export function TableCoverageMap({ table, maps, view }: { table: Dataset; maps?: CoverageMaps; view: TimeView }) {
+export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { table: Dataset; maps?: CoverageMaps; view: TimeView; publishers?: CoveragePublishers; onRetry?: () => void }) {
   const [axis, setAxis] = useState('');
   const map = currentCoverageMap(table, maps);
-  if (!map) return <p className="time-caption">{maps?.tables[table.id] ? 'Coverage needs refreshing for the current files or time period.' : 'Coverage map is not available.'}</p>;
+  if (!map) return <div className="coverage-map"><p className="coverage-unavailable">{maps?.tables[table.id] ? 'Coverage counts are unavailable for this data release or measurement month.' : 'Coverage counts are not available for this table.'}</p>{onRetry && <button type="button" onClick={onRetry}>Reload published counts</button>}</div>;
   const preferred = map.dimensions.find(dim => ['month', 'year', 'season'].includes(dim.granularity) && dim.placedRows > 0)
     ?? map.dimensions.find(dim => dim.granularity !== 'snapshot' && dim.placedRows > 0) ?? map.dimensions[0];
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
+  const statement = coverageStatement(dimension);
+  const remainingMeaning = dimension.meaning.slice(statement.length).trim();
+  const sourceInputs = (Array.isArray(dimension.parent) ? dimension.parent : [dimension.parent]).filter(object).flatMap(input => typeof input.tableId === 'string' ? [input.tableId] : []);
+  const notes = [...new Set([remainingMeaning, ...(dimension.notes ?? []), map.note].filter(Boolean))];
   return <div className="coverage-map">
-    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Coverage by</span><select aria-label={`Coverage dimension for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{dim.label}</option>)}</select></label> : <p className="time-caption"><strong>{dimension.label}</strong></p>}
-    <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} />
-    <p className="time-caption">{dimension.meaning}</p>
-    {table.id === 'court_opinion_clusters' && (dimension.fields?.includes('date_filed') || dimension.fields?.includes('date_filed_is_approximate')) && <p className="time-caption">CourtListener’s precision flag does not verify a date’s accuracy. Unusually early source dates remain unchanged and need source review.</p>}
-    {['comments', 'comments_index'].includes(table.id) && ['comment-posting-months', 'indexed-comment-posting-months'].includes(dimension.id) && Object.keys(dimension.buckets).some(key => Number(key.slice(0, 4)) < 1900) && <p className="time-caption">These months come from the saved index. Unusually early dates remain unchanged and need source review.</p>}
-    {dimension.unplacedRows > 0 && <p className="time-caption">{count(dimension.unplacedRows)} rows are not counted in this view.</p>}
-    {(dimension.partialRows ?? 0) > 0 && <p className="time-caption">{count(dimension.partialRows ?? 0)} rows also have values that could not be placed.</p>}
-    {(dimension.unmatchedRows ?? 0) > 0 && <p className="time-caption">{count(dimension.unmatchedRows ?? 0)} rows could not be matched to the recorded parent.</p>}
-    {dimension.overlapping && <p className="time-caption">A row can appear in more than one cell. Counts are separate for each cell.</p>}
-    {dimension.notes?.map(note => <p className="time-caption" key={note}>{note}</p>)}
-    <DimensionFacts dimension={dimension} />
-    {map.note && <p className="table-note">{map.note}</p>}
+    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{dim.label}</option>)}</select></label> : <p className="coverage-view-label">{dimension.label}</p>}
+    <p className="coverage-meaning">{statement}</p>
+    <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} publisherNames={coveragePublisherNames(table, maps, dimension, publishers)} />
+    <details className="coverage-checks">
+      <summary>How this count was checked<span className="sr-only"> for {table.label}, {dimension.label}</span></summary>
+      <div className="coverage-checks-body">
+        <dl className="coverage-check-counts">
+          <div><dt>Rows counted for {dimension.label.toLowerCase()}</dt><dd>{count(dimension.placedRows)}</dd></div>
+          {dimension.unplacedRows > 0 && <div><dt>Rows not counted for this field</dt><dd>{count(dimension.unplacedRows)}</dd></div>}
+          {(dimension.partialRows ?? 0) > 0 && <div><dt>Counted rows with additional missing or unusable values</dt><dd>{count(dimension.partialRows!)}</dd></div>}
+          {(dimension.unmatchedRows ?? 0) > 0 && <div><dt>Rows without a matching source record</dt><dd>{count(dimension.unmatchedRows!)}</dd></div>}
+        </dl>
+        {sourceInputs.length > 0 && <p>Matched source {sourceInputs.length === 1 ? 'table' : 'tables'}: <code>{[...new Set(sourceInputs)].join(', ')}</code>.</p>}
+        {dimension.overlapping && <p>A row can count in several cells. Adding cell counts can count the same row more than once.</p>}
+        {table.id === 'court_opinion_clusters' && (dimension.fields?.includes('date_filed') || dimension.fields?.includes('date_filed_is_approximate')) && <p>CourtListener’s date precision flag does not verify a date’s accuracy. Unusually early source dates need review.</p>}
+        {table.id === 'comments_index' && Object.keys(dimension.buckets).some(key => Number(key.slice(0, 4)) < 1900) && <p>The saved posting index includes unusually early source dates. Those values remain unchanged and need review.</p>}
+        {notes.map(note => <p key={note}>{note}</p>)}
+        <DimensionFacts dimension={dimension} />
+      </div>
+    </details>
   </div>;
 }
 
-export function SourceCoverageSummary({ tables, maps, view }: { tables: Dataset[]; maps?: CoverageMaps; view: TimeView }) {
-  const current = tables.map(table => currentCoverageMap(table, maps));
-  const measured = current.filter(map => map !== undefined).length;
-  const temporal = current.map(map => map?.dimensions.filter(dim => ['month', 'year', 'season'].includes(dim.granularity)) ?? []);
-  const temporalTables = temporal.filter(dims => dims.length).length;
-  const periods = Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 12 }, (_, i) => view.mode === 'years' ? String(Math.max(1, view.year - 11) + i).padStart(4, '0') : `${String(view.year).padStart(4, '0')}-${String(i + 1).padStart(2, '0')}`);
-  return <div className="time-coverage time-compact">
-    {temporalTables > 0 && <div className="time-grid">{periods.map((period, i) => {
-      const included = temporal.map(dims => dims.map(dim => dimensionPeriodRows(dim, period)).filter(n => n !== undefined));
-      const present = included.filter(counts => counts.some(n => n! > 0)).length;
-      const available = included.filter(counts => counts.length).length;
-      const state = present ? 'present' : available > 0 && available === temporalTables && measured === tables.length ? 'empty' : 'unknown';
-      const text = `${period}: ${present} tables with placed rows; ${available} tables have a count for this view`;
-      return <span className={`time-cell time-${state}`} key={period} title={text} aria-label={text}><span>{view.mode === 'years' ? period : months[i]}</span><i aria-hidden="true">{present ? '●' : state === 'empty' ? '—' : '?'}</i></span>;
-    })}</div>}
-    <p className="time-caption">{measured} of {tables.length} tables mapped{temporalTables > 0 ? ` · any stated date, year, or cycle` : ' · scopes or snapshots'}</p>
-  </div>;
+export function SourceCoverageSummary({ tables, maps }: { tables: Dataset[]; maps?: CoverageMaps; view: TimeView }) {
+  const measured = tables.filter(table => currentCoverageMap(table, maps)).length;
+  return <p className="coverage-source-summary">Coverage counts available for {measured} of {tables.length} tables. Open a table to compare its fields.</p>;
 }
 
 function DimensionFacts({ dimension }: { dimension: CoverageDimension }) {
@@ -56,59 +58,74 @@ function DimensionFacts({ dimension }: { dimension: CoverageDimension }) {
   const futureRows = typeof anomalies?.futureActivityRows === 'number' ? anomalies.futureActivityRows : 0;
   const boundaryMonth = typeof anomalies?.boundaryMonth === 'string' ? anomalies.boundaryMonth : undefined;
   return <>
-    {typeof evidence?.usedCollections === 'number' && <p className="time-caption">{count(evidence.usedCollections)} matched collections.</p>}
-    {futureRows > 0 && <p className="time-caption">{count(futureRows)} source dates {boundaryMonth ? `fall after ${boundaryMonth}` : 'fall in the future'} and are excluded from this view.</p>}
-    {empty.length > 0 && <details className="coverage-facts"><summary>{count(empty.length)} checked-empty requests</summary><p>These exact requests returned no records. They do not prove a whole year or source is empty.</p><ul>{empty.map((request, i) => <li key={i}>{request.scope}</li>)}</ul></details>}
-    {refusals.length > 0 && <details className="coverage-facts"><summary>{count(refusals.length)} refusals or unresolved selections</summary><ul>{refusals.map((item, i) => <li key={i}>{typeof item.sourceFamily === 'string' && <strong>{item.sourceFamily.replaceAll('_', ' ')}: </strong>}{typeof item.reason === 'string' ? item.reason : 'No reason recorded.'}</li>)}</ul></details>}
+    {typeof evidence?.usedCollections === 'number' && <p>{count(evidence.usedCollections)} saved {evidence.usedCollections === 1 ? 'collection supplies' : 'collections supply'} matching source records.</p>}
+    {futureRows > 0 && <p>{count(futureRows)} source {futureRows === 1 ? 'date falls' : 'dates fall'} {boundaryMonth ? `after ${boundaryMonth}` : 'in the future'} and {futureRows === 1 ? 'is' : 'are'} excluded from this view.</p>}
+    {empty.length > 0 && <details className="coverage-facts"><summary>{count(empty.length)} {empty.length === 1 ? 'request confirmed' : 'requests confirmed'} empty</summary><p>These exact requests returned no records. They do not establish that a whole year or source is empty.</p><ul>{empty.map((request, i) => <li key={i}>{request.scope}</li>)}</ul></details>}
+    {refusals.length > 0 && <details className="coverage-facts"><summary>{count(refusals.length)} selections not accepted or unresolved</summary><ul>{refusals.map((item, i) => <li key={i}>{typeof item.sourceFamily === 'string' && <strong>{item.sourceFamily.replaceAll('_', ' ')}: </strong>}{typeof item.reason === 'string' ? item.reason : 'No reason recorded.'}</li>)}</ul></details>}
   </>;
 }
 
-function DimensionGrid({ dimension, view }: { dimension: CoverageDimension; view: TimeView }) {
+function DimensionGrid({ dimension, view, publisherNames }: { dimension: CoverageDimension; view: TimeView; publisherNames?: ReadonlyMap<string, string> }) {
   const [selected, setSelected] = useState('');
   const keys = Object.keys(dimension.buckets).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  if (dimension.granularity === 'snapshot') return <div className="coverage-snapshot"><p><strong>Snapshot</strong> · {count(dimension.rows)} retained rows{dimension.snapshot?.publishedAt && <> · Published {new Date(dimension.snapshot.publishedAt).toLocaleDateString()}</>}</p>
+  if (dimension.granularity === 'snapshot') return <div className="coverage-snapshot"><p><strong>{rowsLabel(dimension.rows)}</strong> in one saved release{dimension.snapshot?.publishedAt && <> · Released {new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(dimension.snapshot.publishedAt))}</>}</p>
     {dimension.snapshot?.asOf && <p>Calculated {new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(dimension.snapshot.asOf))} UTC</p>}
-    {!!dimension.snapshot?.facts?.length && <dl className="coverage-snapshot-facts">{dimension.snapshot.facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>}
-    <span className="table-note">This view describes one saved release.</span></div>;
-  if (dimension.granularity === 'category') return <CategoryGrid dimension={dimension} />;
+    {!!dimension.snapshot?.facts?.length && <dl className="coverage-snapshot-facts">{dimension.snapshot.facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>}</div>;
+  if (dimension.granularity === 'category') return <CategoryGrid dimension={dimension} publisherNames={publisherNames} />;
+  const yearOnlyMonths = dimension.granularity === 'year' && view.mode === 'months';
+  const cycles = dimension.granularity === 'year' && coveragePeriodNoun(dimension) === 'cycle';
   const periods = dimension.granularity === 'season'
     ? Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 1 }, (_, i) => String(view.mode === 'years' ? Math.max(1, view.year - 11) + i : view.year).padStart(4, '0')).flatMap(year => [`${year}-spring`, `${year}-fall`])
     : Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 12 }, (_, i) => view.mode === 'years' ? String(Math.max(1, view.year - 11) + i).padStart(4, '0') : `${String(view.year).padStart(4, '0')}-${String(i + 1).padStart(2, '0')}`);
+  const annual = yearOnlyMonths ? dimensionPeriodRows(dimension, String(view.year).padStart(4, '0')) : undefined;
   return <>
-    <div className={`time-grid ${dimension.granularity === 'season' ? 'coverage-period-grid' : ''}`}>{periods.map((period, index) => {
-      const rows = dimensionPeriodRows(dimension, period);
-      const state = rows === undefined ? 'unknown' : rows ? 'present' : 'empty';
-      const text = `${period}: ${rows === undefined ? 'No count is available for this view' : `${count(rows)} ${dimension.unit ?? 'rows'}`}`;
-      const label = dimension.granularity === 'season' ? period.replace('-spring', ' spring').replace('-fall', ' fall') : view.mode === 'months' ? months[index] : period;
-      return <button type="button" key={period} className={`time-cell time-${state}`} aria-label={text} title={text} onClick={() => setSelected(text)}><span>{label}</span><i aria-hidden="true">{rows === undefined ? '?' : rows ? '●' : '—'}</i></button>;
-    })}</div>
-    {keys.length > 0 && <p className="time-caption">First {keys[0]} · last {keys[keys.length - 1]}</p>}
+    {yearOnlyMonths ? <p className="coverage-unavailable">Month counts are unavailable: this field records {cycles ? 'two-year election cycles' : 'years'} only.{annual !== undefined && <> {rowsLabel(annual)} counted for {coveragePeriodLabel(dimension, String(view.year).padStart(4, '0'))}.</>}</p> : <>
+      {dimension.granularity === 'season' && view.mode === 'months' && <p className="coverage-unavailable">Month counts are unavailable. Spring and fall editions are shown below.</p>}
+      <div className={`time-grid coverage-time-grid ${cycles ? 'coverage-cycle-grid' : ''} ${dimension.granularity === 'season' ? 'coverage-period-grid' : ''}`}>{periods.map((period, index) => {
+        const rows = dimensionPeriodRows(dimension, period);
+        const state = rows === undefined ? 'unknown' : rows ? 'present' : 'empty';
+        const text = `${coveragePeriodLabel(dimension, period)}: ${rows === undefined ? 'Count unavailable for this view' : `${count(rows)} ${unitLabel(rows, dimension.unit)} counted here`}`;
+        const label = dimension.granularity === 'season' ? coveragePeriodLabel(dimension, period) : view.mode === 'months' ? months[index] : period;
+        const cycleSpan = cycles && Number(period) >= 2 && Number(period) % 2 === 0 ? `${Number(period) - 1}–${period}` : undefined;
+        return <button type="button" key={period} className={`time-cell time-${state}`} aria-label={text} title={text} onClick={() => setSelected(text)}><span>{label}</span>{cycleSpan && <small>{cycleSpan}</small>}<i aria-hidden="true">{rows === undefined ? '?' : rows ? '●' : '—'}</i></button>;
+      })}</div>
+    </>}
+    {keys.length > 0 ? <dl className="coverage-range"><div><dt>First recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[0])}</dd></div><div><dt>Last recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[keys.length - 1])}</dd></div></dl> : <p className="coverage-empty">No records have a usable value for {dimension.label.toLowerCase()}.</p>}
     {selected && <p className="time-selection" role="status">{selected}</p>}
   </>;
 }
 
-function CategoryGrid({ dimension }: { dimension: CoverageDimension }) {
-  const [all, setAll] = useState(false), [selected, setSelected] = useState('');
-  const label = (key: string) => scopeLabel(key, dimension.fields);
-  const entries = Object.entries(dimension.buckets).sort(([a], [b]) => label(a).localeCompare(label(b), undefined, { numeric: true }));
-  if (!entries.length) return <p className="time-caption">No rows have a usable scope value.</p>;
+function CategoryGrid({ dimension, publisherNames }: { dimension: CoverageDimension; publisherNames?: ReadonlyMap<string, string> }) {
+  const [all, setAll] = useState(false), [selected, setSelected] = useState(''), [query, setQuery] = useState('');
+  const display = (key: string) => coverageCategoryDisplay(dimension, key, publisherNames);
+  const entries = Object.entries(dimension.buckets).sort(([a], [b]) => display(a).label.localeCompare(display(b).label, undefined, { numeric: true }) || a.localeCompare(b));
+  if (!entries.length) return <p className="coverage-empty">No records have a usable value for {dimension.label.toLowerCase()}.</p>;
   const tuples = entries.map(([key, n]) => {
     try { const values: unknown = JSON.parse(key); return Array.isArray(values) && values.length === 2 && values.every(value => typeof value === 'string') ? { values: values as string[], n } : undefined; } catch { return undefined; }
   });
   if (tuples.every(tuple => tuple !== undefined)) {
     const rows = [...new Set(tuples.map(tuple => tuple!.values[1]))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     const columns = [...new Set(tuples.map(tuple => tuple!.values[0]))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const columnLabel = (value: string) => scopeLabel(value, dimension.fields?.slice(0, 1));
-    const rowLabel = (value: string) => scopeLabel(value, dimension.fields?.slice(1, 2));
-    if (rows.length <= 60 && columns.length <= 30) return <div className="coverage-matrix-scroll"><table className="coverage-matrix" aria-label={dimension.label}><thead><tr><th scope="col">{coverageFieldLabel(dimension.fields?.[1])}</th>{columns.map(column => <th scope="col" key={column}>{columnLabel(column)}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row}><th scope="row">{rowLabel(row)}</th>{columns.map(column => {
-      const n = dimension.buckets[JSON.stringify([column, row])] ?? 0;
-      return <td key={column} className={n ? 'scope-present' : 'scope-empty'} title={`${columnLabel(column)} · ${rowLabel(row)}: ${count(n)} rows in this file`}>{n ? count(n) : '—'}</td>;
-    })}</tr>)}</tbody></table><p className="time-caption">— No placed rows in this file.</p></div>;
+    const columnLabel = (value: string) => dimension.fields?.[0] === 'publisher_id' ? publisherNames?.get(value) ?? `Publisher ID: ${value}` : scopeLabel(value, dimension.fields?.slice(0, 1));
+    const rowLabel = (value: string) => dimension.fields?.[1] === 'publisher_id' ? publisherNames?.get(value) ?? `Publisher ID: ${value}` : scopeLabel(value, dimension.fields?.slice(1, 2));
+    if (rows.length <= 60 && columns.length <= 30) return <>
+      <p className="coverage-scroll-hint">Scroll across or down to compare all values.</p>
+      <div className="coverage-matrix-scroll" role="region" aria-label={`${dimension.label}; scroll to compare values`} tabIndex={0}><table className="coverage-matrix"><caption>{coverageFieldLabel(dimension.fields?.[1])} by {coverageFieldLabel(dimension.fields?.[0])} · {dimension.unit ?? 'rows'} counted</caption><thead><tr><th scope="col">{coverageFieldLabel(dimension.fields?.[1])}</th>{columns.map(column => <th scope="col" key={column}>{columnLabel(column)}{dimension.fields?.[0] === 'publisher_id' && publisherNames?.has(column) && <small className="coverage-publisher-id">Publisher ID: {column}</small>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row}><th scope="row">{rowLabel(row)}{dimension.fields?.[1] === 'publisher_id' && publisherNames?.has(row) && <small className="coverage-publisher-id">Publisher ID: {row}</small>}</th>{columns.map(column => {
+        const n = dimension.buckets[JSON.stringify([column, row])] ?? 0;
+        return <td key={column} className={n ? 'scope-present' : 'scope-empty'}>{n ? count(n) : <><span aria-hidden="true">—</span><span className="sr-only">0</span></>}</td>;
+      })}</tr>)}</tbody></table></div>
+      <p className="coverage-matrix-legend">— No records counted for this combination.</p>
+    </>;
   }
-  const visible = all ? entries : entries.slice(0, 18);
+  const noun = coverageItemNoun(dimension);
+  const filtered = entries.filter(([key]) => coverageCategoryMatches(dimension, key, query, publisherNames));
+  const visible = all ? filtered : entries.slice(0, 6);
+  const selection = selected ? display(selected) : undefined;
   return <>
-    <div className="coverage-scope-grid">{visible.map(([key, n]) => <button type="button" key={key} className="coverage-scope-cell" title={`${label(key)}: ${count(n)} ${dimension.unit ?? 'rows'}`} onClick={() => setSelected(`${label(key)}: ${count(n)} ${dimension.unit ?? 'rows'}`)}><span>{label(key)}</span><strong>{count(n)}</strong></button>)}</div>
-    {entries.length > 18 && <button className="details-toggle" onClick={() => setAll(!all)}>{all ? 'Show fewer' : `Show all ${count(entries.length)} scopes`}</button>}
-    {selected && <p className="time-selection" role="status">{selected}</p>}
+    {all && <label className="coverage-category-search">Find {noun}<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>}
+    <div className={`coverage-scope-grid${all ? ' coverage-scope-expanded' : ''}`} {...(all ? { role: 'region', 'aria-label': `All ${noun} for ${dimension.label}`, tabIndex: 0 } : {})}>{visible.map(([key, n]) => <button type="button" key={key} className="coverage-scope-cell" aria-label={`${display(key).label}: ${count(n)} ${unitLabel(n, dimension.unit)}; show exact recorded value`} onClick={() => setSelected(key)}><span>{display(key).label}</span><strong>{count(n)}</strong></button>)}</div>
+    {all && !filtered.length && <p role="status">No {noun} match this search. <button type="button" onClick={() => setQuery('')}>Clear search</button></p>}
+    {entries.length > 6 && <button type="button" className="coverage-show-all" onClick={() => { setAll(!all); setQuery(''); }}>{all ? 'Show fewer' : `Show all ${count(entries.length)} ${noun}`}</button>}
+    {selection && <div className="coverage-selection" role="status"><strong>{selection.label}</strong><p>{count(dimension.buckets[selected])} {unitLabel(dimension.buckets[selected], dimension.unit)} counted here.</p><details><summary>Exact recorded value</summary><p className="coverage-exact-value">{selection.exact}</p><details><summary>Stored identifier</summary><code>{selected}</code></details></details></div>}
   </>;
 }

@@ -8,7 +8,7 @@ async function module(path) {
   const { outputFiles } = await build({ entryPoints: [path], bundle: true, platform: 'node', format: 'esm', write: false });
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
-const { parseSourceReview, parseRulemaking, parseComments, sourceEntries, reviewedGenerationLinks, filterEntries, parseGenerationDetails, loadOtherPublications } = await module('lib/source-directory.ts');
+const { parseSourceReview, parseRulemaking, parseComments, sourceEntries, reviewedGenerationLinks, filterEntries, parseGenerationDetails, loadOtherPublications, sourceSections, collectionSteps, sourceMetadataNeedsAttention } = await module('lib/source-directory.ts');
 const { generationEvidence, dataUrl } = await module('lib/publication-evidence.ts');
 const sha = 'sha256:' + 'a'.repeat(64), newer = 'sha256:' + 'b'.repeat(64);
 const base = 'https://data.spicygov.ai';
@@ -189,7 +189,10 @@ test('source-log preview distinguishes saved responses, missing fields and inher
   assert.equal(preview.inherited, true);
   assert.equal(preview.partial, true);
   assert.deepEqual(preview.observations.map(row => [row.source, row.saved, row.status]), [['example.gov', true, 200], ['other.gov', false, undefined]]);
-  assert.equal(parseObservationPreview(Array(8).fill(JSON.stringify({event:'capture', requested_url:'https://example.gov'})).join('\n')).observations.length, 5);
+  const repeated = parseObservationPreview(Array(8).fill(JSON.stringify({event:'capture', requested_url:'https://example.gov'})).join('\n'));
+  assert.equal(repeated.observations.length, 1);
+  assert.equal(repeated.observations[0].examples, 5);
+  assert.equal(repeated.partial, true);
 });
 
 test('time coverage shows measured gaps without turning missing measurements into gaps', async () => {
@@ -271,4 +274,74 @@ test('collection links refuse a different release even when table bytes match', 
   assert.equal(parseCollectionEvidence({...raw,input:{...raw.input,url:raw.input.url.replace('/generations/', '/generations/../')}},3),undefined);
   assert.equal(parseCollectionEvidence({...raw,queryResults:[{status:'refused',reason:'missing timestamp',completeness:'not-asserted',records:2}]},3),undefined);
   assert.equal(parseCollectionEvidence({...raw,queryResults:[{status:'refused',reason:'missing timestamp',completeness:'not-asserted',records:3}]},3).queryResults[0].status,'refused');
+});
+
+
+test('topic and family grouping keeps derived tables with their subjects and retains all exact publishers', () => {
+  const publishers = [{id: 'govinfo', name: 'GovInfo'}, {id: 'congress', name: 'Congress.gov'}];
+  const entries = sourceEntries([
+    {...table('bill_actions'), group: 'Congress', family: 'bills', inputs: ['bills'], sources: publishers},
+    {...table('bill_text'), group: 'Congress', family: 'bills', sources: publishers.slice(0,1)},
+    {...table('dockets'), group: 'Regulation', family: 'dockets', sources: [publishers[0]]},
+    {...table('fec_candidates'), group: 'Elections', family: 'candidates'},
+  ], []);
+  const sections = sourceSections(entries);
+  assert.deepEqual(sections.map(s => s.topic), ['Congress', 'Regulation', 'Elections']);
+  assert.equal(sections[0].groups[0].entries.length, 2);
+  assert.deepEqual(sections[0].groups[0].publishers, publishers);
+  assert.equal(sections[2].groups[0].publishers.length, 0);
+  assert.equal(sections.flatMap(s => s.groups.flatMap(g => g.entries)).length, entries.length);
+});
+test('collection labels distinguish acquisition from reuse and processing', () => {
+  assert.deepEqual(collectionSteps(['api', 'bulk_download', 'retained_input', 'derived', 'document_extraction']), [
+    {label: 'Collection', values: ['API', 'Bulk downloads']},
+    {label: 'Reuses', values: ['Saved source files']},
+    {label: 'Processing', values: ['Calculated', 'Text extracted from documents']},
+  ]);
+});
+test('source-detail recovery selects metadata problems separately from unreviewed collection', () => {
+  const audit = parseSourceReview(review());
+  const entries = sourceEntries([{...table(), metadataState: 'older-publication'}, {...table('new_table'), metadataState: 'current'}], [], audit);
+  assert.equal(sourceMetadataNeedsAttention(entries.find(e => e.table.id === 'records')), true);
+  assert.deepEqual(filterEntries(entries, '', '', 'source-details').map(e => e.table.id), ['records']);
+  assert.deepEqual(filterEntries(entries, '', '', 'unreviewed').map(e => e.table.id), ['new_table']);
+});
+test('source request preview preserves recorded endpoint and filters without inventing a purpose', async () => {
+  const {parseObservationPreview} = await module('lib/source-observations.ts');
+  const preview = parseObservationPreview(JSON.stringify({event: 'capture', requested_url: 'https://example.gov/api/records?year=2025&page=2'}));
+  assert.equal(preview.observations[0].endpoint, '/api/records');
+  assert.equal(preview.observations[0].selection, 'year=2025&page=2');
+  assert.equal(preview.observations[0].purpose, undefined);
+});
+
+test('duplicate request previews combine only matching endpoints, selections and outcomes', async () => {
+  const {parseObservationPreview} = await module('lib/source-observations.ts');
+  const rows = [
+    {observed_at:'2026-10-01T01:00:00Z',status_code:200},
+    {observed_at:'2026-10-02T01:00:00Z',status_code:200},
+    {observed_at:'2026-10-02T02:00:00Z',status_code:404},
+  ].map(row => JSON.stringify({event:'capture',requested_url:'https://example.gov/api/records?year=2025',...row})).join('\n');
+  const preview = parseObservationPreview(rows);
+  assert.equal(preview.observations.length, 2);
+  assert.equal(preview.observations[0].examples, 2);
+  assert.equal(preview.observations[0].observedAt, '2026-10-01T01:00:00Z');
+  assert.equal(preview.observations[0].lastObservedAt, '2026-10-02T01:00:00Z');
+  assert.equal(preview.observations[1].status, 404);
+});
+
+test('bill comparisons and classifications stay under Congress in the shared catalog taxonomy', async () => {
+  const {groupFor} = await module('lib/catalog.ts');
+  for (const id of ['diff_summaries', 'financial_changes', 'section_classifications']) assert.equal(groupFor(id), 'Congress');
+});
+
+test('request grouping preserves unknown dates and orders timestamps by instant', async () => {
+  const {parseObservationPreview} = await module('lib/source-observations.ts');
+  const dates = ['2026-10-05T01:00:00+02:00', '2026-10-04T23:30:00Z', undefined, 'invalid'];
+  const preview = parseObservationPreview(dates.map(observed_at => JSON.stringify({event:'capture',requested_url:'https://example.gov/api/records',observed_at})).join('\n'));
+  assert.equal(preview.observations.length, 2);
+  assert.equal(preview.observations[0].examples, 2);
+  assert.equal(preview.observations[0].observedAt, '2026-10-05T01:00:00+02:00');
+  assert.equal(preview.observations[0].lastObservedAt, '2026-10-04T23:30:00Z');
+  assert.equal(preview.observations[1].examples, 2);
+  assert.equal(preview.observations[1].observedAt, undefined);
 });

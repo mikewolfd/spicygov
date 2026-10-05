@@ -45,6 +45,9 @@ export function groupFor(id: string) {
   if (id.startsWith("scorecard")) return "Congress";
   if (
     [
+      "diff_summaries",
+      "financial_changes",
+      "section_classifications",
       "section_diffs",
       "section_diff_items",
       "public_activity_events",

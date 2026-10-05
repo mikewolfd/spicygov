@@ -4,8 +4,8 @@ import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
 
 export const methodLabels: Record<string, string> = {
-  bulk_download: 'Bulk downloads', structured_download: 'Data files', feed_download: 'RSS feeds',
-  api: 'Data service (API)', web_scraping: 'Web pages', document_extraction: 'Document text',
+  bulk_download: 'Bulk downloads', structured_download: 'Structured file downloads', feed_download: 'RSS feeds',
+  api: 'API', web_scraping: 'Web scraping', document_extraction: 'Text extracted from documents',
   retained_input: 'Saved source files', legacy_carry_forward: 'Earlier records',
   derived: 'Calculated', model_generated: 'AI-generated', unknown: 'Not documented',
 };
@@ -122,7 +122,7 @@ export function filterEntries(entries: SourceEntry[], query: string, method: str
     const { table, review, source } = entry;
     if (q && ![table.id, table.label, table.summary, source.name, ...table.inputs, ...(review?.sources.map(s => s.name) ?? []), review?.summary, review?.copy?.summary, review?.copy?.scope, ...(review?.copy?.gaps ?? []), ...(review?.methods.map(m => methodLabels[m] ?? m) ?? [])].join(' ').toLowerCase().includes(q)) return false;
     if (method && !review?.methods.includes(method)) return false;
-    if (evidence === 'native' && !table.publication?.nativeReceipts || evidence === 'journal' && !reviewedGenerationLinks(entry).length || evidence === 'empty' && table.rows !== 0 || evidence === 'separate' && entry.explorer || evidence === 'unreviewed' && review) return false;
+    if (evidence === 'native' && !table.publication?.nativeReceipts || evidence === 'journal' && !reviewedGenerationLinks(entry).length || evidence === 'empty' && table.rows !== 0 || evidence === 'separate' && entry.explorer || evidence === 'unreviewed' && review || evidence === 'source-details' && !sourceMetadataNeedsAttention(entry)) return false;
     return true;
   });
 }
@@ -146,4 +146,40 @@ export function parseGenerationDetails(raw: unknown, table: Dataset): Generation
     result.identityFields = strings(policy?.identity_fields);
   }
   return result;
+}
+
+export function sourceMetadataNeedsAttention(entry: SourceEntry): boolean {
+  return entry.explorer && !['current', 'loading'].includes(entry.table.metadataState);
+}
+export function collectionSteps(methods: string[]): { label: string; values: string[] }[] {
+  const categories = [
+    { label: 'Collection', keys: ['bulk_download', 'structured_download', 'feed_download', 'api', 'web_scraping', 'unknown'] },
+    { label: 'Reuses', keys: ['retained_input', 'legacy_carry_forward'] },
+    { label: 'Processing', keys: ['document_extraction', 'derived', 'model_generated'] },
+  ];
+  return categories.flatMap(({label, keys}) => {
+    const values = methods.filter(method => keys.includes(method)).map(method => methodLabels[method]);
+    return values.length ? [{label, values}] : [];
+  });
+}
+export type SourceSection = { topic: string; id: string; groups: { id: string; name: string; publishers: Source[]; historical: boolean; entries: SourceEntry[] }[] };
+export function sourceSections(entries: SourceEntry[]): SourceSection[] {
+  const topics = ['Congress', 'Regulation', 'Elections', 'Law & courts'];
+  const sections = new Map<string, SourceSection>();
+  for (const entry of entries) {
+    const topic = entry.table.group || groupFor(entry.table.id);
+    const section = sections.get(topic) ?? { topic, id: `topic-${topic.toLowerCase().replace(/[^a-z]+/g, '-')}`, groups: [] };
+    const id = `${section.id}-${entry.table.family}`;
+    let group = section.groups.find(group => group.id === id);
+    if (!group) {
+      group = { id, name: pretty(entry.table.family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener'), publishers: [], historical: false, entries: [] };
+      section.groups.push(group);
+    }
+    group.entries.push(entry);
+    group.historical ||= entry.historicalAttribution;
+    const publishers = entry.table.sources.length ? entry.table.sources : entry.historicalAttribution ? entry.review?.sources ?? [] : [];
+    for (const publisher of publishers) if (!group.publishers.some(source => source.id === publisher.id && source.name === publisher.name)) group.publishers.push(publisher);
+    sections.set(topic, section);
+  }
+  return [...sections.values()].sort((a,b) => topics.indexOf(a.topic) - topics.indexOf(b.topic)).map(section => ({...section, groups: section.groups.sort((a,b) => a.name.localeCompare(b.name))}));
 }

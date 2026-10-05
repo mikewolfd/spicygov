@@ -135,6 +135,11 @@ const originLabels: Record<string, string> = {
 const literalLabel = (value: string) => Object.hasOwn(originLabels, value) ? originLabels[value] : value;
 
 const fieldValueLabels: Record<string, Record<string, string>> = {
+  record_outcome: {
+    empty: 'Confirmed empty request', inventory_only: 'File or source listing',
+    selection_context: 'Selection notes', 'no-record-rejections': 'Selected records parsed',
+    refused: 'Not accepted for parsing', unresolved: 'Selection unresolved',
+  },
   ingest_source: { bulk: 'Bulk export', search: 'Search results' },
   link_source: { printed: 'Printed docket labels', regulations_dot_gov_info: 'Regulations.gov link', both: 'Printed labels and Regulations.gov link' },
   source: {
@@ -160,6 +165,7 @@ const fieldValueLabels: Record<string, Record<string, string>> = {
   date_filed_is_approximate: { f: 'Marked exact', t: 'Marked approximate' },
 };
 function fieldLabel(value: unknown, field?: string): string {
+  if (field === 'publisher_id' || field === 'scorecard_id') return typeof value === 'string' ? value : JSON.stringify(value);
   if (value === null && field === 'withdrawal_source') return 'Not recorded';
   const labels = field && Object.hasOwn(fieldValueLabels, field) ? fieldValueLabels[field] : undefined;
   return typeof value === 'string' ? labels && Object.hasOwn(labels, value) ? labels[value] : literalLabel(value) : JSON.stringify(value);
@@ -192,4 +198,84 @@ export function scopeLabel(key: string, fields?: string[]): string {
     }
   } catch { /* Literal publisher labels need not be JSON. */ }
   return fieldLabel(key, fields?.[0]);
+}
+
+export function coverageStatement(dimension: CoverageDimension): string {
+  // The complete source meaning remains available with the counting checks.
+  for (const boundary of dimension.meaning.matchAll(/[.!?]\s+(?=[A-Z])/g)) {
+    const statement = dimension.meaning.slice(0, boundary.index! + 1);
+    // Initials in names such as U.S. Code are part of the same sentence.
+    if (/\b(?:[A-Za-z]\.){2,}$/.test(statement)) continue;
+    return statement;
+  }
+  return dimension.meaning;
+}
+
+export function coveragePeriodLabel(dimension: CoverageDimension, period: string): string {
+  if (dimension.granularity === 'year' && /\bcycles?\b/i.test(dimension.label) && /^\d{4}$/.test(period)) {
+    const year = Number(period);
+    // FEC cycles use their even ending year. Preserve unusual source labels.
+    return year >= 2 && year % 2 === 0 ? `Cycle ending ${period} (${year - 1}–${period})` : `Cycle label ${period}`;
+  }
+  return period.replace('-spring', ' spring').replace('-fall', ' fall');
+}
+
+export function coveragePeriodNoun(dimension: CoverageDimension): string {
+  if (/\bcycles?\b/i.test(dimension.label) && dimension.granularity === 'year') return 'cycle';
+  return dimension.granularity === 'season' ? 'edition' : dimension.granularity === 'month' ? 'month' : 'year';
+}
+
+export function coverageItemNoun(dimension: CoverageDimension): string {
+  if (dimension.id === 'selected_source_scopes') return 'selected files and requests';
+  if (dimension.fields?.includes('publisher_id')) return 'publishers';
+  if (dimension.fields?.includes('scorecard_id')) return 'editions';
+  if (dimension.fields?.includes('form')) return 'filing layouts';
+  return 'recorded values';
+}
+
+function conciseSelection(value: string): string {
+  return value.replace(/https?:\/\/[^\s;]+/g, address => {
+    try {
+      const url = new URL(address);
+      const segments = url.pathname.split('/').filter(Boolean);
+      const endpoint = segments.slice(-2).join('/').replaceAll('_', ' ') || url.hostname;
+      const filters = [...url.searchParams].slice(0, 2).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ');
+      return `${endpoint}${filters ? ` · ${filters}` : ''}`;
+    } catch { return address; }
+  });
+}
+
+export function coverageCategoryDisplay(dimension: CoverageDimension, key: string, publisherNames?: ReadonlyMap<string, string>): { label: string; exact: string } {
+  const exact = scopeLabel(key, dimension.fields);
+  let label = exact;
+  const publisherIndex = dimension.fields?.indexOf('publisher_id') ?? -1;
+  if (publisherIndex >= 0 && publisherNames) {
+    try {
+      const values: unknown = JSON.parse(key);
+      if (Array.isArray(values) && values.every(value => typeof value === 'string')) {
+        const name = publisherNames.get(values[publisherIndex]);
+        if (name) return {label: values.map((value, index) => index === publisherIndex ? name : fieldLabel(value, dimension.fields?.[index])).join(' · '), exact};
+      }
+    } catch { /* Unrecognized values keep their recorded identifier. */ }
+  }
+  if (dimension.id === 'selected_source_scopes') {
+    try {
+      const values: unknown = JSON.parse(key);
+      if (Array.isArray(values) && values.length === 3 && values.every(value => typeof value === 'string')) {
+        const [family, outcome, scope] = values;
+        const source = family === 'fec_access' ? 'FEC' : family.replace(/^fec_/, 'FEC ').replaceAll('_', ' ');
+        const state = fieldLabel(outcome, 'record_outcome');
+        label = `${source} · ${conciseSelection(scope)} · ${state}`;
+      }
+    } catch { /* The exact recorded scope stays available even when it is not a tuple. */ }
+  } else if (dimension.fields?.length === 1 && ['publisher_id', 'scorecard_id'].includes(dimension.fields[0])) {
+    label = `${dimension.fields[0] === 'publisher_id' ? 'Publisher ID' : 'Edition ID'}: ${exact}`;
+  }
+  const trimmed = label.length > 140 ? `${label.slice(0, 137).trimEnd()}…` : label;
+  return { label: trimmed, exact };
+}
+
+export function coverageCategoryMatches(dimension: CoverageDimension, key: string, query: string, publisherNames?: ReadonlyMap<string, string>): boolean {
+  const shown = coverageCategoryDisplay(dimension, key, publisherNames);
+  return `${shown.label} ${shown.exact}`.toLowerCase().includes(query.trim().toLowerCase());
 }
