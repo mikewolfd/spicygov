@@ -1,4 +1,4 @@
-/** Metadata is optional. The publication catalog remains the authority for files and schemas. */
+/** Published manifests own file membership. Separate-file schemas require metadata bound to their exact publication identity. */
 export type Source = { id: string; name: string; url?: string; kind: string; note: string };
 export type Join = {
   child: string;
@@ -28,6 +28,7 @@ export type TableMetadata = {
   columns?: { column_name: string; description: string }[];
   family: string;
   publicationSchema: [string, string][];
+  publicationIdentity?: string;
   sources: Source[];
   inputs: string[];
   transformation?: string;
@@ -37,6 +38,12 @@ export type TableMetadata = {
   sourceStatus: 'documented' | 'unknown';
   joinAudit?: { status: string; reason: string };
 };
+export type PublicationDescriptor = {
+  kind: 'rulemaking' | 'comments'; family: string;
+  members: { path: string; sha256: string; byteSize: number; rows: number; etag?: string }[];
+  snapshotId?: string;
+};
+export type ExtraTableMetadata = { family: string; publicationSchema: [string, string][]; publicationIdentity: string; descriptor: PublicationDescriptor };
 export type MetadataBundle = {
   format: 'spicy-regs-explorer-metadata';
   version: 1;
@@ -46,6 +53,7 @@ export type MetadataBundle = {
   tables: Record<string, TableMetadata>;
   joins: Join[];
   omittedJoins: { child: string; parent: string; reason: string }[];
+  extra_tables: Record<string, ExtraTableMetadata>;
 };
 const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = (value: unknown) => typeof value === 'string' ? value : undefined;
@@ -71,6 +79,7 @@ function parseTable(value: unknown): TableMetadata | undefined {
   const columns = Array.isArray(value.columns) ? value.columns.filter(isObject).filter(c => typeof c.column_name === 'string' && typeof c.description === 'string').map(c => ({ column_name: c.column_name as string, description: c.description as string })) : [];
   return {
     family: value.family, publicationSchema: value.publicationSchema as [string, string][],
+    publicationIdentity: text(value.publicationIdentity),
     label: text(value.label), summary: text(value.summary), coverage: text(value.coverage), kind: text(value.kind), data_quality: text(value.data_quality), columns,
     sources, inputs: Array.isArray(value.inputs) ? value.inputs.filter((input): input is string => typeof input === 'string') : [],
     transformation: text(value.transformation), modelGenerated: value.modelGenerated === true, emptyReason: text(value.emptyReason),
@@ -78,6 +87,18 @@ function parseTable(value: unknown): TableMetadata | undefined {
     sourceStatus: value.sourceStatus === 'documented' ? 'documented' : 'unknown',
     joinAudit: isObject(value.joinAudit) && typeof value.joinAudit.status === 'string' && typeof value.joinAudit.reason === 'string' ? { status: value.joinAudit.status, reason: value.joinAudit.reason } : undefined,
   };
+}
+function parseExtra(value: unknown): ExtraTableMetadata | undefined {
+  if (!isObject(value) || typeof value.family !== 'string' || typeof value.publicationIdentity !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(value.publicationIdentity)
+      || !Array.isArray(value.publicationSchema) || !value.publicationSchema.length || !value.publicationSchema.every(column => Array.isArray(column) && column.length === 2 && column.every(item => typeof item === 'string' && item.length > 0))
+      || new Set(value.publicationSchema.map(column => column[0])).size !== value.publicationSchema.length || !isObject(value.descriptor)) return undefined;
+  const descriptor = value.descriptor;
+  if (!['rulemaking', 'comments'].includes(String(descriptor.kind)) || descriptor.family !== value.family || !Array.isArray(descriptor.members) || !descriptor.members.length
+      || !descriptor.members.every(member => isObject(member) && typeof member.path === 'string' && /^[a-zA-Z0-9_./=-]+$/.test(member.path) && !member.path.startsWith('/') && !member.path.split('/').some(part => !part || part === '.' || part === '..')
+        && typeof member.sha256 === 'string' && /^sha256:[a-f0-9]{64}$/.test(member.sha256) && Number.isSafeInteger(member.rows) && Number(member.rows) >= 0 && Number.isSafeInteger(member.byteSize) && Number(member.byteSize) >= 0
+        && (member.etag === undefined || typeof member.etag === 'string' && member.etag.length > 0))
+      || descriptor.snapshotId !== undefined && typeof descriptor.snapshotId !== 'string') return undefined;
+  return {family: value.family, publicationSchema: value.publicationSchema as [string, string][], publicationIdentity: value.publicationIdentity, descriptor: descriptor as PublicationDescriptor};
 }
 export function parseMetadata(value: unknown): MetadataBundle {
   if (!isObject(value) || value.format !== 'spicy-regs-explorer-metadata' || value.version !== 1 || !validDate(value.generatedAt) || !isObject(value.tables) || !Array.isArray(value.joins) || !isObject(value.publication) || !isObject(value.publication.families)) throw new Error('Metadata has an unsupported format.');
@@ -91,6 +112,7 @@ export function parseMetadata(value: unknown): MetadataBundle {
     omittedJoins: Array.isArray(value.omittedJoins) ? value.omittedJoins.filter(isObject)
       .filter(join => typeof join.child === 'string' && typeof join.parent === 'string' && typeof join.reason === 'string')
       .map(join => ({ child: join.child as string, parent: join.parent as string, reason: join.reason as string })) : [],
+    extra_tables: isObject(value.extra_tables) ? Object.fromEntries(Object.entries(value.extra_tables).flatMap(([id, raw]) => {const parsed = parseExtra(raw); return parsed ? [[id, parsed]] : [];})) : {},
   };
 }
 export function tableMetadataMessage(state: TableMetadataState): string | undefined {

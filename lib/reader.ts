@@ -13,7 +13,21 @@ export type ReadRequest = {
 export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; done: boolean };
 
 async function remoteFile(member: Dataset['members'][number]) {
-  const remote = await asyncBufferFromUrl({ url: member.url, byteLength: member.byteSize });
+  const expectedEtag = member.etag?.replace(/^"|"$/g, '');
+  const remote = await asyncBufferFromUrl({ url: member.url, byteLength: member.byteSize,
+    ...(expectedEtag ? {requestInit: {headers: {'If-Match': `"${expectedEtag}"`}}, fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await fetch(input, init);
+      const received = response.headers.get('etag')?.replace(/^"|"$/g, '');
+      const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') ?? '');
+      const requested = /^bytes=(\d+)-(\d*)$/.exec(new Headers(init?.headers).get('range') ?? '');
+      if (response.status !== 206 || received !== expectedEtag || !range || !requested || Number(range[3]) !== member.byteSize
+          || Number(range[1]) !== Number(requested[1]) || Number(range[2]) !== (requested[2] ? Number(requested[2]) : member.byteSize - 1)) {
+        await response.body?.cancel();
+        throw new Error('This published file changed or its identity could not be checked. Reload the catalog before reading records.');
+      }
+      return response;
+    }} : {}),
+  });
   const cache = new Map<string, ArrayBuffer>();
   let cacheBytes = 0;
   return {
@@ -92,6 +106,7 @@ export async function readPage(
   { table, columns, filters, cursor, limit = 40, sort }: ReadRequest,
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
+  if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
   if (!Number.isSafeInteger(cursor) || cursor < 0)
     throw new Error("Invalid record position.");
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid page size.');

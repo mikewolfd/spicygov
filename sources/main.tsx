@@ -102,9 +102,10 @@ function SourcesPage() {
     void fetchJson('/coverage-maps.v1.json', controller.signal).then(parseCoverageMaps).then(setCoverageMaps).catch(() => { if (!controller.signal.aborted) { setCoverageMaps(undefined); setTimeError(true); } });
     return () => controller.abort();
   }, [retry]);
-  const { tables, metadata, error } = useCollection(retry);
-  const { extra, review, warnings, pending } = useSourceDirectory(retry);
-  const entries = useMemo(() => sourceEntries(tables, extra, review), [tables, extra, review]);
+  const { tables, metadata, error, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
+  const { review, warnings: reviewWarnings, pending } = useSourceDirectory(retry);
+  const warnings = [...publicationWarnings, ...reviewWarnings];
+  const entries = useMemo(() => sourceEntries(tables, [], review), [tables, review]);
   const allTables = useMemo(() => entries.map(entry => entry.table), [entries]);
   useEffect(() => {
     const controller = new AbortController(); setCoveragePublishers(undefined); setPublisherError(false);
@@ -156,7 +157,7 @@ function SourcesPage() {
         <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">With reviewed source logs</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">Source descriptions need attention</option></select></label>
         <button onClick={clearFilters}>Clear filters</button>
       </div>
-      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filtered.length} of {entries.length} published tables · {filtered.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{pending ? ' · Checking other tables…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
+      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filtered.length} of {entries.length} published tables · {filtered.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
       <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
       {metadataSummary ? <p className="metadata-status" role="status">{metadataSummary} This concerns descriptions and connections, not record counts. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
       {publisherError && <p className="metadata-status" role="status">Publisher names could not load. Recorded IDs remain visible. <button onClick={() => setRetry(retry + 1)}>Retry publisher names</button></p>}

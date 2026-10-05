@@ -95,7 +95,7 @@ export default function Explorer() {
   const worker = useRef<Worker | null>(null),
     recordWorker = useRef<Worker | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { tables: catalog, joins, metadata, error: catalogError } = useCollection(retry);
+  const { tables: catalog, joins, metadata, error: catalogError, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
   const table = catalog.find((t) => t.id === location.id),
     connections = table ? related(table.id, joins) : [];
   const activeColumns = columns.length
@@ -146,13 +146,16 @@ export default function Explorer() {
   }, [catalogError]);
   useEffect(() => {
     if (!table) {
-      if (catalog.length) {
+      if (catalog.length && !publicationsPending) {
         setBusy(false);
         setError(
           "This dataset is not in the current publication. Choose a dataset from the collection.",
         );
       }
       return;
+    }
+    if (table.recordsAvailable === false) {
+      setBusy(false); setRows([]); setError('Records are paused until the physical fields match this data release. You can still download the published file or reload the catalog.'); return;
     }
     setBusy(true);
     setRows([]);
@@ -195,7 +198,8 @@ export default function Explorer() {
     // Descriptions arriving must not cancel or restart an in-progress file scan.
     table?.id,
     JSON.stringify(table?.members),
-    catalog.length,
+    table ? false : publicationsPending,
+    table?.recordsAvailable,
     location.id,
     JSON.stringify(location.filters),
     location.cursor,
@@ -386,6 +390,7 @@ export default function Explorer() {
           {sidebar}
         </aside>
         <main className="main-pane" id="explorer">
+          {publicationWarnings.map(warning => <p className="metadata-status" role="status" key={warning}>{warning} <button onClick={() => setRetry(retry + 1)}>Reload catalog</button></p>)}
           <div className="breadcrumb">
             Collection <ChevronRight size={13} />
             {table?.group ?? "Congress"}
@@ -416,10 +421,10 @@ export default function Explorer() {
                 ? "Choose another dataset to keep exploring."
                 : "Loading the published collection…")}
           </p>
-          {table && tableMetadataMessage(table.metadataState) && <p className="metadata-status" role="status">{tableMetadataMessage(table.metadataState)} {table.metadataState === "unavailable" && <button onClick={() => setRetry(retry + 1)}>Try again</button>}</p>}
+          {table?.recordsAvailable === false ? <p className="metadata-status" role="status">Physical fields could not be confirmed for this release. <button onClick={() => setRetry(retry + 1)}>Reload catalog</button></p> : table && tableMetadataMessage(table.metadataState) && <p className="metadata-status" role="status">{tableMetadataMessage(table.metadataState)} {table.metadataState === "unavailable" && <button onClick={() => setRetry(retry + 1)}>Try again</button>}</p>}
           <div className="table-meta">
             <span>{table ? count(table.rows) : "—"} records</span>
-            <span>{table?.columns.length ?? "—"} fields</span>
+            <span>{table?.recordsAvailable === false ? "Fields unavailable" : `${table?.columns.length ?? "—"} fields`}</span>
             <span>{connections.length} connections</span>
             <span className="format-label">PARQUET</span>
           </div>

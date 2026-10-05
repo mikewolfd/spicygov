@@ -147,6 +147,16 @@ test('origin inputs link separate exports directly and do not claim unknown inpu
   assert.match(html, /not in this catalog/);
 });
 
+test('bound separate inputs link to the explorer while unbound physical fields retain the file link', async () => {
+  const {TableProvenance} = await module('components/table-provenance.tsx');
+  const input = {...parseComments(comments())[0], recordsAvailable: true};
+  const html = renderToStaticMarkup(createElement(TableProvenance, {table: {...table(), inputs:['comments']}, catalog:[input]}));
+  assert.match(html, /href="\/\?table=comments&amp;view=about"/);
+  assert.doesNotMatch(html, /Comments \(Parquet\)/);
+  assert.equal(sourceEntries([input], [input])[0].explorer, true);
+  assert.equal(sourceEntries([{...input, recordsAvailable:false}], [input])[0].explorer, false);
+});
+
 
 test('concise copy changes presentation and search, never published membership', () => {
   const raw = review();
