@@ -1,3 +1,4 @@
+import { parseNavigation, type Navigation } from './navigation';
 /** Published manifests own file membership. Separate-file schemas require metadata bound to their exact publication identity. */
 export type Source = { id: string; name: string; url?: string; kind: string; note: string };
 export type Join = {
@@ -38,6 +39,8 @@ export type TableMetadata = {
   metadataStatus: 'documented' | 'unknown';
   sourceStatus: 'documented' | 'unknown';
   joinAudit?: { status: string; reason: string };
+  receiptIdentity?: string[];
+  receiptContainers?: Record<string, string[]>;
 };
 export type PublicationDescriptor = {
   kind: 'rulemaking' | 'comments'; family: string;
@@ -53,6 +56,7 @@ export type MetadataBundle = {
   publication: { sha256?: string; families: Record<string, string> };
   tables: Record<string, TableMetadata>;
   joins: Join[];
+  navigation?: Navigation[];
   omittedJoins: { child: string; parent: string; reason: string }[];
   extra_tables: Record<string, ExtraTableMetadata>;
 };
@@ -79,6 +83,8 @@ function parseTable(value: unknown): TableMetadata | undefined {
   const sources = Array.isArray(value.sources) ? value.sources.filter(isObject).filter(s => typeof s.id === 'string' && typeof s.name === 'string').map(s => ({ id: s.id as string, name: s.name as string, url: safeUrl(s.url), kind: text(s.kind) ?? 'unknown', note: text(s.note) ?? '' })) : [];
   const columns = Array.isArray(value.columns) ? value.columns.filter(isObject).filter(c => typeof c.column_name === 'string' && typeof c.description === 'string').map(c => ({ column_name: c.column_name as string, description: c.description as string })) : [];
   return {
+    receiptIdentity: Array.isArray(value.receiptIdentity) ? value.receiptIdentity.filter((v): v is string => typeof v === "string") : [],
+    receiptContainers: isObject(value.receiptContainers) ? Object.fromEntries(Object.entries(value.receiptContainers).filter((p): p is [string, string[]] => Array.isArray(p[1]) && p[1].every(v => typeof v === "string"))) : {},
     family: value.family, publicationSchema: value.publicationSchema as [string, string][],
     publicationIdentity: text(value.publicationIdentity),
     label: text(value.label), summary: text(value.summary), coverage: text(value.coverage), kind: text(value.kind), data_quality: text(value.data_quality), columns,
@@ -110,6 +116,7 @@ export function parseMetadata(value: unknown): MetadataBundle {
     tables: Object.fromEntries(Object.entries(value.tables).flatMap(([id, raw]) => { const parsed = parseTable(raw); return parsed ? [[id, parsed]] : []; })),
     // Join endpoints and complete composite keys are checked against current table schemas when applied.
     joins: value.joins as Join[],
+    navigation: parseNavigation(value.navigation),
     omittedJoins: Array.isArray(value.omittedJoins) ? value.omittedJoins.filter(isObject)
       .filter(join => typeof join.child === 'string' && typeof join.parent === 'string' && typeof join.reason === 'string')
       .map(join => ({ child: join.child as string, parent: join.parent as string, reason: join.reason as string })) : [],

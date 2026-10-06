@@ -1,3 +1,4 @@
+import { usableNavigation, type Navigation } from './navigation';
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
 import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
 import { bindExtraTables, extraMetadataMatches } from './separate-publications';
@@ -33,6 +34,8 @@ export type Dataset = {
   emptyReason?: string;
   joinAudit?: { status: string; reason: string };
   connectionNotes: string[];
+  receiptIdentity?: string[];
+  receiptContainers?: Record<string, string[]>;
   group: string;
   family: string;
 };
@@ -124,7 +127,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
     }
   return tables.sort((a, b) => a.label.localeCompare(b.label));
 }
-export type Collection = { tables: Dataset[]; joins: Join[]; metadata: MetadataStatus; warnings?: string[]; publicationsPending?: boolean };
+export type Collection = { tables: Dataset[]; joins: Join[]; navigation?: Navigation[]; metadata: MetadataStatus; warnings?: string[]; publicationsPending?: boolean };
 export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collection {
   const status: MetadataStatus = { ...loadingMetadata, state: "current", generatedAt: bundle.generatedAt };
   const enriched = tables.map((table): Dataset => {
@@ -146,6 +149,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     return {
       ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
       kind: metadata.kind ?? "published", quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
+      receiptIdentity: metadata.receiptIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
       columns: table.columns.map(column => ({ ...column, description: metadata.columns?.find(c => c.column_name === column.name)?.description ?? "" })),
@@ -181,7 +185,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     }
   }
   if (status.missingTables || status.staleTables || status.undocumentedTables || status.rejectedJoins) status.state = "partial";
-  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, metadata: status };
+  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, navigation: usableNavigation(bundle.navigation ?? [], enriched), metadata: status };
 }
 export async function loadCollection(signal?: AbortSignal, onCatalog?: (collection: Collection) => void): Promise<Collection> {
   // Begin both requests together. Records can load as soon as the catalog arrives.

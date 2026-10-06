@@ -1217,3 +1217,9 @@ h1 {
 .shared-targets span { font-size: 11px; color: #62675f; overflow-wrap: anywhere; }
 .record-sheet .shared-targets { grid-template-columns: 1fr; }
 @media (max-width: 600px) { .shared-browse { padding: 10px; } .shared-browse summary span { display: block; margin: 5px 0 0; } .shared-browse form label { min-width: 100px; } }
+
+.source-reference { padding: .75rem 0; border-bottom: 1px solid var(--border); }
+.source-reference p { margin: 0 0 .5rem; font-size: .875rem; line-height: 1.5; }
+.source-reference small, .source-reference a small { display: block; font-size: .75rem; line-height: 1.5; opacity: .8; }
+.source-reference a { display: block; margin: .5rem 0; overflow-wrap: anywhere; }
+.source-passage { white-space: pre-wrap; font-family: inherit; font-size: .875rem; line-height: 1.6; max-height: 24rem; overflow: auto; }
