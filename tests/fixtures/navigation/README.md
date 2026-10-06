@@ -1,0 +1,1 @@
+These are synthetic Parquet fixtures, not publisher evidence. The receipt fixtures use the backend's canonical receipt codec and hashes. They exercise exact identities, generation selection, indexed reads, duplicate receipts and mismatched index pointers. Meetings exercise composite array references; communications exercise an inline recorded passage.

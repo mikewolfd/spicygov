@@ -1,4 +1,5 @@
 "use client";
+import { SourceConnections } from '../components/source-connections';
 import { useEffect, useRef, useState } from "react";
 import {
   Database,
@@ -97,9 +98,10 @@ export default function Explorer() {
   const worker = useRef<Worker | null>(null),
     recordWorker = useRef<Worker | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { tables: catalog, joins, metadata, error: catalogError, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
+  const { tables: catalog, joins, navigation = [], metadata, error: catalogError, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
   const table = catalog.find((t) => t.id === location.id),
     connections = table ? related(table.id, joins) : [];
+  const sourceConnections = table ? navigation.filter(s=>s.source===table.id||s.targets.some(t=>t.table===table.id)) : [];
   const activeColumns = columns.length
     ? columns
     : table
@@ -109,7 +111,8 @@ export default function Explorer() {
     if (
       state.id !== location.id ||
       JSON.stringify(state.filters) !== JSON.stringify(location.filters) ||
-      JSON.stringify(state.sort) !== JSON.stringify(location.sort)
+      JSON.stringify(state.sort) !== JSON.stringify(location.sort) ||
+      JSON.stringify(state.connection) !== JSON.stringify(location.connection)
     )
       state = { ...state, trail: [] };
     window.history.pushState({}, "", makeHref(state));
@@ -191,6 +194,8 @@ export default function Explorer() {
       filters: location.filters,
       cursor: location.cursor,
       sort: location.sort,
+      connection: location.connection,
+      navigation: navigation.find(s=>s.id===location.connection?.id),
     });
     return () => {
       w.terminate();
@@ -204,6 +209,8 @@ export default function Explorer() {
     table?.recordsAvailable,
     location.id,
     JSON.stringify(location.filters),
+    JSON.stringify(location.connection),
+    JSON.stringify(location.connection ? navigation.find(s=>s.id===location.connection?.id) : null),
     location.cursor,
     location.sort?.column,
     location.sort?.direction,
@@ -264,9 +271,9 @@ export default function Explorer() {
       from: table?.label,
     });
   }
-  function browse(id: string, filters: Filter[]) {
+  function browse(id: string, filters: Filter[], connection?: import("../lib/navigation").Connection) {
     recordWorker.current?.terminate();
-    navigate({id, filters, cursor: 0, view: "records", from: table?.label});
+    navigate({id, filters, connection, cursor: 0, view: "records", from: table?.label});
   }
   function cancel() {
     worker.current?.terminate();
@@ -431,7 +438,8 @@ export default function Explorer() {
           <div className="table-meta">
             <span>{table ? count(table.rows) : "—"} records</span>
             <span>{table?.recordsAvailable === false ? "Fields unavailable" : `${table?.columns.length ?? "—"} fields`}</span>
-            <span>{connections.length} connections</span>
+            <span>{connections.length + sourceConnections.length} connections</span>
+            {location.connection && <span>Exact source reference · {location.connection.values.join(' + ')}</span>}
             <span className="format-label">PARQUET</span>
           </div>
           <Tabs
@@ -544,7 +552,7 @@ export default function Explorer() {
                   <button onClick={() => navigate({...location, sort: undefined, cursor: 0})} aria-label="Clear sort">Clear <X size={13} /></button>
                 </div>
               )}
-              {!!location.filters.length && (
+              {!!(location.filters.length || location.connection) && (
                 <div className="filter-chips">
                   {location.filters.map((f) => (
                     <button
@@ -684,20 +692,21 @@ export default function Explorer() {
                     <h2>
                       {table?.rows === 0
                         ? "No records published yet"
-                        : "No matching records"}
+                        : location.connection && !done ? "No match in the checked records" : "No matching records"}
                     </h2>
                     <p>
                       {table?.rows === 0
                         ? "This dataset is published with an empty table."
-                        : "The selected values did not match any records in this publication."}
+                        : location.connection && !done ? "The search is incomplete. Choose Next to check more source references." : "The selected values did not match any records in this publication."}
                     </p>
-                    {!!location.filters.length && (
+                    {!!(location.filters.length || location.connection) && (
                       <Button
                         variant="outline"
                         onClick={() =>
                           navigate({
                             ...location,
                             filters: [],
+                            connection: undefined,
                             cursor: 0,
                             from: undefined,
                           })
@@ -713,7 +722,7 @@ export default function Explorer() {
                 <span aria-live="polite">
                   {busy
                     ? "Reading…"
-                    : `${count(rows.length)} ${location.filters.length ? "matching " : ""}records${done ? " · End of results" : ""}`}
+                    : `${count(rows.length)} ${location.filters.length || location.connection ? "matching " : ""}records${done ? " · End of results" : ""}`}
                 </span>
                 <div className="pagination">
                   <Button
@@ -793,7 +802,8 @@ export default function Explorer() {
                     </div>
                   );
                 })}
-                {!connections.length && noConnectionsMessage(table) && (
+                {sourceConnections.map(s=><div className="connection-row" key={s.id}><Network size={20}/><div><strong>{s.source===table?.id?s.targets.map(t=>t.table==='@url'?'Offered documents':catalog.find(d=>d.id===t.table)?.label??pretty(t.table)).join(' · '):catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}</strong><p>{s.meaning}</p><small>{s.available?'Open a record to follow its exact source references.':'Source fields are not published yet.'}</small></div><span className="relation-type">Source reference</span></div>)}
+                {!connections.length && !sourceConnections.length && noConnectionsMessage(table) && (
                   <p className="small-empty">{noConnectionsMessage(table)}</p>
                 )}
                 {table?.connectionNotes.map((note, i) => <p key={i} className="small-empty">{note}</p>)}
@@ -951,6 +961,7 @@ export default function Explorer() {
                   </div>
                 </details>
               )}
+            {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} navigation={navigation} onOpen={browse}/> }
             {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
             <dl className="record-fields">
               {table?.columns

@@ -1,3 +1,4 @@
+import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
 import { matchesFilters, validFilter } from './filter-values';
 import { asyncBufferFromUrl, parquetReadObjects, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
@@ -10,6 +11,8 @@ export type ReadRequest = {
   cursor: number;
   limit?: number;
   sort?: RecordSort;
+  connection?: Connection;
+  navigation?: Navigation;
 };
 export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; done: boolean };
 
@@ -52,7 +55,7 @@ async function remoteFile(member: Dataset['members'][number]) {
 }
 
 async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: number }, onProgress: (n: number) => void): Promise<ReadResult> {
-  const { table, columns, filters, cursor, sort, limit } = request;
+  const { table, columns, filters, cursor, sort, limit, connection, navigation } = request;
   if (cursor > table.rows || !['asc', 'desc'].includes(sort.direction)) throw new Error('Invalid sort or record position.');
   if (limit > 1000) throw new Error('Sorted pages are limited to 1,000 records.');
   let boundary: SortEntry | undefined;
@@ -63,7 +66,7 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   }
   const heap: SortEntry[] = [];
   let offset = 0, remaining = 0;
-  const scanColumns = [...new Set([sort.column, ...filters.map(f => f.column)])];
+  const scanColumns = [...new Set([sort.column, ...filters.map(f => f.column), ...(navigation ? navigationColumns(navigation) : [])])];
   for (const member of table.members) {
     if (!member.rows) continue;
     const file = await remoteFile(member);
@@ -71,7 +74,7 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
       const end = Math.min(member.rows, start + 50000);
       const rows = await parquetReadObjects({ file, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
       for (const row of rows) {
-        if (!matchesFilters(row, filters)) continue;
+        if (!matchesFilters(row, filters) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
         if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
         remaining++;
@@ -104,7 +107,7 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   return { rows: heap.map(entry => records.get(entry.position)!), positions: heap.map(entry => entry.position), cursor: heap.length ? heap.at(-1)!.position + 1 : cursor, done: remaining <= limit };
 }
 export async function readPage(
-  { table, columns, filters, cursor, limit = 40, sort }: ReadRequest,
+  { table, columns, filters, cursor, limit = 40, sort, connection, navigation }: ReadRequest,
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
   if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
@@ -118,13 +121,20 @@ export async function readPage(
   )
     throw new Error("Unknown field in this dataset.");
   if (!filters.every(validFilter)) throw new Error('Invalid filter values.');
-  if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort }, onProgress);
+  if (connection && (!validConnection(connection) || !navigation || navigation.id !== connection.id || navigation.source !== table.id || !navigation.targets[connection.target] || navigation.targets[connection.target].columns.length !== connection.values.length)) throw new Error('This source connection is unavailable. Reload the catalog.');
+  const connectionColumns = navigation ? navigationColumns(navigation) : [];
+  if (connection && (navigation?.candidates && navigation.receiptFields.length || connectionColumns.some(c => !table.columns.some(x=>x.name===c)))) {
+    const {readReceiptConnectionPage} = await import('./receipt-reader');
+    if (sort || filters.length) throw new Error('Clear the sort and field filters before following a receipt connection.');
+    return readReceiptConnectionPage({table,columns,cursor,limit,connection,navigation:navigation!},onProgress);
+  }
+  if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort, connection, navigation }, onProgress);
   let offset = 0,
     position = cursor;
   const results: Row[] = [],
     positions: number[] = [];
   const canPrune =
-    filters.length > 0 &&
+    !connection && filters.length > 0 &&
     filters.every(
       (f) => table.columns.find((c) => c.name === f.column)?.type === "VARCHAR",
     );
@@ -141,12 +151,12 @@ export async function readPage(
     while (local < member.rows && results.length < limit) {
       const end = Math.min(
         member.rows,
-        local + (filters.length ? 50000 : limit - results.length),
+        local + (filters.length || connection ? 50000 : limit - results.length),
       );
       const rows = await parquetReadObjects({
         file,
         compressors,
-        columns: [...new Set([...columns, ...filters.map((f) => f.column)])],
+        columns: [...new Set([...columns, ...filters.map((f) => f.column), ...connectionColumns])],
         rowStart: local,
         rowEnd: end,
         filter,
@@ -157,7 +167,7 @@ export async function readPage(
       let last = end;
       for (const row of rows) {
         if (
-          matchesFilters(row, filters)
+          matchesFilters(row, filters) && (!connection || matchesConnection(row, navigation!, connection))
         ) {
           results.push(row);
           positions.push(offset + row[rowIndex]!);
