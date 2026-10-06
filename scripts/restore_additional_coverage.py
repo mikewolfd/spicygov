@@ -18,7 +18,7 @@ from spicy_regs.native_types import described_schema
 from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
 
 DATASETS = frozenset(("amendments", "court_dockets", "court_docket_groups",
-                      "court_opinion_pdf_extractions"))
+                      "court_opinion_pdf_extractions", "court_opinions"))
 ROOT = Path(inspect.getfile(court_receipts)).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
     "maintained_coverage_bridge", ROOT / "scripts/restore_coverage_processing.py"

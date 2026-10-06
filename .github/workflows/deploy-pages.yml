@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
-          ref: 2f71e956073cf7c0b18f75042eff16de43a0e48c
+          ref: 4ff55b3c1cd488e637cf0b198e548fe260b54d39
           path: .coverage-navigation-backend
       - name: Check out the qualified court-citation key reader
         uses: actions/checkout@v4
@@ -101,12 +101,16 @@ jobs:
       - run: python tests/test_selected_native_coverage.py
       - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
       - run: .coverage-current-backend/.venv/bin/python tests/test_court_extraction_coverage.py
+      - run: .coverage-current-backend/.venv/bin/python tests/test_bulk_court_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_source_navigation_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_small_native_coverage.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_bulk_native_coverage.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_native_coverage.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_rulemaking_native_coverage.py
       - name: Restore validated coverage checkpoints
         # A source update carries its freshly qualified maps in the commit.
-        # Scheduled refreshes may reuse interrupted scan checkpoints.
-        if: github.event_name == 'schedule'
+        # Scheduled and manual refreshes reuse validated interrupted scans.
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         id: coverage-cache
         uses: actions/cache/restore@v5
         with:

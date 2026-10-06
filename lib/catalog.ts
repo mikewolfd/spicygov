@@ -9,6 +9,11 @@ export type Row = Record<string, unknown>;
 export type Filter = { column: string; value: string; values?: string[] };
 export type Member = { url: string; rows: number; byteSize: number; sha256?: string; etag?: string };
 export type CoverageInput = { id: string; url: string; rows: number; byteSize: number; sha256: string; etag: string };
+export type RulemakingSnapshot = {
+  pointer: Record<string, unknown>; manifestDefinitionDigest: string; generationId: string;
+  subjects: { key: string; rows: number; byteSize: number; sha256: string }[];
+  receipts: { key: string; rows: number; byteSize: number; sha256: string };
+};
 export type Dataset = {
   id: string;
   label: string;
@@ -21,6 +26,7 @@ export type Dataset = {
   columns: { name: string; type: string; description: string }[];
   members: Member[];
   coverageInputs?: CoverageInput[];
+  rulemakingSnapshot?: RulemakingSnapshot;
   published?: string;
   artifactDigest?: string;
   publication?: PublicationEvidence;
