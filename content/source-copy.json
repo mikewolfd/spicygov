@@ -269,7 +269,7 @@
       ]
     },
     "committee_report_reads": {
-      "label": "Report and hearing read outcomes",
+      "label": "Committee report collection status",
       "summary": "Records the outcome of each selected report or hearing read, including successful reads that found no bill links.",
       "scope": "Selected GovInfo reports and hearings that the collector attempted to read.",
       "gaps": [
@@ -431,7 +431,7 @@
       ]
     },
     "document_citation_reads": {
-      "label": "Selected text citation checks",
+      "label": "Document citation extraction status",
       "summary": "Records completed citation searches in selected text we already hold, including searches that found no citations.",
       "scope": "Individually selected bill or report sections, comments, lobbying descriptions, communications and extracted court text.",
       "gaps": [
@@ -490,7 +490,7 @@
       ]
     },
     "fec_agency_mapping_dispositions": {
-      "label": "Agency report processing outcomes",
+      "label": "FEC agency processing results",
       "summary": "Records which facts from saved agency reports were mapped into tables, left unmapped, or rejected.",
       "scope": "Selected XML reports, webpages, and Word documents; a processing log for saved material.",
       "gaps": [
@@ -546,7 +546,7 @@
       ]
     },
     "fec_api_response_controls": {
-      "label": "FEC response counts and limits",
+      "label": "FEC API pagination and response status",
       "summary": "Keeps response counts, page limits, and completeness statements from saved candidate and committee queries to the FEC data service.",
       "scope": "Selected saved responses; these rows describe requests and responses rather than candidates or committees.",
       "gaps": [
@@ -591,7 +591,7 @@
       ]
     },
     "fec_collection_selection": {
-      "label": "Contribution file selections",
+      "label": "FEC collection selection decisions",
       "summary": "Records which saved version of individual-contribution data was selected when a main file and files split by date represent overlapping records.",
       "scope": "Selected bulk contribution files and their recorded equivalence checks.",
       "gaps": [
@@ -600,7 +600,7 @@
       ]
     },
     "fec_collections": {
-      "label": "Saved FEC collections",
+      "label": "FEC collection runs",
       "summary": "Describes the scope and outcome of selected FEC queries, files, database exports, and documents. Use these records to identify what was requested and saved.",
       "scope": "Selected collections only; supported source types do not prove that every source was collected.",
       "gaps": [
@@ -705,7 +705,7 @@
       ]
     },
     "fec_filing_definition_evidence": {
-      "label": "Filing field definition sources",
+      "label": "FEC filing layout source links",
       "summary": "Links filing field definitions to the cells in saved specification workbooks that support them.",
       "scope": "Selected workbooks and field definitions, with their source locations.",
       "gaps": [
@@ -714,7 +714,7 @@
       ]
     },
     "fec_filing_definitions": {
-      "label": "Filing field definitions",
+      "label": "FEC filing layouts",
       "summary": "Describes fields and layouts from saved electronic, paper-format, and Senate filing specifications.",
       "scope": "Selected specification workbooks and supported form versions.",
       "gaps": [
@@ -723,7 +723,7 @@
       ]
     },
     "fec_filing_header_associations": {
-      "label": "Original file to filing links",
+      "label": "FEC header-to-filing matches",
       "summary": "Links headers in saved original files to separately collected filing records using supported original-document URLs.",
       "scope": "Selected original files and filing records with evidence supporting the match.",
       "gaps": [
@@ -924,7 +924,7 @@
       ]
     },
     "fec_record_evidence": {
-      "label": "Record-to-source evidence links",
+      "label": "FEC record source links",
       "summary": "Links published records to their saved source records or collection context, preserving repeated supporting references and the source version.",
       "scope": "Selected legal, agency, identity, data service, history, and narrative records.",
       "gaps": [
@@ -971,7 +971,7 @@
       ]
     },
     "fec_research_context_dispositions": {
-      "label": "Research source processing outcomes",
+      "label": "FEC source processing results",
       "summary": "Records how saved reference material was handled, including definitions, archive listings, unsupported formats, rejected processing, and deferred PDF text.",
       "scope": "Selected source documentation, responses, research references, and statistical material.",
       "gaps": [
@@ -1007,7 +1007,7 @@
       ]
     },
     "fec_research_response_outcomes": {
-      "label": "FEC query outcomes",
+      "label": "FEC API request outcomes",
       "summary": "Records outcomes of saved FEC data service queries, including empty responses, rejected formats, and stated limits, even when they produced no data rows.",
       "scope": "Selected saved queries and response records.",
       "gaps": [
@@ -1034,7 +1034,7 @@
       ]
     },
     "fec_source_catalog": {
-      "label": "FEC sources and access routes",
+      "label": "FEC source directory",
       "summary": "Lists official Federal Election Commission sources and their access routes from saved source definitions. It describes available routes without querying them.",
       "scope": "All source families in the packaged registry used for this publication.",
       "gaps": [
@@ -1043,7 +1043,7 @@
       ]
     },
     "fec_source_records": {
-      "label": "Saved FEC source records",
+      "label": "Original FEC source records",
       "summary": "Keeps source records from selected FEC data service responses, bulk files, database exports, and documents. Rows preserve original fields and source locations.",
       "scope": "Selected saved collections only. Main files, date partitions, and corrections can overlap; row counts do not represent unique transactions.",
       "gaps": [
@@ -1272,7 +1272,7 @@
       ]
     },
     "native_legal_reference_reads": {
-      "label": "Legal-reference read outcomes",
+      "label": "Legal reference extraction status",
       "summary": "Records complete reads of selected saved legal-text files, including reads that find no references. The process reuses those files without checking the publisher again.",
       "scope": "Explicitly selected saved files; the documented collection uses Title 1 of the electronic Code of Federal Regulations and Title 1 of the U.S. Code.",
       "gaps": [
@@ -1409,7 +1409,7 @@
       "summary": "Matches publisher-scored actions to congressional bills, amendments and votes using exact identifiers.",
       "scope": "Links between the scorecard and congressional data versions used to build this table.",
       "gaps": [
-        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release’s receipts, outside these row counts. Similar names do not establish a match.",
+        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release\u2019s receipts, outside these row counts. Similar names do not establish a match.",
         "Links may refer to older input data rather than the latest published tables."
       ]
     },
@@ -1438,7 +1438,7 @@
       "summary": "Matches people in scorecards to congressional records using exact identifiers and their historical service context.",
       "scope": "Links between the scorecard and congressional data versions used to build this table.",
       "gaps": [
-        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release’s receipts, outside these row counts. Names alone do not establish a match.",
+        "This table counts matched links only. Unresolved, ambiguous and conflicting attempts are in this release\u2019s receipts, outside these row counts. Names alone do not establish a match.",
         "Links may refer to older input data rather than the latest published tables."
       ]
     },

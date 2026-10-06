@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { readFile } from 'node:fs/promises';
 const { outputFiles } = await build({ entryPoints: ['lib/catalog.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
-const { loadCollection, connectionFilters, publicationDate, applyMetadata, noConnectionsMessage, recordDatasets } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const { loadCollection, connectionFilters, publicationDate, applyMetadata, noConnectionsMessage, recordDatasets, supportingSection, tableCountUnit, tableEyebrow } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const metadataBuild = await build({ entryPoints: ['lib/metadata.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
 const { parseMetadata } = await import(`data:text/javascript;base64,${Buffer.from(metadataBuild.outputFiles[0].contents).toString('base64')}`);
 const publication = () => ({ version: 2, families: { records: { artifactDigest: 'sha256:current', prefix: 'records/current', tables: {
@@ -40,6 +40,23 @@ try {
     assert.deepEqual(recordDatasets(result.tables).map(t => t.id), ['parent']);
     assert.match(noConnectionsMessage(result.tables.find(t => t.id === 'child')), /collection evidence/);
     assert.equal(recordDatasets([{id:'fec_receipts',category:'native_observation'}]).length, 1);
+  });
+  await test('supporting roles preserve direct access, units and declared connections', async () => {
+    const value = bundle();
+    value.tables.child.category = 'reference_data';
+    value.tables.child.row_unit = 'filing layouts';
+    const result = applyMetadata((await loadCollection()).tables, parseMetadata(value));
+    const reference = result.tables.find(t => t.id === 'child');
+    assert.equal(reference.rowUnit, 'filing layouts');
+    assert.equal(tableCountUnit(reference), 'filing layouts');
+    assert.equal(tableEyebrow(reference), 'REFERENCE DATA');
+    assert.equal(result.joins.length, 1); // Evidence presentation must not erase explicit routes.
+    assert.deepEqual(recordDatasets(result.tables).map(t => t.id), ['parent']);
+    for (const category of ['diagnostics','processing_evidence','source_evidence','reference_data']) {
+      assert.ok(supportingSection({category}));
+    }
+    assert.equal(recordDatasets([{id:'fec_source_records',category:'source_data'}, {id:'fec_receipts',category:'query_data'}]).length, 2);
+    assert.equal(tableCountUnit({category:'diagnostics'}), 'rows');
   });
   await test('missing, null, invalid and impossible publication dates never format as Invalid Date', () => {
     for (const value of [null, undefined, '', 'not a date', 0, '2026-02-30', '2026-13-01', '2026-10-03Tbad']) assert.equal(publicationDate(value), 'Publication date unavailable');

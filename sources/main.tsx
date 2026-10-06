@@ -1,7 +1,7 @@
 import { sourceControlLabel } from '../lib/source-labels';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { count, publicationDate, isProcessingEvidence, type Dataset } from '../lib/catalog';
+import { count, publicationDate, supportingSection, supportingSections, tableCountUnit, type SupportingSection, type Dataset } from '../lib/catalog';
 import { useCollection } from '../lib/use-collection';
 import { useSourceDirectory } from '../lib/use-source-directory';
 import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, sourceMetadataSummary, sourceSections, collectionSteps, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
@@ -18,6 +18,19 @@ import './style.css';
 function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
   return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
 }
+function SupportingTables({ groupId, role, entries }: { groupId: string; role: SupportingSection; entries: SourceEntry[] }) {
+  if (!entries.length) return null;
+  const section = supportingSections[role], titleId = `${groupId}-${role}`;
+  return <section className="collection-checkpoints" aria-labelledby={titleId}>
+    <h4 id={titleId}>{section.label}</h4><p>{section.summary}</p>
+    <ul className="readable-inputs">{entries.map(({ table }) => <li key={table.id}>
+      <strong>{table.label}</strong><span>{table.summary}</span>
+      <span>{count(table.rows)} {tableCountUnit(table)} · {table.published ? `Released ${publicationDate(table.published)}` : 'Release date not recorded'}</span>
+      <a href={`/?table=${encodeURIComponent(table.id)}`}>{section.link}</a>
+    </li>)}</ul>
+  </section>;
+}
+
 type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
 function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView, publishers, onRetry, coverageLoading }: {
   entry: SourceEntry; catalog: Dataset[]; coverageMaps?: CoverageMaps; timeView: TimeView; publishers?: CoveragePublishers; onRetry: () => void; coverageLoading: boolean;
@@ -107,8 +120,8 @@ function SourcesPage() {
   const { review, warnings: reviewWarnings, pending } = useSourceDirectory(retry);
   const warnings = [...publicationWarnings, ...reviewWarnings];
   const entries = useMemo(() => sourceEntries(tables, [], review), [tables, review]);
-  const dataEntries = entries.filter(entry => !isProcessingEvidence(entry.table));
-  const allTables = useMemo(() => entries.filter(entry => !isProcessingEvidence(entry.table)).map(entry => entry.table), [entries]);
+  const dataEntries = entries.filter(entry => !supportingSection(entry.table));
+  const allTables = useMemo(() => entries.filter(entry => !supportingSection(entry.table)).map(entry => entry.table), [entries]);
   useEffect(() => {
     const controller = new AbortController(); setCoveragePublishers(undefined); setPublisherError(false);
     void loadCoveragePublishers(allTables, coverageMaps, controller.signal).then(value => {
@@ -117,7 +130,7 @@ function SourcesPage() {
     return () => controller.abort();
   }, [allTables, coverageMaps, retry]);
   const filtered = useMemo(() => filterEntries(entries, query, method, evidence), [entries, query, method, evidence]);
-  const filteredData = filtered.filter(entry => !isProcessingEvidence(entry.table));
+  const filteredData = filtered.filter(entry => !supportingSection(entry.table));
   const sections = useMemo(() => sourceSections(filtered), [filtered]);
   const metadataSummary = sourceMetadataSummary(entries);
   const filtering = !!query || !!method || !!evidence;
@@ -146,7 +159,7 @@ function SourcesPage() {
     <header className="topbar"><a className="wordmark" href="/">spicygov<span className="brand-star" aria-hidden="true">✳</span></a><nav aria-label="Main"><a href="/">Explore</a><span className="nav-active" aria-current="page">Sources</span><a href="/mcp/">MCP</a><a href="https://docs.spicygov.ai">Data docs</a></nav></header>
     <main id="sources" className="sources-content">
       <div className="sources-heading"><h1>Sources</h1><p className="sources-intro">See what data we hold, the periods it covers, and what is missing.</p></div>
-      <nav className="topic-shortcuts" aria-label="Jump to topic">{sections.map(section => <a key={section.id} href={`#${section.id}`}>{section.topic}<span>{section.groups.reduce((n,g) => n + g.entries.length, 0)}</span></a>)}</nav>
+      <nav className="topic-shortcuts" aria-label="Jump to topic">{sections.map(section => <a key={section.id} href={`#${section.id}`}>{section.topic}<span>{section.groups.reduce((n,g) => n + g.entries.length, 0)} tables · {section.groups.reduce((n,g) => n + Object.values(g.supporting).reduce((total,rows) => total + rows.length, 0), 0)} supporting</span></a>)}</nav>
       <section className="time-controls" aria-label="Time coverage">
         <label>View <select value={timeView.mode} onChange={event => setTimeView({...timeView, mode:event.target.value as TimeView['mode']})}><option value="years">Years</option><option value="months">Months</option></select></label>
         <label>{timeView.mode === 'years' ? sourceControlLabel('Through year') : 'Year'} <input aria-label="Coverage year" type="number" min="1" max="9999" value={timeView.year} onChange={event => { const year = Number(event.target.value); if (Number.isInteger(year) && year >= 1 && year <= 9999) setTimeView({...timeView,year}); }} /></label>
@@ -160,7 +173,7 @@ function SourcesPage() {
         <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">{sourceControlLabel('With reviewed source logs')}</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">{sourceControlLabel('Source descriptions need attention')}</option></select></label>
         <button onClick={clearFilters}>Clear filters</button>
       </div>
-      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filteredData.length} of {dataEntries.length} published tables · {filteredData.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
+      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filteredData.length} of {dataEntries.length} record tables · {filtered.length - filteredData.length} supporting {filtered.length - filteredData.length === 1 ? 'table' : 'tables'} · {filteredData.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
       <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
       {metadataSummary ? <p className="metadata-status" role="status">{metadataSummary} This concerns descriptions and connections, not record counts. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
       {publisherError && <p className="metadata-status" role="status">Publisher names could not load. Recorded IDs remain visible. <button onClick={() => setRetry(retry + 1)}>Retry publisher names</button></p>}
@@ -174,16 +187,17 @@ function SourcesPage() {
           const isOpen = groupOverrides[group.id] ?? (expanded || filtering);
           const limit = limits[group.id] ?? 8;
           const items = group.entries;
+          const supportingCount = Object.values(group.supporting).reduce((total, rows) => total + rows.length, 0);
           const coverage = coverageMapCounts(items.map(entry => entry.table), coverageMaps);
           return <div className="source-group" key={group.id}>
             <button className="source-group-toggle" aria-expanded={isOpen} aria-controls={`${group.id}-body`} onClick={() => setGroupOverrides(previous => ({...previous, [group.id]: !isOpen}))}>
               <span><h3>{group.name}</h3><span className="publisher-caption">{group.publishers.length ? `Sources: ${group.publishers[0].name}${group.publishers.length > 1 ? ` + ${group.publishers.length - 1} other ${group.publishers.length === 2 ? 'source' : 'sources'}` : ''}` : 'Publisher not recorded'}{group.historical ? ' · includes earlier source notes' : ''}</span></span>
-              <span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{coverageMaps ? `${coverage.current + coverage.previous} with coverage maps${coverage.previous ? ` · ${coverage.previous} awaiting refresh` : ''}` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+              <span className="group-count">{items.length} {items.length === 1 ? 'record table' : 'record tables'}{supportingCount ? ` · ${supportingCount} supporting ${supportingCount === 1 ? 'table' : 'tables'}` : ''}<span>{!items.length ? 'Collection and source details' : coverageMaps ? `${coverage.current + coverage.previous} with coverage maps${coverage.previous ? ` · ${coverage.previous} awaiting refresh` : ''}` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
             </button>
             {isOpen && <div className="source-body" id={`${group.id}-body`}>
               {group.publishers.length > 1 && <details className="publisher-list"><summary>Recorded source names</summary>{group.historical && <p>Some names come from an earlier review and may be incomplete.</p>}<ul>{group.publishers.map(source => <li key={`${source.id}-${source.name}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a> : source.name}</li>)}</ul></details>}
               {!!items.length && <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">{sourceControlLabel('Coverage')}</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} coverageLoading={!coverageMaps && !timeError} />)}</tbody></table></div>}
-              {!!group.checkpoints.length && <section className="collection-checkpoints" aria-labelledby={`${group.id}-checkpoints`}><h4 id={`${group.id}-checkpoints`}>Collection status</h4><p>Saved checkpoints help collection resume and record incomplete work. Their counts describe processing, not source completeness.</p><ul className="readable-inputs">{group.checkpoints.map(({table}) => <li key={table.id}><strong>{table.label}</strong><span>{table.summary || 'Saved collection progress.'}</span><span>{table.rows ? `${count(table.rows)} saved checkpoints` : 'No checkpoints recorded in this release'} · {table.published ? `Released ${publicationDate(table.published)}` : 'Release date not recorded'}</span><a href={`/?table=${encodeURIComponent(table.id)}`}>Inspect collection evidence →</a></li>)}</ul></section>}
+              {(Object.keys(supportingSections) as SupportingSection[]).map(role => <SupportingTables key={role} groupId={group.id} role={role} entries={group.supporting[role]} />)}
               {items.length > limit && <button className="show-more" onClick={() => setLimits(previous => ({...previous, [group.id]: limit + 8}))}>Show {Math.min(8, items.length-limit)} more tables ({items.length-limit} remaining)</button>}
             </div>}
           </div>;

@@ -58,7 +58,8 @@ import {
   noConnectionsMessage,
   pretty,
   recordDatasets,
-  isProcessingEvidence,
+  tableEyebrow,
+  tableCountUnit,
   type Dataset,
   type Row,
   type Filter,
@@ -419,7 +420,7 @@ export default function Explorer() {
           </div>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">{table && isProcessingEvidence(table) ? 'COLLECTION CHECKPOINT' : 'FOLLOW THE PUBLIC RECORD'}</p>
+              <p className="eyebrow">{tableEyebrow(table)}</p>
               <h1>
                 {table?.label ??
                   (catalog.length
@@ -439,7 +440,7 @@ export default function Explorer() {
           </p>
           {table?.recordsAvailable === false ? <p className="metadata-status" role="status">Physical fields could not be confirmed for this release. <button onClick={() => setRetry(retry + 1)}>Reload catalog</button></p> : table && tableMetadataMessage(table.metadataState) && <p className="metadata-status" role="status">{tableMetadataMessage(table.metadataState)} {table.metadataState === "unavailable" && <button onClick={() => setRetry(retry + 1)}>Try again</button>}</p>}
           <div className="table-meta">
-            <span>{table ? count(table.rows) : "—"} {table && isProcessingEvidence(table) ? 'checkpoints' : 'records'}</span>
+            <span>{table ? count(table.rows) : "—"} {table ? tableCountUnit(table) : 'records'}</span>
             <span>{table?.recordsAvailable === false ? "Fields unavailable" : `${table?.columns.length ?? "—"} fields`}</span>
             <span>{connections.length + sourceConnections.length} connections</span>
             {location.connection && <span>Exact source reference · {location.connection.values.join(' + ')}</span>}

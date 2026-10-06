@@ -39,8 +39,8 @@ test('source groups retain checkpoints as evidence without counting them as data
   const checkpoint = {...table('bill_family_backfills'), family:'bill-family', group:'Congress', category:'processing_evidence', label:'Bill fetch attempts'};
   const group = sourceSections(sourceEntries([bills,checkpoint],[]))[0].groups[0];
   assert.deepEqual(group.entries.map(entry => entry.table.id), ['congress_bills']);
-  assert.deepEqual(group.checkpoints.map(entry => entry.table.id), ['bill_family_backfills']);
-  assert.equal(group.checkpoints[0].table.label, 'Bill fetch attempts');
+  assert.deepEqual(group.supporting.collection.map(entry => entry.table.id), ['bill_family_backfills']);
+  assert.equal(group.supporting.collection[0].table.label, 'Bill fetch attempts');
 });
 const review = () => ({ format: 'spicygov-source-review', version: 1, reviewedAt: '2026-10-04T21:00:00Z', sourceRevision: 'a'.repeat(40), tables: {
   records: { family: 'family', label: 'Records', methods: ['api', 'bulk_download'], summary: 'API plus bulk.', mixing: 'Retained records.', gaps: ['Bodies absent.'], sources: [{ id: 'publisher', name: 'Publisher', url: 'https://example.gov' }], artifactDigest: sha, generationLinks: [{ label: 'Source observation journal', url: `${base}/source-evidence/${'a'.repeat(64)}/journal.jsonl` }], evidence: [] },
@@ -65,6 +65,19 @@ test('dated notes cannot invent live membership and historical attribution stays
   assert.equal(reviewed.historicalAttribution, true);
   assert.equal(reviewed.source.name, 'Publisher');
   assert.equal(entries.find(entry => entry.table.id === 'new_table').review, undefined);
+});
+test('collection status, source evidence and reference data stay distinct from original records', () => {
+  const definitions = [
+    ['fec_api_response_controls','diagnostics'], ['fec_collections','processing_evidence'],
+    ['fec_record_evidence','source_evidence'], ['fec_filing_definitions','reference_data'],
+    ['fec_source_records','source_data'], ['fec_receipts','query_data'],
+  ];
+  const entries = sourceEntries(definitions.map(([id,category]) => ({...table(id),category,family:'fec-query',group:'Elections'})), []);
+  const group = sourceSections(entries)[0].groups[0];
+  assert.deepEqual(group.supporting.collection.map(e => e.table.id), ['fec_api_response_controls','fec_collections']);
+  assert.deepEqual(group.supporting.evidence.map(e => e.table.id), ['fec_record_evidence']);
+  assert.deepEqual(group.supporting.reference.map(e => e.table.id), ['fec_filing_definitions']);
+  assert.deepEqual(group.entries.map(e => e.table.id).sort(), ['fec_receipts','fec_source_records']);
 });
 test('receipt files apply only to their advertised datasets and safe publication paths', () => {
   const receipt = { datasets: ['records'], key: 'etl_receipts.parquet', generationId: 'g1', rows: 20, byteSize: 100, sha256: sha };

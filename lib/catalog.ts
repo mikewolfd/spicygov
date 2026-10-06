@@ -21,6 +21,7 @@ export type Dataset = {
   coverage: string;
   kind: string;
   category?: string;
+  rowUnit?: string;
   quality?: string;
   rows: number;
   bytes: number;
@@ -49,7 +50,25 @@ export type Dataset = {
 export const pretty = (s: string) =>
   s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 export const isProcessingEvidence = (table: Pick<Dataset, 'category'>) => table.category === 'processing_evidence';
-export const recordDatasets = (tables: Dataset[]) => tables.filter(table => !isProcessingEvidence(table));
+export const supportingSections = {
+  collection: { label: 'Collection status', eyebrow: 'COLLECTION STATUS', summary: 'Saved collection and processing results. Counts describe recorded work, not source completeness.', link: 'Inspect collection status →' },
+  evidence: { label: 'Source evidence', eyebrow: 'SOURCE EVIDENCE', summary: 'Links between records and the saved material used to produce or interpret them.', link: 'Inspect source evidence →' },
+  reference: { label: 'Reference data', eyebrow: 'REFERENCE DATA', summary: 'Source directories and filing layouts that explain where data comes from and what its fields mean.', link: 'Inspect reference data →' },
+} as const;
+export type SupportingSection = keyof typeof supportingSections;
+export function supportingSection(table: Pick<Dataset, 'category'>): SupportingSection | undefined {
+  switch (table.category) {
+    case 'processing_evidence': case 'diagnostics': return 'collection';
+    case 'source_evidence': return 'evidence';
+    case 'reference_data': return 'reference';
+  }
+}
+export const recordDatasets = (tables: Dataset[]) => tables.filter(table => !supportingSection(table));
+export const tableCountUnit = (table: Pick<Dataset, 'category' | 'rowUnit'>) => table.rowUnit || (supportingSection(table) ? 'rows' : 'records');
+export function tableEyebrow(table?: Pick<Dataset, 'category'>): string {
+  const section = table && supportingSection(table);
+  return section ? supportingSections[section].eyebrow : table?.category === 'source_data' ? 'ORIGINAL SOURCE RECORDS' : 'FOLLOW THE PUBLIC RECORD';
+}
 export const count = (n: number) => new Intl.NumberFormat("en-US").format(n);
 export const compact = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -157,7 +176,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     if (undocumented) status.undocumentedTables++;
     return {
       ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
-      kind: metadata.kind ?? "published", category: metadata.category, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
+      kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
       receiptIdentity: metadata.receiptIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",

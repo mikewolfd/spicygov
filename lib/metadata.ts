@@ -27,6 +27,7 @@ export type TableMetadata = {
   coverage?: string;
   kind?: string;
   category?: string;
+  row_unit?: string;
   data_quality?: string;
   columns?: { column_name: string; description: string }[];
   family: string;
@@ -88,7 +89,7 @@ function parseTable(value: unknown): TableMetadata | undefined {
     receiptContainers: isObject(value.receiptContainers) ? Object.fromEntries(Object.entries(value.receiptContainers).filter((p): p is [string, string[]] => Array.isArray(p[1]) && p[1].every(v => typeof v === "string"))) : {},
     family: value.family, publicationSchema: value.publicationSchema as [string, string][],
     publicationIdentity: text(value.publicationIdentity),
-    label: text(value.label), summary: text(value.summary), coverage: text(value.coverage), kind: text(value.kind), category: text(value.category), data_quality: text(value.data_quality), columns,
+    label: text(value.label), summary: text(value.summary), coverage: text(value.coverage), kind: text(value.kind), category: text(value.category), row_unit: text(value.row_unit), data_quality: text(value.data_quality), columns,
     sources, inputs: Array.isArray(value.inputs) ? value.inputs.filter((input): input is string => typeof input === 'string') : [],
     transformation: text(value.transformation), modelGenerated: value.modelGenerated === true, emptyReason: text(value.emptyReason),
     metadataStatus: value.metadataStatus === 'documented' ? 'documented' : 'unknown',
