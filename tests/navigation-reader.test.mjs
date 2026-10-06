@@ -4,10 +4,10 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['lib/receipt-reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {receiptFields,recordIdentity,exactJson,unpack,parseExact}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {receiptFields,recordIdentity,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const built=await build({entryPoints:['lib/reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {readPage}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
-const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
+const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys','detail-attempts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
 const server=createServer((req,res)=>{const name=req.url.slice(1),file=files[name];if(!file)return res.writeHead(404).end();const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');if(match){const start=Number(match[1]),end=Number(match[2]);res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${file.length}`,'Content-Length':end-start+1});res.end(file.subarray(start,end+1));}else{res.writeHead(200,{'Content-Length':file.length});res.end(file);}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
@@ -15,6 +15,18 @@ const member=(n,rows)=>({url:`${base}/${n}`,rows,byteSize:files[n].length});
 const cols=names=>names.map(name=>({name,type:'VARCHAR',description:''}));
 const table={id:'house_communications',rows:1,columns:cols(['congress','communication_type','number']),members:[member('communications',1)],receiptIdentity:['congress','communication_type','number'],receiptContainers:{source_fields:['record_package_id','record_granule_id','record_entry_text']},artifactDigest:'sha256:'+'a'.repeat(64),publication:{kind:'generation',nativeReceipts:{url:`${base}/receipts`,generationId:'g1',rows:1,bytes:files.receipts.length,sha256:'sha256:'+'b'.repeat(64)}}};
 try {
+ await test('detail attempt evidence preserves PN partitions and separates failed reads from empty successes',async()=>{
+  const selected={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/detail-attempts`,rows:3,bytes:files['detail-attempts'].length}}};
+  const filters=[{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}];
+  const result=await readSourceEvidence(selected,'congress_acquisition',filters);
+  assert.deepEqual(result.records.map(row=>row.read_outcome),['failed','read']);
+  assert.deepEqual(result.records.map(row=>row.citation),['PN129-10','PN129-10']);
+  assert.equal(result.records[0].error_type,'PagedJsonSourceError');
+  assert.ok(result.records.every(row=>!('credential' in row)&&!('private_path' in row)));
+  const unread=await readSourceEvidence(selected,'congress_acquisition',[...filters.slice(0,1),{column:'citation',value:'PN999'}]);
+  assert.equal(unread.records.length,0);assert.equal(unread.partial,false);
+  await assert.rejects(readSourceEvidence({...selected,publication:{...selected.publication,nativeReceipts:{...selected.publication.nativeReceipts,generationId:'g2'}}},'congress_acquisition',filters),/different generation/);
+ });
  await test('receipt lookup preserves complete source identity and reads useful source fields',async()=>{
   const row={congress:'113',communication_type:'ec',number:'1'};
   const fields=await receiptFields(table,row,['record_package_id','record_entry_text']);
