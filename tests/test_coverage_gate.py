@@ -206,7 +206,7 @@ class CoverageGateTest(unittest.TestCase):
                 else:
                     self.assertTrue(first_finished.wait(timeout=5))
                     self.assertTrue(spill.exists(), 'The first reader removed the second reader\'s active spill file')
-                return mock.Mock(stdout=json.dumps({'reader': id}))
+                return mock.Mock(stdout=json.dumps({'reader': id}), stderr='')
             with mock.patch.object(builder, 'cached', return_value=False), \
                  mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
                  concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -216,31 +216,33 @@ class CoverageGateTest(unittest.TestCase):
             self.assertTrue(all(not directory.exists() for directory in directories))
 
     def test_heavy_native_readers_queue_without_blocking_cached_results(self):
-        started, release, second_started = (threading.Event() for _ in range(3))
-        def reader(command, **options):
-            id = json.loads(options['input'])['id']
-            self.assertEqual(options['timeout'], 900)
-            if id == 'federal_register':
-                started.set()
-                self.assertTrue(release.wait(timeout=5))
-            else:
-                second_started.set()
-            return mock.Mock(stdout=json.dumps({'reader': id}))
-        policy = {'_additionalNativeProcessing': True}
-        with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old == 'cached'), \
-             mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
-             concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            first = pool.submit(builder.timed_scan, ('federal_register', {}, policy, None))
-            try:
-                self.assertTrue(started.wait(timeout=5))
-                second = pool.submit(builder.timed_scan, ('fr_docket_links', {}, policy, None))
-                self.assertFalse(second_started.wait(timeout=0.1))
-                self.assertEqual(builder.timed_scan(('documents', {}, policy, 'cached')), ('documents', 'cached'))
-            finally:
-                release.set()
-            self.assertEqual(first.result()[0], 'federal_register')
-            self.assertEqual(second.result()[0], 'fr_docket_links')
-            self.assertTrue(second_started.is_set())
+        for second_id in ('fr_docket_links', 'comment_periods', 'rule_targets'):
+            with self.subTest(second_id=second_id):
+                started, release, second_started = (threading.Event() for _ in range(3))
+                def reader(command, **options):
+                    id = json.loads(options['input'])['id']
+                    self.assertEqual(options['timeout'], 900)
+                    if id == 'federal_register':
+                        started.set()
+                        self.assertTrue(release.wait(timeout=5))
+                    else:
+                        second_started.set()
+                    return mock.Mock(stdout=json.dumps({'reader': id}), stderr='')
+                policy = {'_additionalNativeProcessing': True}
+                with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old == 'cached'), \
+                     mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
+                     concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                    first = pool.submit(builder.timed_scan, ('federal_register', {}, policy, None))
+                    try:
+                        self.assertTrue(started.wait(timeout=5))
+                        second = pool.submit(builder.timed_scan, (second_id, {}, policy, None))
+                        self.assertFalse(second_started.wait(timeout=0.1))
+                        self.assertEqual(builder.timed_scan(('documents', {}, policy, 'cached')), ('documents', 'cached'))
+                    finally:
+                        release.set()
+                    self.assertEqual(first.result()[0], 'federal_register')
+                    self.assertEqual(second.result()[0], second_id)
+                    self.assertTrue(second_started.is_set())
 
     def test_clock_dependent_counts_expire_even_without_future_anomalies(self):
         table, policy, measured = fixture()

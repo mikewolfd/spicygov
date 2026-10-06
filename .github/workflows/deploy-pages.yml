@@ -108,6 +108,7 @@ jobs:
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_native_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_rulemaking_native_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_coverage_single_pass.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_vote_coverage_receipt_scope.py
       - name: Restore validated coverage checkpoints
         # Reuse validated interrupted scans on every build, including pushes.
         # The builder still checks each checkpoint against the current inputs.
