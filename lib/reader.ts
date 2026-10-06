@@ -96,9 +96,10 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   let offset = 0, remaining = 0;
   const scanColumns = [...new Set([sort.column, ...filters.map(f => f.column), ...(navigation ? navigationColumns(navigation) : [])])];
   for (const member of table.members) {
-    if (!member.rows) continue;
     const file = await remoteFile(member);
     const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
+    if (Number(metadata.num_rows) !== member.rows) throw new Error('The Parquet footer differs from the published row count.');
+    if (!member.rows) continue;
     for (let start = 0; start < member.rows; start += 50000) {
       const end = Math.min(member.rows, start + 50000);
       const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
@@ -159,7 +160,11 @@ export async function readPage(
   if (connection && connectionColumns.some(c => !table.columns.some(x=>x.name===c))) {
     throw new Error('The main source fields for this connection are not published. Receipts remain available as evidence.');
   }
-  if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort, connection, navigation }, onProgress);
+  if (sort) {
+    if (maxScanRows !== undefined && table.rows > maxScanRows)
+      throw new Error('Sorting requires checking every source row. This related-record search is bounded; clear sorting to continue checking it in batches.');
+    return readSortedPage({ table, columns, filters, cursor, limit, sort, connection, navigation }, onProgress);
+  }
   let offset = 0,
     position = cursor;
   const scanEnd = Math.min(table.rows, maxScanRows === undefined ? table.rows : cursor + maxScanRows);

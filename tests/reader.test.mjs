@@ -168,6 +168,11 @@ try {
     assert.equal(p.cursor, 140);
     assert.equal(p.done, true);
   });
+  await test('bounded related searches refuse a sort that exceeds the scan limit', async () => {
+    const progress=[];
+    await assert.rejects(readPage({table,columns:['id'],filters:[],cursor:0,maxScanRows:1,sort:{column:'id',direction:'asc'}}, n=>progress.push(n)), /clear sorting/);
+    assert.deepEqual(progress,[]);
+  });
   await test('text sorting covers every file, not just the visible page', async () => {
     const sort = {column: 'id', direction: 'asc'};
     const p = await readPage({table, columns: ['id'], filters: [], cursor: 0, sort});

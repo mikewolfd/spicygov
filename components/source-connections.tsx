@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Dataset, Filter, Row } from '../lib/catalog';
 import { pretty, display } from '../lib/catalog';
-import { at, elements, forwardLinks, fccDocumentOutcome, type Connection, type Navigation } from '../lib/navigation';
+import { at, elements, sourceOccurrences, forwardLinks, fccDocumentOutcome, type Connection, type Navigation } from '../lib/navigation';
 type Props = {table: Dataset; catalog: Dataset[]; row: Row; navigation: Navigation[]; onOpen: (id:string,filters:Filter[],connection?:Connection,detail?:boolean)=>void};
-export function FccDocumentReference({link,receipt,fieldAvailable}:{link:ReturnType<typeof forwardLinks>[number];receipt:Row;fieldAvailable:boolean}) {
-  const outcome=fccDocumentOutcome(link.values[0],receipt,fieldAvailable);
+export function FccDocumentReference({link,row,fieldAvailable}:{link:ReturnType<typeof forwardLinks>[number];row:Row;fieldAvailable:boolean}) {
+  const outcome=fccDocumentOutcome(link.values[0],row,fieldAvailable);
   const filename=at(link.sourceElement,['filename']),description=at(link.sourceElement,['description']);
   return <>
     {typeof filename==='string'&&<small style={{whiteSpace:'pre-wrap'}}>Offered filename: {filename}</small>}
@@ -15,7 +15,7 @@ export function FccDocumentReference({link,receipt,fieldAvailable}:{link:ReturnT
     {outcome.state==='recorded'&&<details><summary>Recorded details</summary>
       {outcome.sourceSha256&&<small style={{overflowWrap:'anywhere'}}>Recorded source byte SHA-256: {outcome.sourceSha256}</small>}
       {outcome.error&&<small>Reported error: {outcome.error}</small>}
-      <small>This selected receipt records an extraction outcome. These fields do not establish access to retained file bytes or extracted text.</small>
+      <small>This filing records an extraction outcome. These fields do not establish access to retained file bytes or extracted text.</small>
     </details>}
   </>;
 }
@@ -47,18 +47,18 @@ export function SourceConnections({table,catalog,row,navigation,onOpen}: Props) 
     <summary>Source references</summary>
     <div className="record-join-list">
       {outgoing.map(s=>{
-        const links=forwardLinks(s,current), state=elements(s,current).state;
+        const links=forwardLinks(s,current), state=elements(s,current).state, occurrences=sourceOccurrences(s,current);
         return <div className="source-reference" key={s.id}>
           <p>{s.meaning}</p>
           {state==='ambiguous targets'&&<small>Ambiguous reference: each link is a separate candidate.</small>}
           {links.map((link,i)=>link.target.table==='@url'?<div key={i}>
-            {s.id==='fcc_filing_documents'&&s.source==='fcc_filings'?<FccDocumentReference link={link} receipt={held} fieldAvailable={s.receiptFields.includes('pdf_extraction_results_json')}/>:<><a href={link.values[0]} target="_blank" rel="noreferrer">Open offered document</a><small>Capture and text extraction are not established by this link.</small></>}
+            {s.id==='fcc_filing_documents'&&s.source==='fcc_filings'?<FccDocumentReference link={link} row={row} fieldAvailable={table.columns.some(c=>c.name==='extraction_results')}/>:<><a href={link.values[0]} target="_blank" rel="noreferrer">Open offered document</a><small>Capture and text extraction are not established by this link.</small></>}
           </div>:<button key={i} disabled={!link.target.available||link.target.directions?.forward.available===false} onClick={()=>onOpen(link.target.table,link.filters,undefined,link.target.completeKey===true)}>
             <span>{link.target.table==='@receipt:congress_acquisition'?'Detail read attempts':catalog.find(t=>t.id===link.target.table)?.label??pretty(link.target.table.replace('@receipt:',''))}<small>{link.target.columns.map((c,i)=>`${c}: ${link.values[i]}`).join(' · ')}</small></span>
             {!link.target.available&&<small>Target is not published</small>}
             {link.target.available&&<small>{link.target.completeKey?'Open record · checks for one exact match':'Show related records'}</small>}
           </button>)}
-          {elements(s,current).values.length>0&&<details><summary>Source occurrences · {elements(s,current).values.length}</summary><ol>{elements(s,current).values.map((value,i)=><li key={i}><pre className="source-passage">{display(value)}</pre></li>)}</ol></details>}
+          {occurrences.length>0&&<details><summary>Source occurrences · {occurrences.length}</summary><ol>{occurrences.map((value,i)=><li key={i}><pre className="source-passage">{display(value)}</pre></li>)}</ol></details>}
           {!links.length&&<small>{!s.available?'Source fields are not published yet.':state==='stated'?'No complete, supported target key in this reference.':state==='empty'?'The source lists no references.':state==='unread'?'Not read yet.':state==='not stated'?'The read source states no reference.':state==='unknown read state'?'No reference is stored; the source read state is unknown.':state==='unresolved targets'?'No recorded target identity. See the interpretation and target statuses below.':state==='unsupported shape'?'The stored reference format is unsupported.':state}</small>}
         </div>;
       })}

@@ -64,11 +64,36 @@ export function targetKeys(t: Target, element: unknown, row: Row): string[] | un
 }
 function decoded(v: unknown, integerReferences = false): unknown { if (typeof v !== 'string') return v; try { return parseExact(v, integerReferences); } catch { return undefined; } }
 export type FccDocumentOutcome = { state: 'unavailable' | 'unread' | 'unrecorded' | 'malformed' | 'ambiguous' | 'recorded'; message: string; sourceSha256?: string; pageCount?: number; error?: string };
-// Pass only fields returned by the selected-generation receipt reader, never another filing's diagnostics.
+// Main result observations take precedence. The older receipt form remains
+// readable for the separate evidence inspector, never for navigation keys.
 export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = true): FccDocumentOutcome {
   const malformed: FccDocumentOutcome = {state:'malformed',message:'Recorded extraction diagnostics are malformed.'};
   const unrecorded: FccDocumentOutcome = {state:'unrecorded',message:'No extraction attempt recorded for this URL.'};
   if (!fieldAvailable) return {state:'unavailable',message:'Extraction diagnostics are unavailable in the published source details.'};
+  if (Object.hasOwn(receipt, 'extraction_results')) {
+    if (receipt.extraction_results === null) return unrecorded;
+    const results = decoded(receipt.extraction_results);
+    if (!Array.isArray(results)) return malformed;
+    const matches = results.filter(d => object(d) && d.url === url);
+    if (matches.length > 1) return {state:'ambiguous',message:'Multiple recorded outcomes; no outcome chosen.'};
+    if (!matches.length) return unrecorded;
+    const d = matches[0];
+    if (d.url_status !== 'usable' || d.digest_status === 'invalid') return malformed;
+    const count = typeof d.page_count === 'bigint' && d.page_count <= BigInt(Number.MAX_SAFE_INTEGER)
+      ? Number(d.page_count) : d.page_count;
+    const digest = d.source_sha256;
+    if (!['ok','empty','encrypted','error'].includes(d.status) || !(d.error === null || typeof d.error === 'string')
+      || !(digest === null || typeof digest === 'string' && /^(?:sha256:)?[a-f0-9]{64}$/.exec(digest)?.[0] === digest)
+      || !(count === null || Number.isSafeInteger(count) && count >= 0)
+      || (digest === null ? d.status !== 'error' || count !== null || !d.error : count === null)
+      || d.status === 'ok' && (count < 1 || d.error !== null)) return malformed;
+    const label = {ok:'successful',empty:'no extractable text',encrypted:'encrypted',error:'failed'}[
+      d.status as 'ok'|'empty'|'encrypted'|'error'];
+    return {state:'recorded',message:label ? `Reported extraction: ${label}.` : `Recorded outcome: ${String(d.status ?? 'not stated')}.`,
+      ...(typeof d.source_sha256 === 'string' ? {sourceSha256:d.source_sha256} : {}),
+      ...(Number.isSafeInteger(count) && count >= 0 ? {pageCount:count} : {}),
+      ...(typeof d.error === 'string' && d.error ? {error:d.error} : {})};
+  }
   if (!Object.hasOwn(receipt, 'pdf_extraction_results_json')) return {state:'unread',message:'Extraction outcome not read yet.'};
   const raw = receipt.pdf_extraction_results_json;
   if (raw === null) return unrecorded;
@@ -86,6 +111,13 @@ export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = t
   const label = {ok:'successful',empty:'no extractable text',encrypted:'encrypted',error:'failed'}[d.status as 'ok'|'empty'|'encrypted'|'error'];
   return {state:'recorded',message:`Reported extraction: ${label}.`,
     ...(digest ? {sourceSha256:digest} : {}), ...(d.page_count !== null ? {pageCount:d.page_count} : {}), ...(d.error ? {error:d.error} : {})};
+}
+export function sourceOccurrences(s: Navigation, row: Row): unknown[] {
+  if (s.mode === 'row') return [];
+  const field = s.field && s.field in row ? s.field : s.fields.find(f => f in row);
+  let value = decoded(field ? row[field] : undefined, true);
+  if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
+  return Array.isArray(value) ? value : [];
 }
 export function elements(s: Navigation, row: Row): { state: string; values: unknown[] } {
   if (s.mode === 'row') return { state: 'stated', values: [row] };

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {renderToStaticMarkup} from 'react-dom/server';
 const {outputFiles}=await build({entryPoints:['lib/navigation.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {parseNavigation,targetKeys,elements,matchesConnection,forwardLinks,validConnection,fccDocumentOutcome}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {parseNavigation,targetKeys,elements,sourceOccurrences,matchesConnection,forwardLinks,validConnection,fccDocumentOutcome}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(transform?{transform}:{})});
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
@@ -138,17 +138,31 @@ test('FCC document display keeps literal descriptors and compact status with exp
  const {FccDocumentReference}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
  const url='https://example.test/not-the-offered-filename.pdf', digest='sha256:'+'a'.repeat(64);
  const link={values:[url],sourceElement:{filename:'Literal & offered.pdf',description:'Publisher description'},sourceOrdinal:2};
- const receipt={pdf_extraction_results_json:JSON.stringify([{url,source_sha256:digest,status:'ok',page_count:2,error:null}])};
- const html=renderToStaticMarkup(FccDocumentReference({link,receipt,fieldAvailable:true}));
+ const row={extraction_results:[{url,source_sha256:digest,status:'ok',page_count:2n,error:null,url_status:'usable',digest_status:'recorded'}]};
+ const html=renderToStaticMarkup(FccDocumentReference({link,row,fieldAvailable:true}));
  const [primary,details]=html.split('<details>');
  assert.match(primary,/Literal &amp; offered.pdf/);assert.match(primary,/Publisher description/);
  assert.match(primary,/Open offered document 3/);assert.match(primary,/Reported extraction: successful\. 2 pages\./);
  assert.match(primary,/File and text access: not verified/);assert.ok(!primary.includes(digest));
  assert.match(details,/<summary>Recorded details<\/summary>/);assert.ok(details.includes(digest));
  assert.match(details,/do not establish access to retained file bytes or extracted text/);
- const absent=renderToStaticMarkup(FccDocumentReference({link:{values:[url],sourceElement:{}},receipt:{},fieldAvailable:false}));
+ const absent=renderToStaticMarkup(FccDocumentReference({link:{values:[url],sourceElement:{}},row:{},fieldAvailable:false}));
  assert.match(absent,/unavailable in the published source details/);assert.ok(!absent.includes('not read yet'));
  assert.ok(!absent.includes('Offered filename:'));assert.ok(!absent.includes('Description:'));
+});
+
+test('FCC main results take precedence and malformed siblings do not hide a matched observation',()=>{
+ const url='https://example.test/a.pdf';
+ const result={url,status:'ok',source_sha256:'sha256:'+'a'.repeat(64),page_count:2n,error:null,
+  url_status:'usable',digest_status:'recorded',offered_ordinals:[0n,2n]};
+ const row={extraction_results:[null,{url:'bad url',url_status:'invalid'},result],pdf_extraction_results_json:'invalid'};
+ assert.equal(fccDocumentOutcome(url,row).state,'recorded');
+ assert.equal(fccDocumentOutcome(url,row).pageCount,2);
+ assert.equal(fccDocumentOutcome(url,{...row,extraction_results:null}).state,'unrecorded');
+ assert.equal(fccDocumentOutcome(url,{extraction_results:[result,result]}).state,'ambiguous');
+ assert.equal(fccDocumentOutcome(url,{extraction_results:[{...result,digest_status:'invalid'}]}).state,'malformed');
+ for(const changed of [{page_count:0n},{source_sha256:null,page_count:null},{error:'contradiction'}])
+  assert.equal(fccDocumentOutcome(url,{extraction_results:[{...result,...changed}]}).state,'malformed');
 });
 
 test('legal targets distinguish unresolved and ambiguous candidates from absent references',()=>{
@@ -169,4 +183,11 @@ test('full guards refuse trailing newlines instead of accepting a prefix',()=>{
  const t={...target,guards:[{...part('congress'),pattern:'[1-9][0-9]*'}]};
  assert.equal(targetKeys(t,{congress:'119\n',number:14,part:'2'},{}),undefined);
  assert.equal(targetKeys(t,{congress:'119\r\n',number:14,part:'2'},{}),undefined);
+});
+
+test('source occurrences retain unresolved, repeated and null legal candidates',()=>{
+ const s={...spec,candidates:true,field:'refs',fields:['refs']};
+ const values=[{target_status:'unsupported',candidate_keys:[]},{target_status:'ambiguous',candidate_keys:[{id:'a'},{id:'a'}]},null];
+ assert.deepEqual(sourceOccurrences(s,{refs:JSON.stringify(values)}),values);
+ assert.deepEqual(sourceOccurrences({...s,mode:'row'}, {refs:values}),[]);
 });
