@@ -325,17 +325,20 @@ def timed_scan(item):
         # DuckDB's default spill directory is relative to the working directory.
         # Keep concurrent readers separate and clean up even after a timeout.
         # Full selected receipt admission can use several GiB beyond DuckDB's
-        # memory limit. Queue these three readers before starting their timer;
+        # memory limit. Queue the measured large receipt readers before starting their timer;
         # other scans keep the existing parallelism and cached maps return above.
-        serial = id in ('documents', 'federal_register', 'fr_docket_links') and policy.get('_additionalNativeProcessing')
+        serial = id in ('documents', 'federal_register', 'fr_docket_links', 'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
         with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = subprocess.run([sys.executable, __file__, '--scan'],
                 input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
                 capture_output=True, timeout=timeout_seconds, check=True, cwd=workdir)
+        additional.forward_restore_diagnostics(process.stderr)
         return id, json.loads(process.stdout.splitlines()[-1])
     except subprocess.CalledProcessError as error:
+        additional.forward_restore_diagnostics(error.stderr)
         raise ValueError(id + ': ' + error.stderr[-1500:]) from error
     except subprocess.TimeoutExpired as error:
+        additional.forward_restore_diagnostics(error.stderr)
         raise ValueError(f'{id}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
 
 

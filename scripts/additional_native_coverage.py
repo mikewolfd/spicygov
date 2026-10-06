@@ -50,13 +50,27 @@ def bridge(args=(), request=None):
     if not script or not Path(script).is_absolute() or not Path(script).is_file():
         raise ValueError("Additional native coverage requires the pinned restoration bridge")
     python = os.environ.get(prefix + "_COVERAGE_PYTHON", sys.executable)
-    # The complete documents restore passed locally but exceeded five minutes
-    # on the hosted runner. Keep the larger finite allowance scoped to it.
-    timeout = 600 if dataset == "documents" and not args else 300
-    result = subprocess.run([python, script, *args],
-                            input=None if request is None else json.dumps(request),
-                            text=True, capture_output=True, check=True, timeout=timeout)
+    # Full current documents and Register restores passed locally, but each
+    # exceeded five minutes on the hosted runner. Keep their finite allowance
+    # separate from schema requests and the other selected readers.
+    timeout = 600 if dataset in {"documents", "federal_register"} and not args else 300
+    try:
+        result = subprocess.run([python, script, *args],
+                                input=None if request is None else json.dumps(request),
+                                text=True, capture_output=True, check=True, timeout=timeout)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        forward_restore_diagnostics(error.stderr)
+        raise
+    forward_restore_diagnostics(result.stderr)
     return json.loads(result.stdout.splitlines()[-1])
+
+
+def forward_restore_diagnostics(stderr):
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    for line in (stderr or "").splitlines():
+        if line.startswith("coverage-restore "):
+            print(line, file=sys.stderr, flush=True)
 
 
 @lru_cache(maxsize=len(FAMILIES) + len(RULEMAKING_DATASETS))
