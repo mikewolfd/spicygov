@@ -17,6 +17,32 @@ export type ReadRequest = {
 };
 export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; done: boolean };
 
+/** Offline audit projection: one footer per pinned member, bounded batches. */
+export async function readColumnBatches(table: Dataset, columns: string[], maxRows: number, onBatch: (rows: Row[]) => void | Promise<void>, startRow = 0): Promise<{rows: number; complete: boolean}> {
+  if (table.recordsAvailable === false || columns.some(name => !table.columns.some(column => column.name === name))) throw new Error('Audit fields are unavailable in this publication.');
+  if (!Number.isSafeInteger(maxRows) || maxRows < 1) throw new Error('Invalid audit row limit.');
+  if (!Number.isSafeInteger(startRow) || startRow < 0 || startRow > table.rows) throw new Error('Invalid audit continuation.');
+  let rows = 0, offset = 0;
+  for (const member of table.members) {
+    if (rows >= maxRows) break;
+    const memberStart = Math.max(0, startRow - offset);
+    offset += member.rows;
+    if (memberStart >= member.rows) continue;
+    if (!member.rows) continue;
+    const file = await remoteFile(member);
+    const metadata = await parquetMetadataAsync(file);
+    if (Number(metadata.num_rows) !== member.rows) throw new Error('The Parquet footer differs from the published row count.');
+    for (let start = memberStart; start < member.rows && rows < maxRows;) {
+      const end = Math.min(member.rows, start + 50000, start + maxRows - rows);
+      const batch = await parquetReadObjects({file, metadata, compressors, columns, rowStart:start, rowEnd:end, useOffsetIndex:true, usePageIndex:true});
+      if (batch.length !== end - start) throw new Error('The audit projection returned an incomplete batch.');
+      await onBatch(batch);
+      rows += batch.length; start = end;
+    }
+  }
+  return {rows, complete:startRow + rows === table.rows};
+}
+
 async function remoteFile(member: Dataset['members'][number]) {
   const expectedEtag = member.etag?.replace(/^"|"$/g, '');
   const remote = await asyncBufferFromUrl({ url: member.url, byteLength: member.byteSize,

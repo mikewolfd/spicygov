@@ -109,3 +109,30 @@ Open a record to follow its recorded references: nominations and treaties at mee
 Reverse links find records containing the selected reference. Array searches read the needed columns in pages; a partially checked page is labeled incomplete. Native source fields load only when requested, from receipts paired with the selected publication generation and exact record identity. Receipt searches check up to 50,000 rows per page and can continue. These references do not establish source completeness, document capture or extraction, or financial totals.
 
 `explorer-metadata.v1.json` supplies the backend's canonical navigation recipes and receipt field definitions. The browser supports physical arrays and JSON, complete scalar keys, and explicitly declared receipt fields. Undeployed fields stay visible as unavailable connections. It never scans source receipts while rendering the table. Unsorted reverse links check up to 250,000 source rows per page; Next continues from the last checked row, including when a page has no matches. Sorted results still check the whole table to preserve global order. Each read reuses the Parquet footer across its batches.
+
+### Measure connections against the published files
+
+`node scripts/audit-navigation.mjs --output /tmp/navigation-audit.json` checks
+both scalar joins and the array/composite recipes used by the explorer. It
+records the selected file and receipt pins with each result. Counts retain
+repeated source references; multiple retained target rows do not automatically
+mean an ambiguous identity. Offered document URLs count separately from captures.
+
+The default scan checks up to 25,000 source rows and indexes targets with up to
+100,000 rows. `--tables fcc_filings,native_legal_references` selects source tables;
+`--max-source-rows` and `--max-target-rows` set explicit limits. `partial` means
+the source scan or target check is incomplete. `unmeasured` means required
+source fields cannot be checked through this projection. Neither status asserts
+that references or targets are absent.
+
+Rerunning with the same output file reuses complete results only when the
+recipes, reader implementation, and source/target file pins still match. Existing
+full scalar measurements are also reused when both selected file populations
+match exactly and their counts do not amplify source rows. Within a run, each
+source projection and target key population is shared across its recipes; each
+member's footer is parsed once per projection. This audit runs separately from
+site builds and does not republish or recount the source data.
+
+A partial source scan continues after its last checked row when all targets
+were checked. A partial result with unchecked targets is reused until its limits
+or pins change; repeatedly scanning the same source prefix would add no evidence.
