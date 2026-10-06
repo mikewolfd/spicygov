@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 90
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     env:
+      SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_source_navigation_coverage.py
+      SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-navigation-backend/.venv/bin/python
       SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_additional_coverage.py
       SPICYGOV_ADDITIONAL_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-current-backend/.venv/bin/python
       SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/select_native_coverage_reader.py
@@ -45,6 +47,12 @@ jobs:
           repository: mikewolfd/spicy-regs
           ref: 032a08b3ba48cf3b2fd01bcd9ab8a097d38ced44
           path: .coverage-current-backend
+      - name: Check out the qualified source-navigation reader
+        uses: actions/checkout@v4
+        with:
+          repository: mikewolfd/spicy-regs
+          ref: 2f71e956073cf7c0b18f75042eff16de43a0e48c
+          path: .coverage-navigation-backend
       - name: Check out the qualified court-citation key reader
         uses: actions/checkout@v4
         with:
@@ -60,6 +68,9 @@ jobs:
         run: uv sync --frozen --no-default-groups --group source-readers
       - name: Install the locked current amendment and court reader
         working-directory: .coverage-current-backend
+        run: uv sync --frozen --no-default-groups --group source-readers
+      - name: Install the locked source-navigation reader
+        working-directory: .coverage-navigation-backend
         run: uv sync --frozen --no-default-groups --group source-readers
       - name: Install the locked court-citation key reader
         working-directory: .coverage-print-citation-backend
@@ -89,6 +100,7 @@ jobs:
       - run: python tests/test_native_legislative_coverage.py
       - run: python tests/test_selected_native_coverage.py
       - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_source_navigation_coverage.py
       - name: Restore validated coverage checkpoints
         # A source update carries its freshly qualified maps in the commit.
         # Scheduled refreshes may reuse interrupted scan checkpoints.
