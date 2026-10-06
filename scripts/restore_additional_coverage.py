@@ -30,7 +30,7 @@ SPEC.loader.exec_module(MAINTAINED)
 
 def implementation_identity():
     files = [Path(__file__), *(ROOT / "src/spicy_regs" / name for name in (
-        "court_receipts.py", "court_subjects.py", "etl_receipts.py",
+        "court_receipts.py", "court_subjects.py", "etl_receipts.py", "etl_bulk.py",
         "native_types.py", "parquet_rows.py", "transforms/parquet_rows.py",
     ))]
     value = hashlib.sha256(MAINTAINED.implementation_identity().encode())

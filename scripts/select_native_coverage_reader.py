@@ -1,14 +1,29 @@
 """Select the maintained reader qualified for this exact dataset.
 
-Keep the established legislative reader for every other dataset. The court-key
-mapping correction applies only to document_citations and returns its own
-implementation identity, so only that table's checkpoint changes.
+Keep the established legislative reader for every other dataset and bind its
+identity to the bulk receipt validator it calls. The court-key mapping correction
+applies only to document_citations and retains that reader's own identity.
 """
+import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
+
+
+def implementation_identity(maintained_identity, script):
+    if not isinstance(maintained_identity, str) or not maintained_identity.startswith("sha256:"):
+        raise ValueError("Maintained coverage reader has no implementation SHA-256")
+    bulk = script.resolve().parents[1] / "src/spicy_regs/etl_bulk.py"
+    if not bulk.is_file():
+        raise ValueError("Maintained coverage reader requires its selected etl_bulk.py")
+    value = hashlib.sha256(maintained_identity.encode())
+    for path in (Path(__file__), bulk):
+        data = path.read_bytes()
+        value.update(len(data).to_bytes(8, "big"))
+        value.update(data)
+    return "sha256:" + value.hexdigest()
 
 
 def main():
@@ -20,7 +35,17 @@ def main():
     python = Path(os.environ[prefix + "_COVERAGE_PYTHON"])
     if not script.is_absolute() or not script.is_file() or not python.is_absolute() or not python.is_file():
         raise ValueError("Coverage readers require existing absolute paths")
-    result = subprocess.run([str(python), str(script), *args], input=payload, text=True)
+    if dataset is None or dataset == "document_citations":
+        result = subprocess.run([str(python), str(script), *args], input=payload, text=True)
+        sys.exit(result.returncode)
+    result = subprocess.run([str(python), str(script), *args], input=payload, text=True,
+                            stdout=subprocess.PIPE)
+    if result.returncode == 0:
+        value = json.loads(result.stdout)
+        value["implementationSha256"] = implementation_identity(value.get("implementationSha256"), script)
+        print(json.dumps(value))
+    else:
+        sys.stdout.write(result.stdout)
     sys.exit(result.returncode)
 
 
