@@ -67,9 +67,10 @@ export function elements(s: Navigation, row: Row): { state: string; values: unkn
   let value = decoded(raw);
   if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
   if (!Array.isArray(value)) return {state: 'unsupported shape', values: []};
+  const ambiguous = s.candidates && value.some(candidate => object(candidate) && candidate.target_status === 'ambiguous');
   if (s.candidates) value = value.flatMap(candidate => object(candidate) && Array.isArray(candidate.candidate_keys) ? candidate.candidate_keys.filter(object).map(identity => ({...candidate, ...identity})) : []);
   const values = value as unknown[];
-  return { state: values.length ? 'stated' : 'empty', values };
+  return { state: values.length ? ambiguous ? 'ambiguous targets' : 'stated' : s.candidates ? 'unresolved targets' : 'empty', values };
 }
 export function matchesConnection(row: Row, s: Navigation, c: Connection): boolean {
   const t = s.targets[c.target];

@@ -43,3 +43,10 @@ test('FCC direct document arrays and retained raw records follow the same URL re
  assert.equal(forwardLinks(s,{documents:[{src:'https://example.test/document.pdf'}]})[0].values[0],'https://example.test/document.pdf');
  assert.equal(forwardLinks({...s,field:'native_fields_json'},{native_fields_json:JSON.stringify({documents:[{src:'https://example.test/document.pdf'}]})})[0].values[0],'https://example.test/document.pdf');
 });
+
+test('legal targets distinguish unresolved and ambiguous candidates from absent references',()=>{
+ const s={...spec,candidates:true};
+ assert.equal(elements(s,{nomination_references_json:'[]'}).state,'unresolved targets');
+ assert.equal(elements(s,{nomination_references_json:JSON.stringify([{target_status:'not_checked',candidate_keys:[]}])}).state,'unresolved targets');
+ assert.equal(elements(s,{nomination_references_json:JSON.stringify([{target_status:'ambiguous',candidate_keys:[{id:'one'},{id:'two'}]}])}).state,'ambiguous targets');
+});
