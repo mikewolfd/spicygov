@@ -39,13 +39,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
-          ref: d8573ca1dc4e5a602992c7a158edf06f0399f079
+          ref: 6b6e39059f4b0129df1810da34834bc3568f7947
           path: .coverage-backend
       - name: Check out the current amendment and court reader
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
-          ref: 032a08b3ba48cf3b2fd01bcd9ab8a097d38ced44
+          ref: 6b6e39059f4b0129df1810da34834bc3568f7947
           path: .coverage-current-backend
       - name: Check out the qualified source-navigation reader
         uses: actions/checkout@v4
