@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 90
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     env:
+      SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_additional_coverage.py
+      SPICYGOV_ADDITIONAL_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-current-backend/.venv/bin/python
       SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
       SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
     steps:
@@ -33,12 +35,21 @@ jobs:
           repository: mikewolfd/spicy-regs
           ref: d8573ca1dc4e5a602992c7a158edf06f0399f079
           path: .coverage-backend
+      - name: Check out the current amendment and court reader
+        uses: actions/checkout@v4
+        with:
+          repository: mikewolfd/spicy-regs
+          ref: 032a08b3ba48cf3b2fd01bcd9ab8a097d38ced44
+          path: .coverage-current-backend
       - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
           cache-dependency-glob: .coverage-backend/uv.lock
       - name: Install the locked native receipt reader
         working-directory: .coverage-backend
+        run: uv sync --frozen --no-default-groups --group source-readers
+      - name: Install the locked current amendment and court reader
+        working-directory: .coverage-current-backend
         run: uv sync --frozen --no-default-groups --group source-readers
       - name: Check the pinned legislative and Congress readers
         run: |
@@ -63,7 +74,11 @@ jobs:
       - run: python tests/test_fec_coverage_maps.py
       - run: python tests/test_congress_coverage_maps.py
       - run: python tests/test_native_legislative_coverage.py
+      - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
       - name: Restore validated coverage checkpoints
+        # A source update carries its freshly qualified maps in the commit.
+        # Scheduled refreshes may reuse interrupted scan checkpoints.
+        if: github.event_name == 'schedule'
         id: coverage-cache
         uses: actions/cache/restore@v5
         with:

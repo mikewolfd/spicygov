@@ -22,6 +22,7 @@ from coverage_dimensions import binding, definition_digest, scan_dimension, vali
 from coverage_inputs import CoverageInputs, inherit_unique
 from native_legislative_coverage import processing_context, variant
 from native_legislative_coverage import validate_native_implementations
+import additional_native_coverage as additional
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -32,13 +33,20 @@ CACHE = ROOT / '.cache/coverage-maps'
 def measurement_revision(policy=None):
     import hashlib
     from coverage_revision import legacy_revision
-    if not policy or not policy.get('_nativeProcessing'):
-        revision = legacy_revision(ROOT, __file__)
-        if revision: return revision
+    if policy and policy.get('_additionalNativeProcessing'):
+        return additional.measurement_revision(policy)
+    affected = policy and policy.get('family') == 'gao-reports'
+    revision = legacy_revision(ROOT, __file__)
+    if revision and not affected:
+        if policy and policy.get('_nativeProcessing'):
+            proof = json.loads((ROOT / 'content/legacy-coverage-compatibility.v1.json').read_text())
+            return proof['nativeMeasurementRevision']
+        return revision
     paths = [pathlib.Path(__file__), *(ROOT / 'scripts' / name for name in (
         'coverage_dimensions.py', 'coverage_inputs.py', 'publication_census.py',
         'collection_coverage.py', 'congress_coverage.py', 'regulation_coverage.py', 'fec_coverage.py',
-        'native_receipt_coverage.py', 'native_legislative_coverage.py', 'coverage_revision.py'))]
+        'native_receipt_coverage.py', 'native_legislative_coverage.py', 'coverage_revision.py',
+        'gao_receipt_policy.py'))]
     return 'sha256:' + hashlib.sha256(b''.join(path.read_bytes() for path in paths)).hexdigest()
 
 
@@ -61,7 +69,7 @@ def validate_plan(tables, policies):
     if missing: raise ValueError('Published tables need coverage review: ' + ', '.join(missing))
     # Old reviewed entries may remain as history, but cannot create runtime tables.
     for id, table in tables.items():
-        policy = policies[id] = variant(id, table, policies[id])
+        policy = policies[id] = additional.variant(id, table, variant(id, table, policies[id]))
         if policy.get('family') != table['family']: raise ValueError('Coverage family changed: ' + id)
         if not isinstance(policy.get('classification'), str) or not policy['classification'].strip():
             raise ValueError('Coverage classification is missing: ' + id)
@@ -159,7 +167,7 @@ def validate_members(conn, id, table, expected_schema):
 
 
 def _scan_legacy_table(id, table, policy):
-    revision = measurement_revision()
+    revision = measurement_revision(policy)
     conn = duckdb.connect()
     try:
         # Render stored instants in UTC, regardless of the host's timezone.
@@ -202,7 +210,7 @@ def _scan_legacy_table(id, table, policy):
                             definitionDigest=definition_digest(dim))
             result.append(measured)
         check_mutable()
-        if measurement_revision() != revision: raise ValueError('Coverage implementation changed during this table scan')
+        if measurement_revision(policy) != revision: raise ValueError('Coverage implementation changed during this table scan')
         return {**binding(table, policy), 'status': 'measured', 'classification': policy['classification'],
                 'note': policy.get('note', ''), 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'measurementRevision': revision, 'dimensions': result}
@@ -276,6 +284,8 @@ def _scan_native_table(id, table, policy):
 
 
 def scan_table(id, table, policy):
+    if policy.get('_additionalNativeProcessing'):
+        return additional.scan_table(id, table, policy, validate_members=validate_members, validate_counts=validate_counts)
     return (_scan_native_table if policy.get('_nativeProcessing') else _scan_legacy_table)(id, table, policy)
 
 
@@ -372,6 +382,7 @@ def main():
     if definitions() != reviewed_policies:
         raise ValueError('Coverage definitions changed during the build; rerun the reviewed policies')
     validate_native_implementations({id: policies[id] for id in selected})
+    additional.validate_native_implementations({id: policies[id] for id in selected})
     if measurement_revision() != revision or any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items()):
         raise ValueError('Coverage implementation changed during the build; rerun the reviewed code')
     if set(results) != set(selected): raise ValueError('Coverage build omitted a published table')

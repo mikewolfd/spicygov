@@ -125,6 +125,7 @@ export function dimensionPeriodRows(dimension: CoverageDimension, period: string
 
 const originLabels: Record<string, string> = {
   gao_rss: 'GAO feed', gao_listing: 'GAO listing', gao_r_package: 'GAO R package',
+  gao_major_rule_listing: 'GAO major-rule listing', gao_major_rule_index: 'GAO older major-rule index',
   gao_repair: 'GAO repairs', upstream_copy: 'Upstream copy', govinfo: 'GovInfo',
   full_text: 'Full-text classification', kind_uncertain: 'Text completeness uncertain',
   procedural_amendments: 'Procedural amendments', procedural_summary: 'Procedural summary',

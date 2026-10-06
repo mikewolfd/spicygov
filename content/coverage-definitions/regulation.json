@@ -2508,6 +2508,18 @@
         [
           "subject_terms",
           "VARCHAR[]"
+        ],
+        [
+          "major_rule_agency",
+          "VARCHAR"
+        ],
+        [
+          "major_rule_rins",
+          "VARCHAR[]"
+        ],
+        [
+          "major_rule_fr_citations",
+          "VARCHAR[]"
         ]
       ],
       "classification": "record-dates",

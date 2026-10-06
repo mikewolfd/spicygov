@@ -4522,6 +4522,18 @@
         [
           "subject_terms",
           "VARCHAR[]"
+        ],
+        [
+          "major_rule_agency",
+          "VARCHAR"
+        ],
+        [
+          "major_rule_rins",
+          "VARCHAR[]"
+        ],
+        [
+          "major_rule_fr_citations",
+          "VARCHAR[]"
         ]
       ],
       "dimensions": [
@@ -4607,6 +4619,13 @@
           "dimensionsAllSuccess": true,
           "liveCurrentPolicyDigestsMatch": true
         }
+      },
+      "currentNativeSchemaReview": {
+        "backendRevision": "032a08b3ba48cf3b2fd01bcd9ab8a097d38ced44",
+        "policy": "government-sources/2",
+        "source": "src/spicy_regs/government_receipts.py",
+        "meaning": "Three major-rule fields are native subject values; existing publication-date and receipt-origin measurements retain their definitions.",
+        "evidence": "website-sources-refresh-current/gao-native-receipt-review.md"
       }
     },
     {

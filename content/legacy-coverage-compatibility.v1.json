@@ -9,28 +9,35 @@
     "publication_census.py": "68ff076fc3d54640d719c9202b4a8eb1352289d79553abdb9dc5e0d589041ff6",
     "collection_coverage.py": "4b9a38a36bf95f03395882d3d667568de93aebb9cf79972b29c0067faf85c0dc",
     "congress_coverage.py": "6fe7046a26c689ed1d44a0340aab254346e4553d69aad1ac49750004a65bda9a",
-    "regulation_coverage.py": "d2251b6c2235a88163bb5c4984f240aba19215508e81d773a6d9ba63a2681ae4",
+    "regulation_coverage.py": "eefd2ead257779b4a726cecd6d0ef6288fc1d39c3d72e13825f1bce783925fad",
     "fec_coverage.py": "1208d67f99cfb23ebf000b0b544a20baf5b17da7873cbf8e1385a331b9cece1a",
-    "native_receipt_coverage.py": "667b42f6bfe56380eaac750a1d9655fb2920d35708664e736321866ecc2a2742"
+    "native_receipt_coverage.py": "63ce1c753f8a6788f7b1809d1816e5a1c8f90fcc38126bb0b79deb848359f134"
   },
   "functions": {
     "validate_counts": "837d82aa7924e43be2e86d52a50b03f2ce1a42e2c34b021f6728c51eaf9324b5",
     "header_matches": "7b6941d0bc5ec3ff232e0cba49d6c3301eca80692c4e9cd8b8e9ab105e90e9fd",
     "validate_members": "df37e93897a6fe10ea90e0f2edf9f93ecd26f0867a260b740aa1745c9725d3d3",
-    "_scan_legacy_table": "a9a930409eb36882aa14f6a09d16ac72ab89685428f223147f459554bd6337ba",
     "definitions": "090388e0e20de0b03bfc3a375cb142566d06580207abd45b17136fdd5ae1f4a4",
-    "validate_plan": "4565954b692165122f2013be121ad2754c53868689692b14342cbfb728bcba2c",
     "cached": "54b0065def1b7ac8d31af7500bb32ad1273a6d90ae94370d54dbd689c9d89740",
-    "timed_scan": "333211b7707eae639981409eda9b632540734b66afdde158cfcb7ffd78a5b920",
-    "main": "6b6fd34a9590030b1becb8f1218bcfd4d8f0d093a597e99e87022ed3aabf9562"
+    "timed_scan": "333211b7707eae639981409eda9b632540734b66afdde158cfcb7ffd78a5b920"
   },
   "topLevelSha256": "2cf48cf33f7777b821bf8211b7cc0daddef0d00f58831d7b4fd3862e2a9e37a9",
   "nativeLegacyGuardSha256": "4eb0f4c212f5dedc67f1e3fa00363f239565f4a19480268d0f890606662e123d",
   "reviewedRoutingFunctions": {
-    "measurement_revision": "5cffe3028b766b4071332317129ddb64a213a978ec6cf6e8b2f8ef2312a9855a",
-    "scan_table": "581e8b74a3cfc7e530563aaf0ded4147593a473d5f82bda70d31133be950dabf"
+    "measurement_revision": "75fb7a335528826ca95a14161a45ec169b12aa98a3d992efbacf881989351dd3",
+    "scan_table": "a0ebec2d79d776fcd22467f93d663e2d37d32267f5bddabf75a51610e87603c2",
+    "validate_plan": "8dbdb32fe1a2e26bb2bd38a3702df160f5ef0e65952f6604785f416bdde0cf1a",
+    "main": "c3a0dc3616d12fca36d96c5c8cffbb5adc979b4e4306285053d777eed13faae9",
+    "_scan_legacy_table": "259649398401f437aa65cf39084bd3b0c4173aeea3ab4aad5b8148350c9a49e8",
+    "_scan_native_table": "688185a31f716dc1c6852465f210fe33e7a1b3a82ab17623dc7477d0ecacad16"
   },
-  "nativeOnlyFunctions": [
-    "_scan_native_table"
-  ]
+  "nativeOnlyFunctions": [],
+  "nativeMeasurementRevision": "sha256:56a53cd1b0bcd2283ad802079c2277a70e0d581e6be855012427b4caa9e6db17",
+  "revisionFiles": {
+    "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
+    "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
+    "additional_native_coverage.py": "939fc8cd1f507c8ace78bb8629d093c4bd26513187ddebe23314cdce5d197bb8",
+    "restore_additional_coverage.py": "8bff5cf9a6b9d16ca28980b5de973da9a5d65e6dbb2cd8063b44d6bf27ea9fbd",
+    "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
+  }
 }

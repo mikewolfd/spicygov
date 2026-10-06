@@ -18,7 +18,9 @@ from native_receipt_coverage import fetch_member, selected_records
 
 ORIGIN_LABELS = {'gao_rss': 'GAO feed', 'upstream_copy': 'Upstream copy',
                  'gao_listing': 'GAO listings', 'gao_r_package': 'R package import',
-                 'gao_repair': 'GAO repairs', 'govinfo': 'GovInfo archive'}
+                 'gao_repair': 'GAO repairs', 'govinfo': 'GovInfo archive',
+                 'gao_major_rule_listing': 'GAO major-rule listing',
+                 'gao_major_rule_index': 'GAO older major-rule index'}
 
 
 def source_instant(value):

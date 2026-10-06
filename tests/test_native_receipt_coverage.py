@@ -15,7 +15,8 @@ import pyarrow.parquet as pq
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
-from native_receipt_coverage import RECEIPT_SCHEMA, content_hash, exact, qualified_records, subject_keys
+from native_receipt_coverage import RECEIPT_SCHEMA, content_hash, decode, exact, policy_schema, qualified_records, subject_keys
+from gao_receipt_policy import GAO_REPORT_V2_SCHEMA
 from regulation_coverage import scan_special, source_instant
 from publication_census import BASE
 
@@ -24,7 +25,7 @@ class NativeReceiptTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.root = pathlib.Path(self.temp.name)
     def tearDown(self): self.temp.cleanup()
-    def fixture(self, dataset='usaspending_recipients'):
+    def fixture(self, dataset='usaspending_recipients', report_v2=False):
         if dataset == 'usaspending_recipients':
             schema = pa.schema([('recipient_id',pa.string()),('amount',pa.decimal128(38,6))])
             subjects = [{'recipient_id':'r1','amount':Decimal('1.000000')},
@@ -41,6 +42,17 @@ class NativeReceiptTests(unittest.TestCase):
                       dict(zip(identity,['id2','https://example.invalid/d2'][:len(identity)]),published_date=datetime.date(2001,1,1))]
             raw=[dict(row,source='gao_listing') for row in subjects];raw[1]['source']='gao_rss'
             version='government-sources/1' if dataset=='gao_reports' else 'government-sources/2'
+            if report_v2:
+                self.assertEqual(dataset, 'gao_reports')
+                schema=GAO_REPORT_V2_SCHEMA;version='government-sources/2'
+                subjects=[{name:row.get(name) for name in schema.names} for row in subjects]
+                subjects[0].update(major_rule_agency='Department of Energy',
+                    major_rule_rins=['1904-AF12', '1904-AF12'],major_rule_fr_citations=['89 FR 1234'])
+                subjects[1].update(major_rule_agency=None,major_rule_rins=[],major_rule_fr_citations=None)
+                raw=[dict(row,source=old['source'],major_rule_letter_json={
+                    'readings':[None,{'literal':'1904-AF12','spans':[1,3]}],
+                    '_rulespec':{'source':None,'diagnostic':'kept verbatim'}})
+                    for row,old in zip(subjects,raw)]
         descriptor={'dataset':dataset,'policy_version':version,
                     'subject_schema':base64.b64encode(schema.serialize()).decode(),
                     'identity_fields':identity,'receipt_fields':['raw_record'],
@@ -159,6 +171,73 @@ class NativeReceiptTests(unittest.TestCase):
                 self.assertEqual(result['granularity'],'category');self.assertEqual(result['unplacedRows'],0)
                 self.assertEqual(result['evidence']['recordedOrigins'],{'gao_listing':1,'gao_rss':1})
                 self.assertNotIn('yearBuckets',result)
+    def test_current_report_policy_preserves_native_lists_nulls_and_raw_evidence(self):
+        f=self.fixture('gao_reports',report_v2=True);rows=self.read(f)
+        self.assertEqual(rows[0][0]['major_rule_rins'],['1904-AF12','1904-AF12'])
+        self.assertEqual(rows[1][0]['major_rule_rins'],[])
+        self.assertIsNone(rows[1][0]['major_rule_fr_citations'])
+        for row,receipt in zip(rows,f['receipts']):
+            self.assertEqual(row[1],decode(receipt['processing_json'])['raw_record'])
+        table,inputs,*_=self.inputs(f)
+        result=scan_special(None,'gao_reports',table,self.dimension('gao_reports'),inputs)
+        self.assertEqual(result['evidence']['recordedOrigins'],{'gao_listing':1,'gao_rss':1})
+        self.assertEqual(result['buckets'],{'["gao_rss"]':1,'["gao_listing"]':1})
+        self.assertNotIn('yearBuckets',result)
+    def test_current_report_policy_refuses_unreviewed_schema_version_and_identity(self):
+        for mutation in ['missing-column','wrong-list-type','wrong-order','wrong-version','wrong-key']:
+            with self.subTest(mutation=mutation):
+                f=self.fixture('gao_reports',report_v2=True);d=f['descriptor']
+                schema=f['schema']
+                if mutation=='missing-column':schema=schema.remove(schema.get_field_index('major_rule_agency'))
+                if mutation=='wrong-list-type':schema=schema.set(schema.get_field_index('major_rule_rins'),pa.field('major_rule_rins',pa.string()))
+                if mutation=='wrong-order':schema=pa.schema(list(schema)[::-1])
+                if mutation=='wrong-version':d['policy_version']='government-sources/3'
+                if mutation=='wrong-key':d['identity_fields']=['title']
+                d['subject_schema']=base64.b64encode(schema.serialize()).decode()
+                with self.assertRaises(ValueError):policy_schema(d)
+    def test_current_report_receipt_must_match_new_fields_and_selected_policy(self):
+        for mutation in ['native-value','receipt-policy','raw-identity']:
+            with self.subTest(mutation=mutation):
+                f=self.fixture('gao_reports',report_v2=True)
+                if mutation=='native-value':f['subjects'][0]['major_rule_rins']=['different']
+                else:
+                    r=f['receipts'][0]
+                    if mutation=='receipt-policy':r['policy_version']='government-sources/1'
+                    else:
+                        body=decode(r['processing_json']);body['raw_record']['report_id']='other'
+                        r['processing_json']=exact(body)
+                    self.resign(r)
+                with self.assertRaises(ValueError):self.read(f)
+    def test_shared_current_gao_receipts_admit_both_datasets_without_rebinding(self):
+        report=self.fixture('gao_reports',report_v2=True);decision=self.fixture('gao_decisions')
+        descriptors={f['dataset']:f['descriptor'] for f in [report,decision]}
+        receipts=report['receipts']+decision['receipts']
+        receipt=self.root/'shared.parquet'
+        pq.write_table(pa.Table.from_pylist(receipts,schema=RECEIPT_SCHEMA),receipt)
+        for f in [report,decision]:
+            with self.subTest(dataset=f['dataset']):
+                subject=self.root/(f['dataset']+'.parquet')
+                pq.write_table(pa.Table.from_pylist(f['subjects'],schema=f['schema']),subject)
+                with qualified_records(subject,receipt,f['dataset'],descriptors,'selected',2,4) as rows:
+                    admitted=list(rows)
+                self.assertEqual([row[0] for row in admitted],f['subjects'])
+                self.assertEqual([row[1]['source'] for row in admitted],['gao_listing','gao_rss'])
+        descriptors['gao_reports']['policy_version']='government-sources/3'
+        with self.assertRaisesRegex(ValueError,'policy'):
+            with qualified_records(subject,receipt,'gao_decisions',descriptors,'selected',2,4) as rows:
+                list(rows)
+    def test_current_major_rule_origins_remain_literal_and_have_no_invented_dates(self):
+        f=self.fixture('gao_reports',report_v2=True)
+        origins=['gao_major_rule_listing','gao_major_rule_index']
+        for receipt,origin in zip(f['receipts'],origins):
+            body=decode(receipt['processing_json']);body['raw_record']['source']=origin
+            receipt['processing_json']=exact(body);self.resign(receipt)
+        table,inputs,*_=self.inputs(f)
+        result=scan_special(None,'gao_reports',table,self.dimension('gao_reports'),inputs)
+        self.assertEqual(result['buckets'],{json.dumps([origin]):1 for origin in origins})
+        self.assertEqual(result['evidence']['recordedOrigins'],dict.fromkeys(origins,1))
+        self.assertEqual(result['placedRows'],2)
+        self.assertNotIn('yearBuckets',result)
     def test_unknown_origin_requires_review(self):
         f=self.fixture('gao_reports');from native_receipt_coverage import decode
         r=f['receipts'][0];body=decode(r['processing_json']);body['raw_record']['source']='unreviewed'

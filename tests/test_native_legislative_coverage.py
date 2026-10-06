@@ -373,7 +373,7 @@ class WarmCoverageTests(unittest.TestCase):
             proof = json.loads(
                 (target / "content/legacy-coverage-compatibility.v1.json").read_text()
             )
-            for name in proof["files"]:
+            for name in set(proof["files"]) | set(proof.get("revisionFiles", {})):
                 shutil.copyfile(root / "scripts" / name, target / "scripts" / name)
             driver = target / "scripts/build-coverage-maps.py"
             shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
@@ -399,6 +399,14 @@ class WarmCoverageTests(unittest.TestCase):
                 driver.read_text().replace(
                     "def scan_table(id, table, policy):",
                     "def scan_table(id, table, policy):\n    table['rows'] = 0",
+                )
+            )
+            self.assertIsNone(legacy_revision(target, driver))
+            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
+            driver.write_text(
+                driver.read_text().replace(
+                    "def _scan_native_table(id, table, policy):",
+                    "def _scan_native_table(id, table, policy):\n    table['rows'] = 0",
                 )
             )
             self.assertIsNone(legacy_revision(target, driver))

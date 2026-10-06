@@ -25,6 +25,9 @@ def legacy_revision(root, driver):
             != expected
         ):
             return None
+    for name, expected in proof.get("revisionFiles", {}).items():
+        if hashlib.sha256((Path(root) / "scripts" / name).read_bytes()).hexdigest() != expected:
+            return None
     text = Path(driver).read_text()
     lines = text.splitlines()
     tree = ast.parse(text)
@@ -37,6 +40,7 @@ def legacy_revision(root, driver):
         node
         for node in tree.body
         if not isinstance(node, ast.FunctionDef)
+        and not (isinstance(node, ast.Import) and [(a.name, a.asname) for a in node.names] == [("additional_native_coverage", "additional")])
         and not (
             isinstance(node, ast.ImportFrom)
             and (node.module, tuple(alias.name for alias in node.names))
