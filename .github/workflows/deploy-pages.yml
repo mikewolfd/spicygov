@@ -109,9 +109,8 @@ jobs:
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_rulemaking_native_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_coverage_single_pass.py
       - name: Restore validated coverage checkpoints
-        # A source update carries its freshly qualified maps in the commit.
-        # Scheduled and manual refreshes reuse validated interrupted scans.
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # Reuse validated interrupted scans on every build, including pushes.
+        # The builder still checks each checkpoint against the current inputs.
         id: coverage-cache
         uses: actions/cache/restore@v5
         with:
