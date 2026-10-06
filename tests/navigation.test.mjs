@@ -50,3 +50,10 @@ test('legal targets distinguish unresolved and ambiguous candidates from absent 
  assert.equal(elements(s,{nomination_references_json:JSON.stringify([{target_status:'not_checked',candidate_keys:[]}])}).state,'unresolved targets');
  assert.equal(elements(s,{nomination_references_json:JSON.stringify([{target_status:'ambiguous',candidate_keys:[{id:'one'},{id:'two'}]}])}).state,'ambiguous targets');
 });
+
+test('receipt routes constrain the event type as well as the exact source identity',()=>{
+ const t={table:'@receipt:congress_acquisition',columns:['event','congress','citation'],keys:[key({...part(''),literal:'congress-detail-result'}),key(part('congress','row')),key(part('citation','row'))],guards:[]};
+ const s={...spec,mode:'row',field:undefined,fields:[],targets:[t]};
+ assert.deepEqual(forwardLinks(s,{congress:'119',citation:'PN129-10'})[0].filters,[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}]);
+ assert.throws(()=>parseNavigation([{...s,targets:[{...t,keys:[key({...part(''),literal:42}),...t.keys.slice(1)]}]}]),/keys/);
+});

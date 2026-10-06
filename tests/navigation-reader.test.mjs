@@ -16,14 +16,14 @@ const cols=names=>names.map(name=>({name,type:'VARCHAR',description:''}));
 const table={id:'house_communications',rows:1,columns:cols(['congress','communication_type','number']),members:[member('communications',1)],receiptIdentity:['congress','communication_type','number'],receiptContainers:{source_fields:['record_package_id','record_granule_id','record_entry_text']},artifactDigest:'sha256:'+'a'.repeat(64),publication:{kind:'generation',nativeReceipts:{url:`${base}/receipts`,generationId:'g1',rows:1,bytes:files.receipts.length,sha256:'sha256:'+'b'.repeat(64)}}};
 try {
  await test('detail attempt evidence preserves PN partitions and separates failed reads from empty successes',async()=>{
-  const selected={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/detail-attempts`,rows:3,bytes:files['detail-attempts'].length}}};
-  const filters=[{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}];
+  const selected={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/detail-attempts`,rows:4,bytes:files['detail-attempts'].length}}};
+  const filters=[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}];
   const result=await readSourceEvidence(selected,'congress_acquisition',filters);
   assert.deepEqual(result.records.map(row=>row.read_outcome),['failed','read']);
   assert.deepEqual(result.records.map(row=>row.citation),['PN129-10','PN129-10']);
   assert.equal(result.records[0].error_type,'PagedJsonSourceError');
   assert.ok(result.records.every(row=>!('credential' in row)&&!('private_path' in row)));
-  const unread=await readSourceEvidence(selected,'congress_acquisition',[...filters.slice(0,1),{column:'citation',value:'PN999'}]);
+  const unread=await readSourceEvidence(selected,'congress_acquisition',[...filters.slice(0,2),{column:'citation',value:'PN999'}]);
   assert.equal(unread.records.length,0);assert.equal(unread.partial,false);
   await assert.rejects(readSourceEvidence({...selected,publication:{...selected.publication,nativeReceipts:{...selected.publication.nativeReceipts,generationId:'g2'}}},'congress_acquisition',filters),/different generation/);
  });
