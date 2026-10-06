@@ -65,7 +65,7 @@ export function elements(s: Navigation, row: Row): { state: string; values: unkn
   const raw = field ? row[field] : undefined;
   if (raw == null) return {state: row.detail_read === 'false' ? 'unread' : row.detail_read === 'true' ? 'not stated' : 'unknown read state', values: []};
   let value = decoded(raw);
-  if (s.elementPath.length) value = at(value, s.elementPath);
+  if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
   if (!Array.isArray(value)) return {state: 'unsupported shape', values: []};
   if (s.candidates) value = value.flatMap(candidate => object(candidate) && Array.isArray(candidate.candidate_keys) ? candidate.candidate_keys.filter(object).map(identity => ({...candidate, ...identity})) : []);
   const values = value as unknown[];
