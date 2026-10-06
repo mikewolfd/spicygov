@@ -11,7 +11,7 @@ async function module(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
 
-const {parseCoverageMaps, currentCoverageMap, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
+const {parseCoverageMaps, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
 const {parseComments} = await module('lib/source-directory.ts');
 const {publisherNames, loadCoveragePublishers, coveragePublisherNames} = await module('lib/coverage-publishers.ts');
 const hash = 'sha256:' + 'a'.repeat(64);
@@ -292,11 +292,68 @@ test('coverage renders recorded publisher names only while its lookup remains bo
   assert.doesNotMatch(unbound,/Americans for Prosperity/);assert.match(unbound,/Publisher ID: afp/);
 });
 
-test('unavailable maps offer nearby reloading without implying a new measurement', async () => {
+test('prior release maps stay visible with their original date and counts, without qualifying as current', async () => {
   const {TableCoverageMap}=await coverageComponent();const maps=parseCoverageMaps(document());
-  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:{...table,rows:4},maps,onRetry:()=>{},view:{year:2026,mode:'years'}}));
-  assert.match(html,/Coverage counts are unavailable for this data release or measurement month/);
-  assert.match(html,/Reload published counts/);assert.doesNotMatch(html,/recalculate|scan records/i);
+  maps.tables.records.publishedAt='2026-10-04T12:30:00Z';
+  const changed={...table,published:'2026-10-06T02:54:15Z',rows:4,artifactDigest:'sha256:'+'b'.repeat(64)};
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,onRetry:()=>{},view:{year:2024,mode:'years'}}));
+  assert.equal(currentCoverageMap(changed,maps),undefined);
+  assert.equal(coverageMapForDisplay(changed,maps).freshness,'previous-release');
+  assert.match(html,/Previous release.*Refresh pending/);
+  assert.match(html,/datetime="2026-10-04T12:30:00Z"/i);
+  assert.match(html,/3 rows\. The current release has not been checked/);
+  assert.doesNotMatch(html,/4 rows/);
+  assert.match(html,/2024: 2 rows counted here/);
+  assert.match(html,/Count by|Event date/);
+  assert.match(html,/Reload published counts/);
+  assert.doesNotMatch(html,/recalculate|scan records/i);
+});
+
+test('expired monthly measurements stay visible with their check date and a distinct refresh notice', async t => {
+  t.mock.timers.enable({apis:['Date'],now:new Date('2026-11-01T00:00:00Z').getTime()});
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  raw.tables.records.dimensions[0].activityBoundary={month:'2026-10',basis:'measurement-month'};
+  const maps=parseCoverageMaps(raw);
+  assert.equal(currentCoverageMap(table,maps),undefined);
+  assert.equal(coverageMapForDisplay(table,maps).freshness,'previous-measurement');
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
+  assert.match(html,/Previous measurement.*Refresh pending/);
+  assert.match(html,/datetime="2026-10-05T00:00:00Z"/i);
+  assert.match(html,/Counts have not been refreshed for this month/);
+  assert.match(html,/2024: 2 rows counted here/);
+  assert.doesNotMatch(html,/Previous release/);
+});
+
+test('display fallback refuses another family and distinguishes current, previous and missing maps in summaries', async () => {
+  const {TableCoverageMap,SourceCoverageSummary}=await coverageComponent();const raw=document();
+  raw.tables.previous=structuredClone(map);
+  const maps=parseCoverageMaps(raw);
+  const previous={...table,id:'previous',published:'2026-10-06T00:00:00Z'};
+  const missing={...table,id:'missing'};
+  assert.equal(coverageMapForDisplay(table,maps).freshness,'current');
+  assert.equal(coverageMapForDisplay(missing,maps),undefined);
+  assert.equal(coverageMapForDisplay({...table,family:'another'},maps),undefined);
+  assert.deepEqual(coverageMapCounts([table,previous,missing],maps),{current:1,previous:1});
+  const summary=renderToStaticMarkup(createElement(SourceCoverageSummary,{tables:[table,previous,missing],maps,view:{year:2024,mode:'years'}}));
+  assert.match(summary,/available for 2 of 3 tables/);
+  assert.match(summary,/1 map awaits refresh/);
+  for (const unavailable of [missing,{...table,family:'another'}]) {
+    const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:unavailable,maps,onRetry:()=>{},view:{year:2024,mode:'years'}}));
+    assert.match(html,/Coverage counts are not available for this table/);
+    assert.doesNotMatch(html,/Previous release|2024: 2 rows/);
+  }
+  const current=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
+  assert.doesNotMatch(current,/Refresh pending/);
+});
+
+test('previous publisher coverage keeps recorded IDs instead of borrowing names from a newer release', async () => {
+  const {TableCoverageMap}=await coverageComponent();const {source,maps}=publisherFixture();
+  const publishers={source,names:new Map([['afp','Americans for Prosperity']])};
+  const changed={...source,artifactDigest:'sha256:'+'b'.repeat(64)};
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,publishers,view:{year:2026,mode:'years'}}));
+  assert.match(html,/Previous release/);
+  assert.match(html,/Publisher ID: afp/);
+  assert.doesNotMatch(html,/Americans for Prosperity/);
 });
 
 test('publisher lookup refuses stale maps, large lists, incomplete reads and conflicting names', async () => {

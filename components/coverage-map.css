@@ -6,6 +6,8 @@
 }
 
 .coverage-map p { margin: 0 0 12px; }
+.coverage-previous { margin: 0 0 16px; padding: 12px; border-left: 3px solid #896121; background: #fff6e4; color: #503d1d; }
+.coverage-previous p:last-child { margin-bottom: 0; }
 .coverage-axis { display: grid; gap: 6px; margin: 0 0 12px; }
 .coverage-axis > span, .coverage-view-label { font-weight: 600; }
 .coverage-axis select, .coverage-category-search input {

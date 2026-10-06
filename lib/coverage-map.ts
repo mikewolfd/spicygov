@@ -88,16 +88,38 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
   return { generatedAt: raw.generatedAt, censusDigest: raw.censusDigest, tables };
 }
 
-export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): CoverageMap | undefined {
-  const map = maps?.tables[table.id];
-  return map?.family === table.family && map.fingerprint === timeFingerprint(table) && map.rows === table.rows
+function matchesCoverageRelease(table: Dataset, map: CoverageMap): boolean {
+  return map.family === table.family && map.fingerprint === timeFingerprint(table) && map.rows === table.rows
     && (map.publishedAt ?? undefined) === (table.published ?? undefined)
     && map.inputsFingerprint === JSON.stringify([...(table.coverageInputs ?? [])].sort((a, b) => a.id.localeCompare(b.id)).map(i => [i.id, i.url, i.rows, i.byteSize, i.sha256, i.etag]))
     && (map.artifactDigest ?? undefined) === table.artifactDigest
     && (map.publicationSha256 ?? undefined) === table.publication?.sha256
+    && (!table.columns.length || JSON.stringify(map.schema) === JSON.stringify(table.columns.map(c => [c.name, c.type])));
+}
+
+export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): CoverageMap | undefined {
+  const map = maps?.tables[table.id];
+  return map && matchesCoverageRelease(table, map)
     && !map.dimensions.some(dim => !validActivityBoundary(dim.activityBoundary, map.publishedAt)
-      || (dim.activityBoundary?.basis === 'measurement-month' && dim.activityBoundary.month !== new Date().toISOString().slice(0, 7)))
-    && (!table.columns.length || JSON.stringify(map.schema) === JSON.stringify(table.columns.map(c => [c.name, c.type]))) ? map : undefined;
+      || (dim.activityBoundary?.basis === 'measurement-month' && dim.activityBoundary.month !== new Date().toISOString().slice(0, 7))) ? map : undefined;
+}
+
+export function coverageMapForDisplay(table: Dataset, maps?: CoverageMaps): {
+  map: CoverageMap; freshness: 'current' | 'previous-release' | 'previous-measurement';
+} | undefined {
+  const map = maps?.tables[table.id];
+  if (!map || map.family !== table.family) return undefined;
+  return {map, freshness: currentCoverageMap(table, maps) ? 'current'
+    : matchesCoverageRelease(table, map) ? 'previous-measurement' : 'previous-release'};
+}
+
+export function coverageMapCounts(tables: Dataset[], maps?: CoverageMaps): { current: number; previous: number } {
+  const counts = {current: 0, previous: 0};
+  for (const table of tables) {
+    const display = coverageMapForDisplay(table, maps);
+    if (display) counts[display.freshness === 'current' ? 'current' : 'previous']++;
+  }
+  return counts;
 }
 
 export function textAvailabilityDetails(table: Dataset, maps?: CoverageMaps): { label: string; rows: number; withText: number; notSaved: number; blank: number }[] {

@@ -10,7 +10,7 @@ import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
 import { TableProvenance } from '../components/table-provenance';
 import type { TimeView } from '../components/time-coverage';
 import { TableCoverageMap } from '../components/coverage-map';
-import { currentCoverageMap, parseCoverageMaps, textAvailabilityDetails, type CoverageMaps } from '../lib/coverage-map';
+import { coverageMapCounts, parseCoverageMaps, textAvailabilityDetails, type CoverageMaps } from '../lib/coverage-map';
 import '../app/globals.css';
 import './style.css';
 
@@ -171,11 +171,11 @@ function SourcesPage() {
           const isOpen = groupOverrides[group.id] ?? (expanded || filtering);
           const limit = limits[group.id] ?? 8;
           const items = group.entries;
-          const measured = items.filter(entry => currentCoverageMap(entry.table, coverageMaps)).length;
+          const coverage = coverageMapCounts(items.map(entry => entry.table), coverageMaps);
           return <div className="source-group" key={group.id}>
             <button className="source-group-toggle" aria-expanded={isOpen} aria-controls={`${group.id}-body`} onClick={() => setGroupOverrides(previous => ({...previous, [group.id]: !isOpen}))}>
               <span><h3>{group.name}</h3><span className="publisher-caption">{group.publishers.length ? `Sources: ${group.publishers[0].name}${group.publishers.length > 1 ? ` + ${group.publishers.length - 1} other ${group.publishers.length === 2 ? 'source' : 'sources'}` : ''}` : 'Publisher not recorded'}{group.historical ? ' · includes earlier source notes' : ''}</span></span>
-              <span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{coverageMaps ? `${measured} with coverage maps` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+              <span className="group-count">{items.length} {items.length === 1 ? 'table' : 'tables'}<span>{coverageMaps ? `${coverage.current + coverage.previous} with coverage maps${coverage.previous ? ` · ${coverage.previous} awaiting refresh` : ''}` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
             </button>
             {isOpen && <div className="source-body" id={`${group.id}-body`}>
               {group.publishers.length > 1 && <details className="publisher-list"><summary>Recorded source names</summary>{group.historical && <p>Some names come from an earlier review and may be incomplete.</p>}<ul>{group.publishers.map(source => <li key={`${source.id}-${source.name}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a> : source.name}</li>)}</ul></details>}
