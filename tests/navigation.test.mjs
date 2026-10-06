@@ -36,3 +36,10 @@ test('legal candidates keep ambiguous alternatives and use recorded target ident
  assert.equal(forwardLinks(s,row).length,2);
  assert.equal(matchesConnection(row,s,{id:s.id,target:0,values:['CFR-2025-title2','g1']}),true);
 });
+
+test('FCC direct document arrays and retained raw records follow the same URL recipe',()=>{
+ const url={table:'@url',columns:['url'],keys:[{...key(part('src')),pattern:'https://[^\\s]+'}],guards:[]};
+ const s={...spec,id:'fcc_documents',field:'documents',fields:['documents'],targets:[url],receiptFields:['native_fields_json'],elementPath:['documents']};
+ assert.equal(forwardLinks(s,{documents:[{src:'https://example.test/document.pdf'}]})[0].values[0],'https://example.test/document.pdf');
+ assert.equal(forwardLinks({...s,field:'native_fields_json'},{native_fields_json:JSON.stringify({documents:[{src:'https://example.test/document.pdf'}]})})[0].values[0],'https://example.test/document.pdf');
+});
