@@ -1,6 +1,7 @@
 /** Published manifests own file membership. Separate-file schemas require metadata bound to their exact publication identity. */
 export type Source = { id: string; name: string; url?: string; kind: string; note: string };
 export type Join = {
+  direction?: 'incoming'; // Local navigation direction for self-referencing tables.
   child: string;
   child_columns: string[];
   parent: string;

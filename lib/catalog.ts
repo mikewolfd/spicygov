@@ -5,7 +5,7 @@ export { publicationDate, tableMetadataMessage, metadataMessage } from "./metada
 export type { Join, MetadataStatus } from "./metadata";
 export { DATA_BASE } from './publication-evidence';
 export type Row = Record<string, unknown>;
-export type Filter = { column: string; value: string };
+export type Filter = { column: string; value: string; values?: string[] };
 export type Member = { url: string; rows: number; byteSize: number; sha256?: string; etag?: string };
 export type CoverageInput = { id: string; url: string; rows: number; byteSize: number; sha256: string; etag: string };
 export type Dataset = {
@@ -213,14 +213,20 @@ export function display(value: unknown): string {
   return String(value);
 }
 export function joinTarget(join: Join, id: string) {
-  return join.child === id
+  return join.child === id && join.direction !== 'incoming'
     ? { id: join.parent, local: join.child_columns, remote: join.parent_columns }
     : { id: join.child, local: join.parent_columns, remote: join.child_columns };
+}
+export function connectionLabel(join: Join, targetLabel: string): string {
+  if (join.child !== join.parent) return targetLabel;
+  if (join.child === 'amendments') return join.direction === 'incoming' ? 'Amendments modifying this amendment' : 'Amendment being amended';
+  if (join.child === 'committees') return join.direction === 'incoming' ? 'Committees under this committee' : 'Parent committee';
+  return join.direction === 'incoming' ? 'Records referencing this record' : 'Referenced record';
 }
 export function connectionFilters(join: Join, id: string, row: Row): Filter[] | null {
   if (id !== join.child && id !== join.parent) return null;
   const target = joinTarget(join, id);
-  if (target.local.some(key => row[key] == null)) return null;
+  if (target.local.some(key => row[key] == null || row[key] === '' || !['string', 'number', 'bigint', 'boolean'].includes(typeof row[key]))) return null;
   return target.remote.map((column, i) => ({ column, value: display(row[target.local[i]]) }));
 }
 export function noConnectionsMessage(table?: Dataset): string | undefined {
@@ -229,7 +235,7 @@ export function noConnectionsMessage(table?: Dataset): string | undefined {
   return table?.joinAudit?.status !== "connected" && table?.joinAudit?.reason || "No supported connections are declared for this dataset.";
 }
 export function related(id: string, joins: Join[]) {
-  return joins.filter((j) => j.child === id || j.parent === id);
+  return joins.flatMap(j => j.child === id && j.parent === id ? [{...j, direction: undefined}, {...j, direction: 'incoming' as const}] : j.child === id || j.parent === id ? [j] : []);
 }
 export function defaultColumns(table: Dataset): string[] {
   const preferred: Record<string, string[]> = {
@@ -241,6 +247,7 @@ export function defaultColumns(table: Dataset): string[] {
       "sponsor_full_name",
       "sponsor_bioguide_id",
     ],
+    amendments: ["amendment_id", "purpose", "chamber", "amended_bill_id", "amended_amendment_id", "sponsor_bioguide_id"],
     members: [
       "bioguide_id",
       "name_first",

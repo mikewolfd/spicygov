@@ -175,7 +175,7 @@ test('known source classes use readable labels only within their stated fields',
   assert.equal(scopeLabel('["captured_partial","parsed"]', ['uslm_outcome','law_text_outcome']), 'Partial metadata saved · Sections parsed');
   assert.equal(scopeLabel('["f"]', ['date_filed_is_approximate']), 'Marked exact');
   assert.equal(coverageFieldLabel('interpretation_status'), 'Reading result');
-  assert.equal(coverageFieldLabel('edition'), 'edition');
+  assert.equal(coverageFieldLabel('edition'), 'Source edition');
 });
 
 test('cycle labels explain their period without converting other source years or unusual cycles', () => {
@@ -401,4 +401,48 @@ test('publisher checksum is verified before decoding and tampered bytes never su
   assert.equal(decoded,0);
   const valid=await loadCoveragePublishers([source],maps,undefined,{fetchMember:async()=>publisherBytes.slice(0),decode:async buffer=>{decoded++;assert.deepEqual(new Uint8Array(buffer),new Uint8Array(publisherBytes));return publisherRows;}});
   assert.equal(decoded,1);assert.equal(valid.names.get('afp'),'Americans for Prosperity');
+});
+
+test('readable labels retain exact source evidence and do not infer completeness', () => {
+  const dim = {...dimension, granularity:'category', fields:['source_family','source_record_key','edition']};
+  const key = '["ecfr","ecfr/title/1","requested-as-of:2026-08-10"]';
+  const shown = coverageCategoryDisplay(dim,key);
+  assert.equal(shown.label,'eCFR · eCFR Title 1 · Requested as of Aug 10, 2026');
+  assert.equal(shown.exact,'ecfr · ecfr/title/1 · requested-as-of:2026-08-10');
+  assert.ok(coverageCategoryMatches(dim,key,'requested-as-of:2026-08-10'));
+  assert.ok(coverageCategoryMatches(dim,key,'eCFR Title 1'));
+  assert.equal(scopeLabel('["complete_selected_shapes"]',['read_status']),'Finished supported reference checks');
+  assert.equal(scopeLabel('["not_flagged","pdf_extracted"]',['body_completeness','body_completeness']),'No completeness flag · Text extracted from PDF');
+  assert.equal(scopeLabel('["not-asserted"]',['query_completeness']),'Completeness not established');
+  assert.equal(scopeLabel('["refused_native_observation_not_qualified_empty_success"]',['outcome_status']),'Request refused; not a confirmed empty result');
+  assert.equal(scopeLabel('["119-103"]',['edition']),'119-103');
+  assert.equal(scopeLabel('["requested-as-of:2026-02-31"]',['edition']),'requested-as-of:2026-02-31');
+});
+
+test('translations stay within their fields and preserve unknown and missing values', () => {
+  assert.equal(scopeLabel('[true,false,null]',['is_current','is_current','is_current']),'Current list · Historical list · null');
+  assert.equal(scopeLabel('["true","false"]',['detail_read','detail_read']),'Details read · List only');
+  assert.equal(scopeLabel('["complete_selected_shapes"]',['publisher_period']),'complete_selected_shapes');
+  assert.equal(scopeLabel('["billstatus_bulk"]',['publisher_id']),'billstatus_bulk');
+  assert.equal(scopeLabel('["new_reader_status"]',['read_status']),'new_reader_status');
+  assert.equal(scopeLabel('["constructor","__proto__"]',['constructor','source']),'constructor · __proto__');
+  const dim = {...dimension, fields:['is_current','body_completeness']};
+  assert.equal(coverageCategoryDisplay(dim,'[null,"not_flagged"]').exact,'null · not_flagged');
+});
+
+test('rendered matrices show readable fields and retain original codes without changing counts', async () => {
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  Object.assign(raw.tables.records.dimensions[0],{label:'Body state',granularity:'category',fields:['source','body_completeness'],buckets:{'["billstatus_bulk","not_flagged"]':2}});
+  const before=structuredClone(raw),maps=parseCoverageMaps(raw);
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
+  assert.match(html,/Report text status/);
+  assert.match(html,/Text status by Collection source/);
+  assert.match(html,/GovInfo bill-status files/);
+  assert.match(html,/No completeness flag/);
+  assert.match(html,/Original field values/);
+  assert.match(html,/<code>not_flagged<\/code>/);
+  assert.match(html,/<td[^>]*>2<\/td>/);
+  assert.deepEqual(raw,before);
+  assert.deepEqual(maps.tables.records.dimensions[0],before.tables.records.dimensions[0]);
+  assert.ok(currentCoverageMap(table,maps));
 });

@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { useCollection } from "@/lib/use-collection";
+import { SharedBrowse } from "@/components/shared-browse";
 import { TableProvenance } from "@/components/table-provenance";
 import { useExplorerTools } from "@/lib/webmcp";
 import { initial, readLocation, makeHref, type LocationState, type View } from '@/lib/explorer-location';
@@ -52,6 +53,7 @@ import {
   related,
   joinTarget,
   connectionFilters,
+  connectionLabel,
   noConnectionsMessage,
   pretty,
   type Dataset,
@@ -262,6 +264,10 @@ export default function Explorer() {
       from: table?.label,
     });
   }
+  function browse(id: string, filters: Filter[]) {
+    recordWorker.current?.terminate();
+    navigate({id, filters, cursor: 0, view: "records", from: table?.label});
+  }
   function cancel() {
     worker.current?.terminate();
     setBusy(false);
@@ -445,6 +451,7 @@ export default function Explorer() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          {table && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} onOpen={browse} />}
           {location.view === "records" && (
             <>
               <div className="table-toolbar">
@@ -613,9 +620,7 @@ export default function Explorer() {
                           const links = connections.filter(
                             (j) =>
                               joinTarget(j, location.id).local.includes(c) &&
-                              joinTarget(j, location.id).local.every(
-                                (k) => r[k] != null,
-                              ),
+                              connectionFilters(j, location.id, r) !== null,
                           );
                           return (
                             <td key={c}>
@@ -761,7 +766,7 @@ export default function Explorer() {
                       <Network size={20} />
                       <div>
                         <button disabled={!target} onClick={() => choose(t.id)}>
-                          {target?.label ?? pretty(t.id)}
+                          {connectionLabel(j, target?.label ?? pretty(t.id))}
                         </button>
                         <p>
                           <code>{t.local.join(" + ")}</code>
@@ -770,7 +775,7 @@ export default function Explorer() {
                         </p>
                         {j.reason && (
                           <details>
-                            <summary>Coverage note</summary>
+                            <summary>What this link means</summary>
                             <p>{j.reason}</p>
                           </details>
                         )}
@@ -782,8 +787,8 @@ export default function Explorer() {
                           : j.kind === "empty"
                             ? "No key baseline"
                             : j.kind === "scope"
-                              ? "Partial coverage"
-                              : "By design"}
+                              ? "Some targets missing"
+                              : j.kind === "unmeasured" ? "Awaiting key check" : "By design"}
                       </span>
                     </div>
                   );
@@ -900,9 +905,7 @@ export default function Explorer() {
             {recordError && <p className="error-state">{recordError}</p>}
             {record &&
               connections.some((j) =>
-                joinTarget(j, location.id).local.every(
-                  (c) => record[c] != null,
-                ),
+                connectionFilters(j, location.id, record) !== null,
               ) && (
                 <details
                   className="record-connections"
@@ -920,9 +923,7 @@ export default function Explorer() {
                             joinTarget(j, location.id).local.includes(
                               connectionField,
                             )) &&
-                          joinTarget(j, location.id).local.every(
-                            (c) => record[c] != null,
-                          ),
+                          connectionFilters(j, location.id, record) !== null,
                       )
                       .map((j, i) => {
                         const t = joinTarget(j, location.id),
@@ -936,7 +937,7 @@ export default function Explorer() {
                           >
                             <Network size={16} />
                             <span>
-                              {target?.label ?? pretty(t.id)}
+                              {connectionLabel(j, target?.label ?? pretty(t.id))}
                               <small>
                                 {t.local
                                   .map((k) => `${k}: ${display(record[k])}`)
@@ -950,6 +951,7 @@ export default function Explorer() {
                   </div>
                 </details>
               )}
+            {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
             <dl className="record-fields">
               {table?.columns
                 .filter((c) => record && c.name in record)

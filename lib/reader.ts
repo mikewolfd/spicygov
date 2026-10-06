@@ -1,3 +1,4 @@
+import { matchesFilters, validFilter } from './filter-values';
 import { asyncBufferFromUrl, parquetReadObjects, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
@@ -70,7 +71,7 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
       const end = Math.min(member.rows, start + 50000);
       const rows = await parquetReadObjects({ file, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
       for (const row of rows) {
-        if (!filters.every(f => row[f.column] != null && String(row[f.column]) === f.value)) continue;
+        if (!matchesFilters(row, filters)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
         if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
         remaining++;
@@ -116,6 +117,7 @@ export async function readPage(
     (sort && !table.columns.some((c) => c.name === sort.column))
   )
     throw new Error("Unknown field in this dataset.");
+  if (!filters.every(validFilter)) throw new Error('Invalid filter values.');
   if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort }, onProgress);
   let offset = 0,
     position = cursor;
@@ -127,7 +129,7 @@ export async function readPage(
       (f) => table.columns.find((c) => c.name === f.column)?.type === "VARCHAR",
     );
   const filter = canPrune
-    ? { $and: filters.map((f) => ({ [f.column]: { $eq: f.value } })) }
+    ? { $and: filters.map((f) => ({ [f.column]: f.values ? { $in: f.values } : { $eq: f.value } })) }
     : undefined;
   for (const member of table.members) {
     if (offset + member.rows <= position) {
@@ -155,9 +157,7 @@ export async function readPage(
       let last = end;
       for (const row of rows) {
         if (
-          filters.every(
-            (f) => row[f.column] != null && String(row[f.column]) === f.value,
-          )
+          matchesFilters(row, filters)
         ) {
           results.push(row);
           positions.push(offset + row[rowIndex]!);

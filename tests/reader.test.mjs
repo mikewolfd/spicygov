@@ -206,6 +206,14 @@ try {
     await assert.rejects(readPage({table, columns: ['id'], filters: [], cursor: 141, sort: {column: 'id', direction: 'asc'}}), /Invalid sort/);
     await assert.rejects(readPage({table, columns: ['id'], filters: [], cursor: 0, sort: {column: 'id', direction: 'sideways'}}), /Invalid sort/);
   });
+  await test('literal alternatives preserve filtering and sorting across file partitions', async () => {
+    const filters=[{column:'id',value:'1',values:['1','71']}];
+    const page=await readPage({table,columns:['id'],filters,cursor:0});
+    assert.deepEqual(page.rows.map(r=>r.id),['1','71']);
+    const sorted=await readPage({table,columns:['id'],filters,cursor:0,sort:{column:'id',direction:'desc'}});
+    assert.deepEqual(sorted.rows.map(r=>r.id),['71','1']);
+    await assert.rejects(readPage({table,columns:['id'],filters:[{column:'id',value:'1',values:[]}],cursor:0}),/Invalid filter/);
+  });
 } finally {
   server.close();
 }

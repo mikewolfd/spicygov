@@ -1,0 +1,368 @@
+{
+  "dimensions": {
+    "API scope controls": "Request scope and completeness",
+    "Acquisition route": "Estimate data sources",
+    "Acquisition source and body kind": "Printing source and text type",
+    "Agency mapping results": "Agency record processing results",
+    "Body state": "Report text status",
+    "Bounded committee history periods": "Committee history with start and end dates",
+    "CFR titles by annual edition": "Regulation titles and annual editions",
+    "CRS publication": "Research report publication dates",
+    "Catalog inventory date (freshness)": "Source inventory date",
+    "Classification Congress/session": "Congress and session of classified laws",
+    "Classification table preparation": "Classification table preparation date",
+    "Communication source and detail availability": "Source and detail status",
+    "Context mapping results": "Source record processing results",
+    "Current/historical committee list": "Current or historical committee list",
+    "Docket input editions": "Docket source editions",
+    "Earlier printing": "Earlier printing dates",
+    "Estimate publication": "Estimate publication dates",
+    "Feed publication": "Feed publication dates",
+    "Header association results": "Filing link results",
+    "Later printing": "Later printing dates",
+    "OLRC act dates": "Law dates in the U.S. Code index",
+    "Printing acquisition source": "Printing data sources",
+    "Printing body kind": "Printing text type",
+    "Proceeding link classification": "Proceeding link results",
+    "Proposed": "Amendment proposal dates",
+    "Publisher Congress labels": "Publisher-stated Congress",
+    "Publisher publication labels": "Publisher-stated publication dates",
+    "Publisher session labels": "Publisher-stated session",
+    "Publisher year labels": "Publisher-stated years",
+    "Read outcome": "Read results",
+    "Reference evidence classes": "Reference types and reading results",
+    "Reference source records and editions": "Source files and editions",
+    "Relationship evidence sources": "Sources supporting proceeding links",
+    "Release publication": "Press release publication dates",
+    "Retained request results": "Request results",
+    "Retained snapshot": "Saved release",
+    "Retained source pages": "Saved page types and content",
+    "Saved decision origins": "Decision collection sources",
+    "Saved record origin": "Record collection sources",
+    "Saved report origins": "Report collection sources",
+    "Selected opinion input editions": "Selected opinion source editions",
+    "Selected source records and editions": "Source files and editions",
+    "Service-term matching": "Vote-to-term matching results",
+    "Source families": "Source categories",
+    "Source load date (freshness)": "Source load date",
+    "Source selection outcomes": "Read results by source file",
+    "Source update date (freshness)": "Source update date",
+    "Sponsorship": "Cosponsor start dates",
+    "Subject acquisition route": "Subject data sources",
+    "Submitted": "Amendment submission dates",
+    "Table III retained scope": "Table III Congress and release",
+    "Target evidence sources": "Sources supporting regulation links",
+    "Withdrawal evidence sources": "Withdrawal date sources",
+    "Withdrawals": "Cosponsor withdrawal dates",
+    "Year-only item labels": "Item years (year only)",
+    "Year-only source period labels": "Source period years (year only)"
+  },
+  "families": {
+    "agency-stats": "Agency statistics",
+    "bill-family": "Bills and bill records",
+    "discovery-signals": "Unusual agency activity",
+    "fec-observations": "Saved FEC source records",
+    "fec-query": "FEC filing and financial records",
+    "feed-summary": "Docket summaries",
+    "fr-docket-links": "Federal Register links to dockets",
+    "member-vote-terms": "Votes linked to service terms",
+    "native-legal-references": "References in legal text",
+    "org-committee-links": "Commenter organizations and committees",
+    "print-citations": "Document citations",
+    "sam-entities": "Federal entity registrations"
+  },
+  "controls": {
+    "How collected": "Collection or processing method",
+    "API": "Data service (API)",
+    "RSS feeds": "Update feeds (RSS)",
+    "Through year": "Years ending in",
+    "With reviewed source logs": "Tables with reviewed collection logs",
+    "Source descriptions need attention": "Tables with missing or older source details",
+    "Native metadata reading": "Law metadata read result",
+    "Section text reading": "Law text read result",
+    "Observed source requests": "Collection request examples",
+    "Earlier records": "Records carried forward",
+    "Calculated": "Calculated from other data",
+    "Coverage": "Data coverage and checks"
+  },
+  "fields": {
+    "interpretation_status": "Reading result",
+    "observation_kind": "Evidence type",
+    "scope_status": "Proceeding link",
+    "kind": "Text classification",
+    "edition_year": "Edition year",
+    "uslm_outcome": "Law metadata read result",
+    "law_text_outcome": "Law text read result",
+    "source": "Collection source",
+    "carrier": "Subject source",
+    "outcome": "Read result",
+    "body_completeness": "Text status",
+    "is_current": "Committee list",
+    "edition": "Source edition",
+    "document_kind": "Document type",
+    "disposition": "Processing result",
+    "registry_scope_status": "Request scope",
+    "query_completeness": "Request completeness",
+    "association_status": "Filing link result",
+    "endpoint_kind": "Source evidence type",
+    "role": "Evidence role",
+    "mapping_status": "Processing result",
+    "outcome_status": "Request result",
+    "page_type": "Page type",
+    "content_scope": "Saved content",
+    "source_family": "Source category",
+    "source_route": "Source route",
+    "detail_read": "Detail read",
+    "dated_by": "Date source",
+    "filing_period": "Filing period",
+    "term_match": "Vote-to-term match",
+    "source_record_key": "Source file",
+    "read_status": "Read result",
+    "event_type": "Change type",
+    "grid_kind": "Table type"
+  },
+  "commonValues": {
+    "gao_rss": "GAO feed",
+    "gao_listing": "GAO listing",
+    "gao_r_package": "GAO R package",
+    "gao_major_rule_listing": "GAO major-rule listing",
+    "gao_major_rule_index": "GAO older major-rule index",
+    "gao_repair": "GAO repairs",
+    "upstream_copy": "Upstream copy",
+    "govinfo": "GovInfo",
+    "full_text": "Full-text classification",
+    "kind_uncertain": "Text completeness uncertain",
+    "procedural_amendments": "Procedural amendments",
+    "procedural_summary": "Procedural summary",
+    "unknown": "Unknown",
+    "no_saved_text": "Not saved",
+    "saved_blank_text": "Saved blank text",
+    "saved_nonblank_text": "Saved text"
+  },
+  "values": {
+    "record_outcome": {
+      "empty": "Confirmed empty request",
+      "inventory_only": "File or source listing",
+      "selection_context": "Selection notes",
+      "no-record-rejections": "Selected records parsed",
+      "refused": "Not accepted for parsing",
+      "unresolved": "Selection unresolved"
+    },
+    "ingest_source": {
+      "bulk": "Bulk export",
+      "search": "Search results"
+    },
+    "link_source": {
+      "printed": "Printed docket labels",
+      "regulations_dot_gov_info": "Regulations.gov link",
+      "both": "Printed labels and Regulations.gov link"
+    },
+    "source": {
+      "congress": "Congress.gov",
+      "docket_document_cites_action_notice": "Docket document cites an action notice",
+      "docket_rin": "Docket regulation identifier",
+      "document_rin": "Document regulation identifier",
+      "document_fr_doc": "Document cites a Federal Register notice",
+      "fr_cfr_ref": "Federal Register regulation citation",
+      "federal_register_rin": "Federal Register regulation identifier",
+      "documents.comment_end_date": "Regulations.gov",
+      "federal_register.comments_close_on": "Federal Register",
+      "documents.comment_end_date+federal_register.comments_close_on": "Regulations.gov + Federal Register",
+      "billstatus_bulk": "GovInfo bill-status files",
+      "cbo_feed": "Congressional Budget Office feed",
+      "federal_register": "Federal Register",
+      "govinfo": "GovInfo",
+      "regulations_gov": "Regulations.gov",
+      "unified_agenda": "Unified Agenda"
+    },
+    "withdrawal_source": {
+      "federal_register": "Federal Register",
+      "unified_agenda": "Unified Agenda"
+    },
+    "scope_status": {
+      "recurring": "Routine and frequent",
+      "single_observed": "One linked proceeding",
+      "unresolved": "Zero or multiple linked proceedings"
+    },
+    "observation_kind": {
+      "native_reference": "Native reference",
+      "source_credit": "Source credit",
+      "source_note": "Source note",
+      "authority": "Authority note"
+    },
+    "interpretation_status": {
+      "native_public_law_href": "Public-law link",
+      "native_section_href": "U.S. Code section link",
+      "native_statute_href": "Statutes-at-Large link",
+      "unsupported_href": "Unsupported link",
+      "partial_text_findings": "Some references found in text",
+      "no_qualified_text_findings": "No accepted text findings"
+    },
+    "uslm_outcome": {
+      "captured": "Metadata saved",
+      "captured_partial": "Partial metadata saved",
+      "captured_refused": "Metadata capture refused",
+      "request_failed": "Metadata request failed",
+      "unavailable": "Source unavailable",
+      "not_requested": "Not requested"
+    },
+    "law_text_outcome": {
+      "parsed": "Sections parsed",
+      "refused": "Text reading refused",
+      "not_requested": "Not requested"
+    },
+    "date_filed_is_approximate": {
+      "f": "Marked exact",
+      "t": "Marked approximate"
+    },
+    "carrier": {
+      "congress-api": "Congress.gov data service",
+      "govinfo-billstatus": "GovInfo bill-status files"
+    },
+    "outcome": {
+      "complete": "Read finished",
+      "refused_final": "Read refused"
+    },
+    "body_completeness": {
+      "not_flagged": "No completeness flag",
+      "pdf_extracted": "Text extracted from PDF"
+    },
+    "is_current": {
+      "true": "Current list",
+      "false": "Historical list"
+    },
+    "document_kind": {
+      "bill_section": "Bill section",
+      "budget_volume": "Budget volume",
+      "communication_authority": "Communication authority statement",
+      "communication_report_nature": "Communication report description",
+      "court_opinion_derived_pdf": "Court opinion text from PDF",
+      "govinfo_package": "GovInfo package",
+      "lobbying_activity": "Lobbying activity",
+      "report_section": "Report section"
+    },
+    "disposition": {
+      "definition_context": "Definition or report context",
+      "mapped": "Mapped to a data record",
+      "structural_nondata": "Document structure; no data"
+    },
+    "registry_scope_status": {
+      "retained-source-observations-only": "Saved source observations only"
+    },
+    "query_completeness": {
+      "not-asserted": "Completeness not established"
+    },
+    "association_status": {
+      "resolved_native_filing_key": "Linked by source filing key",
+      "unresolved_archive_member_identity": "Unresolved archive member identity",
+      "unresolved_no_native_url_witness": "Unresolved: no source URL evidence",
+      "unresolved_source_authority": "Unresolved source authority"
+    },
+    "endpoint_kind": {
+      "collection_context": "Collection context",
+      "source_record": "Source record"
+    },
+    "role": {
+      "dimension_context": "Measurement context",
+      "field_definition": "Field definition",
+      "filing_header": "Filing header",
+      "item_fields": "Item fields",
+      "primary": "Primary evidence",
+      "report_context": "Report context"
+    },
+    "mapping_status": {
+      "acquisition_inventory": "Collection inventory",
+      "definition_context": "Definition context",
+      "mapped": "Mapped to a data record",
+      "mapped_feed_context": "Mapped feed context",
+      "mapped_partial_capture": "Mapped from a partial capture",
+      "mapped_refusal_outcome": "Mapped refusal result",
+      "mapped_source_reference": "Mapped source reference",
+      "provenance_context": "Collection history context",
+      "reference_documentation": "Reference documentation",
+      "reference_inventory": "Reference inventory",
+      "reference_or_research_context": "Reference or research context"
+    },
+    "outcome_status": {
+      "refused_native_observation_not_qualified_empty_success": "Request refused; not a confirmed empty result"
+    },
+    "page_type": {
+      "filing_form_reference": "Filing form reference",
+      "official_court_case_reference": "Official court case reference",
+      "official_legal_document_reference": "Official legal document reference",
+      "official_oversight_report_reference": "Official oversight report reference"
+    },
+    "content_scope": {
+      "retained_native_context_part": "Saved portion of source context"
+    },
+    "source_family": {
+      "ecfr": "eCFR",
+      "uscode": "U.S. Code",
+      "fec_access": "FEC source access",
+      "fec_agency_reports": "FEC agency reports",
+      "fec_ao": "FEC advisory opinions",
+      "fec_archive_quality": "FEC archive quality",
+      "fec_bundling": "FEC bundled contributions",
+      "fec_candidate_links": "FEC candidate links",
+      "fec_candidates": "FEC candidates",
+      "fec_committees": "FEC committees",
+      "fec_communication_costs": "FEC communication costs",
+      "fec_disbursements": "FEC disbursements",
+      "fec_electioneering": "FEC electioneering communications",
+      "fec_enforcement": "FEC enforcement",
+      "fec_guidance_meetings": "FEC guidance and meetings",
+      "fec_ie": "FEC independent expenditures",
+      "fec_inaugural": "FEC inaugural donations",
+      "fec_intercommittee": "FEC committee transfers",
+      "fec_leadership": "FEC leadership committees",
+      "fec_legal": "FEC legal records",
+      "fec_loans_debts": "FEC loans and debts",
+      "fec_oig": "FEC Inspector General reports",
+      "fec_party_allocation": "FEC party allocations",
+      "fec_public_funding": "FEC public funding",
+      "fec_receipts": "FEC receipts",
+      "fec_reports": "FEC reports",
+      "fec_results_calendar": "FEC election results and calendar",
+      "fec_summaries": "FEC financial summaries"
+    },
+    "source_route": {
+      "congress-gov-detail": "Congress.gov detail record"
+    },
+    "detail_read": {
+      "true": "Details read",
+      "false": "List only"
+    },
+    "dated_by": {
+      "federal_register": "Federal Register",
+      "regulations_gov": "Regulations.gov",
+      "unified_agenda": "Unified Agenda"
+    },
+    "filing_period": {
+      "first_quarter": "First quarter",
+      "second_quarter": "Second quarter",
+      "third_quarter": "Third quarter",
+      "fourth_quarter": "Fourth quarter",
+      "mid_year": "Mid-year",
+      "year_end": "Year-end"
+    },
+    "term_match": {
+      "half_open": "Matched before term end date",
+      "inclusive_end": "Matched on term end date",
+      "unmatched": "No matching service term",
+      "unresolved_member": "Member identity unresolved"
+    },
+    "read_status": {
+      "complete_selected_shapes": "Finished supported reference checks"
+    },
+    "event_type": {
+      "bill_added": "Bill added",
+      "stage_changed": "Stage changed",
+      "version_added": "Version added"
+    },
+    "grid_kind": {
+      "appropriation_summary": "Appropriation summary",
+      "organization_detail": "Organization detail",
+      "payee_detail": "Payee detail"
+    }
+  }
+}

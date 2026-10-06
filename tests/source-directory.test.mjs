@@ -174,7 +174,7 @@ test('Sources search finds displayed family headings, raw table IDs and readable
   const sam = { ...table('sam_entities'), family: 'sam-entities', label: 'Federal entity registrations', rows: 1 };
   const unrelated = { ...table('other_records'), summary: 'Uses the same source.', rows: 0 };
   const entries = sourceEntries([sam, unrelated], []);
-  assert.equal(sourceSections(entries).flatMap(section => section.groups).find(group => group.entries.some(entry => entry.table.id === sam.id)).name, 'SAM entities');
+  assert.equal(sourceSections(entries).flatMap(section => section.groups).find(group => group.entries.some(entry => entry.table.id === sam.id)).name, 'Federal entity registrations');
   for (const query of ['SAM entities', 'sam_entities', 'sam-entities', '  SAM   entities  ', 'Federal entity registrations']) {
     assert.deepEqual(filterEntries(entries, query, '', '').map(entry => entry.table.id), ['sam_entities']);
   }
@@ -319,9 +319,9 @@ test('topic and family grouping keeps derived tables with their subjects and ret
 });
 test('collection labels distinguish acquisition from reuse and processing', () => {
   assert.deepEqual(collectionSteps(['api', 'bulk_download', 'retained_input', 'derived', 'document_extraction']), [
-    {label: 'Collection', values: ['API', 'Bulk downloads']},
+    {label: 'Collection', values: ['Data service (API)', 'Bulk downloads']},
     {label: 'Reuses', values: ['Saved source files']},
-    {label: 'Processing', values: ['Calculated', 'Text extracted from documents']},
+    {label: 'Processing', values: ['Calculated from other data', 'Text extracted from documents']},
   ]);
 });
 test('source-detail recovery selects metadata problems separately from unreviewed collection', () => {
@@ -333,8 +333,8 @@ test('source-detail recovery selects metadata problems separately from unreviewe
 });
 test('source warning identifies actual metadata problems without treating them as missing records', () => {
   const entries = states => sourceEntries(states.map((metadataState, i) => ({...table(`table_${i}`), metadataState})), [], undefined);
-  assert.equal(sourceMetadataSummary(entries([...Array(21).fill('incompatible'), 'older-publication'])), 'Source descriptions need attention for 22 tables: 21 have changed fields; 1 has a newer release.');
-  assert.equal(sourceMetadataSummary(entries(['missing'])), 'Source descriptions need attention for 1 table: 1 has no source descriptions.');
+  assert.equal(sourceMetadataSummary(entries([...Array(21).fill('incompatible'), 'older-publication'])), 'Missing or older source details for 22 tables: 21 have changed fields; 1 has a newer release.');
+  assert.equal(sourceMetadataSummary(entries(['missing'])), 'Missing or older source details for 1 table: 1 has no source descriptions.');
   assert.equal(sourceMetadataSummary(entries(['loading', 'current'])), undefined);
   assert.equal(sourceMetadataSummary(sourceEntries([], [{...table(), metadataState:'missing'}])), undefined);
   assert.match(sourceMetadataSummary(entries(['undocumented', 'unavailable'])), /1 has incomplete source descriptions; 1 could not load source descriptions/);
@@ -377,4 +377,17 @@ test('request grouping preserves unknown dates and orders timestamps by instant'
   assert.equal(preview.observations[0].lastObservedAt, '2026-10-04T23:30:00Z');
   assert.equal(preview.observations[1].examples, 2);
   assert.equal(preview.observations[1].observedAt, undefined);
+});
+
+test('readable family headings preserve identifiers, grouping and searches', () => {
+  const rows = sourceEntries([
+    {...table('native_legal_references'), family:'native-legal-references',group:'Law & courts'},
+    {...table('bills'), family:'bill-family',group:'Congress'},
+  ],[]);
+  assert.deepEqual(sourceSections(rows).map(section=>section.groups[0].name),['Bills and bill records','References in legal text']);
+  assert.equal(sourceSections(rows)[1].groups[0].id,'topic-law-courts-native-legal-references');
+  assert.equal(filterEntries(rows,'References in legal text','','')[0].table.id,'native_legal_references');
+  assert.equal(filterEntries(rows,'native-legal-references','','')[0].table.id,'native_legal_references');
+  assert.equal(filterEntries(rows,'Bills and bill records','','')[0].table.id,'bills');
+  assert.equal(rows[0].table.family,'native-legal-references');
 });
