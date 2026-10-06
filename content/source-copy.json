@@ -1110,10 +1110,10 @@
     },
     "gao_reports": {
       "label": "GAO reports",
-      "summary": "Combines GAO\u2019s recent feed and website listings, GovInfo\u2019s archive, earlier feed copies, targeted additions and the CetiAlphaFive/gao research dataset.",
-      "scope": "GovInfo covers November 15, 1989\u2013September 18, 2008; website listings start in 2009. The research dataset adds older reports from 1922, mainly from the 1970s\u20131990s.",
+      "summary": "Combines GAO\u2019s recent feed, website listings, major-rule listings and older index with GovInfo\u2019s archive, earlier feed copies, targeted additions and the CetiAlphaFive/gao research dataset.",
+      "scope": "GovInfo covers November 15, 1989\u2013September 18, 2008; website listings start in 2009. The research dataset adds older reports from 1922, mainly from the 1970s\u20131990s. Major-rule listings and GAO\u2019s older index add reports outside the monthly listings.",
       "gaps": [
-        "Major-rule reports from 1996\u20132008 are absent; unread listings and missed feed items leave other gaps.",
+        "Unread listings and missed feed items leave gaps; saved rows do not establish that every major-rule report was collected.",
         "Research-dataset details stop at the September 26, 2026 copy until separately filled.",
         "Fields in one row can come from several sources even when its source label names only one."
       ]
