@@ -1,0 +1,227 @@
+{
+  "dataset": "documents",
+  "artifactDigest": "sha256:1defaa8e6f4520678a7bc894e70eff32ec210b935094a105eea7b49546e055c8",
+  "request": {
+    "dataset": "documents",
+    "generationId": "85246d894b714bce9c1bf7659802610a",
+    "subjects": [
+      {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/native-family-documents/documents/build/generation/documents.parquet",
+        "sha256": "sha256:0b5de33cdecfc6fe304e40eb91b4a67c313794461e93aa1284dd368b075e7097",
+        "byteSize": 98658809
+      }
+    ],
+    "receipts": {
+      "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/native-family-documents/documents/build/generation/etl_receipts.parquet",
+      "sha256": "sha256:716049625e91b35fbb87256440bb0ad396ea2297913ec6a2bcaeb4b202ca357f",
+      "byteSize": 431821675
+    },
+    "destination": "/tmp/spicygov-fast-restore-documents-1791290739024042000"
+  },
+  "status": "PASS",
+  "seconds": 230.90003008395433,
+  "restoration": {
+    "format": "spicygov-private-coverage-input",
+    "version": 1,
+    "dataset": "documents",
+    "generationId": "85246d894b714bce9c1bf7659802610a",
+    "selection": {
+      "subjects": [
+        {
+          "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/native-family-documents/documents/build/generation/documents.parquet",
+          "sha256": "sha256:0b5de33cdecfc6fe304e40eb91b4a67c313794461e93aa1284dd368b075e7097",
+          "byteSize": 98658809
+        }
+      ],
+      "receipts": {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/native-family-documents/documents/build/generation/etl_receipts.parquet",
+        "sha256": "sha256:716049625e91b35fbb87256440bb0ad396ea2297913ec6a2bcaeb4b202ca357f",
+        "byteSize": 431821675
+      }
+    },
+    "nativeSchema": [
+      [
+        "document_id",
+        "VARCHAR"
+      ],
+      [
+        "docket_id",
+        "VARCHAR"
+      ],
+      [
+        "agency_code",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "posted_date",
+        "VARCHAR"
+      ],
+      [
+        "modify_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_start_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_end_date",
+        "VARCHAR"
+      ],
+      [
+        "attachments",
+        "STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[]"
+      ],
+      [
+        "attachment_records",
+        "STRUCT(attachment_id VARCHAR, title VARCHAR, file_formats STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[], restrict_reason VARCHAR, restrict_reason_type VARCHAR)[]"
+      ],
+      [
+        "fr_doc_num",
+        "VARCHAR"
+      ],
+      [
+        "withdrawn",
+        "BOOLEAN"
+      ],
+      [
+        "reason_withdrawn",
+        "VARCHAR"
+      ],
+      [
+        "additional_rins",
+        "VARCHAR[]"
+      ],
+      [
+        "text_content",
+        "VARCHAR"
+      ],
+      [
+        "publisher_status",
+        "VARCHAR"
+      ],
+      [
+        "removed_observed_at",
+        "VARCHAR"
+      ]
+    ],
+    "processingSchema": [
+      [
+        "document_id",
+        "VARCHAR"
+      ],
+      [
+        "docket_id",
+        "VARCHAR"
+      ],
+      [
+        "agency_code",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "posted_date",
+        "VARCHAR"
+      ],
+      [
+        "modify_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_start_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_end_date",
+        "VARCHAR"
+      ],
+      [
+        "file_url",
+        "VARCHAR"
+      ],
+      [
+        "attachments_json",
+        "VARCHAR"
+      ],
+      [
+        "attachment_records_json",
+        "VARCHAR"
+      ],
+      [
+        "fr_doc_num",
+        "VARCHAR"
+      ],
+      [
+        "withdrawn",
+        "VARCHAR"
+      ],
+      [
+        "reason_withdrawn",
+        "VARCHAR"
+      ],
+      [
+        "additional_rins",
+        "VARCHAR"
+      ],
+      [
+        "text_content",
+        "VARCHAR"
+      ],
+      [
+        "text_extraction_status",
+        "VARCHAR"
+      ],
+      [
+        "pdf_extraction_results_json",
+        "VARCHAR"
+      ]
+    ],
+    "policy": {
+      "dataset": "documents",
+      "policy_version": "regulations-native-v1",
+      "subject_schema": "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",
+      "identity_fields": [
+        "document_id"
+      ],
+      "receipt_fields": [
+        "file_url",
+        "text_extraction_status",
+        "pdf_extraction_results_json",
+        "raw_conversion_inputs",
+        "input_metadata",
+        "raw_source_record"
+      ],
+      "receipt_only": false,
+      "nullable_identity_fields": []
+    },
+    "policyVersion": "regulations-native-v1",
+    "receiptOnly": false,
+    "implementationSha256": "sha256:6885cc61f876367d46f84bc52a76f469b6463d3a41b018222a71d0b62dc8e8ef",
+    "rows": 2004396,
+    "urls": [
+      "/tmp/spicygov-fast-restore-documents-1791290739024042000/coverage-facts.parquet"
+    ],
+    "processingMembers": [
+      {
+        "path": "/tmp/spicygov-fast-restore-documents-1791290739024042000/coverage-facts.parquet",
+        "sha256": "sha256:72cbe05b29cedac5762c06381a21abcfe3d6324f096f59240e0bef143e22d225",
+        "byteSize": 100806322
+      }
+    ]
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "status": "passed",
+  "siteRevision": "eedc54c01d1602dad56426fc2fec8f6350043a05",
+  "artifactDigest": "sha256:1defaa8e6f4520678a7bc894e70eff32ec210b935094a105eea7b49546e055c8",
+  "receiptGenerationId": "85246d894b714bce9c1bf7659802610a",
+  "rows": 2004396,
+  "nativeColumns": 18,
+  "processingColumns": 19,
+  "validatePlan": "passed",
+  "sealedPreparedReceipt": "verified",
+  "memberHashSizeRows": [
+    {
+      "objectKey": "documents.parquet",
+      "sha256": "sha256:0b5de33cdecfc6fe304e40eb91b4a67c313794461e93aa1284dd368b075e7097",
+      "byteSize": 98658809,
+      "recordCount": 2004396
+    },
+    {
+      "objectKey": "etl_receipts.parquet",
+      "sha256": "sha256:716049625e91b35fbb87256440bb0ad396ea2297913ec6a2bcaeb4b202ca357f",
+      "byteSize": 431821675,
+      "recordCount": 2004397
+    }
+  ],
+  "reusedRestoredFrame": {
+    "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/native-family-documents/documents/restored/64befcbb316443d9bcf05989ef0e7128/documents.parquet",
+    "sha256": "sha256:72cbe05b29cedac5762c06381a21abcfe3d6324f096f59240e0bef143e22d225",
+    "byteSize": 100806322,
+    "orderedValuesMetadataAndRepetitions": "exact match to sealed retained input",
+    "orderedComparisonSeconds": 0.703
+  },
+  "coverageFactsProjection": {
+    "reviewedSchema": [
+      [
+        "document_id",
+        "VARCHAR"
+      ],
+      [
+        "docket_id",
+        "VARCHAR"
+      ],
+      [
+        "agency_code",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "posted_date",
+        "VARCHAR"
+      ],
+      [
+        "modify_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_start_date",
+        "VARCHAR"
+      ],
+      [
+        "comment_end_date",
+        "VARCHAR"
+      ],
+      [
+        "file_url",
+        "VARCHAR"
+      ],
+      [
+        "attachments_json",
+        "VARCHAR"
+      ],
+      [
+        "attachment_records_json",
+        "VARCHAR"
+      ],
+      [
+        "fr_doc_num",
+        "VARCHAR"
+      ],
+      [
+        "withdrawn",
+        "VARCHAR"
+      ],
+      [
+        "reason_withdrawn",
+        "VARCHAR"
+      ],
+      [
+        "additional_rins",
+        "VARCHAR"
+      ],
+      [
+        "text_content",
+        "VARCHAR"
+      ],
+      [
+        "text_extraction_status",
+        "VARCHAR"
+      ],
+      [
+        "pdf_extraction_results_json",
+        "VARCHAR"
+      ]
+    ],
+    "safeCastAllRows": "passed"
+  },
+  "existingOwnerEvidence": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/bulk-current-resume/hosted-37448259592/documents-coverage-check.log",
+  "restorationImplementationSha256": "sha256:32cc56475616cffc0a7bc25d6181181efe301ff4d8afe1f029e3541ca9c2631e",
+  "receiptRestorationEvidence": "Maintained converter full ordered restoration reused; no new receipt restoration executed",
+  "currentBridge300SecondRuntimeQualified": false,
+  "runtimeNote": "Whole official preparation elapsed23:35.06 and convert_seconds471.3; neither isolates the current coverage bridge. Its300-second timeout remains unmeasured."
+}

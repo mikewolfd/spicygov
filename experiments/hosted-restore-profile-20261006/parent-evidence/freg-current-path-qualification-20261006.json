@@ -1,0 +1,414 @@
+{
+  "artifactDigest": "sha256:6c4a5d1abb57beaf3009dbe1a825dbe304f164cc31d522a41a5c25a16ba651c7",
+  "request": {
+    "dataset": "federal_register",
+    "generationId": "e3c3f2726d894cb9b83c512256e193a1",
+    "subjects": [
+      {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/normal-public-read-back/federal-register/federal_register.parquet",
+        "sha256": "sha256:ada62c7f5430f9db8fc30003f28839968ec60750d2f66aeab196fdd1722399d7",
+        "byteSize": 221455671
+      }
+    ],
+    "receipts": {
+      "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/normal-public-read-back/federal-register/etl_receipts.parquet",
+      "sha256": "sha256:d31a5699bbc649e484aa4c72de1250cdf7ae1e198614742efce4c257f6cce688",
+      "byteSize": 488431905
+    },
+    "destination": "/tmp/freg-current-path-restoration-20261006-1791298061385472000"
+  },
+  "sourceReaderCommit": "032c5a2ef9da7754a74be911254ccffc8dddfe53",
+  "scope": "One required qualification of fresh ordinary FR current pin; existing retained members, no downloads or source rebuild",
+  "timeoutSeconds": 300,
+  "status": "PASS",
+  "returncode": 0,
+  "stderr": "coverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 181649408, \"pid\": 69557, \"stage\": \"original-member-checks\", \"state\": \"started\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 181649408, \"pid\": 69557, \"seconds\": 0.32358995790127665, \"stage\": \"original-member-checks\", \"state\": \"completed\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 209764352, \"pid\": 69557, \"stage\": \"selected-receipt-scoping\", \"state\": \"started\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 2129068032, \"pid\": 69557, \"seconds\": 4.56281658296939, \"stage\": \"selected-receipt-scoping\", \"state\": \"completed\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"generationId\": \"e3c3f2726d894cb9b83c512256e193a1\", \"originalSha256\": \"sha256:d31a5699bbc649e484aa4c72de1250cdf7ae1e198614742efce4c257f6cce688\", \"peakRssBytes\": 2129068032, \"pid\": 69557, \"rows\": 1010065, \"stage\": \"selected-receipts\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 2129068032, \"pid\": 69557, \"stage\": \"maintained-batch-admission-and-reproduction\", \"state\": \"started\"}\ncoverage-restore {\"dataset\": \"federal_register\", \"peakRssBytes\": 10106470400, \"pid\": 69557, \"seconds\": 264.82167470792774, \"stage\": \"maintained-batch-admission-and-reproduction\", \"state\": \"completed\"}\n",
+  "restoration": {
+    "format": "spicygov-private-coverage-input",
+    "version": 1,
+    "dataset": "federal_register",
+    "generationId": "e3c3f2726d894cb9b83c512256e193a1",
+    "selection": {
+      "subjects": [
+        {
+          "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/normal-public-read-back/federal-register/federal_register.parquet",
+          "sha256": "sha256:ada62c7f5430f9db8fc30003f28839968ec60750d2f66aeab196fdd1722399d7",
+          "byteSize": 221455671
+        }
+      ],
+      "receipts": {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/normal-public-read-back/federal-register/etl_receipts.parquet",
+        "sha256": "sha256:d31a5699bbc649e484aa4c72de1250cdf7ae1e198614742efce4c257f6cce688",
+        "byteSize": 488431905
+      }
+    },
+    "nativeSchema": [
+      [
+        "document_number",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "abstract",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "publication_date",
+        "VARCHAR"
+      ],
+      [
+        "effective_on",
+        "VARCHAR"
+      ],
+      [
+        "comments_close_on",
+        "VARCHAR"
+      ],
+      [
+        "signing_date",
+        "VARCHAR"
+      ],
+      [
+        "agencies",
+        "STRUCT(id BIGINT, \"name\" VARCHAR, raw_name VARCHAR, parent_id BIGINT, slug VARCHAR)[]"
+      ],
+      [
+        "agency_slugs",
+        "VARCHAR[]"
+      ],
+      [
+        "docket_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "regulation_id_numbers",
+        "VARCHAR[]"
+      ],
+      [
+        "cfr_references",
+        "STRUCT(title BIGINT, part VARCHAR, chapter VARCHAR)[]"
+      ],
+      [
+        "topics",
+        "VARCHAR[]"
+      ],
+      [
+        "volume",
+        "VARCHAR"
+      ],
+      [
+        "start_page",
+        "VARCHAR"
+      ],
+      [
+        "end_page",
+        "VARCHAR"
+      ],
+      [
+        "subtype",
+        "VARCHAR"
+      ],
+      [
+        "executive_order_number",
+        "VARCHAR"
+      ],
+      [
+        "modify_date",
+        "VARCHAR"
+      ],
+      [
+        "rin",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_docket_id",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_document_id",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_comments_count",
+        "BIGINT"
+      ],
+      [
+        "regulations_dot_gov_checked_at",
+        "VARCHAR"
+      ],
+      [
+        "action",
+        "VARCHAR"
+      ],
+      [
+        "correction_of",
+        "VARCHAR"
+      ],
+      [
+        "corrections",
+        "VARCHAR[]"
+      ],
+      [
+        "significant",
+        "BOOLEAN"
+      ],
+      [
+        "regulations_dot_gov_agency_id",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_title",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_regulation_id_number",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_supporting_documents_count",
+        "BIGINT"
+      ],
+      [
+        "regulations_dot_gov_supporting_documents",
+        "STRUCT(document_id VARCHAR, title VARCHAR)[]"
+      ],
+      [
+        "regulations_dot_gov_regulatory_plan_title",
+        "VARCHAR"
+      ]
+    ],
+    "processingSchema": [
+      [
+        "document_number",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "abstract",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "publication_date",
+        "VARCHAR"
+      ],
+      [
+        "effective_on",
+        "VARCHAR"
+      ],
+      [
+        "comments_close_on",
+        "VARCHAR"
+      ],
+      [
+        "signing_date",
+        "VARCHAR"
+      ],
+      [
+        "agencies_json",
+        "VARCHAR"
+      ],
+      [
+        "agency_slugs",
+        "VARCHAR"
+      ],
+      [
+        "docket_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "regulation_id_numbers_json",
+        "VARCHAR"
+      ],
+      [
+        "cfr_references_json",
+        "VARCHAR"
+      ],
+      [
+        "topics_json",
+        "VARCHAR"
+      ],
+      [
+        "html_url",
+        "VARCHAR"
+      ],
+      [
+        "pdf_url",
+        "VARCHAR"
+      ],
+      [
+        "body_html_url",
+        "VARCHAR"
+      ],
+      [
+        "volume",
+        "VARCHAR"
+      ],
+      [
+        "start_page",
+        "VARCHAR"
+      ],
+      [
+        "end_page",
+        "VARCHAR"
+      ],
+      [
+        "subtype",
+        "VARCHAR"
+      ],
+      [
+        "executive_order_number",
+        "VARCHAR"
+      ],
+      [
+        "modify_date",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_info_json",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_docket_id",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_document_id",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_comments_count",
+        "VARCHAR"
+      ],
+      [
+        "regulations_dot_gov_checked_at",
+        "VARCHAR"
+      ],
+      [
+        "action",
+        "VARCHAR"
+      ],
+      [
+        "correction_of",
+        "VARCHAR"
+      ],
+      [
+        "corrections_json",
+        "VARCHAR"
+      ],
+      [
+        "significant",
+        "VARCHAR"
+      ],
+      [
+        "rin",
+        "VARCHAR"
+      ]
+    ],
+    "policy": {
+      "dataset": "federal_register",
+      "policy_version": "regulations-native-v1",
+      "subject_schema": "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",
+      "identity_fields": [
+        "document_number",
+        "publication_date"
+      ],
+      "receipt_fields": [
+        "html_url",
+        "pdf_url",
+        "body_html_url",
+        "regulations_dot_gov_info_json",
+        "raw_conversion_inputs",
+        "input_metadata",
+        "raw_source_record"
+      ],
+      "receipt_only": false,
+      "nullable_identity_fields": []
+    },
+    "policyVersion": "regulations-native-v1",
+    "receiptOnly": false,
+    "implementationSha256": "sha256:fb3688150f8f0250d7278a8683d176ccdbb9eabd9c9ae14429bfecf258eb1e63",
+    "rows": 1010064,
+    "urls": [
+      "/tmp/freg-current-path-restoration-20261006-1791298061385472000/coverage-facts.parquet"
+    ],
+    "processingMembers": [
+      {
+        "path": "/tmp/freg-current-path-restoration-20261006-1791298061385472000/coverage-facts.parquet",
+        "sha256": "sha256:2ec827aac255c354ad6988c2849d590bac38e1a1d3875ed3613ad25475ac8313",
+        "byteSize": 279108411
+      }
+    ]
+  },
+  "seconds": 270.6092018749332,
+  "events": [
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 181649408,
+      "pid": 69557,
+      "stage": "original-member-checks",
+      "state": "started"
+    },
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 181649408,
+      "pid": 69557,
+      "seconds": 0.32358995790127665,
+      "stage": "original-member-checks",
+      "state": "completed"
+    },
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 209764352,
+      "pid": 69557,
+      "stage": "selected-receipt-scoping",
+      "state": "started"
+    },
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 2129068032,
+      "pid": 69557,
+      "seconds": 4.56281658296939,
+      "stage": "selected-receipt-scoping",
+      "state": "completed"
+    },
+    {
+      "dataset": "federal_register",
+      "generationId": "e3c3f2726d894cb9b83c512256e193a1",
+      "originalSha256": "sha256:d31a5699bbc649e484aa4c72de1250cdf7ae1e198614742efce4c257f6cce688",
+      "peakRssBytes": 2129068032,
+      "pid": 69557,
+      "rows": 1010065,
+      "stage": "selected-receipts"
+    },
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 2129068032,
+      "pid": 69557,
+      "stage": "maintained-batch-admission-and-reproduction",
+      "state": "started"
+    },
+    {
+      "dataset": "federal_register",
+      "peakRssBytes": 10106470400,
+      "pid": 69557,
+      "seconds": 264.82167470792774,
+      "stage": "maintained-batch-admission-and-reproduction",
+      "state": "completed"
+    }
+  ],
+  "batchToRowFallbackReasons": []
+}

@@ -1,0 +1,450 @@
+{
+  "artifacts": {
+    "agency_lifecycle_stats.parquet": {
+      "bytes": 10433,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/agency_lifecycle_stats.parquet",
+      "rows": 342,
+      "sha256": "224595efa6ceb495db5f5291eedd7e4d6fa2744fd42aff49d3da21b1d74da16b",
+      "visibility": "public"
+    },
+    "agenda_item_proceedings.parquet": {
+      "bytes": 3799906,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/agenda_item_proceedings.parquet",
+      "rows": 148113,
+      "sha256": "0f7a379bf4298040af782c365da76cc5f69991c43fe39d669b293e58de098be9",
+      "visibility": "public"
+    },
+    "comment_periods.parquet": {
+      "bytes": 24659603,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/comment_periods.parquet",
+      "rows": 640329,
+      "sha256": "737aa48e93b63b915be4b41832def04058325131483a8faaa126f536302a8467",
+      "visibility": "public"
+    },
+    "etl_receipts.parquet": {
+      "bytes": 409667576,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/etl_receipts.parquet",
+      "rows": 1840866,
+      "sha256": "1515e103d375a8315d4620b2b9c9e8188c806d079ce23f42ab63cc27aefe0036",
+      "visibility": "internal"
+    },
+    "lifecycle_events.parquet": {
+      "bytes": 7575427,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/lifecycle_events.parquet",
+      "rows": 134667,
+      "sha256": "199bf42e5df840355017c059dc809955def21cdac7ecb89466dd5d34a7c3855c",
+      "visibility": "public"
+    },
+    "proceedings.parquet": {
+      "bytes": 18865975,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/proceedings.parquet",
+      "rows": 172694,
+      "sha256": "57fa94f7b9f283494abcd8b2577ca60e6ad7819bf44b65ab7efa761a0e4cfb04",
+      "visibility": "public"
+    },
+    "regulatory_agenda_items.parquet": {
+      "bytes": 660306,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/regulatory_agenda_items.parquet",
+      "rows": 52102,
+      "sha256": "75cc0ac1ee5039fb9bccc7510a10f8d7c54b3c996b086941144df7df969d6d6b",
+      "visibility": "public"
+    },
+    "rule_targets.parquet": {
+      "bytes": 27895479,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/rule_targets.parquet",
+      "rows": 617416,
+      "sha256": "e70f29e83a22bf3f9a618cbfd1b7c93e9a841ca3d35acc62276654a481b021b8",
+      "visibility": "public"
+    },
+    "rulemaking_lifecycles.parquet": {
+      "bytes": 2915925,
+      "remote_key": "materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/rulemaking_lifecycles.parquet",
+      "rows": 75195,
+      "sha256": "8ae342da98b32b44daf62aae7a328c8da3ec68a03be11bc3d2ebf44e958e3587",
+      "visibility": "public"
+    }
+  },
+  "asserted_at": "2026-10-03T22:27:32Z",
+  "dataset": "rulemaking",
+  "etlReceipts": {
+    "generationId": "native-rulemaking-import-20261005-v1",
+    "key": "etl_receipts.parquet",
+    "policies": [
+      {
+        "dataset": "rule_targets",
+        "identity_fields": [
+          "rule_target_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "source",
+          "evidence_id",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "fr_references_json",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////1ACAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAoAAADoAQAAqAEAAHwBAABMAQAAHAEAAOwAAADEAAAAlAAAAGQAAAAEAAAAUP7//wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAA8AAABmcl9kb2N1bWVudF9pZHMARP7//4T+//8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAAGz+//+s/v//AAABBRAAAAAcAAAABAAAAAAAAAAJAAAAbGFzdF9zZWVuAAAAmP7//9j+//8AAAEFEAAAABwAAAAEAAAAAAAAAAoAAABmaXJzdF9zZWVuAADE/v//BP///wAAAQUQAAAAFAAAAAQAAAAAAAAAAwAAAHJpbgDo/v//KP///wAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGNmcl9zZWN0aW9uABT///9U////AAABBRAAAAAcAAAABAAAAAAAAAAIAAAAY2ZyX3BhcnQAAAAAQP///4D///8AAAEFEAAAABwAAAAEAAAAAAAAAAkAAABjZnJfdGl0bGUAAABs////rP///wAAAQUQAAAAGAAAAAQAAAAAAAAABwAAAGNmcl9yZWYAlP///9T///8AAAEFEAAAABwAAAAEAAAAAAAAAAkAAABkb2NrZXRfaWQAAADA////EAAUAAgABgAHAAwAAAAQABAAAAAAAAEFEAAAACQAAAAEAAAAAAAAAA4AAABydWxlX3RhcmdldF9pZAAABAAEAAQAAAAAAAAA"
+      },
+      {
+        "dataset": "proceedings",
+        "identity_fields": [
+          "proceeding_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "fr_document_joins_json",
+          "unresolved_fr_references_json",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////+gEAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAA0AAACABAAASAQAAOwDAADAAwAAkAMAAFwDAAA8AgAA2AEAAHwBAAAcAQAAvAAAAFwAAAAEAAAAxPv//wAAAQwUAAAAHAAAAAQAAAABAAAAFAAAAAQAAAByaW5zAAAAALD7///w+///AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAADY+///GPz//wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAA8AAABmcl9kb2N1bWVudF9pZHMADPz//0z8//8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAADT8//90/P//AAABDBQAAAAkAAAABAAAAAEAAAAcAAAADgAAAGF1dGhvcml0eV9yZWZzAABo/P//qPz//wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAAkPz//9D8//8AAAEMFAAAACQAAAAEAAAAAQAAABwAAAAPAAAAY2ZyX3RhcmdldF9pcmlzAMT8//8E/f//AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAADs/P//LP3//wAAAQwUAAAAIAAAAAQAAAABAAAAGAAAAAgAAABjZnJfcmVmcwAAAAAc/f//XP3//wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAARP3//4T9//8AAAEMFAAAACgAAAAEAAAAAQAAACAAAAATAAAAZnJfZG9jdW1lbnRfbnVtYmVycwB8/f//vP3//wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAApP3//+T9//8AAAEMFAAAACQAAAAEAAAAAQAAABwAAAAMAAAAc3RhZ2VfZXZlbnRzAAAAANj9//8Y/v//AAABDSAAAAAoAAAABAAAAAQAAACoAAAAeAAAAEQAAAAUAAAABAAAAGl0ZW0AAAAAEP7//1D+//8AAAEFEAAAABwAAAAEAAAAAAAAAAsAAABkb2N1bWVudF9pZAA8/v//fP7//wAAAQUQAAAAIAAAAAQAAAAAAAAADgAAAGVmZmVjdGl2ZV9kYXRlAABs/v//rP7//wAAAQUQAAAAHAAAAAQAAAAAAAAACgAAAGV2ZW50X2tpbmQAAJj+///Y/v//AAABBRAAAAAYAAAABAAAAAAAAAAFAAAAc3RhZ2UAAADA/v//AP///wAAAQUQAAAAIAAAAAQAAAAAAAAADQAAAGN1cnJlbnRfc3RhZ2UAAADw/v//MP///wAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGFnZW5jeV9jb2RlABz///9c////AAABBRAAAAAYAAAABAAAAAAAAAAFAAAAdGl0bGUAAABE////hP///wAAAQwUAAAAIAAAAAQAAAABAAAAGAAAAAoAAABkb2NrZXRfaWRzAAB0////tP///wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAAnP///9z///8AAAEFEAAAABQAAAAEAAAAAAAAAAMAAAByaW4AwP///xAAFAAIAAYABwAMAAAAEAAQAAAAAAABBRAAAAAkAAAABAAAAAAAAAANAAAAcHJvY2VlZGluZ19pZAAAAAQABAAEAAAAAAAAAA=="
+      },
+      {
+        "dataset": "regulatory_agenda_items",
+        "identity_fields": [
+          "agenda_item_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "scope_basis",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "unresolved_fr_references_json",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////wACAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAgAAACYAQAAYAEAACwBAADgAAAAoAAAAGQAAAA0AAAABAAAAJj+//8AAAEFEAAAABwAAAAEAAAAAAAAAAkAAABsYXN0X3NlZW4AAACE/v//xP7//wAAAQUQAAAAHAAAAAQAAAAAAAAACgAAAGZpcnN0X3NlZW4AALD+///w/v//AAABBRAAAAAoAAAABAAAAAAAAAAVAAAAbGF0ZXN0X2FnZW5kYV9lZGl0aW9uAAAA6P7//yj///8AAAECEAAAACQAAAAEAAAAAAAAABEAAABvYnNlcnZhdGlvbl9jb3VudAAAAMD///8AAAABQAAAAGT///8AAAECEAAAADAAAAAEAAAAAAAAABcAAABsaW5rZWRfcHJvY2VlZGluZ19jb3VudAAIAAwACAAHAAgAAAAAAAABQAAAAKz///8AAAEFEAAAACAAAAAEAAAAAAAAAAwAAABzY29wZV9zdGF0dXMAAAAAnP///9z///8AAAEFEAAAABQAAAAEAAAAAAAAAAMAAAByaW4AwP///xAAFAAIAAYABwAMAAAAEAAQAAAAAAABBRAAAAAkAAAABAAAAAAAAAAOAAAAYWdlbmRhX2l0ZW1faWQAAAQABAAEAAAAAAAAAA=="
+      },
+      {
+        "dataset": "agenda_item_proceedings",
+        "identity_fields": [
+          "relationship_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "source",
+          "evidence_id",
+          "evidence_uri",
+          "evidence_date",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////0ABAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAUAAADcAAAAmAAAAHAAAAA8AAAABAAAAEj///8AAAEFEAAAACQAAAAEAAAAAAAAABEAAAByZWxhdGlvbnNoaXBfcm9sZQAAADz///98////AAABBRAAAAAgAAAABAAAAAAAAAANAAAAcHJvY2VlZGluZ19pZAAAAGz///+s////AAABBRAAAAAUAAAABAAAAAAAAAADAAAAcmluAJD////Q////AAABBRAAAAAgAAAABAAAAAAAAAAOAAAAYWdlbmRhX2l0ZW1faWQAAMD///8QABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAJAAAAAQAAAAAAAAADwAAAHJlbGF0aW9uc2hpcF9pZAAEAAQABAAAAA=="
+      },
+      {
+        "dataset": "comment_periods",
+        "identity_fields": [
+          "comment_period_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "source",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "unresolved_fr_references_json",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////2ADAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAsAAAD4AgAAiAIAADACAADUAQAApAEAAHQBAAAMAQAArAAAAHwAAABEAAAABAAAAET9//8AAAEFEAAAACwAAAAEAAAAAAAAABoAAAByZWd1bGF0aW9uc19nb3ZfY2xvc2VfZGF0ZQAAPP3//4D9//8AAAEFEAAAACQAAAAEAAAAAAAAABMAAAByZWdpc3Rlcl9jbG9zZV9kYXRlAHD9//+0/f//AAABBRAAAAAcAAAABAAAAAAAAAALAAAAYW5jaG9yX2tpbmQAnP3//+D9//8AAAEMFAAAACQAAAAEAAAAAQAAABwAAAAMAAAAZXZpZGVuY2VfaWRzAAAAAND9//8U/v//AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAAD4/f//PP7//wAAAQwUAAAALAAAAAQAAAABAAAAJAAAABYAAABvcGVuZWRfYnlfYXJ0aWZhY3RfaWRzAAA0/v//eP7//wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAAXP7//6D+//8AAAEFEAAAABwAAAAEAAAAAAAAAAoAAABjbG9zZV9kYXRlAACI/v//zP7//wAAAQUQAAAAHAAAAAQAAAAAAAAACQAAAG9wZW5fZGF0ZQAAALT+///4/v//AAABDBQAAAAgAAAABAAAAAEAAAAYAAAACgAAAGRvY2tldF9pZHMAAOT+//8o////AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAAAM////UP///wAAAQwUAAAAHAAAAAQAAAABAAAAFAAAAAQAAAByaW5zAAAAADj///98////AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAABg////pP///wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAA4AAABwcm9jZWVkaW5nX2lkcwAAlP///9j///8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAALz///8QABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAKAAAAAQAAAAAAAAAEQAAAGNvbW1lbnRfcGVyaW9kX2lkAAAABAAEAAQAAAA="
+      },
+      {
+        "dataset": "rulemaking_lifecycles",
+        "identity_fields": [
+          "proceeding_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "withdrawal_source",
+          "anchored_by_specific_rin",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////+AEAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAABUAAAB4BAAAOAQAAAwEAADQAwAAlAMAAGADAAAsAwAA9AIAAMQCAAB4AgAAQAIAAAQCAADYAQAAnAEAAGgBAAA4AQAABAEAANAAAACcAAAAPAAAAAQAAADs+///AAABBhAAAAAkAAAABAAAAAAAAAARAAAAcHJlXzIwMDhfY292ZXJhZ2UAAADg+///IPz//wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAA0AAABzcGVjaWZpY19yaW5zAAAAFPz//1T8//8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAADz8//98/P//AAABBRAAAAAgAAAABAAAAAAAAAAMAAAAYWdlbmRhX21ham9yAAAAAGz8//+s/P//AAABBRAAAAAgAAAABAAAAAAAAAAPAAAAYWdlbmRhX3ByaW9yaXR5AJz8///c/P//AAABBRAAAAAgAAAABAAAAAAAAAAOAAAAcm91dGluZV9mYW1pbHkAAMz8//8M/f//AAABBRAAAAAcAAAABAAAAAAAAAALAAAAb3Blbl9zaWduYWwA+Pz//zj9//8AAAEIEAAAABwAAAAEAAAAAAAAAAsAAABjZW5zb3JfZGF0ZQDC/f//AAAAAGj9//8AAAECEAAAACAAAAAEAAAAAAAAAA0AAABkdXJhdGlvbl9kYXlzAAAALP///wAAAAEgAAAAoP3//wAAAQUQAAAAGAAAAAQAAAAAAAAABwAAAG91dGNvbWUAiP3//8j9//8AAAEFEAAAACgAAAAEAAAAAAAAABYAAAB3aXRoZHJhd2FsX2RvY3VtZW50X2lkAADA/f//AP7//wAAAQgQAAAAIAAAAAQAAAAAAAAADwAAAHdpdGhkcmF3YWxfZGF0ZQCO/v//AAAAADT+//8AAAECEAAAADAAAAAEAAAAAAAAABYAAABmaW5hbHNfYmVmb3JlX3Byb3Bvc2FsAAAIAAwACAAHAAgAAAAAAAABIAAAAHz+//8AAAEFEAAAABwAAAAEAAAAAAAAAAoAAABmaW5hbF9mb3JtAABo/v//qP7//wAAAQUQAAAAJAAAAAQAAAAAAAAAEQAAAGZpbmFsX2RvY3VtZW50X2lkAAAAnP7//9z+//8AAAEIEAAAABwAAAAEAAAAAAAAAAoAAABmaW5hbF9kYXRlAABm////AAAAAAz///8AAAEFEAAAACAAAAAEAAAAAAAAAA0AAABwcm9wb3NhbF9mb3JtAAAA/P7//zz///8AAAEFEAAAACgAAAAEAAAAAAAAABQAAABwcm9wb3NhbF9kb2N1bWVudF9pZAAAAAA0////dP///wAAAQgQAAAAJAAAAAQAAAAAAAAADQAAAHByb3Bvc2FsX2RhdGUABgAIAAYABgAAAAAAAACs////AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAa2luZAAAAACU////1P///wAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGFnZW5jeV9jb2RlAMD///8QABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAJAAAAAQAAAAAAAAADQAAAHByb2NlZWRpbmdfaWQAAAAEAAQABAAAAAAAAAA="
+      },
+      {
+        "dataset": "lifecycle_events",
+        "identity_fields": [
+          "lifecycle_event_id"
+        ],
+        "nullable_identity_fields": [],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "source",
+          "dated_by",
+          "evidence_id",
+          "joined_by",
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////7ABAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAcAAABEAQAAAAEAANAAAACkAAAAaAAAADQAAAAEAAAA6P7//wAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGFuY2hvcl9yb2xlAND+//8U////AAABBRAAAAAgAAAABAAAAAAAAAANAAAAZG9jdW1lbnRfZm9ybQAAAAD///9E////AAABCBAAAAAkAAAABAAAAAAAAAAKAAAAZXZlbnRfZGF0ZQAAAAAGAAgABgAGAAAAAAAAAHz///8AAAEFEAAAABgAAAAEAAAAAAAAAAUAAABzdGFnZQAAAGD///+k////AAABBRAAAAAcAAAABAAAAAAAAAALAAAAZG9jdW1lbnRfaWQAjP///9D///8AAAEFEAAAACAAAAAEAAAAAAAAAA0AAABwcm9jZWVkaW5nX2lkAAAAvP///xAAFAAIAAYABwAMAAAAEAAQAAAAAAABBRAAAAAoAAAABAAAAAAAAAASAAAAbGlmZWN5Y2xlX2V2ZW50X2lkAAAEAAQABAAAAAAAAAA="
+      },
+      {
+        "dataset": "agency_lifecycle_stats",
+        "identity_fields": [
+          "agency_code",
+          "stratum"
+        ],
+        "nullable_identity_fields": [
+          "agency_code"
+        ],
+        "policy_version": "regulations-native-v1",
+        "receipt_fields": [
+          "method",
+          "actor_id",
+          "run_id",
+          "asserted_at",
+          "supersedes_id",
+          "raw_conversion_inputs",
+          "input_metadata",
+          "raw_source_record"
+        ],
+        "receipt_only": false,
+        "subject_schema": "/////wAEAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAABEAAACcAwAAYAMAACQDAADwAgAAuAIAAIACAABQAgAAHAIAAOABAACkAQAAbAEAACwBAADsAAAAuAAAAHwAAABAAAAABAAAALj8//8AAAEIEAAAACQAAAAEAAAAAAAAAAsAAABjZW5zb3JfZGF0ZQAAAAYACAAGAAYAAAAAAAAA8Pz//wAAAQIQAAAAIAAAAAQAAAAAAAAADQAAAHEzX3VwcGVyX2RheXMAAABY/f//AAAAASAAAAAo/f//AAABAhAAAAAgAAAABAAAAAAAAAANAAAAcTNfbG93ZXJfZGF5cwAAAJD9//8AAAABIAAAAGD9//8AAAECEAAAABgAAAAEAAAAAAAAAAcAAABxM19kYXlzAMD9//8AAAABIAAAAJD9//8AAAECEAAAACQAAAAEAAAAAAAAABEAAABtZWRpYW5fdXBwZXJfZGF5cwAAAPz9//8AAAABIAAAAMz9//8AAAECEAAAACQAAAAEAAAAAAAAABEAAABtZWRpYW5fbG93ZXJfZGF5cwAAADj+//8AAAABIAAAAAj+//8AAAECEAAAABwAAAAEAAAAAAAAAAsAAABtZWRpYW5fZGF5cwBs/v//AAAAASAAAAA8/v//AAABAhAAAAAgAAAABAAAAAAAAAANAAAAcTFfdXBwZXJfZGF5cwAAAKT+//8AAAABIAAAAHT+//8AAAECEAAAACAAAAAEAAAAAAAAAA0AAABxMV9sb3dlcl9kYXlzAAAA3P7//wAAAAEgAAAArP7//wAAAQIQAAAAGAAAAAQAAAAAAAAABwAAAHExX2RheXMADP///wAAAAEgAAAA3P7//wAAAQYQAAAAHAAAAAQAAAAAAAAACgAAAHN1cHByZXNzZWQAAMz+//8I////AAABAhAAAAAcAAAABAAAAAAAAAAIAAAAY2Vuc29yZWQAAAAAbP///wAAAAEgAAAAPP///wAAAQIQAAAAHAAAAAQAAAAAAAAACwAAAHdpdGhkcmF3YWxzAKD///8AAAABIAAAAHD///8AAAECEAAAABgAAAAEAAAAAAAAAAYAAABmaW5hbHMAAND///8AAAABIAAAAKD///8AAAECEAAAACAAAAAEAAAAAAAAAAUAAABydWxlcwAAAAgADAAIAAcACAAAAAAAAAEgAAAA2P///wAAAQUQAAAAGAAAAAQAAAAAAAAABwAAAHN0cmF0dW0AxP///xAAFAAIAAYABwAMAAAAEAAQAAAAAAABBRAAAAAgAAAABAAAAAAAAAALAAAAYWdlbmN5X2NvZGUABAAEAAQAAAAAAAAA"
+      }
+    ]
+  },
+  "format_version": 2,
+  "inputs": {
+    "legacy_snapshot": {
+      "manifest": {
+        "artifacts": {
+          "agency_lifecycle_stats.parquet": {
+            "bytes": 14520,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/agency_lifecycle_stats.parquet",
+            "rows": 342,
+            "sha256": "c9dc97e5d34ac5ae39a80f1ebce115768d5c7356b6cf6fac3cc3c71969c2c80e",
+            "visibility": "public"
+          },
+          "agenda_item_proceedings.parquet": {
+            "bytes": 6512360,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/agenda_item_proceedings.parquet",
+            "rows": 148113,
+            "sha256": "5264a754eeedf0ccd126c699385d75f28d145d200b5605b06abf1a5fbc0e713a",
+            "visibility": "public"
+          },
+          "comment_periods.parquet": {
+            "bytes": 22230710,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/comment_periods.parquet",
+            "rows": 640329,
+            "sha256": "c0210cd09387bb8cf7a02bea67404fbf8f39693dc7871df808bca688c516ca2c",
+            "visibility": "public"
+          },
+          "lifecycle_events.parquet": {
+            "bytes": 3504768,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/lifecycle_events.parquet",
+            "rows": 134667,
+            "sha256": "c972b3a2d4c957c95ddd32aedad9ca3e0fef79139b4f4c4adf92989cba431d39",
+            "visibility": "public"
+          },
+          "proceedings.parquet": {
+            "bytes": 23475430,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/proceedings.parquet",
+            "rows": 172694,
+            "sha256": "8ba2dbc894e3ff84dba9092cc106097705235ced699e4e2e7bd8960f03b4264d",
+            "visibility": "public"
+          },
+          "regulatory_agenda_items.parquet": {
+            "bytes": 600312,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/regulatory_agenda_items.parquet",
+            "rows": 52102,
+            "sha256": "d754138270c30e183f66b600069d2257a9c4a716d547a3e2e8a07b27ece23330",
+            "visibility": "public"
+          },
+          "rule_targets.parquet": {
+            "bytes": 10874022,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/rule_targets.parquet",
+            "rows": 617416,
+            "sha256": "37d9bf66591a5f81981066d4ae42b3c71863611a6eea751131fc9ba3e7af7059",
+            "visibility": "public"
+          },
+          "rulemaking_lifecycles.parquet": {
+            "bytes": 2481068,
+            "remote_key": "materialized/rulemaking/snapshots/snapshot_d1acc86e7a75e229668f074329b6483e/rulemaking_lifecycles.parquet",
+            "rows": 75195,
+            "sha256": "92c1066f47fe5f3b33ee52882e5669b4eeedba172ebddc44e4340c8826827e46",
+            "visibility": "public"
+          }
+        },
+        "asserted_at": "2026-10-03T22:27:32Z",
+        "dataset": "rulemaking",
+        "format_version": 2,
+        "inputs": {
+          "previous_snapshot_id": "snapshot_de5f9d03812dfdb91364f14179e0ed3d",
+          "prior_artifacts": {
+            "proceedings.parquet": {
+              "bytes": 23499935,
+              "sha256": "f974b327d00cb352b94e2b30dc12c217f0870617e71bc9ea22e2899e376711aa"
+            }
+          },
+          "sources": {
+            "dockets.parquet": {
+              "bytes": 11646366,
+              "sha256": "f77a85f90417c36bf023e49c74537c4887b6e0a3842860932541456a76f021f0"
+            },
+            "documents.parquet": {
+              "bytes": 76950751,
+              "sha256": "cca8805286439fcab419ca0d927db567b1bb2f91cfa05b2c89d9f25c4a1201ca"
+            },
+            "federal_register.parquet": {
+              "bytes": 183907473,
+              "sha256": "0dc72c9b6d7a90830322e55ee145dfb553d7bb933d5778e8cd6eead2d76cc69d"
+            },
+            "fr_docket_links.parquet": {
+              "bytes": 123240208,
+              "sha256": "c3ae914d2a57d1be962a4669383525dd92113a9b51e64adfa9b1e60ac4bdeb32"
+            },
+            "unified_agenda.parquet": {
+              "bytes": 49483296,
+              "sha256": "fc86c9aa744c67dd0ad511efd91700791fd085b33b238d020556e409ddbf310f"
+            }
+          }
+        },
+        "run_id": "rulemaking-20261003T222732Z",
+        "snapshot_id": "snapshot_d1acc86e7a75e229668f074329b6483e",
+        "stages": [
+          {
+            "depends_on": [],
+            "name": "rule-targets",
+            "outputs": [
+              "rule_targets.parquet"
+            ]
+          },
+          {
+            "depends_on": [
+              "rule-targets"
+            ],
+            "name": "proceedings",
+            "outputs": [
+              "proceedings.parquet"
+            ]
+          },
+          {
+            "depends_on": [
+              "proceedings"
+            ],
+            "name": "regulatory-agenda",
+            "outputs": [
+              "regulatory_agenda_items.parquet",
+              "agenda_item_proceedings.parquet"
+            ]
+          },
+          {
+            "depends_on": [
+              "proceedings"
+            ],
+            "name": "comment-periods",
+            "outputs": [
+              "comment_periods.parquet"
+            ]
+          },
+          {
+            "depends_on": [
+              "proceedings",
+              "regulatory-agenda"
+            ],
+            "name": "lifecycles",
+            "outputs": [
+              "rulemaking_lifecycles.parquet",
+              "lifecycle_events.parquet"
+            ]
+          },
+          {
+            "depends_on": [
+              "lifecycles"
+            ],
+            "name": "agency-lifecycle-stats",
+            "outputs": [
+              "agency_lifecycle_stats.parquet"
+            ]
+          }
+        ]
+      },
+      "manifest_sha256": "dc326a4be40f5a15b34b160da8a6a50d551526f550037aab3926b552f4de7b21",
+      "pointer_sha256": "0e03712d5536ab746c766fd3e808b9d7d35463b2e9f28669a8f62064790897b5",
+      "snapshot_id": "snapshot_d1acc86e7a75e229668f074329b6483e"
+    },
+    "previous_snapshot_id": "snapshot_d1acc86e7a75e229668f074329b6483e",
+    "prior_artifacts": {
+      "proceedings.parquet": {
+        "bytes": 23499935,
+        "sha256": "f974b327d00cb352b94e2b30dc12c217f0870617e71bc9ea22e2899e376711aa"
+      }
+    },
+    "sources": {
+      "dockets.parquet": {
+        "bytes": 11646366,
+        "sha256": "f77a85f90417c36bf023e49c74537c4887b6e0a3842860932541456a76f021f0"
+      },
+      "documents.parquet": {
+        "bytes": 76950751,
+        "sha256": "cca8805286439fcab419ca0d927db567b1bb2f91cfa05b2c89d9f25c4a1201ca"
+      },
+      "federal_register.parquet": {
+        "bytes": 183907473,
+        "sha256": "0dc72c9b6d7a90830322e55ee145dfb553d7bb933d5778e8cd6eead2d76cc69d"
+      },
+      "fr_docket_links.parquet": {
+        "bytes": 123240208,
+        "sha256": "c3ae914d2a57d1be962a4669383525dd92113a9b51e64adfa9b1e60ac4bdeb32"
+      },
+      "unified_agenda.parquet": {
+        "bytes": 49483296,
+        "sha256": "fc86c9aa744c67dd0ad511efd91700791fd085b33b238d020556e409ddbf310f"
+      }
+    }
+  },
+  "run_id": "native-rulemaking-import-20261005-v1",
+  "snapshot_id": "snapshot_2c73500f546f3a2189e963dc410e40ac",
+  "stages": []
+}

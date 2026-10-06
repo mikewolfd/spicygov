@@ -1,0 +1,237 @@
+{
+  "dataset": "fr_docket_links",
+  "artifactDigest": "sha256:f140afd8b586f9d99154aba68dd9b9c6c4819b8cdd46566bbe71336211fed404",
+  "request": {
+    "dataset": "fr_docket_links",
+    "generationId": "f69a916b606e46b39f0e18a2ca602aa3",
+    "subjects": [
+      {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/fr-docket-links/build/generations/f140afd8b586f9d99154aba68dd9b9c6c4819b8cdd46566bbe71336211fed404/fr_docket_links.parquet",
+        "sha256": "sha256:33c0cedc26ed3bd447dfc0d6648cc735861cd96c8e969cda50d4f180be32a1b9",
+        "byteSize": 120163600
+      }
+    ],
+    "receipts": {
+      "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/fr-docket-links/build/generations/f140afd8b586f9d99154aba68dd9b9c6c4819b8cdd46566bbe71336211fed404/etl_receipts.parquet",
+      "sha256": "sha256:9712c3524eda87c1ddd4990b19111f09fa987f11522681a8501b654951d3b859",
+      "byteSize": 349151517
+    },
+    "destination": "/tmp/frlinks-reader-leaf-restoration-1791293368601942000"
+  },
+  "timeoutSeconds": 300,
+  "benchmarkDispatch": "Existing checked/scoped site adapter calls maintained complete-identity bulk reader; public FRlinks restore admission and production site dispatch remain unchanged",
+  "sourceReaderCommit": "bb675dd9ecc00c9b9be3d8e2d28724ecfe14c938",
+  "status": "PASS",
+  "seconds": 106.85032391594723,
+  "restoration": {
+    "format": "spicygov-private-coverage-input",
+    "version": 1,
+    "dataset": "fr_docket_links",
+    "generationId": "f69a916b606e46b39f0e18a2ca602aa3",
+    "selection": {
+      "subjects": [
+        {
+          "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/fr-docket-links/build/generations/f140afd8b586f9d99154aba68dd9b9c6c4819b8cdd46566bbe71336211fed404/fr_docket_links.parquet",
+          "sha256": "sha256:33c0cedc26ed3bd447dfc0d6648cc735861cd96c8e969cda50d4f180be32a1b9",
+          "byteSize": 120163600
+        }
+      ],
+      "receipts": {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/fr-docket-links/build/generations/f140afd8b586f9d99154aba68dd9b9c6c4819b8cdd46566bbe71336211fed404/etl_receipts.parquet",
+        "sha256": "sha256:9712c3524eda87c1ddd4990b19111f09fa987f11522681a8501b654951d3b859",
+        "byteSize": 349151517
+      }
+    },
+    "nativeSchema": [
+      [
+        "docket_id",
+        "VARCHAR"
+      ],
+      [
+        "docket_source_ordinal",
+        "BIGINT"
+      ],
+      [
+        "document_number",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "abstract",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "subtype",
+        "VARCHAR"
+      ],
+      [
+        "publication_date",
+        "VARCHAR"
+      ],
+      [
+        "effective_on",
+        "VARCHAR"
+      ],
+      [
+        "comments_close_on",
+        "VARCHAR"
+      ],
+      [
+        "signing_date",
+        "VARCHAR"
+      ],
+      [
+        "agency_slugs",
+        "VARCHAR[]"
+      ],
+      [
+        "docket_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "regulation_id_numbers",
+        "VARCHAR[]"
+      ],
+      [
+        "executive_order_number",
+        "VARCHAR"
+      ],
+      [
+        "link_source",
+        "VARCHAR"
+      ]
+    ],
+    "processingSchema": [
+      [
+        "docket_id",
+        "VARCHAR"
+      ],
+      [
+        "docket_source_ordinal",
+        "BIGINT"
+      ],
+      [
+        "normalized_docket_candidates_json",
+        "VARCHAR"
+      ],
+      [
+        "docket_normalization_rule",
+        "VARCHAR"
+      ],
+      [
+        "document_number",
+        "VARCHAR"
+      ],
+      [
+        "title",
+        "VARCHAR"
+      ],
+      [
+        "abstract",
+        "VARCHAR"
+      ],
+      [
+        "document_type",
+        "VARCHAR"
+      ],
+      [
+        "subtype",
+        "VARCHAR"
+      ],
+      [
+        "publication_date",
+        "VARCHAR"
+      ],
+      [
+        "effective_on",
+        "VARCHAR"
+      ],
+      [
+        "comments_close_on",
+        "VARCHAR"
+      ],
+      [
+        "signing_date",
+        "VARCHAR"
+      ],
+      [
+        "agency_slugs",
+        "VARCHAR"
+      ],
+      [
+        "docket_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "regulation_id_numbers_json",
+        "VARCHAR"
+      ],
+      [
+        "html_url",
+        "VARCHAR"
+      ],
+      [
+        "pdf_url",
+        "VARCHAR"
+      ],
+      [
+        "executive_order_number",
+        "VARCHAR"
+      ],
+      [
+        "link_source",
+        "VARCHAR"
+      ]
+    ],
+    "policy": {
+      "dataset": "fr_docket_links",
+      "policy_version": "regulations-native-v1",
+      "subject_schema": "/////xgEAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAABAAAAC4AwAAXAMAACgDAAD8AgAAzAIAAJgCAABsAgAANAIAAAACAADIAQAAlAEAADQBAADYAAAAcAAAADQAAAAEAAAAmPz//wAAAQUQAAAAHAAAAAQAAAAAAAAACwAAAGxpbmtfc291cmNlAIj8///E/P//AAABBRAAAAAoAAAABAAAAAAAAAAWAAAAZXhlY3V0aXZlX29yZGVyX251bWJlcgAAwPz///z8//8AAAEMFAAAACwAAAAEAAAAAQAAACQAAAAVAAAAcmVndWxhdGlvbl9pZF9udW1iZXJzAAAA/Pz//zj9//8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAACT9//9g/f//AAABDBQAAAAgAAAABAAAAAEAAAAYAAAACgAAAGRvY2tldF9pZHMAAFT9//+Q/f//AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAAB8/f//uP3//wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAAwAAABhZ2VuY3lfc2x1Z3MAAAAAsP3//+z9//8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAANj9//8U/v//AAABBRAAAAAgAAAABAAAAAAAAAAMAAAAc2lnbmluZ19kYXRlAAAAAAj+//9E/v//AAABBRAAAAAkAAAABAAAAAAAAAARAAAAY29tbWVudHNfY2xvc2Vfb24AAAA8/v//eP7//wAAAQUQAAAAIAAAAAQAAAAAAAAADAAAAGVmZmVjdGl2ZV9vbgAAAABs/v//qP7//wAAAQUQAAAAJAAAAAQAAAAAAAAAEAAAAHB1YmxpY2F0aW9uX2RhdGUAAAAAoP7//9z+//8AAAEFEAAAABgAAAAEAAAAAAAAAAcAAABzdWJ0eXBlAMj+//8E////AAABBRAAAAAgAAAABAAAAAAAAAANAAAAZG9jdW1lbnRfdHlwZQAAAPj+//80////AAABBRAAAAAcAAAABAAAAAAAAAAIAAAAYWJzdHJhY3QAAAAAJP///2D///8AAAEFEAAAABgAAAAEAAAAAAAAAAUAAAB0aXRsZQAAAEz///+I////AAABBRAAAAAgAAAABAAAAAAAAAAPAAAAZG9jdW1lbnRfbnVtYmVyAHz///+4////AAABAhAAAAAwAAAABAAAAAAAAAAVAAAAZG9ja2V0X3NvdXJjZV9vcmRpbmFsAAAACAAMAAgABwAIAAAAAAAAAUAAAAAQABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAIAAAAAQAAAAAAAAACQAAAGRvY2tldF9pZAAAAAQABAAEAAAA",
+      "identity_fields": [
+        "document_number",
+        "publication_date",
+        "docket_source_ordinal",
+        "docket_id"
+      ],
+      "receipt_fields": [
+        "docket_normalization_rule",
+        "html_url",
+        "pdf_url",
+        "normalized_docket_candidates_json",
+        "raw_conversion_inputs",
+        "input_metadata",
+        "raw_source_record"
+      ],
+      "receipt_only": false,
+      "nullable_identity_fields": [
+        "docket_source_ordinal"
+      ]
+    },
+    "policyVersion": "regulations-native-v1",
+    "receiptOnly": false,
+    "implementationSha256": "sha256:f3ee1fe42f4e7890e25b73051dbdcd671552e01b804afbfae4a203a4aaade517",
+    "rows": 1037931,
+    "urls": [
+      "/tmp/frlinks-reader-leaf-restoration-1791293368601942000/coverage-facts.parquet"
+    ],
+    "processingMembers": [
+      {
+        "path": "/tmp/frlinks-reader-leaf-restoration-1791293368601942000/coverage-facts.parquet",
+        "sha256": "sha256:18418607e80f71f3af44cd9b1c28e1761fe88b6dd8a68f0be3c4ca4b40c55550",
+        "byteSize": 157144540
+      }
+    ],
+    "benchmarkOnlyDispatch": [
+      "regulations_bulk._materialize_selected"
+    ],
+    "sourceReaderWorktree": "/Users/mikewolfd/Work/.worktrees/spicy-regs-federal-register-bulk-restore-20261006"
+  },
+  "stderr": ""
+}

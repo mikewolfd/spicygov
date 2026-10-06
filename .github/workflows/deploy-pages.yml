@@ -1,153 +1,58 @@
-name: Deploy SpicyGov
+# Diagnostic branch only: this registered workflow has no build/deploy/cache job.
+name: Profile retained coverage restore samples
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: "23 6 * * *"
   workflow_dispatch:
-    inputs:
-      runner:
-        description: GitHub-hosted runner for build and deployment
-        type: choice
-        default: ubuntu-latest
-        options:
-          - ubuntu-latest
-          - ubuntu-24.04-arm
 permissions:
   contents: read
 concurrency:
-  group: github-pages
+  group: restore-profile-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  build:
-    timeout-minutes: 90
-    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
-    env:
-      SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_source_navigation_coverage.py
-      SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-navigation-backend/.venv/bin/python
-      SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_additional_coverage.py
-      SPICYGOV_ADDITIONAL_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-current-backend/.venv/bin/python
-      SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/select_native_coverage_reader.py
-      SPICYGOV_LEGACY_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
-      SPICYGOV_LEGACY_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
-      SPICYGOV_PRINT_CITATION_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-print-citation-backend/scripts/restore_coverage_processing.py
-      SPICYGOV_PRINT_CITATION_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-print-citation-backend/.venv/bin/python
-      SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Check out the qualified native receipt reader
-        uses: actions/checkout@v4
-        with:
-          repository: mikewolfd/spicy-regs
-          ref: 6b6e39059f4b0129df1810da34834bc3568f7947
-          path: .coverage-backend
-      - name: Check out the current amendment and court reader
-        uses: actions/checkout@v4
-        with:
-          repository: mikewolfd/spicy-regs
-          ref: 6b6e39059f4b0129df1810da34834bc3568f7947
-          path: .coverage-current-backend
-      - name: Check out the qualified source-navigation reader
+      - name: Check out the unchanged failing reader
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
           ref: 032c5a2ef9da7754a74be911254ccffc8dddfe53
           path: .coverage-navigation-backend
-      - name: Check out the qualified court-citation key reader
-        uses: actions/checkout@v4
-        with:
-          repository: mikewolfd/spicy-regs
-          ref: b2c9f96c6fb7af21f2b7cdab1ae2ef7cfbe4fda4
-          path: .coverage-print-citation-backend
       - uses: astral-sh/setup-uv@v4
         with:
-          enable-cache: true
-          cache-dependency-glob: .coverage-backend/uv.lock
-      - name: Install the locked native receipt reader
-        working-directory: .coverage-backend
-        run: uv sync --frozen --no-default-groups --group source-readers
-      - name: Install the locked current amendment and court reader
-        working-directory: .coverage-current-backend
-        run: uv sync --frozen --no-default-groups --group source-readers
-      - name: Install the locked source-navigation reader
+          enable-cache: false
+      - name: Install locked maintained reader
+        timeout-minutes: 8
         working-directory: .coverage-navigation-backend
         run: uv sync --frozen --no-default-groups --group source-readers
-      - name: Install the locked court-citation key reader
-        working-directory: .coverage-print-citation-backend
-        run: uv sync --frozen --no-default-groups --group source-readers
-      - name: Check the pinned legislative and Congress readers
+      - name: Record hosted resources and source identity
         run: |
-          "$SPICYGOV_NATIVE_COVERAGE_PYTHON" "$SPICYGOV_NATIVE_COVERAGE_BRIDGE" --schema bill_versions > /dev/null
-          "$SPICYGOV_NATIVE_COVERAGE_PYTHON" "$SPICYGOV_NATIVE_COVERAGE_BRIDGE" --schema congress_bills > /dev/null
-      - uses: actions/setup-node@v4
+          mkdir -p diagnostic-results
+          uname -a > diagnostic-results/uname.txt
+          lscpu > diagnostic-results/cpu.txt
+          free -b > diagnostic-results/memory-before.txt
+          df -B1 > diagnostic-results/disk-before.txt
+          git rev-parse HEAD > diagnostic-results/website-revision.txt
+          git -C .coverage-navigation-backend rev-parse HEAD > diagnostic-results/source-revision.txt
+      - name: Check instrumented admission and refusal controls
+        timeout-minutes: 1
+        run: .coverage-navigation-backend/.venv/bin/python experiments/hosted-restore-profile-20261006/test_profile_restore.py > diagnostic-results/refusal-controls.log 2>&1
+      - name: Profile exact retained sample selections
+        timeout-minutes: 10
+        run: .coverage-navigation-backend/.venv/bin/python experiments/hosted-restore-profile-20261006/profile_restore.py --out diagnostic-results/runs
+      - name: Record final resources
+        if: always()
+        run: |
+          mkdir -p diagnostic-results
+          free -b > diagnostic-results/memory-after.txt
+          df -B1 > diagnostic-results/disk-after.txt
+      - name: Retain raw diagnostics, samples and preregistration
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14
-      - run: python tests/test_time_coverage.py
-      - run: python tests/test_collection_coverage.py
-      - run: python tests/test_publication_census.py
-      - run: python tests/test_coverage_dimensions.py
-      - run: python tests/test_coverage_gate.py
-      - run: python tests/test_regulation_coverage_maps.py
-      - run: python tests/test_native_receipt_coverage.py
-      - run: python tests/test_fec_coverage_maps.py
-      - run: python tests/test_congress_coverage_maps.py
-      - run: python tests/test_native_legislative_coverage.py
-      - run: python tests/test_selected_native_coverage.py
-      - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
-      - run: .coverage-current-backend/.venv/bin/python tests/test_court_extraction_coverage.py
-      - run: .coverage-current-backend/.venv/bin/python tests/test_bulk_court_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_source_navigation_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_small_native_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_bulk_native_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_native_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_rulemaking_native_coverage.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_regulatory_coverage_single_pass.py
-      - run: .coverage-navigation-backend/.venv/bin/python tests/test_vote_coverage_receipt_scope.py
-      - name: Restore validated coverage checkpoints
-        # Reuse validated interrupted scans on every build, including pushes.
-        # The builder still checks each checkpoint against the current inputs.
-        id: coverage-cache
-        uses: actions/cache/restore@v5
-        with:
-          path: .cache/coverage-maps
-          key: ${{ runner.os }}-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            ${{ runner.os }}-coverage-v1-
-      - name: Verify coverage for every published table
-        id: coverage-scan
-        # A restored checkpoint is only a candidate. The builder rechecks exact
-        # source, schema, policy, scanner, paired exports and UTC month bindings.
-        run: python scripts/build-coverage-maps.py
-      - name: Save validated coverage checkpoints
-        if: ${{ always() && steps.coverage-cache.outcome == 'success' && (steps.coverage-scan.outcome == 'success' || steps.coverage-scan.outcome == 'failure') && hashFiles('.cache/coverage-maps/*.json') != '' }}
-        uses: actions/cache/save@v5
-        with:
-          # Preserve completed tables after a failed scan; the builder still
-          # requires every current table before it replaces the served map.
-          path: .cache/coverage-maps
-          key: ${{ steps.coverage-cache.outputs.cache-primary-key }}
-      - run: npm test
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-  deploy:
-    needs: build
-    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/configure-pages@v5
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: retained-restore-profile-${{ github.run_id }}
+          path: |
+            diagnostic-results
+            experiments/hosted-restore-profile-20261006
+          retention-days: 14

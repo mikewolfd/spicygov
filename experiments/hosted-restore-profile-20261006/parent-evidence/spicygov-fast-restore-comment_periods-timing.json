@@ -1,0 +1,199 @@
+{
+  "dataset": "comment_periods",
+  "artifactDigest": "sha256:e26c32592fc5fa89e33f9c92a9b557267a13d28cec13faca48033521e9a028a4",
+  "request": {
+    "dataset": "comment_periods",
+    "generationId": "native-rulemaking-import-20261005-v1",
+    "subjects": [
+      {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/candidate-read-root/materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/comment_periods.parquet",
+        "sha256": "sha256:737aa48e93b63b915be4b41832def04058325131483a8faaa126f536302a8467",
+        "byteSize": 24659603
+      }
+    ],
+    "receipts": {
+      "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/candidate-read-root/materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/etl_receipts.parquet",
+      "sha256": "sha256:1515e103d375a8315d4620b2b9c9e8188c806d079ce23f42ab63cc27aefe0036",
+      "byteSize": 409667576
+    },
+    "destination": "/tmp/spicygov-fast-restore-comment_periods-1791291018343621000"
+  },
+  "status": "PASS",
+  "seconds": 171.6304299159674,
+  "restoration": {
+    "format": "spicygov-private-coverage-input",
+    "version": 1,
+    "dataset": "comment_periods",
+    "generationId": "native-rulemaking-import-20261005-v1",
+    "selection": {
+      "subjects": [
+        {
+          "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/candidate-read-root/materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/comment_periods.parquet",
+          "sha256": "sha256:737aa48e93b63b915be4b41832def04058325131483a8faaa126f536302a8467",
+          "byteSize": 24659603
+        }
+      ],
+      "receipts": {
+        "path": "/Users/mikewolfd/Work/corpora/session-reports-2026-10-06/native-regulatory-current/candidate-read-root/materialized/rulemaking/snapshots/snapshot_2c73500f546f3a2189e963dc410e40ac/etl_receipts.parquet",
+        "sha256": "sha256:1515e103d375a8315d4620b2b9c9e8188c806d079ce23f42ab63cc27aefe0036",
+        "byteSize": 409667576
+      }
+    },
+    "nativeSchema": [
+      [
+        "comment_period_id",
+        "VARCHAR"
+      ],
+      [
+        "proceeding_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "rins",
+        "VARCHAR[]"
+      ],
+      [
+        "docket_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "open_date",
+        "VARCHAR"
+      ],
+      [
+        "close_date",
+        "VARCHAR"
+      ],
+      [
+        "opened_by_artifact_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "evidence_ids",
+        "VARCHAR[]"
+      ],
+      [
+        "anchor_kind",
+        "VARCHAR"
+      ],
+      [
+        "register_close_date",
+        "VARCHAR"
+      ],
+      [
+        "regulations_gov_close_date",
+        "VARCHAR"
+      ]
+    ],
+    "processingSchema": [
+      [
+        "comment_period_id",
+        "VARCHAR"
+      ],
+      [
+        "proceeding_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "rins_json",
+        "VARCHAR"
+      ],
+      [
+        "docket_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "open_date",
+        "VARCHAR"
+      ],
+      [
+        "close_date",
+        "VARCHAR"
+      ],
+      [
+        "source",
+        "VARCHAR"
+      ],
+      [
+        "opened_by_artifact_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "evidence_ids_json",
+        "VARCHAR"
+      ],
+      [
+        "method",
+        "VARCHAR"
+      ],
+      [
+        "actor_id",
+        "VARCHAR"
+      ],
+      [
+        "run_id",
+        "VARCHAR"
+      ],
+      [
+        "asserted_at",
+        "VARCHAR"
+      ],
+      [
+        "supersedes_id",
+        "VARCHAR"
+      ],
+      [
+        "unresolved_fr_references_json",
+        "VARCHAR"
+      ],
+      [
+        "anchor_kind",
+        "VARCHAR"
+      ],
+      [
+        "register_close_date",
+        "VARCHAR"
+      ],
+      [
+        "regulations_gov_close_date",
+        "VARCHAR"
+      ]
+    ],
+    "policy": {
+      "dataset": "comment_periods",
+      "policy_version": "regulations-native-v1",
+      "subject_schema": "/////2ADAAAQAAAAAAAKAAwABgAFAAgACgAAAAABBAAMAAAACAAIAAAABAAIAAAABAAAAAsAAAD4AgAAiAIAADACAADUAQAApAEAAHQBAAAMAQAArAAAAHwAAABEAAAABAAAAET9//8AAAEFEAAAACwAAAAEAAAAAAAAABoAAAByZWd1bGF0aW9uc19nb3ZfY2xvc2VfZGF0ZQAAPP3//4D9//8AAAEFEAAAACQAAAAEAAAAAAAAABMAAAByZWdpc3Rlcl9jbG9zZV9kYXRlAHD9//+0/f//AAABBRAAAAAcAAAABAAAAAAAAAALAAAAYW5jaG9yX2tpbmQAnP3//+D9//8AAAEMFAAAACQAAAAEAAAAAQAAABwAAAAMAAAAZXZpZGVuY2VfaWRzAAAAAND9//8U/v//AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAAD4/f//PP7//wAAAQwUAAAALAAAAAQAAAABAAAAJAAAABYAAABvcGVuZWRfYnlfYXJ0aWZhY3RfaWRzAAA0/v//eP7//wAAAQUQAAAAGAAAAAQAAAAAAAAABAAAAGl0ZW0AAAAAXP7//6D+//8AAAEFEAAAABwAAAAEAAAAAAAAAAoAAABjbG9zZV9kYXRlAACI/v//zP7//wAAAQUQAAAAHAAAAAQAAAAAAAAACQAAAG9wZW5fZGF0ZQAAALT+///4/v//AAABDBQAAAAgAAAABAAAAAEAAAAYAAAACgAAAGRvY2tldF9pZHMAAOT+//8o////AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAAAM////UP///wAAAQwUAAAAHAAAAAQAAAABAAAAFAAAAAQAAAByaW5zAAAAADj///98////AAABBRAAAAAYAAAABAAAAAAAAAAEAAAAaXRlbQAAAABg////pP///wAAAQwUAAAAJAAAAAQAAAABAAAAHAAAAA4AAABwcm9jZWVkaW5nX2lkcwAAlP///9j///8AAAEFEAAAABgAAAAEAAAAAAAAAAQAAABpdGVtAAAAALz///8QABQACAAGAAcADAAAABAAEAAAAAAAAQUQAAAAKAAAAAQAAAAAAAAAEQAAAGNvbW1lbnRfcGVyaW9kX2lkAAAABAAEAAQAAAA=",
+      "identity_fields": [
+        "comment_period_id"
+      ],
+      "receipt_fields": [
+        "source",
+        "method",
+        "actor_id",
+        "run_id",
+        "asserted_at",
+        "supersedes_id",
+        "unresolved_fr_references_json",
+        "raw_conversion_inputs",
+        "input_metadata",
+        "raw_source_record"
+      ],
+      "receipt_only": false,
+      "nullable_identity_fields": []
+    },
+    "policyVersion": "regulations-native-v1",
+    "receiptOnly": false,
+    "implementationSha256": "sha256:5c78d3cf12ada6c0699773d9953437e5f184290dff47cdde075a031ea349248f",
+    "rows": 640329,
+    "urls": [
+      "/tmp/spicygov-fast-restore-comment_periods-1791291018343621000/coverage-facts.parquet"
+    ],
+    "processingMembers": [
+      {
+        "path": "/tmp/spicygov-fast-restore-comment_periods-1791291018343621000/coverage-facts.parquet",
+        "sha256": "sha256:1841fb3b4647195915bc22a95a294047df5db939e2716660b6e2d6e190b2acba",
+        "byteSize": 41109319
+      }
+    ]
+  }
+}

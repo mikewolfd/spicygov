@@ -1,0 +1,26 @@
+{
+  "rule_targets.parquet": {
+    "exact_rows_in_order": 617416
+  },
+  "proceedings.parquet": {
+    "exact_rows_in_order": 172694
+  },
+  "regulatory_agenda_items.parquet": {
+    "exact_rows_in_order": 52102
+  },
+  "agenda_item_proceedings.parquet": {
+    "exact_rows_in_order": 148113
+  },
+  "comment_periods.parquet": {
+    "exact_rows_in_order": 640329
+  },
+  "rulemaking_lifecycles.parquet": {
+    "exact_rows_in_order": 75195
+  },
+  "lifecycle_events.parquet": {
+    "exact_rows_in_order": 134667
+  },
+  "agency_lifecycle_stats.parquet": {
+    "exact_rows_in_order": 342
+  }
+}

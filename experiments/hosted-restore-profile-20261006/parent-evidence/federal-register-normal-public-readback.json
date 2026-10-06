@@ -1,0 +1,27 @@
+{
+  "state": "PASS",
+  "family": "federal-register",
+  "artifactDigest": "sha256:6c4a5d1abb57beaf3009dbe1a825dbe304f164cc31d522a41a5c25a16ba651c7",
+  "generationId": "e3c3f2726d894cb9b83c512256e193a1",
+  "publishedAt": "2026-10-06T13:36:08Z",
+  "startedAt": "2026-10-06T13:39:48.434006+00:00",
+  "members": {
+    "federal_register.parquet": {
+      "state": "PASS",
+      "rows": 1010064,
+      "bytes": 221455671,
+      "sha256": "sha256:ada62c7f5430f9db8fc30003f28839968ec60750d2f66aeab196fdd1722399d7",
+      "schemaEqualsPublishedDescriptor": true
+    },
+    "etl_receipts.parquet": {
+      "state": "PASS",
+      "rows": 1010065,
+      "bytes": 488431905,
+      "sha256": "sha256:d31a5699bbc649e484aa4c72de1250cdf7ae1e198614742efce4c257f6cce688",
+      "schemaEqualsPublishedDescriptor": true
+    }
+  },
+  "familyEntryStable": true,
+  "receiptGenerationAndDatasetsMatch": true,
+  "completedAt": "2026-10-06T13:40:06.324179+00:00"
+}
