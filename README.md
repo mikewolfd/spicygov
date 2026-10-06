@@ -89,6 +89,12 @@ FEC scope maps retain exact collection/witness generation pins, bulk-directory o
 
 Comments use the paired monthly index to count comments separately from index groups, reconciling both totals. Both maps bind both exports' recorded hashes, counts, sizes, and ETags. The builder checks both exports' receipt ETags and sizes before and after scanning, and before cache reuse. The older `build-time-coverage.py` and `time-coverage.v1.json` remain historical compatibility artifacts; Sources uses `coverage-maps.v1.json`.
 
+Current documents, votes, court opinions, CFR, agenda, Federal Register and docket-link subjects use the same selected receipt readers to restore their original coverage inputs. Typed public values do not replace source spellings or processing evidence used by the reviewed dimensions.
+
+Native rulemaking tables keep their snapshot identity. Coverage binds the selected pointer, manifest, subject and receipt hashes, sizes, counts and receipt generation. The browser derives the same bindings before displaying a map as current. Older rulemaking snapshots keep their existing behavior. Immutable snapshot receipt hashes support reuse; mutable comments exports still require their recorded ETags.
+
+Manual and scheduled coverage refreshes save and restore validated checkpoints. Every reused result still passes the existing input, schema, scanner and publication checks. If a publication changes during a build, deployment stops and the next refresh checks the new state.
+
 ## Column and relationship audit
 
 Capture the public explorer's schemas, publication identities, and bounded column samples:

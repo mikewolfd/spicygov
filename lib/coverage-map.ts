@@ -2,6 +2,7 @@ import { sourceFieldLabel, sourceValueLabel, recordedScopeLabel } from './source
 import type { Dataset } from './catalog';
 import { object } from './publication-evidence';
 import { timeFingerprint } from './time-coverage';
+import { canonicalJson } from './separate-publications';
 
 export type CoverageDimension = {
   id: string; label: string; meaning: string; status: 'measured'; kind?: string;
@@ -89,10 +90,14 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
   return { generatedAt: raw.generatedAt, censusDigest: raw.censusDigest, tables };
 }
 
+export function coverageInputsFingerprint(table: Dataset): string {
+  const members = [...(table.coverageInputs ?? [])].sort((a, b) => a.id.localeCompare(b.id)).map(i => [i.id, i.url, i.rows, i.byteSize, i.sha256, i.etag]);
+  return table.rulemakingSnapshot ? canonicalJson({members,snapshot:table.rulemakingSnapshot}).replace(/[^\x00-\x7f]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0')) : JSON.stringify(members);
+}
 function matchesCoverageRelease(table: Dataset, map: CoverageMap): boolean {
   return map.family === table.family && map.fingerprint === timeFingerprint(table) && map.rows === table.rows
     && (map.publishedAt ?? undefined) === (table.published ?? undefined)
-    && map.inputsFingerprint === JSON.stringify([...(table.coverageInputs ?? [])].sort((a, b) => a.id.localeCompare(b.id)).map(i => [i.id, i.url, i.rows, i.byteSize, i.sha256, i.etag]))
+    && map.inputsFingerprint === coverageInputsFingerprint(table)
     && (map.artifactDigest ?? undefined) === table.artifactDigest
     && (map.publicationSha256 ?? undefined) === table.publication?.sha256
     && (!table.columns.length || JSON.stringify(map.schema) === JSON.stringify(table.columns.map(c => [c.name, c.type])));

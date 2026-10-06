@@ -42,7 +42,7 @@ function word(p: Part, element: unknown, row: Row): string | undefined {
     case 'nomination-citation': return 'PN' + v;
     case 'senate-amendment': return 'samdt-' + v.replace(/^S\.Amdt\. /, '');
     case 'vote-congress': return /^([1-9][0-9]*)-senate-[12]-[1-9][0-9]*$/.exec(v)?.[1];
-    case 'hearing-congress': return /^[SH]\.Hrg\. ([1-9][0-9]*)-[0-9]+$/.exec(v)?.[1];
+    case 'hearing-congress': return /^[SH]\.Hrg\. ?([1-9][0-9]*)-[0-9]+$/.exec(v)?.[1];
     default: return v;
   }
 }

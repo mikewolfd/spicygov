@@ -6,7 +6,7 @@
   "files": {
     "coverage_dimensions.py": "1c98dc850048024a0f7b294ca1f3b3a641c42c7373b840b8f84f7417bf2198e8",
     "coverage_inputs.py": "911df51b6a2c93467fedda6b36d079af385ad9d5162cf64aa448b43dab85a760",
-    "publication_census.py": "68ff076fc3d54640d719c9202b4a8eb1352289d79553abdb9dc5e0d589041ff6",
+    "publication_census.py": "54299c03e3ad6e13f6bed6b35e35105a2e84d461bc2ef938eea30b2bc78b1a6e",
     "collection_coverage.py": "4b9a38a36bf95f03395882d3d667568de93aebb9cf79972b29c0067faf85c0dc",
     "congress_coverage.py": "6fe7046a26c689ed1d44a0340aab254346e4553d69aad1ac49750004a65bda9a",
     "regulation_coverage.py": "eefd2ead257779b4a726cecd6d0ef6288fc1d39c3d72e13825f1bce783925fad",
@@ -36,8 +36,8 @@
   "revisionFiles": {
     "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
     "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
-    "additional_native_coverage.py": "adac14740575eb32368c1f39310356e87e735d4167e4cdc2ded142d7099ba726",
-    "restore_additional_coverage.py": "b26764364404c3a014f298ceeacdf6bc16bdfdc472b6d0677a1adc2fca43f253",
+    "additional_native_coverage.py": "dbc19e44e4612f9a27c1257eafe5c1dda9a03d81a52b020903abd9f9b2e36a78",
+    "restore_additional_coverage.py": "78321d80ac9cc4f78f5ab0e636bbfa26b51958eb14a635512f16f2c83908200c",
     "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
   },
   "sourceNavigationReview": {
@@ -64,15 +64,35 @@
       "record_issues",
       "senate_expenditures",
       "treaties",
-      "court_opinion_pdf_extractions"
+      "court_opinion_pdf_extractions",
+      "documents",
+      "court_opinions",
+      "roll_call_votes",
+      "member_vote_terms",
+      "cfr_sections",
+      "unified_agenda",
+      "federal_register",
+      "fr_docket_links",
+      "proceedings",
+      "rule_targets",
+      "comment_periods",
+      "regulatory_agenda_items",
+      "agenda_item_proceedings",
+      "rulemaking_lifecycles",
+      "lifecycle_events",
+      "agency_lifecycle_stats"
     ],
-    "reason": "The whitelist and selected readers apply only to changed native schemas. Legacy-equal schemas return before restoration. Native scans preserve restored same-generation parent keys and use the existing publication snapshot facts. Court extraction uses the existing exact witnessed-prior comparison before resolving the original recorded opinion parent. Original legacy dimension readers, bindings, cached validation, and end-of-build checks are unchanged. Native readers retain their per-table implementation identities.",
+    "reason": "The whitelist and selected readers apply only to changed native schemas. Legacy-equal schemas return before restoration. Native scans preserve restored same-generation parent keys and use the existing publication snapshot facts. Court extraction uses the existing exact witnessed-prior comparison before resolving the original recorded opinion parent. Original legacy dimension readers, bindings, cached validation, and end-of-build checks are unchanged. Native readers retain their per-table implementation identities. Current bulk and regulatory subjects use the same selected receipt restoration. Native rulemaking snapshots bind their actual pointer, immutable manifest and declared subject/receipt bytes and generation; their native schema and original processing facts use the maintained reader. Without native receipts, the original census entries and input fingerprints remain identical. Immutable native snapshot pins replace mutable-export ETag checks only for that new path.",
     "checks": [
       "tests/test_source_navigation_coverage.py",
       "tests/test_additional_native_coverage.py",
       "tests/test_native_legislative_coverage.py",
       "tests/test_small_native_coverage.py",
-      "tests/test_court_extraction_coverage.py"
+      "tests/test_court_extraction_coverage.py",
+      "tests/test_bulk_native_coverage.py",
+      "tests/test_bulk_court_coverage.py",
+      "tests/test_regulatory_native_coverage.py",
+      "tests/test_rulemaking_native_coverage.py"
     ]
   }
 }

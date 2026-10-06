@@ -10,8 +10,29 @@ async function module(path) {
 }
 const { parseSourceReview, parseRulemaking, parseComments, sourceEntries, reviewedGenerationLinks, filterEntries, parseGenerationDetails, loadOtherPublications, sourceSections, collectionSteps, sourceMetadataNeedsAttention, sourceMetadataSummary } = await module('lib/source-directory.ts');
 const { generationEvidence, dataUrl } = await module('lib/publication-evidence.ts');
+const { rulemakingManifestDigest } = await module('lib/source-directory.ts');
 const sha = 'sha256:' + 'a'.repeat(64), newer = 'sha256:' + 'b'.repeat(64);
 const base = 'https://data.spicygov.ai';
+test('native rulemaking retains the exact snapshot subject and receipt selection', async () => {
+ const prefix='materialized/rulemaking/snapshots/snapshot_native';
+ const pointer={format_version:2,dataset:'rulemaking',snapshot_id:'snapshot_native',manifest_key:prefix+'/manifest.json'};
+ const file=(name,visibility)=>({rows:1,bytes:20,sha256:'a'.repeat(64),remote_key:prefix+'/'+name,visibility});
+ const manifest={format_version:2,dataset:'rulemaking',snapshot_id:'snapshot_native',run_id:'selected',artifacts:{'proceedings.parquet':file('proceedings.parquet','public'),'etl_receipts.parquet':file('etl_receipts.parquet','internal')},etlReceipts:{key:'etl_receipts.parquet',generationId:'selected',policies:[{dataset:'proceedings'}]}};
+ const identity=await rulemakingManifestDigest(manifest);
+ const [row]=parseRulemaking(pointer,manifest,identity);
+ assert.equal(row.rulemakingSnapshot.manifestDefinitionDigest,identity);
+ assert.deepEqual(row.rulemakingSnapshot.pointer,pointer);
+ assert.equal(row.rulemakingSnapshot.receipts.sha256,sha);
+ assert.equal(row.publication.nativeReceipts.url,base+'/'+prefix+'/etl_receipts.parquet');
+ assert.equal(row.publication.nativeReceipts.generationId,'selected');
+ assert.equal(row.coverageInputs,undefined);
+ assert.throws(()=>parseRulemaking(pointer,manifest),/selected receipts/);
+ assert.throws(()=>parseRulemaking(pointer,{...manifest,run_id:'different'},identity),/selected receipts/);
+ assert.throws(()=>parseRulemaking(pointer,{...manifest,artifacts:{...manifest.artifacts,'etl_receipts.parquet':{...manifest.artifacts['etl_receipts.parquet'],bytes:-1}}},identity),/selected receipts/);
+});
+test('native manifest hashing matches Python canonical JSON including Unicode', async () => {
+ assert.equal(await rulemakingManifestDigest({b:'café😀',a:1}),'sha256:46a3bbc4200ee62e60ef8b57a1c5b3d50dfae21a6d346658d6be06cd9bd9f347');
+});
 const table = (id = 'records') => ({ id, family: 'family', label: 'Records', columns: [], rows: 0, bytes: 20, members: [], inputs: [], sources: [], artifactDigest: sha, summary: '', coverage: '', connectionNotes: [] });
 const review = () => ({ format: 'spicygov-source-review', version: 1, reviewedAt: '2026-10-04T21:00:00Z', sourceRevision: 'a'.repeat(40), tables: {
   records: { family: 'family', label: 'Records', methods: ['api', 'bulk_download'], summary: 'API plus bulk.', mixing: 'Retained records.', gaps: ['Bodies absent.'], sources: [{ id: 'publisher', name: 'Publisher', url: 'https://example.gov' }], artifactDigest: sha, generationLinks: [{ label: 'Source observation journal', url: `${base}/source-evidence/${'a'.repeat(64)}/journal.jsonl` }], evidence: [] },

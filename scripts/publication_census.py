@@ -55,10 +55,13 @@ def fingerprint(members):
 
 def inputs_fingerprint(table):
     """Bind every paired mutable export read to measure a logical table."""
-    return json.dumps([[entry['id'], entry['url'], entry['rows'], entry['byteSize'],
+    paired = [[entry['id'], entry['url'], entry['rows'], entry['byteSize'],
                         entry['sha256'], entry['etag']]
-                       for entry in sorted(table.get('coverageInputs', []), key=lambda entry: entry['id'])],
-                      separators=(',', ':'))
+                       for entry in sorted(table.get('coverageInputs', []), key=lambda entry: entry['id'])]
+    if table.get('rulemakingSnapshot'):
+        return json.dumps({'members': paired, 'snapshot': table['rulemakingSnapshot']},
+                          sort_keys=True, separators=(',', ':'))
+    return json.dumps(paired, separators=(',', ':'))
 
 
 def core_tables(index):
@@ -114,6 +117,20 @@ def rulemaking_tables(pointer, manifest):
             or manifest.get('snapshot_id') != pointer['snapshot_id'] or not isinstance(manifest.get('artifacts'), dict)):
         raise ValueError('Rulemaking manifest differs from pointer')
     result = {}
+    native = manifest.get('etlReceipts')
+    if native is not None:
+        receipt = manifest['artifacts'].get(native.get('key')) if isinstance(native, dict) else None
+        if (not isinstance(native, dict) or native.get('key') != 'etl_receipts.parquet'
+                or not isinstance(native.get('generationId'), str) or not native['generationId']
+                or native['generationId'] != manifest.get('run_id')
+                or not isinstance(native.get('policies'), list) or not native['policies']
+                or any(not isinstance(policy, dict) for policy in native['policies'])
+                or not isinstance(receipt, dict) or receipt.get('visibility') != 'internal'
+                or receipt.get('remote_key') != prefix + '/etl_receipts.parquet'
+                or not size(receipt.get('rows')) or not size(receipt.get('bytes'))
+                or not digest(receipt.get('sha256'))):
+            raise ValueError('Invalid selected rulemaking receipts')
+        manifest_digest = 'sha256:' + hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     for file, entry in manifest['artifacts'].items():
         if not isinstance(entry, dict) or entry.get('visibility') != 'public':
             continue
@@ -125,6 +142,15 @@ def rulemaking_tables(pointer, manifest):
                       'checksum': entry['sha256'], 'recordUrl': BASE + '/' + pointer['manifest_key'],
                       'publishedAt': manifest.get('asserted_at'), 'snapshotId': pointer['snapshot_id'],
                       'members': [{'url': BASE + '/' + entry['remote_key'], 'rows': entry['rows'], 'byteSize': entry['bytes']}]}
+        if native is not None:
+            def selected(name, item):
+                return {'key': name, 'rows': item['rows'], 'byteSize': item['bytes'],
+                        'sha256': 'sha256:' + item['sha256'].removeprefix('sha256:')}
+            result[id]['rulemakingSnapshot'] = {
+                'pointer': dict(pointer), 'manifestDefinitionDigest': manifest_digest,
+                'generationId': native['generationId'], 'subjects': [selected(file, entry)],
+                'receipts': selected(native['key'], receipt),
+            }
     return result
 
 

@@ -24,7 +24,14 @@ DATASETS = {"committee_meetings":"congress", "nominations":"congress", "house_co
     "committees":"congress", "committee_assignments":"congress",
     "laws":"regulation", "law_code_sections":"regulation", "law_sections":"regulation", "table3_records":"regulation",
     "native_legal_references":"regulation", "press_releases":"congress",
-    "record_issues":"congress", "senate_expenditures":"congress", "treaties":"congress"}
+    "record_issues":"congress", "senate_expenditures":"congress", "treaties":"congress", "documents":"regulation",
+    "roll_call_votes":"congress", "member_vote_terms":"congress",
+    "cfr_sections":"regulation", "unified_agenda":"regulation",
+    "federal_register":"regulation", "fr_docket_links":"regulation",
+    "proceedings":"regulation", "rule_targets":"regulation",
+    "comment_periods":"regulation", "regulatory_agenda_items":"regulation",
+    "agenda_item_proceedings":"regulation", "rulemaking_lifecycles":"regulation",
+    "lifecycle_events":"regulation", "agency_lifecycle_stats":"regulation"}
 ROOT = Path(__file__).resolve().parents[1]
 
 

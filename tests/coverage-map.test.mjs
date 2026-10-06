@@ -13,12 +13,23 @@ async function module(path) {
 
 const {parseCoverageMaps, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
 const {parseComments} = await module('lib/source-directory.ts');
+const {coverageInputsFingerprint} = await module('lib/coverage-map.ts');
 const {publisherNames, loadCoveragePublishers, coveragePublisherNames} = await module('lib/coverage-publishers.ts');
 const hash = 'sha256:' + 'a'.repeat(64);
 const table = {id:'records',family:'test',rows:3,artifactDigest:hash, columns:[{name:'date',type:'DATE'}],members:[{url:'https://example.test/file',rows:3,byteSize:100,sha256:hash}]};
 const dimension = {id:'date',label:'Event date',meaning:'Source-stated event dates.',status:'measured',granularity:'month',rows:3,placedRows:2,unplacedRows:1,buckets:{'2024-01':1,'2024-02':1}};
 const map = {fingerprint:JSON.stringify([[hash,3,100]]),inputsFingerprint:'[]',publishedAt:null,rows:3,family:'test',artifactDigest:hash,schema:[['date','DATE']],status:'measured',classification:'temporal',note:'Selected source rows.',measuredAt:'2026-10-05T00:00:00Z',definitionDigest:hash,dimensions:[dimension]};
 const document = () => ({format:'spicygov-coverage-maps',version:1,partial:false,generatedAt:'2026-10-05T00:00:00Z',censusDigest:hash,tables:{records:structuredClone(map)}});
+test('native snapshot coverage becomes stale when a selected receipt, run or pointer changes',()=>{
+ const snapshot={pointer:{snapshot_id:'snapshot_native',label:'café😀'},manifestDefinitionDigest:hash,generationId:'selected',subjects:[{key:'records.parquet',rows:3,byteSize:100,sha256:hash}],receipts:{key:'etl_receipts.parquet',rows:3,byteSize:200,sha256:hash}};
+ const selected={...table,rulemakingSnapshot:snapshot};
+ const raw=document();raw.tables.records.inputsFingerprint=coverageInputsFingerprint(selected);
+ const maps=parseCoverageMaps(raw);
+ assert.ok(currentCoverageMap(selected,maps));
+ assert.match(raw.tables.records.inputsFingerprint,/caf\\u00e9\\ud83d\\ude00/);
+ for(const changed of [{...snapshot,generationId:'different'},{...snapshot,manifestDefinitionDigest:'sha256:'+'b'.repeat(64)},{...snapshot,pointer:{...snapshot.pointer,snapshot_id:'snapshot_other'}},{...snapshot,receipts:{...snapshot.receipts,sha256:'sha256:'+'b'.repeat(64)}}]) assert.equal(currentCoverageMap({...selected,rulemakingSnapshot:changed},maps),undefined);
+ assert.equal(coverageInputsFingerprint(table),'[]');
+});
 
 test('coverage maps bind exact publication, schema and family, including carried input changes', () => {
   const maps = parseCoverageMaps(document());

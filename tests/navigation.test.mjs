@@ -7,6 +7,15 @@ const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(trans
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
 const spec={id:'meeting_nominations',source:'committee_meetings',fields:['nomination_references_json'],field:'nomination_references_json',targets:[target],mode:'array',meaning:'Source-listed nominations',receiptFields:[],elementPath:[],ruleVersion:'source-navigation/1'};
+test('nomination hearings accept retained citation spellings with the complete hearing identity',()=>{
+ const t={table:'hearing_transcripts',columns:['congress','chamber','jacket_number'],keys:[key(part('citation','element','hearing-congress')),key(part('chamber','element','lower')),key(part('jacketNumber'))],guards:[]};
+ for(const citation of ['S.Hrg.119-136','S.Hrg. 119-136']) {
+  const reference={citation,chamber:'Senate',jacketNumber:61323};
+  assert.deepEqual(targetKeys(t,reference,{congress:'118'}),['119','senate','61323']);
+  assert.equal(matchesConnection({hearings_json:JSON.stringify([reference])}, {...spec,fields:['hearings_json'],field:'hearings_json',targets:[t]}, {id:spec.id,target:0,values:['119','senate','61323']}),true);
+ }
+ for(const citation of ['119-136','prefix S.Hrg.119-136','S.Hrg.119-136 suffix']) assert.equal(targetKeys(t,{citation,chamber:'Senate',jacketNumber:61323},{}),undefined);
+});
 test('array connections retain complete PN partitions and reject unstated scope',()=>{
  assert.deepEqual(targetKeys(target,{congress:118,number:14,part:'2'},{}),['118','PN14-2']);
  assert.deepEqual(targetKeys(target,{congress:118,number:14,part:'00'},{}),['118','PN14']);

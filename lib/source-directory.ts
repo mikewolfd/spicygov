@@ -3,6 +3,7 @@ import { groupFor, pretty, type Dataset, type CoverageInput } from './catalog';
 import { validDate, type Source, type MetadataStatus, type TableMetadataState } from './metadata';
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
+import { canonicalJson } from './separate-publications';
 
 export const methodLabels: Record<string, string> = {
   bulk_download: 'Bulk downloads', structured_download: 'Structured file downloads', feed_download: sourceControlLabel('RSS feeds'),
@@ -51,15 +52,31 @@ function extraTable(id: string, family: string, rows: number, bytes: number, url
   return { id, family, label: pretty(id), rows, bytes, columns: [], members: [{ url, rows, byteSize: bytes }],
     group: groupFor(id), summary: '', coverage: '', kind: 'published', recordsAvailable: false, metadataState: 'missing', sources: [], inputs: [], modelGenerated: false, connectionNotes: [] };
 }
-export function parseRulemaking(pointer: unknown, manifest: unknown): Dataset[] {
+export async function rulemakingManifestDigest(manifest: unknown): Promise<string> {
+  const text = canonicalJson(manifest).replace(/[^\x00-\x7f]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return 'sha256:' + [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+export function parseRulemaking(pointer: unknown, manifest: unknown, manifestDefinitionDigest?: string): Dataset[] {
   if (!object(pointer) || pointer.format_version !== 2 || pointer.dataset !== 'rulemaking' || !/^snapshot_[a-zA-Z0-9]+$/.test(pointer.snapshot_id)) throw new Error('Rulemaking pointer has an unsupported format.');
   const prefix = `materialized/rulemaking/snapshots/${pointer.snapshot_id}`;
   if (pointer.manifest_key !== `${prefix}/manifest.json` || !object(manifest) || manifest.format_version !== 2 || manifest.dataset !== 'rulemaking' || manifest.snapshot_id !== pointer.snapshot_id || !object(manifest.artifacts)) throw new Error('Rulemaking snapshot does not match its publication pointer.');
+  const native = manifest.etlReceipts;
+  const receipt = object(native) ? manifest.artifacts[native.key] : undefined;
+  if (native !== undefined && (!object(native) || native.key !== 'etl_receipts.parquet'
+      || typeof native.generationId !== 'string' || !native.generationId || native.generationId !== manifest.run_id
+      || !Array.isArray(native.policies) || !native.policies.length || !object(receipt) || receipt.visibility !== 'internal'
+      || receipt.remote_key !== `${prefix}/etl_receipts.parquet` || !size(receipt.rows) || !size(receipt.bytes) || !digest(receipt.sha256)
+      || typeof manifestDefinitionDigest !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(manifestDefinitionDigest))) throw new Error('Rulemaking contains invalid selected receipts.');
+  const selectedMember = (key: string, file: Record<string, any>) => ({key, rows:file.rows as number, byteSize:file.bytes as number, sha256:`sha256:${String(file.sha256).replace(/^sha256:/, '')}`});
   return Object.entries(manifest.artifacts).flatMap(([key, file]) => {
     if (!object(file) || file.visibility !== 'public') return [];
     if (!/^[a-z0-9_]+\.parquet$/.test(key) || file.remote_key !== `${prefix}/${key}` || !size(file.rows) || !size(file.bytes) || !digest(file.sha256)) throw new Error('Rulemaking contains an invalid public file.');
     return [{ ...extraTable(key.replace(/\.parquet$/, ''), 'rulemaking', file.rows, file.bytes, dataUrl(file.remote_key)!),
-      published: validDate(manifest.asserted_at), publication: { kind: 'rulemaking' as const, recordUrl: dataUrl(pointer.manifest_key)!, snapshotId: pointer.snapshot_id, sha256: file.sha256 } }];
+      ...(native ? {rulemakingSnapshot:{pointer:{...pointer},manifestDefinitionDigest:manifestDefinitionDigest!,generationId:native.generationId,
+        subjects:[selectedMember(key,file)],receipts:selectedMember(native.key,receipt)},} : {}),
+      published: validDate(manifest.asserted_at), publication: { kind: 'rulemaking' as const, recordUrl: dataUrl(pointer.manifest_key)!, snapshotId: pointer.snapshot_id, sha256: file.sha256,
+        ...(native ? {nativeReceipts:{url:dataUrl(receipt.remote_key)!,generationId:native.generationId,rows:receipt.rows,bytes:receipt.bytes,sha256:receipt.sha256}} : {}) } }];
   });
 }
 export function parseComments(raw: unknown): Dataset[] {
@@ -80,7 +97,8 @@ export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tab
     (async () => {
       const pointer = await fetchJson(`${DATA_BASE}/materialized/rulemaking/latest.json`, signal);
       if (!object(pointer) || !/^snapshot_[a-zA-Z0-9]+$/.test(pointer.snapshot_id) || pointer.manifest_key !== `materialized/rulemaking/snapshots/${pointer.snapshot_id}/manifest.json`) throw new Error('Invalid rulemaking pointer.');
-      return parseRulemaking(pointer, await fetchJson(dataUrl(pointer.manifest_key)!, signal));
+      const manifest = await fetchJson(dataUrl(pointer.manifest_key)!, signal);
+      return parseRulemaking(pointer, manifest, object(manifest) && manifest.etlReceipts !== undefined ? await rulemakingManifestDigest(manifest) : undefined);
     })(),
     fetchJson(`${DATA_BASE}/comments-publication.json`, signal).then(parseComments),
   ]);
