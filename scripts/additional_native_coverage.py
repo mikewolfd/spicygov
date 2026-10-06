@@ -56,7 +56,7 @@ def bridge(args=(), request=None):
     timeout = 300
     if not args:
         if dataset == "court_opinions":
-            timeout = 900
+            timeout = 1800
         elif dataset in {"documents", "federal_register"}:
             timeout = 600
     try:

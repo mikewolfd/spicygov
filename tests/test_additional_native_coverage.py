@@ -56,7 +56,7 @@ class BridgeTests(unittest.TestCase):
                 with self.subTest(dataset=dataset, args=args), patch.dict(os.environ, env), patch.object(
                         adapter.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}', 'stderr':''})()) as run:
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
-                    expected = {'documents': 600, 'federal_register': 600, 'court_opinions': 900}
+                    expected = {'documents': 600, 'federal_register': 600, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
