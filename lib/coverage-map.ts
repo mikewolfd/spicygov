@@ -1,3 +1,4 @@
+import { sourceFieldLabel, sourceValueLabel, recordedScopeLabel } from './source-labels';
 import type { Dataset } from './catalog';
 import { object } from './publication-evidence';
 import { timeFingerprint } from './time-coverage';
@@ -145,58 +146,8 @@ export function dimensionPeriodRows(dimension: CoverageDimension, period: string
   return Object.entries(dimension.buckets).reduce((sum, [key, n]) => sum + (key === period || key.startsWith(period + '-') ? n : 0), 0);
 }
 
-const originLabels: Record<string, string> = {
-  gao_rss: 'GAO feed', gao_listing: 'GAO listing', gao_r_package: 'GAO R package',
-  gao_major_rule_listing: 'GAO major-rule listing', gao_major_rule_index: 'GAO older major-rule index',
-  gao_repair: 'GAO repairs', upstream_copy: 'Upstream copy', govinfo: 'GovInfo',
-  full_text: 'Full-text classification', kind_uncertain: 'Text completeness uncertain',
-  procedural_amendments: 'Procedural amendments', procedural_summary: 'Procedural summary',
-  unknown: 'Unknown',
-  no_saved_text: 'Not saved', saved_blank_text: 'Saved blank text',
-  saved_nonblank_text: 'Saved text',
-};
-const literalLabel = (value: string) => Object.hasOwn(originLabels, value) ? originLabels[value] : value;
-
-const fieldValueLabels: Record<string, Record<string, string>> = {
-  record_outcome: {
-    empty: 'Confirmed empty request', inventory_only: 'File or source listing',
-    selection_context: 'Selection notes', 'no-record-rejections': 'Selected records parsed',
-    refused: 'Not accepted for parsing', unresolved: 'Selection unresolved',
-  },
-  ingest_source: { bulk: 'Bulk export', search: 'Search results' },
-  link_source: { printed: 'Printed docket labels', regulations_dot_gov_info: 'Regulations.gov link', both: 'Printed labels and Regulations.gov link' },
-  source: {
-    congress: 'Congress.gov',
-    docket_document_cites_action_notice: 'Docket document cites an action notice',
-    docket_rin: 'Docket regulation identifier', document_rin: 'Document regulation identifier',
-    document_fr_doc: 'Document cites a Federal Register notice', fr_cfr_ref: 'Federal Register regulation citation',
-    federal_register_rin: 'Federal Register regulation identifier',
-    'documents.comment_end_date': 'Regulations.gov',
-    'federal_register.comments_close_on': 'Federal Register',
-    'documents.comment_end_date+federal_register.comments_close_on': 'Regulations.gov + Federal Register',
-  },
-  withdrawal_source: { federal_register: 'Federal Register', unified_agenda: 'Unified Agenda' },
-  scope_status: { recurring: 'Routine and frequent', single_observed: 'One linked proceeding', unresolved: 'Zero or multiple linked proceedings' },
-  observation_kind: { native_reference: 'Native reference', source_credit: 'Source credit', source_note: 'Source note', authority: 'Authority note' },
-  interpretation_status: {
-    native_public_law_href: 'Public-law link', native_section_href: 'U.S. Code section link',
-    native_statute_href: 'Statutes-at-Large link', unsupported_href: 'Unsupported link',
-    partial_text_findings: 'Some references found in text', no_qualified_text_findings: 'No accepted text findings',
-  },
-  uslm_outcome: { captured: 'Metadata saved', captured_partial: 'Partial metadata saved', captured_refused: 'Metadata capture refused', request_failed: 'Metadata request failed', unavailable: 'Source unavailable', not_requested: 'Not requested' },
-  law_text_outcome: { parsed: 'Sections parsed', refused: 'Text reading refused', not_requested: 'Not requested' },
-  date_filed_is_approximate: { f: 'Marked exact', t: 'Marked approximate' },
-};
-function fieldLabel(value: unknown, field?: string): string {
-  if (field === 'publisher_id' || field === 'scorecard_id') return typeof value === 'string' ? value : JSON.stringify(value);
-  if (value === null && field === 'withdrawal_source') return 'Not recorded';
-  const labels = field && Object.hasOwn(fieldValueLabels, field) ? fieldValueLabels[field] : undefined;
-  return typeof value === 'string' ? labels && Object.hasOwn(labels, value) ? labels[value] : literalLabel(value) : JSON.stringify(value);
-}
-export function coverageFieldLabel(field?: string): string {
-  const labels: Record<string, string> = { interpretation_status: 'Reading result', observation_kind: 'Evidence type', scope_status: 'Proceeding link', kind: 'Text classification', uslm_outcome: 'Native metadata reading', law_text_outcome: 'Section text reading', edition_year: 'Edition year' };
-  return field ? Object.hasOwn(labels, field) ? labels[field] : field.replaceAll('_', ' ') : 'Scope';
-}
+const fieldLabel = sourceValueLabel;
+export const coverageFieldLabel = sourceFieldLabel;
 
 export function scopeLabel(key: string, fields?: string[]): string {
   try {
@@ -269,8 +220,8 @@ function conciseSelection(value: string): string {
 }
 
 export function coverageCategoryDisplay(dimension: CoverageDimension, key: string, publisherNames?: ReadonlyMap<string, string>): { label: string; exact: string } {
-  const exact = scopeLabel(key, dimension.fields);
-  let label = exact;
+  const exact = recordedScopeLabel(key);
+  let label = scopeLabel(key, dimension.fields);
   const publisherIndex = dimension.fields?.indexOf('publisher_id') ?? -1;
   if (publisherIndex >= 0 && publisherNames) {
     try {
@@ -286,7 +237,7 @@ export function coverageCategoryDisplay(dimension: CoverageDimension, key: strin
       const values: unknown = JSON.parse(key);
       if (Array.isArray(values) && values.length === 3 && values.every(value => typeof value === 'string')) {
         const [family, outcome, scope] = values;
-        const source = family === 'fec_access' ? 'FEC' : family.replace(/^fec_/, 'FEC ').replaceAll('_', ' ');
+        const source = fieldLabel(family, 'source_family');
         const state = fieldLabel(outcome, 'record_outcome');
         label = `${source} · ${conciseSelection(scope)} · ${state}`;
       }
@@ -300,5 +251,5 @@ export function coverageCategoryDisplay(dimension: CoverageDimension, key: strin
 
 export function coverageCategoryMatches(dimension: CoverageDimension, key: string, query: string, publisherNames?: ReadonlyMap<string, string>): boolean {
   const shown = coverageCategoryDisplay(dimension, key, publisherNames);
-  return `${shown.label} ${shown.exact}`.toLowerCase().includes(query.trim().toLowerCase());
+  return `${shown.label} ${shown.exact} ${key}`.toLowerCase().includes(query.trim().toLowerCase());
 }

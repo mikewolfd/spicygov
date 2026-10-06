@@ -1,13 +1,14 @@
+import { sourceControlLabel, sourceGroupLabel } from './source-labels';
 import { groupFor, pretty, type Dataset, type CoverageInput } from './catalog';
 import { validDate, type Source, type MetadataStatus, type TableMetadataState } from './metadata';
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
 
 export const methodLabels: Record<string, string> = {
-  bulk_download: 'Bulk downloads', structured_download: 'Structured file downloads', feed_download: 'RSS feeds',
-  api: 'API', web_scraping: 'Web scraping', document_extraction: 'Text extracted from documents',
-  retained_input: 'Saved source files', legacy_carry_forward: 'Earlier records',
-  derived: 'Calculated', model_generated: 'AI-generated', unknown: 'Not documented',
+  bulk_download: 'Bulk downloads', structured_download: 'Structured file downloads', feed_download: sourceControlLabel('RSS feeds'),
+  api: sourceControlLabel('API'), web_scraping: 'Web scraping', document_extraction: 'Text extracted from documents',
+  retained_input: 'Saved source files', legacy_carry_forward: sourceControlLabel('Earlier records'),
+  derived: sourceControlLabel('Calculated'), model_generated: 'AI-generated', unknown: 'Not documented',
 };
 export type SourceCopy = { label: string; summary: string; scope: string; gaps: string[] };
 export type TableReview = {
@@ -118,7 +119,7 @@ export function sourceCatalogMessage(status: MetadataStatus): string | undefined
   if (status.state === 'partial') return 'Some source details are missing or older. See each table’s notes.';
 }
 function sourceFamilyName(family: string): string {
-  return pretty(family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener');
+  return sourceGroupLabel(family) ?? pretty(family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener');
 }
 function searchText(value: string): string {
   return value.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -172,7 +173,7 @@ export function sourceMetadataSummary(entries: SourceEntry[]): string | undefine
     const total = affected.filter(entry => entry.table.metadataState === state).length;
     return total ? [`${total} ${total === 1 ? singular : plural}`] : [];
   });
-  return `Source descriptions need attention for ${affected.length} ${affected.length === 1 ? 'table' : 'tables'}: ${details.join('; ')}.`;
+  return `Missing or older source details for ${affected.length} ${affected.length === 1 ? 'table' : 'tables'}: ${details.join('; ')}.`;
 }
 export function collectionSteps(methods: string[]): { label: string; values: string[] }[] {
   const categories = [

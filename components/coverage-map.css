@@ -87,6 +87,7 @@ button.time-cell { cursor: pointer; }
 }
 .coverage-scroll-hint { color: #516252; }
 .coverage-matrix-scroll {
+  position: relative;
   max-width: 100%; max-height: 360px; overflow: auto; overscroll-behavior: contain;
   margin: 12px 0; border: 1px solid #d1decf; border-radius: 5px; scrollbar-gutter: stable;
 }

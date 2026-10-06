@@ -1,3 +1,4 @@
+import { validFilter } from './filter-values';
 import type { Filter } from './catalog';
 import type { RecordSort } from './record-sort';
 export type View = 'records' | 'connections' | 'about';
@@ -11,7 +12,7 @@ export function readLocation(search = window.location.search): LocationState {
   let filters: Filter[] = [];
   try {
     const f = JSON.parse(p.get('where') ?? '[]');
-    if (Array.isArray(f) && f.every(x => typeof x.column === 'string' && typeof x.value === 'string')) filters = f;
+    if (Array.isArray(f) && f.every(validFilter)) filters = f;
   } catch {}
   return {
     id: p.get('table') ?? initial.id, filters, cursor: Math.max(0, Number(p.get('at')) || 0),

@@ -1,4 +1,5 @@
 "use client";
+import { validFilter } from './filter-values';
 import { useEffect, useRef } from "react";
 import type { Dataset, Filter, Row } from "./catalog";
 import type { RecordSort } from './record-sort';
@@ -81,6 +82,7 @@ export function useExplorerTools(
                 properties: {
                   column: { type: "string" },
                   value: { type: "string" },
+                  values: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 },
                 },
                 required: ["column", "value"],
                 additionalProperties: false,
@@ -105,8 +107,7 @@ export function useExplorerTools(
             !filters.every(
               (f) =>
                 f &&
-                typeof f.column === "string" &&
-                typeof f.value === "string" &&
+                validFilter(f) &&
                 dataset.columns.some((c) => c.name === f.column),
             )
           )

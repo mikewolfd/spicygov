@@ -31,6 +31,10 @@ Descriptions, source attribution, derived inputs, coverage and declared joins lo
 
 Records load as soon as the publication catalog arrives. Metadata has a separate ten-second timeout. If it fails or its format is unsupported, every published table remains browsable with an explicit notice and no hidden bundled fallback. A table's family and full column schema must match before descriptions or connections are applied. Same-schema metadata for an older main-index publication stays usable but is marked older. Separate files require an exact descriptor, identity and schema match. Connections require two browsable published endpoints and complete, distinct key columns; unavailable declarations appear as notes instead of clickable connections.
 
+“Browse by shared fields” carries reviewed categories into other tables without treating them as record identities. Congress, chamber, session, agency, election cycle, source collection cycle, fiscal year, CFR edition and scorecard publisher remain separate scopes. Session browsing also carries Congress. Field meanings stay visible; chamber and Table III spelling variants become exact alternatives in the filter URL, leaving stored values unchanged. Destinations advertise a compatible field, not a precomputed matching row count. Opening one runs the normal bounded page reader.
+
+Self-referencing record links show both the referenced record and records referring back to it. Scalar links require every key component; blank, null and compound values cannot silently become identifiers. The backend registry owns the links, their measured baselines and CI checks. Array and polymorphic references require separate reviewed readers and are not inferred from matching names.
+
 [Hyparquet](https://github.com/hyparam/hyparquet) reads selected fields over HTTP byte ranges. The reader handles multipart tables, exact filters, compound join keys, physical row cursors, and 64-bit integers. Filters apply across the whole table. Large scans may take time and can be stopped. Missing or null join values are not fabricated. Declared relationships do not prove the underlying source data is complete or correctly linked.
 
 Click a Records column header to cycle through ascending, descending, and original order. Sorting applies across every published file and respects active filters. Numbers and dates keep their value order, text uses lexicographic order, structured values use their JSON text, and missing values stay last. The URL retains the field and direction. Each sorted page scans the sort and filter fields in a worker, keeps only its next page of candidates, and then reads their visible fields. Large tables require a full scan for each page; progress and Stop remain available. Sorted cursors identify the last record's physical position, with position breaking equal-value ties, so paging and record details retain exact row identity.
@@ -63,7 +67,9 @@ The Sources page renders coverage and limits in the list. Opening a table loads 
 
 ## Coverage maps
 
-The Sources page shows each table's meaningful dates, election cycles, Congresses, publisher editions, reporting spans, or retained snapshot. “Coverage by” switches between independent dimensions. CFR titles and editions appear together; source labels preserve relative and lifetime scorecard periods. A period with no placed rows means only that this file has none. It does not establish complete collection or an empty publisher population.
+The Sources page shows each table's meaningful dates, election cycles, Congresses, publisher editions, reporting spans, or saved release. “Count by” switches between independent views. Regulation titles and editions appear together; source labels preserve relative and lifetime scorecard periods. A period with no placed rows means only that this file has none. It does not establish complete collection or an empty publisher population.
+
+`content/source-labels.json` owns readable coverage-view names, source-group headings, controls, field names and known category values. `lib/source-labels.ts` applies them only for display. Unknown values remain literal; publisher identifiers, calendar years, election cycles and edition codes retain their meaning. Category details show original values beside readable labels, and searches match both. Label edits do not change measurement definitions, stored records, release checks or coverage-cache keys, so they require only the website tests and build, without coverage rescans.
 
 Run `python scripts/build-coverage-maps.py` with the Python dependencies pinned in `.github/workflows/deploy-pages.yml`. The builder inventories the main publication, rulemaking snapshot, and comments receipt using the same logical membership as Sources. The main publication takes precedence; agency comment partitions are not counted twice. A missing publication, unreviewed table, changed schema, failed required scan, or unreconciled count fails the build and preserves the previous published maps.
 
@@ -82,3 +88,16 @@ Source and content views distinguish listed bill printings from acquired text, r
 FEC scope maps retain exact collection/witness generation pins, bulk-directory or mapping cycles, selected members, and literal query filters. Qualified empty requests remain limited to those filters; refusals and inventory-only records never become checked-empty periods. Large source-record key scans use exact constant row-group statistics and read every mixed or inexact group with maintained PyArrow/fsspec readers. Pinned collection metadata downloads are hash-verified before batch parsing.
 
 Comments use the paired monthly index to count comments separately from index groups, reconciling both totals. Both maps bind both exports' recorded hashes, counts, sizes, and ETags. The builder checks both exports' receipt ETags and sizes before and after scanning, and before cache reuse. The older `build-time-coverage.py` and `time-coverage.v1.json` remain historical compatibility artifacts; Sources uses `coverage-maps.v1.json`.
+
+## Column and relationship audit
+
+Capture the public explorer's schemas, publication identities, and bounded column samples:
+
+```sh
+node scripts/audit-columns.mjs --out /path/to/column-audit
+node scripts/render-column-audit.mjs --out /path/to/column-audit
+```
+
+Open the resulting `report.html` to search field names, definitions, table occurrences, samples, and declared connections. The sampler reads up to three rows at each of the first, middle, and last positions, with at most three nonblank values retained per field. It uses range requests, limits downloaded bytes, records incomplete samples, and reuses completed samples only when the captured table and sampler fingerprint match. Large Parquet footers can exceed the bounds and require a separately recorded reader exception. These samples do not establish a field's completeness, uniqueness, or suitability for a join.
+
+The renderer can also display separately captured `key-checks.json` and `findings.json` in the output directory. Full key checks must record the selected publications, missing destinations, and parent uniqueness before a proposed connection is added to the backend's canonical join registry. Shared categories such as Congress or chamber can support browsing filters without identifying individual records.

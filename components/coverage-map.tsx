@@ -1,3 +1,4 @@
+import { coverageViewLabel } from '../lib/source-labels';
 import { useState } from 'react';
 import { count, type Dataset } from '../lib/catalog';
 import { coverageCategoryDisplay, coverageCategoryMatches, coverageFieldLabel, coverageItemNoun, coverageMapCounts, coverageMapForDisplay, coveragePeriodLabel, coveragePeriodNoun, coverageStatement, dimensionPeriodRows, scopeLabel, type CoverageDimension, type CoverageMaps } from '../lib/coverage-map';
@@ -31,14 +32,14 @@ export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { t
         : <>Checked <time dateTime={map.measuredAt}>{coverageDate(map.measuredAt)} UTC</time> · {rowsLabel(map.rows)}. Counts have not been refreshed for this month.</>}</p>
       {onRetry && <button type="button" onClick={onRetry}>Reload published counts</button>}
     </div>}
-    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{dim.label}</option>)}</select></label> : <p className="coverage-view-label">{dimension.label}</p>}
+    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
     <p className="coverage-meaning">{statement}</p>
     <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} publisherNames={coveragePublisherNames(table, maps, dimension, publishers)} />
     <details className="coverage-checks">
-      <summary>How this count was checked<span className="sr-only"> for {table.label}, {dimension.label}</span></summary>
+      <summary>How this count was checked<span className="sr-only"> for {table.label}, {coverageViewLabel(dimension.label)}</span></summary>
       <div className="coverage-checks-body">
         <dl className="coverage-check-counts">
-          <div><dt>Rows counted for {dimension.label.toLowerCase()}</dt><dd>{count(dimension.placedRows)}</dd></div>
+          <div><dt>Rows counted for {coverageViewLabel(dimension.label).toLowerCase()}</dt><dd>{count(dimension.placedRows)}</dd></div>
           {dimension.unplacedRows > 0 && <div><dt>Rows not counted for this field</dt><dd>{count(dimension.unplacedRows)}</dd></div>}
           {(dimension.partialRows ?? 0) > 0 && <div><dt>Counted rows with additional missing or unusable values</dt><dd>{count(dimension.partialRows!)}</dd></div>}
           {(dimension.unmatchedRows ?? 0) > 0 && <div><dt>Rows without a matching source record</dt><dd>{count(dimension.unmatchedRows!)}</dd></div>}
@@ -99,7 +100,7 @@ function DimensionGrid({ dimension, view, publisherNames }: { dimension: Coverag
         return <button type="button" key={period} className={`time-cell time-${state}`} aria-label={text} title={text} onClick={() => setSelected(text)}><span>{label}</span>{cycleSpan && <small>{cycleSpan}</small>}<i aria-hidden="true">{rows === undefined ? '?' : rows ? '●' : '—'}</i></button>;
       })}</div>
     </>}
-    {keys.length > 0 ? <dl className="coverage-range"><div><dt>First recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[0])}</dd></div><div><dt>Last recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[keys.length - 1])}</dd></div></dl> : <p className="coverage-empty">No records have a usable value for {dimension.label.toLowerCase()}.</p>}
+    {keys.length > 0 ? <dl className="coverage-range"><div><dt>First recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[0])}</dd></div><div><dt>Last recorded {coveragePeriodNoun(dimension)}</dt><dd>{coveragePeriodLabel(dimension, keys[keys.length - 1])}</dd></div></dl> : <p className="coverage-empty">No records have a usable value for {coverageViewLabel(dimension.label).toLowerCase()}.</p>}
     {selected && <p className="time-selection" role="status">{selected}</p>}
   </>;
 }
@@ -108,7 +109,7 @@ function CategoryGrid({ dimension, publisherNames }: { dimension: CoverageDimens
   const [all, setAll] = useState(false), [selected, setSelected] = useState(''), [query, setQuery] = useState('');
   const display = (key: string) => coverageCategoryDisplay(dimension, key, publisherNames);
   const entries = Object.entries(dimension.buckets).sort(([a], [b]) => display(a).label.localeCompare(display(b).label, undefined, { numeric: true }) || a.localeCompare(b));
-  if (!entries.length) return <p className="coverage-empty">No records have a usable value for {dimension.label.toLowerCase()}.</p>;
+  if (!entries.length) return <p className="coverage-empty">No records have a usable value for {coverageViewLabel(dimension.label).toLowerCase()}.</p>;
   const tuples = entries.map(([key, n]) => {
     try { const values: unknown = JSON.parse(key); return Array.isArray(values) && values.length === 2 && values.every(value => typeof value === 'string') ? { values: values as string[], n } : undefined; } catch { return undefined; }
   });
@@ -117,13 +118,18 @@ function CategoryGrid({ dimension, publisherNames }: { dimension: CoverageDimens
     const columns = [...new Set(tuples.map(tuple => tuple!.values[0]))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     const columnLabel = (value: string) => dimension.fields?.[0] === 'publisher_id' ? publisherNames?.get(value) ?? `Publisher ID: ${value}` : scopeLabel(value, dimension.fields?.slice(0, 1));
     const rowLabel = (value: string) => dimension.fields?.[1] === 'publisher_id' ? publisherNames?.get(value) ?? `Publisher ID: ${value}` : scopeLabel(value, dimension.fields?.slice(1, 2));
+    const axes = [
+      {values: columns, display: columnLabel, field: dimension.fields?.[0]},
+      {values: rows, display: rowLabel, field: dimension.fields?.[1]},
+    ];
     if (rows.length <= 60 && columns.length <= 30) return <>
       <p className="coverage-scroll-hint">Scroll across or down to compare all values.</p>
-      <div className="coverage-matrix-scroll" role="region" aria-label={`${dimension.label}; scroll to compare values`} tabIndex={0}><table className="coverage-matrix"><caption>{coverageFieldLabel(dimension.fields?.[1])} by {coverageFieldLabel(dimension.fields?.[0])} · {dimension.unit ?? 'rows'} counted</caption><thead><tr><th scope="col">{coverageFieldLabel(dimension.fields?.[1])}</th>{columns.map(column => <th scope="col" key={column}>{columnLabel(column)}{dimension.fields?.[0] === 'publisher_id' && publisherNames?.has(column) && <small className="coverage-publisher-id">Publisher ID: {column}</small>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row}><th scope="row">{rowLabel(row)}{dimension.fields?.[1] === 'publisher_id' && publisherNames?.has(row) && <small className="coverage-publisher-id">Publisher ID: {row}</small>}</th>{columns.map(column => {
+      <div className="coverage-matrix-scroll" role="region" aria-label={`${coverageViewLabel(dimension.label)}; scroll to compare values`} tabIndex={0}><table className="coverage-matrix"><caption>{coverageFieldLabel(dimension.fields?.[1])} by {coverageFieldLabel(dimension.fields?.[0])} · {dimension.unit ?? 'rows'} counted</caption><thead><tr><th scope="col">{coverageFieldLabel(dimension.fields?.[1])}</th>{columns.map(column => <th scope="col" key={column} title={column}>{columnLabel(column)}{dimension.fields?.[0] === 'publisher_id' && publisherNames?.has(column) && <small className="coverage-publisher-id">Publisher ID: {column}</small>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row}><th scope="row" title={row}>{rowLabel(row)}{dimension.fields?.[1] === 'publisher_id' && publisherNames?.has(row) && <small className="coverage-publisher-id">Publisher ID: {row}</small>}</th>{columns.map(column => {
         const n = dimension.buckets[JSON.stringify([column, row])] ?? 0;
         return <td key={column} className={n ? 'scope-present' : 'scope-empty'}>{n ? count(n) : <><span aria-hidden="true">—</span><span className="sr-only">0</span></>}</td>;
       })}</tr>)}</tbody></table></div>
       <p className="coverage-matrix-legend">— No records counted for this combination.</p>
+      {axes.some(axis => axis.values.some(value => axis.display(value) !== value)) && <details className="coverage-facts"><summary>Original field values</summary><dl>{axes.map((axis, index) => <div key={index}><dt>{coverageFieldLabel(axis.field)}</dt><dd><ul>{axis.values.map(value => <li key={value}>{axis.display(value)} · <code>{value}</code></li>)}</ul></dd></div>)}</dl></details>}
     </>;
   }
   const noun = coverageItemNoun(dimension);
@@ -132,7 +138,7 @@ function CategoryGrid({ dimension, publisherNames }: { dimension: CoverageDimens
   const selection = selected ? display(selected) : undefined;
   return <>
     {all && <label className="coverage-category-search">Find {noun}<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>}
-    <div className={`coverage-scope-grid${all ? ' coverage-scope-expanded' : ''}`} {...(all ? { role: 'region', 'aria-label': `All ${noun} for ${dimension.label}`, tabIndex: 0 } : {})}>{visible.map(([key, n]) => <button type="button" key={key} className="coverage-scope-cell" aria-label={`${display(key).label}: ${count(n)} ${unitLabel(n, dimension.unit)}; show exact recorded value`} onClick={() => setSelected(key)}><span>{display(key).label}</span><strong>{count(n)}</strong></button>)}</div>
+    <div className={`coverage-scope-grid${all ? ' coverage-scope-expanded' : ''}`} {...(all ? { role: 'region', 'aria-label': `All ${noun} for ${coverageViewLabel(dimension.label)}`, tabIndex: 0 } : {})}>{visible.map(([key, n]) => <button type="button" key={key} className="coverage-scope-cell" aria-label={`${display(key).label}: ${count(n)} ${unitLabel(n, dimension.unit)}; show exact recorded value`} onClick={() => setSelected(key)}><span>{display(key).label}</span><strong>{count(n)}</strong></button>)}</div>
     {all && !filtered.length && <p role="status">No {noun} match this search. <button type="button" onClick={() => setQuery('')}>Clear search</button></p>}
     {entries.length > 6 && <button type="button" className="coverage-show-all" onClick={() => { setAll(!all); setQuery(''); }}>{all ? 'Show fewer' : `Show all ${count(entries.length)} ${noun}`}</button>}
     {selection && <div className="coverage-selection" role="status"><strong>{selection.label}</strong><p>{count(dimension.buckets[selected])} {unitLabel(dimension.buckets[selected], dimension.unit)} counted here.</p><details><summary>Exact recorded value</summary><p className="coverage-exact-value">{selection.exact}</p><details><summary>Stored identifier</summary><code>{selected}</code></details></details></div>}
