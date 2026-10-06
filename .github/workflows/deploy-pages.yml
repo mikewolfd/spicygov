@@ -25,7 +25,11 @@ jobs:
     env:
       SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/restore_additional_coverage.py
       SPICYGOV_ADDITIONAL_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-current-backend/.venv/bin/python
-      SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
+      SPICYGOV_NATIVE_COVERAGE_BRIDGE: ${{ github.workspace }}/scripts/select_native_coverage_reader.py
+      SPICYGOV_LEGACY_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-backend/scripts/restore_coverage_processing.py
+      SPICYGOV_LEGACY_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
+      SPICYGOV_PRINT_CITATION_COVERAGE_BRIDGE: ${{ github.workspace }}/.coverage-print-citation-backend/scripts/restore_coverage_processing.py
+      SPICYGOV_PRINT_CITATION_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-print-citation-backend/.venv/bin/python
       SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +45,12 @@ jobs:
           repository: mikewolfd/spicy-regs
           ref: 032a08b3ba48cf3b2fd01bcd9ab8a097d38ced44
           path: .coverage-current-backend
+      - name: Check out the qualified court-citation key reader
+        uses: actions/checkout@v4
+        with:
+          repository: mikewolfd/spicy-regs
+          ref: b2c9f96c6fb7af21f2b7cdab1ae2ef7cfbe4fda4
+          path: .coverage-print-citation-backend
       - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
@@ -50,6 +60,9 @@ jobs:
         run: uv sync --frozen --no-default-groups --group source-readers
       - name: Install the locked current amendment and court reader
         working-directory: .coverage-current-backend
+        run: uv sync --frozen --no-default-groups --group source-readers
+      - name: Install the locked court-citation key reader
+        working-directory: .coverage-print-citation-backend
         run: uv sync --frozen --no-default-groups --group source-readers
       - name: Check the pinned legislative and Congress readers
         run: |
@@ -74,6 +87,7 @@ jobs:
       - run: python tests/test_fec_coverage_maps.py
       - run: python tests/test_congress_coverage_maps.py
       - run: python tests/test_native_legislative_coverage.py
+      - run: python tests/test_selected_native_coverage.py
       - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
       - name: Restore validated coverage checkpoints
         # A source update carries its freshly qualified maps in the commit.
