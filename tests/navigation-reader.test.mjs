@@ -7,7 +7,7 @@ const {outputFiles}=await build({entryPoints:['lib/receipt-reader.ts'],bundle:tr
 const {receiptFields,recordIdentity,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const built=await build({entryPoints:['lib/reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {readPage}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
-const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys','detail-attempts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
+const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys','detail-attempts','fcc-receipts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
 const server=createServer((req,res)=>{const name=req.url.slice(1),file=files[name];if(!file)return res.writeHead(404).end();const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');if(match){const start=Number(match[1]),end=Number(match[2]);res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${file.length}`,'Content-Length':end-start+1});res.end(file.subarray(start,end+1));}else{res.writeHead(200,{'Content-Length':file.length});res.end(file);}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
@@ -15,6 +15,15 @@ const member=(n,rows)=>({url:`${base}/${n}`,rows,byteSize:files[n].length});
 const cols=names=>names.map(name=>({name,type:'VARCHAR',description:''}));
 const table={id:'house_communications',rows:1,columns:cols(['congress','communication_type','number']),members:[member('communications',1)],receiptIdentity:['congress','communication_type','number'],receiptContainers:{source_fields:['record_package_id','record_granule_id','record_entry_text']},artifactDigest:'sha256:'+'a'.repeat(64),publication:{kind:'generation',nativeReceipts:{url:`${base}/receipts`,generationId:'g1',rows:1,bytes:files.receipts.length,sha256:'sha256:'+'b'.repeat(64)}}};
 try {
+ await test('FCC outcomes are read only for the exact filing and selected receipt generation',async()=>{
+  const selected={...table,id:'fcc_filings',receiptIdentity:['id_submission'],receiptContainers:{raw_record:['native_fields_json','pdf_extraction_results_json']},publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/fcc-receipts`,bytes:files['fcc-receipts'].length}}};
+  const wanted=['native_fields_json','pdf_extraction_results_json'];
+  const fields=await receiptFields(selected,{id_submission:'123'},wanted);
+  assert.equal(JSON.parse(fields.pdf_extraction_results_json)[0].status,'ok');
+  assert.equal(JSON.parse(fields.native_fields_json).documents[0].src,JSON.parse(fields.pdf_extraction_results_json)[0].url);
+  await assert.rejects(receiptFields(selected,{id_submission:'124'},wanted),/No accepted receipt/);
+  await assert.rejects(receiptFields({...selected,publication:{...selected.publication,nativeReceipts:{...selected.publication.nativeReceipts,generationId:'other-generation'}}},{id_submission:'123'},wanted),/generation differs/);
+ });
  await test('detail attempt evidence preserves PN partitions and separates failed reads from empty successes',async()=>{
   const selected={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/detail-attempts`,rows:4,bytes:files['detail-attempts'].length}}};
   const filters=[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}];

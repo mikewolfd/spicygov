@@ -60,6 +60,30 @@ export function targetKeys(t: Target, element: unknown, row: Row): string[] | un
   return result;
 }
 function decoded(v: unknown): unknown { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return undefined; } }
+export type FccDocumentOutcome = { state: 'unavailable' | 'unread' | 'unrecorded' | 'malformed' | 'ambiguous' | 'recorded'; message: string; sourceSha256?: string; pageCount?: number; error?: string };
+// Pass only fields returned by the selected-generation receipt reader, never another filing's diagnostics.
+export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = true): FccDocumentOutcome {
+  const malformed: FccDocumentOutcome = {state:'malformed',message:'Recorded extraction diagnostics are malformed.'};
+  const unrecorded: FccDocumentOutcome = {state:'unrecorded',message:'No extraction attempt recorded for this URL.'};
+  if (!fieldAvailable) return {state:'unavailable',message:'Extraction diagnostics are unavailable in the published source details.'};
+  if (!Object.hasOwn(receipt, 'pdf_extraction_results_json')) return {state:'unread',message:'Extraction outcome not read yet.'};
+  const raw = receipt.pdf_extraction_results_json;
+  if (raw === null) return unrecorded;
+  const diagnostics = decoded(raw);
+  if (!Array.isArray(diagnostics) || !diagnostics.every(d => object(d) && typeof d.url === 'string' && /^https:\/\/[^\s]+$/.test(d.url))) return malformed;
+  const matches = diagnostics.filter(d => d.url === url);
+  if (matches.length > 1) return {state:'ambiguous',message:'Multiple recorded outcomes; no outcome chosen.'};
+  if (!matches.length) return unrecorded;
+  const d = matches[0], digest = d.source_sha256;
+  if (!['ok','empty','encrypted','error'].includes(d.status) || !(d.error === null || typeof d.error === 'string')
+    || !(digest === null || typeof digest === 'string' && /^sha256:[a-f0-9]{64}$/.test(digest))
+    || !(d.page_count === null || Number.isSafeInteger(d.page_count) && d.page_count >= 0)
+    || (digest === null ? d.status !== 'error' || d.page_count !== null || !d.error : d.page_count === null)
+    || d.status === 'ok' && (d.page_count < 1 || d.error !== null)) return malformed;
+  const label = {ok:'successful',empty:'no extractable text',encrypted:'encrypted',error:'failed'}[d.status as 'ok'|'empty'|'encrypted'|'error'];
+  return {state:'recorded',message:`Reported extraction: ${label}.`,
+    ...(digest ? {sourceSha256:digest} : {}), ...(d.page_count !== null ? {pageCount:d.page_count} : {}), ...(d.error ? {error:d.error} : {})};
+}
 export function elements(s: Navigation, row: Row): { state: string; values: unknown[] } {
   if (s.mode === 'row') return { state: 'stated', values: [row] };
   const field = s.field && s.field in row ? s.field : s.fields.find(f => f in row);
@@ -82,14 +106,15 @@ export function matchesConnection(row: Row, s: Navigation, c: Connection): boole
 export function navigationColumns(s: Navigation): string[] {
   return [...new Set([...(s.field ? [s.field] : []), ...s.targets.flatMap(t => [...t.guards, ...t.keys.flatMap(k => k.parts)].filter(p => p.from === 'row' && p.path.length).map(p => p.path[0]))])];
 }
-export function forwardLinks(s: Navigation, row: Row): {target: Target; values: string[]; filters: Filter[]}[] {
+export function forwardLinks(s: Navigation, row: Row): {target: Target; values: string[]; filters: Filter[]; sourceElement?: unknown; sourceOrdinal?: number}[] {
   const seen = new Set<string>();
-  return elements(s, row).values.flatMap(e => s.targets.flatMap(target => {
+  const fccDocuments = s.id === 'fcc_filing_documents' && s.source === 'fcc_filings';
+  return elements(s, row).values.flatMap((e, sourceOrdinal) => s.targets.flatMap(target => {
     const values = targetKeys(target, e, row);
     if (!values) return [];
     const id = JSON.stringify([target.table, values]);
-    if (seen.has(id)) return []; seen.add(id);
-    return [{target, values, filters: target.columns.map((column, i) => ({column, value: values[i]}))}];
+    if (seen.has(id) && !fccDocuments) return []; seen.add(id);
+    return [{target, values, filters: target.columns.map((column, i) => ({column, value: values[i]})), ...(fccDocuments ? {sourceElement:e,sourceOrdinal} : {})}];
   }));
 }
 export function usableNavigation(specs: Navigation[], tables: Dataset[]): Navigation[] {
