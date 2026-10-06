@@ -55,6 +55,8 @@ class SourceCoverageTests(unittest.TestCase):
                         raw.update(citation="PN129-10", number="129", part_number="10", received_date="2025-04-29", committees_json='[{"systemCode":"hsag"}]', hearings_json='[]', detail_read="true")
                     elif dataset == "committee_meetings":
                         raw.update(chamber="senate", event_id="1", meeting_date="2026-10-01", nomination_references_json='[{"number":129,"part":10}]', treaty_references_json='[]', detail_read="true")
+                    elif dataset == "members":
+                        raw.update(bioguide_id="A000001", name_first="Patricia", name_nickname="Pat", fec_ids_json='["H0CA00001"]', term_count="1", first_term_start="1990-01-03")
                     else:
                         raw.update(communication_id="ec1-119", communication_type="ec", number="1", source_route="congressional-record", record_package_id="CREC-2026-10-01", record_entry_text="Exact retained passage", detail_read="true")
                     source = root / "source.parquet"
@@ -71,6 +73,8 @@ class SourceCoverageTests(unittest.TestCase):
                     self.assertEqual(pq.read_table(subject).to_pylist()[0]["documents"][0]["src"],"https://example.gov/a.pdf")
                 else:
                     self.assertEqual(measured, {name:raw.get(name) for name,_ in reader.reviewed_schema(dataset)})
+                    if dataset == "members":
+                        self.assertEqual(pq.read_table(subject).to_pylist()[0]["name_nickname"], "Pat")
                 wrong = copy.deepcopy(request)
                 wrong["generationId"] = "different"
                 wrong["destination"] += "-wrong"
