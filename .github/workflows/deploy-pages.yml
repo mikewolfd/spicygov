@@ -100,7 +100,9 @@ jobs:
       - run: python tests/test_native_legislative_coverage.py
       - run: python tests/test_selected_native_coverage.py
       - run: .coverage-current-backend/.venv/bin/python tests/test_additional_native_coverage.py
+      - run: .coverage-current-backend/.venv/bin/python tests/test_court_extraction_coverage.py
       - run: .coverage-navigation-backend/.venv/bin/python tests/test_source_navigation_coverage.py
+      - run: .coverage-navigation-backend/.venv/bin/python tests/test_small_native_coverage.py
       - name: Restore validated coverage checkpoints
         # A source update carries its freshly qualified maps in the commit.
         # Scheduled refreshes may reuse interrupted scan checkpoints.

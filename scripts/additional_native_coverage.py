@@ -19,8 +19,15 @@ from coverage_inputs import CoverageInputs, inherit_unique
 from native_legislative_coverage import ProcessingInputs, verify_file
 
 FAMILIES = {"amendments": "amendments", "court_dockets": "courtlistener",
-            "court_docket_groups": "court-docket-groups"}
-SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "member_terms":"members", "member_party_affiliations":"members", "fcc_filings":"fcc-filings"}
+            "court_docket_groups": "court-docket-groups",
+            "court_opinion_pdf_extractions": "court-opinion-pdf-extractions"}
+SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "member_terms":"members", "member_party_affiliations":"members", "fcc_filings":"fcc-filings",
+    "committee_reports":"committee-reports", "report_sections":"committee-reports",
+    "hearing_transcripts":"committee-reports", "hearing_bill_links":"committee-reports",
+    "committees":"committee-rosters", "committee_assignments":"committee-rosters",
+    "laws":"laws", "law_code_sections":"laws", "law_sections":"laws", "table3_records":"laws",
+    "native_legal_references":"native-legal-references", "press_releases":"press-releases",
+    "record_issues":"record-issues", "senate_expenditures":"senate-expenditures", "treaties":"treaties"}
 FAMILIES.update(SOURCE_NAVIGATION_FAMILIES)
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -144,9 +151,15 @@ class AdditionalInputs:
         owner = self.inputs.producing(child_id, child)
         if owner["artifact"]["spec"].get("parents", {}).get(relation["table"] + ".parquet"):
             return self.inputs.parent(child_id, child, relation)
-        if (child_id != "court_docket_groups" or relation["mode"] != "recorded-parent"
-                or relation["table"] != "court_dockets"
-                or relation.get("keys") != [["cl_docket_id", "cl_docket_id"]]):
+        prior_relationships = {
+            "court_docket_groups": ("court_dockets", [["cl_docket_id", "cl_docket_id"]]),
+            "court_opinion_pdf_extractions": (
+                "court_opinions", [["opinion_id", "opinion_id"], ["cluster_id", "cluster_id"]]),
+        }
+        expected_relation = prior_relationships.get(child_id)
+        if (expected_relation is None or relation["mode"] != "recorded-parent"
+                or relation["table"] != expected_relation[0]
+                or relation.get("keys") != expected_relation[1]):
             raise ValueError("Producing release does not pin this additional coverage parent")
         identity = (owner["family"], owner["artifactDigest"])
         if identity in self.parent_cache:
@@ -227,16 +240,19 @@ def scan_table(dataset, table, policy, *, validate_members, validate_counts,
                     raise ValueError("Unsupported additional native coverage dimension")
             elif dim["kind"] == "inherited":
                 parent = adapter.parent(dataset, table, dim["parent"])
-                # Parent bytes remain pinned to their recorded release. Stage them
-                # with the same exact member checks before the local join.
-                key, _, members = adapter.inputs.artifact(parent["family"], parent["artifactDigest"])
-                selected = [m for m in members if m["objectKey"] in {p["key"] for p in parent["members"]}]
-                parent = {**parent, "urls": [adapter.staging._member(key, m)["path"] for m in selected]}
+                # Restoration already checks the exact same-generation subjects
+                # and receipts. Keep its original processing-only join fields.
+                if not parent.get("_coverageProcessing"):
+                    key, _, members = adapter.inputs.artifact(parent["family"], parent["artifactDigest"])
+                    selected = [m for m in members if m["objectKey"] in {p["key"] for p in parent["members"]}]
+                    parent = {**parent, "urls": [adapter.staging._member(key, m)["path"] for m in selected]}
                 measured = inherit_unique(conn, restored["urls"], table["rows"], parent, dim["parent"], dim["dimension"])
                 if parent.get("_additionalParentEvidence"):
                     measured["evidence"] = parent["_additionalParentEvidence"]
             else:
-                measured = scan_dimension(conn, restored["urls"], table["rows"], dim)
+                measured = scan_dimension(conn, restored["urls"], table["rows"], dim, snapshot={
+                    "publishedAt": table.get("publishedAt"), "artifactDigest": table.get("artifactDigest"),
+                    "recordUrl": table.get("recordUrl"), "publicationSha256": table.get("checksum")})
             validate_counts(measured, table["rows"])
             measured.update(id=dim["id"], label=dim["label"], meaning=dim["meaning"],
                             definitionDigest=definition_digest(dim))

@@ -77,7 +77,7 @@ class SourceCoverageTests(unittest.TestCase):
             self.assertNotIn("2000-06", measured["buckets"])
 
     def test_new_subjects_preserve_old_coverage_facts_and_exact_generation(self):
-        for dataset in reader.DATASETS:
+        for dataset in ("committee_meetings", "nominations", "house_communications", "members", "member_terms", "member_party_affiliations", "fcc_filings"):
             with self.subTest(dataset=dataset), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder)
                 if dataset == "fcc_filings":

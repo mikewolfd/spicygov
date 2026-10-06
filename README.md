@@ -136,3 +136,5 @@ site builds and does not republish or recount the source data.
 A partial source scan continues after its last checked row when all targets
 were checked. A partial result with unchecked targets is reused until its limits
 or pins change; repeatedly scanning the same source prefix would add no evidence.
+
+The existing native coverage adapter also admits the small committee-report, roster, law, legal-reference, press-release, Record, Senate-expenditure, treaty and court-extraction families. It restores original values from the selected receipts before applying the reviewed dimensions. Section coverage keeps the complete same-generation parent keys; court extraction resolves its witnessed prior and that prior's recorded opinion input. Snapshot dimensions describe the selected publication. The original legacy scanners and their validated checkpoints keep their reviewed revision.

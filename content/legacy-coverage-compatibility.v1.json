@@ -36,8 +36,8 @@
   "revisionFiles": {
     "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
     "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
-    "additional_native_coverage.py": "24649407226e9422d38edae9ce4cc491633c3b094f546e9d14f843dfbede025c",
-    "restore_additional_coverage.py": "8bff5cf9a6b9d16ca28980b5de973da9a5d65e6dbb2cd8063b44d6bf27ea9fbd",
+    "additional_native_coverage.py": "adac14740575eb32368c1f39310356e87e735d4167e4cdc2ded142d7099ba726",
+    "restore_additional_coverage.py": "b26764364404c3a014f298ceeacdf6bc16bdfdc472b6d0677a1adc2fca43f253",
     "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
   },
   "sourceNavigationReview": {
@@ -48,13 +48,31 @@
       "fcc_filings",
       "members",
       "member_terms",
-      "member_party_affiliations"
+      "member_party_affiliations",
+      "committee_reports",
+      "report_sections",
+      "hearing_transcripts",
+      "hearing_bill_links",
+      "committees",
+      "committee_assignments",
+      "laws",
+      "law_code_sections",
+      "law_sections",
+      "table3_records",
+      "native_legal_references",
+      "press_releases",
+      "record_issues",
+      "senate_expenditures",
+      "treaties",
+      "court_opinion_pdf_extractions"
     ],
-    "reason": "The added whitelist and reader selection apply only to these changed native schemas. Legacy-equal schemas return before restoration. Same-generation parent restoration applies only to the additional native path and preserves the producing generation. Original dimension readers, bindings, cached validation, and end-of-build checks are unchanged. Changed native readers retain their per-table implementation identities.",
+    "reason": "The whitelist and selected readers apply only to changed native schemas. Legacy-equal schemas return before restoration. Native scans preserve restored same-generation parent keys and use the existing publication snapshot facts. Court extraction uses the existing exact witnessed-prior comparison before resolving the original recorded opinion parent. Original legacy dimension readers, bindings, cached validation, and end-of-build checks are unchanged. Native readers retain their per-table implementation identities.",
     "checks": [
       "tests/test_source_navigation_coverage.py",
       "tests/test_additional_native_coverage.py",
-      "tests/test_native_legislative_coverage.py"
+      "tests/test_native_legislative_coverage.py",
+      "tests/test_small_native_coverage.py",
+      "tests/test_court_extraction_coverage.py"
     ]
   }
 }
