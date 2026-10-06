@@ -10,7 +10,7 @@ const { outputFiles } = await build({
   format: "esm",
   write: false,
 });
-const { readPage } = await import(
+const { readPage, readColumnBatches } = await import(
   `data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString("base64")}`
 );
 const files = [0, 1].map((n) =>
@@ -56,6 +56,18 @@ const table = {
   })),
 };
 try {
+  await test('audit projections preserve member boundaries, exact integers and partial-scan status', async () => {
+    const rows=[];
+    assert.deepEqual(await readColumnBatches(table,['id','large'],75,batch=>rows.push(...batch)),{rows:75,complete:false});
+    assert.deepEqual(rows.map(row=>row.id),Array.from({length:75},(_,i)=>String(i)));
+    assert.equal(typeof rows[74].large,'bigint');
+    const full=[];
+    assert.deepEqual(await readColumnBatches(table,['id'],140,batch=>full.push(...batch)),{rows:140,complete:true});
+    assert.equal(full.at(-1).id,'139');
+    const wrong={...table,rows:141,members:[{...table.members[0],rows:71},table.members[1]]};
+    await assert.rejects(readColumnBatches(wrong,['id'],141,()=>{}),/footer differs/);
+    await assert.rejects(readColumnBatches(table,['unknown'],140,()=>{}),/fields are unavailable/);
+  });
   await test('mutable published files require the matching ETag and exact bounded byte range', async () => {
     const guarded={...table,members:table.members.map((member,index)=>({...member,etag:`"fixture-${index}"`}))};
     const result=await readPage({table:guarded,columns:['id'],filters:[],cursor:0,limit:1});assert.equal(result.rows[0].id,'0');
