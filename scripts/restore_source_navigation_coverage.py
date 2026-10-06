@@ -18,7 +18,13 @@ from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
 from spicy_regs.transforms.government_receipts import POLICIES, internal_prior
 from restore_additional_coverage import MAINTAINED, verify_artifacts
 
-DATASETS = {"committee_meetings":"congress", "nominations":"congress", "house_communications":"congress", "members":"congress", "member_terms":"congress", "member_party_affiliations":"congress", "fcc_filings":"regulation"}
+DATASETS = {"committee_meetings":"congress", "nominations":"congress", "house_communications":"congress", "members":"congress", "member_terms":"congress", "member_party_affiliations":"congress", "fcc_filings":"regulation",
+    "committee_reports":"congress", "report_sections":"congress",
+    "hearing_transcripts":"congress", "hearing_bill_links":"congress",
+    "committees":"congress", "committee_assignments":"congress",
+    "laws":"regulation", "law_code_sections":"regulation", "law_sections":"regulation", "table3_records":"regulation",
+    "native_legal_references":"regulation", "press_releases":"congress",
+    "record_issues":"congress", "senate_expenditures":"congress", "treaties":"congress"}
 ROOT = Path(__file__).resolve().parents[1]
 
 
