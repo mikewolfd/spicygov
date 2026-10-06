@@ -1,9 +1,10 @@
 import type { Dataset, Filter, Row } from './catalog';
 import { parseExact } from './exact-json';
+import type { RouteCapability } from './metadata';
 export type Part = { path: string[]; from: 'row' | 'element'; transform?: string; literal?: string };
 export type Key = { parts: Part[]; separator: string; pattern: string };
 export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part };
-export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string };
+export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string;sourceAvailable?:boolean;completeKey?:boolean;directions?:{forward:RouteCapability;reverse:RouteCapability};requiredMainFields?:{path:string;status:string}[];requiredElementFields?:{path:string;status:string}[] };
 export type Navigation = { id: string; source: string; fields: string[]; field?: string; targets: Target[]; mode: 'row' | 'array'; candidates?: boolean; meaning: string; receiptFields: string[]; elementPath: string[]; ruleVersion: string; available?: boolean; unavailableReason?: string };
 export type Connection = { id: string; target: number; values: string[] };
 const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress'];
@@ -43,12 +44,12 @@ function word(p: Part, element: unknown, row: Row): string | undefined {
     case 'bill-type': return v.toLowerCase().replaceAll('.', '');
     case 'nomination-citation': return 'PN' + v;
     case 'senate-amendment': return 'samdt-' + v.replace(/^S\.Amdt\. /, '');
-    case 'vote-congress': return /^([1-9][0-9]*)-senate-[12]-[1-9][0-9]*$/.exec(v)?.[1];
-    case 'hearing-congress': return /^[SH]\.Hrg\. ?([1-9][0-9]*)-[0-9]+$/.exec(v)?.[1];
+    case 'vote-congress': {const match=/^([1-9][0-9]*)-senate-[12]-[1-9][0-9]*$/.exec(v);return match?.[0]===v?match[1]:undefined;}
+    case 'hearing-congress': {const match=/^[SH]\.Hrg\. ?([1-9][0-9]*)-[0-9]+$/.exec(v);return match?.[0]===v?match[1]:undefined;}
     default: return v;
   }
 }
-const full = (p: string, v: string) => new RegExp(`^(?:${p})$`).test(v);
+const full = (p: string, v: string) => new RegExp(`^(?:${p})$`).exec(v)?.[0] === v;
 export function targetKeys(t: Target, element: unknown, row: Row): string[] | undefined {
   if (!t.guards.every(g => { const v = word(g, element, row); return v !== undefined && (!g.sameAs || v === word(g.sameAs, element, row)) && (!g.values || g.values.includes(v)) && (!g.pattern || full(g.pattern, v)); })) return;
   const result: string[] = [];
@@ -116,7 +117,7 @@ export function forwardLinks(s: Navigation, row: Row): {target: Target; values: 
     if (!values) return [];
     const id = JSON.stringify([target.table, values]);
     if (seen.has(id) && !fccDocuments) return []; seen.add(id);
-    return [{target, values, filters: target.columns.map((column, i) => ({column, value: values[i]})), ...(fccDocuments ? {sourceElement:e,sourceOrdinal} : {})}];
+    return [{target, values, filters: target.columns.map((column, i) => ({column, value: values[i]})), sourceElement:e,sourceOrdinal}];
   }));
 }
 export function usableNavigation(specs: Navigation[], tables: Dataset[]): Navigation[] {
@@ -124,9 +125,14 @@ export function usableNavigation(specs: Navigation[], tables: Dataset[]): Naviga
   return specs.filter(s => { const source = lookup.get(s.source); return source && !['missing','incompatible','unavailable'].includes(source.metadataState); }).map(s => {
     const source = lookup.get(s.source)!;
     const field = s.fields.find(f => source.columns.some(c => c.name === f));
-    const canReadReceipt = !!source.publication?.nativeReceipts && !!source.receiptIdentity?.length;
-    const rowColumns = navigationColumns({...s, field});
-    return {...s, field, available: s.mode === 'array' ? !!field || canReadReceipt && !!s.receiptFields.length : rowColumns.every(c => source.columns.some(x => x.name === c)) || canReadReceipt && !!s.receiptFields.length,
-      targets: s.targets.map(t => ({...t, available: t.table === '@url' || t.table.startsWith('@receipt:') && canReadReceipt || t.columns.every(c => lookup.get(t.table)?.columns.some(x => x.name === c)) && !['missing','incompatible','unavailable'].includes(lookup.get(t.table)?.metadataState ?? 'missing')}))};
+    const sourceReady = s.available !== false && (s.mode !== 'array'||!!field);
+    return {...s, field, available:sourceReady,
+      targets: s.targets.map(t => {
+        const mainReady=(t.requiredMainFields??[]).every(f=>f.status!=='missing'&&source.columns.some(c=>c.name===f.path.split('.')[0]))&&navigationColumns({...s,field,targets:[t]}).every(c=>source.columns.some(x=>x.name===c));
+        const nestedReady=(t.requiredElementFields??[]).every(f=>f.status!=='missing');
+        const targetReady=t.table==='@url'||!t.table.startsWith('@')&&t.columns.every(c=>lookup.get(t.table)?.columns.some(x=>x.name===c))&&!['missing','incompatible','unavailable'].includes(lookup.get(t.table)?.metadataState??'missing');
+        const available=sourceReady&&mainReady&&nestedReady&&t.available!==false&&t.sourceAvailable!==false&&targetReady;
+        return {...t,available,directions:t.directions?{forward:{...t.directions.forward,available:available&&t.directions.forward.available},reverse:{...t.directions.reverse,available:available&&t.directions.reverse.available}}:undefined};
+      })};
   });
 }

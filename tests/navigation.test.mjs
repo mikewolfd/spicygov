@@ -108,7 +108,7 @@ test('FCC offered document occurrences preserve order and repeated URLs',()=>{
  const links=forwardLinks(s,{documents});
  assert.deepEqual(links.map(link=>link.sourceOrdinal),[2,3,4]);
  assert.deepEqual(links.map(link=>[link.values[0],link.sourceElement.filename,link.sourceElement.description]),documents.slice(2).map(d=>[d.src,d.filename,d.description]));
- assert.equal(forwardLinks({...s,id:'another_recipe'},{documents})[0].sourceElement,undefined);
+ assert.deepEqual(forwardLinks({...s,id:'another_recipe'},{documents})[0].sourceElement,documents[2]);
 });
 
 test('FCC receipt diagnostics report recorded outcomes with exact URL matching, without qualifying capture or text',()=>{
@@ -163,4 +163,10 @@ test('receipt routes constrain the event type as well as the exact source identi
  const s={...spec,mode:'row',field:undefined,fields:[],targets:[t]};
  assert.deepEqual(forwardLinks(s,{congress:'119',citation:'PN129-10'})[0].filters,[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}]);
  assert.throws(()=>parseNavigation([{...s,targets:[{...t,keys:[key({...part(''),literal:42}),...t.keys.slice(1)]}]}]),/keys/);
+});
+
+test('full guards refuse trailing newlines instead of accepting a prefix',()=>{
+ const t={...target,guards:[{...part('congress'),pattern:'[1-9][0-9]*'}]};
+ assert.equal(targetKeys(t,{congress:'119\n',number:14,part:'2'},{}),undefined);
+ assert.equal(targetKeys(t,{congress:'119\r\n',number:14,part:'2'},{}),undefined);
 });

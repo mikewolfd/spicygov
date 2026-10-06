@@ -1,7 +1,12 @@
 import { receiptFields, readSourceEvidence } from "./receipt-reader";
 import { readPage } from "./reader";
+import {locateRecord} from './record-lookup';
 self.onmessage = async (event) => {
   try {
+    if(event.data.type==='lookup') {
+      const result=await locateRecord(event.data.table,event.data.filters,event.data.cursor,event.data.positions,(scanned)=>self.postMessage({type:'progress',scanned}));
+      self.postMessage({type:'lookup',...result});return;
+    }
     if (event.data.type === "source-evidence") {
       const result = await readSourceEvidence(event.data.table,event.data.dataset,event.data.filters,(scanned)=>self.postMessage({type:"progress",scanned}),event.data.cursor);
       self.postMessage({type:"source-evidence",...result,dataset:event.data.dataset,filters:event.data.filters}); return;

@@ -1,5 +1,6 @@
 import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
-import { matchesFilters, validFilter } from './filter-values';
+import { matchesFilters, parquetFilter, validFilter } from './filter-values';
+import { exactParsers } from './exact-parquet';
 import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
@@ -27,14 +28,14 @@ export async function readColumnBatches(table: Dataset, columns: string[], maxRo
     if (rows >= maxRows) break;
     const memberStart = Math.max(0, startRow - offset);
     offset += member.rows;
-    if (memberStart >= member.rows) continue;
-    if (!member.rows) continue;
+    if (member.rows && memberStart >= member.rows) continue;
     const file = await remoteFile(member);
-    const metadata = await parquetMetadataAsync(file);
+    const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
     if (Number(metadata.num_rows) !== member.rows) throw new Error('The Parquet footer differs from the published row count.');
+    if(!member.rows)continue;
     for (let start = memberStart; start < member.rows && rows < maxRows;) {
       const end = Math.min(member.rows, start + 50000, start + maxRows - rows);
-      const batch = await parquetReadObjects({file, metadata, compressors, columns, rowStart:start, rowEnd:end, useOffsetIndex:true, usePageIndex:true});
+      const batch = await parquetReadObjects({parsers:exactParsers,file, metadata, compressors, columns, rowStart:start, rowEnd:end, useOffsetIndex:true, usePageIndex:true});
       if (batch.length !== end - start) throw new Error('The audit projection returned an incomplete batch.');
       await onBatch(batch);
       rows += batch.length; start = end;
@@ -97,12 +98,12 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   for (const member of table.members) {
     if (!member.rows) continue;
     const file = await remoteFile(member);
-    const metadata = await parquetMetadataAsync(file);
+    const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
     for (let start = 0; start < member.rows; start += 50000) {
       const end = Math.min(member.rows, start + 50000);
-      const rows = await parquetReadObjects({ file, metadata, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+      const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
       for (const row of rows) {
-        if (!matchesFilters(row, filters) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
+        if (!matchesFilters(row, filters, table.columns) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
         if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
         remaining++;
@@ -121,12 +122,12 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
     const positions = selected.filter(entry => entry.position >= offset && entry.position < offset + member.rows).map(entry => entry.position - offset);
     if (positions.length) {
       const file = await remoteFile(member);
-      const metadata = await parquetMetadataAsync(file);
+      const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
       for (let i = 0; i < positions.length;) {
         const start = positions[i];
         let end = start + 1;
         while (++i < positions.length && positions[i] === end) end++;
-        const rows = await parquetReadObjects({ file, metadata, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+        const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
         for (const row of rows) records.set(offset + row[rowIndex]!, row);
       }
     }
@@ -140,6 +141,7 @@ export async function readPage(
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
   if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
+  if(!Number.isSafeInteger(table.rows)||table.rows<0||table.members.some(m=>!Number.isSafeInteger(m.rows)||m.rows<0)||table.members.reduce((n,m)=>n+m.rows,0)!==table.rows)throw new Error('The selected member counts do not agree with this publication.');
   if (!Number.isSafeInteger(cursor) || cursor < 0)
     throw new Error("Invalid record position.");
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid page size.');
@@ -151,12 +153,11 @@ export async function readPage(
   )
     throw new Error("Unknown field in this dataset.");
   if (!filters.every(validFilter)) throw new Error('Invalid filter values.');
+  if(filters.some(f=>table.columns.find(c=>c.name===f.column)?.type.startsWith('DECIMAL')))throw new Error('Exact decimal filtering is unavailable in this reader. Decimal values cannot safely use a rounded numeric match.');
   if (connection && (!validConnection(connection) || !navigation || navigation.id !== connection.id || navigation.source !== table.id || !navigation.targets[connection.target] || navigation.targets[connection.target].columns.length !== connection.values.length)) throw new Error('This source connection is unavailable. Reload the catalog.');
-  const connectionColumns = navigation ? navigationColumns(navigation) : [];
-  if (connection && (navigation?.candidates && navigation.receiptFields.length || connectionColumns.some(c => !table.columns.some(x=>x.name===c)))) {
-    const {readReceiptConnectionPage} = await import('./receipt-reader');
-    if (sort || filters.length) throw new Error('Clear the sort and field filters before following a receipt connection.');
-    return readReceiptConnectionPage({table,columns,cursor,limit,connection,navigation:navigation!},onProgress);
+  const connectionColumns = navigation ? navigationColumns(connection?{...navigation,targets:[navigation.targets[connection.target]]}:navigation) : [];
+  if (connection && connectionColumns.some(c => !table.columns.some(x=>x.name===c))) {
+    throw new Error('The main source fields for this connection are not published. Receipts remain available as evidence.');
   }
   if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort, connection, navigation }, onProgress);
   let offset = 0,
@@ -164,29 +165,24 @@ export async function readPage(
   const scanEnd = Math.min(table.rows, maxScanRows === undefined ? table.rows : cursor + maxScanRows);
   const results: Row[] = [],
     positions: number[] = [];
-  const canPrune =
-    !connection && filters.length > 0 &&
-    filters.every(
-      (f) => table.columns.find((c) => c.name === f.column)?.type === "VARCHAR",
-    );
-  const filter = canPrune
-    ? { $and: filters.map((f) => ({ [f.column]: f.values ? { $in: f.values } : { $eq: f.value } })) }
-    : undefined;
+  const filter = connection ? undefined : parquetFilter(filters,table.columns);
   for (const member of table.members) {
+    if(!member.rows){const file=await remoteFile(member);const metadata=await parquetMetadataAsync(file,{parsers:exactParsers});if(Number(metadata.num_rows)!==0)throw new Error('The Parquet footer differs from the published row count.');continue;}
     if (offset + member.rows <= position) {
       offset += member.rows;
       continue;
     }
     const file = await remoteFile(member);
-    const metadata = await parquetMetadataAsync(file);
+    const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
     let local = Math.max(0, position - offset);
+    if(Number(metadata.num_rows)!==member.rows)throw new Error('The Parquet footer differs from the published row count.');
     while (local < member.rows && position < scanEnd && results.length < limit) {
       const end = Math.min(
         member.rows,
         scanEnd - offset,
         local + (filters.length || connection ? 50000 : limit - results.length),
       );
-      const rows = await parquetReadObjects({
+      const rows = await parquetReadObjects({parsers:exactParsers,
         file,
         metadata,
         compressors,
@@ -201,7 +197,7 @@ export async function readPage(
       let last = end;
       for (const row of rows) {
         if (
-          matchesFilters(row, filters) && (!connection || matchesConnection(row, navigation!, connection))
+          matchesFilters(row, filters, table.columns) && (!connection || matchesConnection(row, navigation!, connection))
         ) {
           results.push(row);
           positions.push(offset + row[rowIndex]!);
