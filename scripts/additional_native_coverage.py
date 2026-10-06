@@ -20,7 +20,7 @@ from native_legislative_coverage import ProcessingInputs, verify_file
 
 FAMILIES = {"amendments": "amendments", "court_dockets": "courtlistener",
             "court_docket_groups": "court-docket-groups"}
-SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "fcc_filings":"fcc-filings"}
+SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "member_terms":"members", "member_party_affiliations":"members", "fcc_filings":"fcc-filings"}
 FAMILIES.update(SOURCE_NAVIGATION_FAMILIES)
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,7 +39,7 @@ def bridge(args=(), request=None):
     return json.loads(result.stdout.splitlines()[-1])
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=len(FAMILIES))
 def native_schema(dataset):
     return bridge(["--schema", dataset])
 
@@ -139,6 +139,8 @@ class AdditionalInputs:
         return value
 
     def parent(self, child_id, child, relation):
+        if relation["mode"] == "same-generation":
+            return self.restore(relation["table"], self.inputs.parent(child_id, child, relation))
         owner = self.inputs.producing(child_id, child)
         if owner["artifact"]["spec"].get("parents", {}).get(relation["table"] + ".parquet"):
             return self.inputs.parent(child_id, child, relation)
