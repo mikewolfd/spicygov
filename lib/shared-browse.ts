@@ -1,12 +1,14 @@
 import type { Dataset, Filter, Row } from './catalog';
+import { isProcessingEvidence } from './catalog';
 export type BrowseField = {axis: string; column: string; label: string; description: string};
-const congressTables = new Set(['amendments','bill_family_archives','bill_family_backfill_walks','bill_family_backfills','bill_sections','bill_vote_references','cbo_cost_estimates','cbo_feed_items','committee_assignments','committee_meetings','committee_reports','congress_bills','hearing_bill_links','hearing_transcripts','house_activity_reports','house_communications','law_code_sections','laws','member_votes','nominations','record_issues','roll_call_votes','scorecard_item_links','table3_records']);
+const congressTables = new Set(['amendments','bill_sections','bill_vote_references','cbo_cost_estimates','cbo_feed_items','committee_assignments','committee_meetings','committee_reports','congress_bills','hearing_bill_links','hearing_transcripts','house_activity_reports','house_communications','law_code_sections','laws','member_votes','nominations','record_issues','roll_call_votes','scorecard_item_links','table3_records']);
 const chamberTables = new Set(['amendments','bill_committee_actions','bill_committees','bill_vote_references','committee_assignments','committee_meetings','committee_reports','committees','hearing_bill_links','hearing_transcripts','house_communications','member_vote_terms','member_votes','press_releases','roll_call_votes','scorecard_item_links']);
 const titleCaseChambers = new Set(['amendments','bill_committees','committees','house_communications','congress_bills','laws']);
 const agencies = new Set(['agency_lifecycle_stats','agency_monthly_volume','agency_stats','comments','comments_index','discovery_signals','dockets','documents','feed_summary','proceedings','rulemaking_lifecycles','unified_agenda']);
 const scalarCategory = /^(?:VARCHAR|TINYINT|SMALLINT|INTEGER|BIGINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|HUGEINT|UHUGEINT)$/;
 /** Reviewed browsing categories. Equal labels alone never create record joins. */
 export function browseFields(table: Dataset): BrowseField[] {
+  if (isProcessingEvidence(table)) return [];
   const supported: [string,string,string][] = [];
   if (congressTables.has(table.id)) supported.push(['congress','congress',table.id==='house_activity_reports'?'Congress filed':'Congress']);
   if (table.id==='house_activity_reports') supported.push(['congress','covered_congress','Congress covered']);

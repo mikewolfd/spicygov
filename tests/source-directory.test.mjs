@@ -34,6 +34,14 @@ test('native manifest hashing matches Python canonical JSON including Unicode', 
  assert.equal(await rulemakingManifestDigest({b:'café😀',a:1}),'sha256:46a3bbc4200ee62e60ef8b57a1c5b3d50dfae21a6d346658d6be06cd9bd9f347');
 });
 const table = (id = 'records') => ({ id, family: 'family', label: 'Records', columns: [], rows: 0, bytes: 20, members: [], inputs: [], sources: [], artifactDigest: sha, summary: '', coverage: '', connectionNotes: [] });
+test('source groups retain checkpoints as evidence without counting them as data tables', () => {
+  const bills = {...table('congress_bills'), family:'bill-family', group:'Congress'};
+  const checkpoint = {...table('bill_family_backfills'), family:'bill-family', group:'Congress', category:'processing_evidence', label:'Bill fetch attempts'};
+  const group = sourceSections(sourceEntries([bills,checkpoint],[]))[0].groups[0];
+  assert.deepEqual(group.entries.map(entry => entry.table.id), ['congress_bills']);
+  assert.deepEqual(group.checkpoints.map(entry => entry.table.id), ['bill_family_backfills']);
+  assert.equal(group.checkpoints[0].table.label, 'Bill fetch attempts');
+});
 const review = () => ({ format: 'spicygov-source-review', version: 1, reviewedAt: '2026-10-04T21:00:00Z', sourceRevision: 'a'.repeat(40), tables: {
   records: { family: 'family', label: 'Records', methods: ['api', 'bulk_download'], summary: 'API plus bulk.', mixing: 'Retained records.', gaps: ['Bodies absent.'], sources: [{ id: 'publisher', name: 'Publisher', url: 'https://example.gov' }], artifactDigest: sha, generationLinks: [{ label: 'Source observation journal', url: `${base}/source-evidence/${'a'.repeat(64)}/journal.jsonl` }], evidence: [] },
 } });

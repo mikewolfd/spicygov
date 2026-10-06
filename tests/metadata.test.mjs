@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { readFile } from 'node:fs/promises';
 const { outputFiles } = await build({ entryPoints: ['lib/catalog.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
-const { loadCollection, connectionFilters, publicationDate, applyMetadata, noConnectionsMessage } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const { loadCollection, connectionFilters, publicationDate, applyMetadata, noConnectionsMessage, recordDatasets } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const metadataBuild = await build({ entryPoints: ['lib/metadata.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
 const { parseMetadata } = await import(`data:text/javascript;base64,${Buffer.from(metadataBuild.outputFiles[0].contents).toString('base64')}`);
 const publication = () => ({ version: 2, families: { records: { artifactDigest: 'sha256:current', prefix: 'records/current', tables: {
@@ -31,6 +31,16 @@ globalThis.fetch = async (url, options) => {
   return Response.json(currentMetadata);
 };
 try {
+  await test('processing evidence remains inspectable but is excluded from the ordinary collection', async () => {
+    const value = bundle();
+    value.tables.child.category = 'processing_evidence';
+    const tables = (await loadCollection()).tables;
+    const result = applyMetadata(tables, parseMetadata(value));
+    assert.equal(result.tables.find(t => t.id === 'child').category, 'processing_evidence');
+    assert.deepEqual(recordDatasets(result.tables).map(t => t.id), ['parent']);
+    assert.match(noConnectionsMessage(result.tables.find(t => t.id === 'child')), /collection evidence/);
+    assert.equal(recordDatasets([{id:'fec_receipts',category:'native_observation'}]).length, 1);
+  });
   await test('missing, null, invalid and impossible publication dates never format as Invalid Date', () => {
     for (const value of [null, undefined, '', 'not a date', 0, '2026-02-30', '2026-13-01', '2026-10-03Tbad']) assert.equal(publicationDate(value), 'Publication date unavailable');
     assert.equal(publicationDate('2026-10-03T23:00:00Z'), 'Oct 3, 2026');

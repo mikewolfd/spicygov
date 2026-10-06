@@ -914,7 +914,7 @@
       ]
     },
     "fec_receipts": {
-      "label": "Reported contributions and other receipts",
+      "label": "Campaign money received",
       "summary": "Reads individual contributions from selected bulk files, receipt schedules in original filings, and supported national party data service responses.",
       "scope": "Each selected contribution bulk file contributes all its records; each selected original filing contributes only receipt records. Other cycles, filings, and query scopes are absent.",
       "gaps": [

@@ -20,6 +20,7 @@ export type Dataset = {
   summary: string;
   coverage: string;
   kind: string;
+  category?: string;
   quality?: string;
   rows: number;
   bytes: number;
@@ -47,6 +48,8 @@ export type Dataset = {
 };
 export const pretty = (s: string) =>
   s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
+export const isProcessingEvidence = (table: Pick<Dataset, 'category'>) => table.category === 'processing_evidence';
+export const recordDatasets = (tables: Dataset[]) => tables.filter(table => !isProcessingEvidence(table));
 export const count = (n: number) => new Intl.NumberFormat("en-US").format(n);
 export const compact = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -154,7 +157,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     if (undocumented) status.undocumentedTables++;
     return {
       ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
-      kind: metadata.kind ?? "published", quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
+      kind: metadata.kind ?? "published", category: metadata.category, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
       receiptIdentity: metadata.receiptIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
@@ -240,6 +243,7 @@ export function connectionFilters(join: Join, id: string, row: Row): Filter[] | 
   return target.remote.map((column, i) => ({ column, value: display(row[target.local[i]]) }));
 }
 export function noConnectionsMessage(table?: Dataset): string | undefined {
+  if (table && isProcessingEvidence(table)) return 'This is collection evidence. The collected records are listed under its source on the Sources page.';
   if (table?.connectionNotes.length) return undefined; // Show the specific unavailable-parent notes instead.
   if (table && ["loading", "missing", "incompatible", "unavailable"].includes(table.metadataState)) return "Connections are unavailable until this table’s metadata is ready.";
   return table?.joinAudit?.status !== "connected" && table?.joinAudit?.reason || "No supported connections are declared for this dataset.";

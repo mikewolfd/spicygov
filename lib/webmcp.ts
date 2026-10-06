@@ -2,6 +2,7 @@
 import { validFilter } from './filter-values';
 import { useEffect, useRef } from "react";
 import type { Dataset, Filter, Row } from "./catalog";
+import { recordDatasets } from './catalog';
 import type { RecordSort } from './record-sort';
 type State = {
   id: string;
@@ -45,7 +46,7 @@ export function useExplorerTools(
           {
             ...current.current,
             rows: current.current.rows.slice(0, 5),
-            datasets: catalog.map((t) => ({
+            datasets: recordDatasets(catalog).map((t) => ({
               id: t.id,
               label: t.label,
               rows: t.rows,

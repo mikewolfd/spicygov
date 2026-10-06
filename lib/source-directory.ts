@@ -1,5 +1,5 @@
 import { sourceControlLabel, sourceGroupLabel } from './source-labels';
-import { groupFor, pretty, type Dataset, type CoverageInput } from './catalog';
+import { groupFor, pretty, isProcessingEvidence, type Dataset, type CoverageInput } from './catalog';
 import { validDate, type Source, type MetadataStatus, type TableMetadataState } from './metadata';
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
@@ -118,7 +118,7 @@ export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: Sour
     if (!explorer && source.id === 'unlisted') source = table.publication?.kind === 'rulemaking'
       ? { id: 'rulemaking-publication', name: 'Rulemaking data', kind: 'derived', note: 'Calculated from regulatory records.' }
       : { id: 'comments-publication', name: 'Public comments', kind: 'publication', note: 'Comments and comment counts.' };
-    return { table: { ...table, label: audit?.copy?.label ?? (table.label === pretty(table.id) && audit ? audit.label : table.label) }, review: audit, explorer, source, historicalAttribution };
+    return { table: { ...table, label: isProcessingEvidence(table) ? table.label : audit?.copy?.label ?? (table.label === pretty(table.id) && audit ? audit.label : table.label) }, review: audit, explorer, source, historicalAttribution };
   }).sort((a, b) => a.table.label.localeCompare(b.table.label));
 }
 export function reviewedGenerationLinks(entry: SourceEntry): EvidenceLink[] {
@@ -204,7 +204,7 @@ export function collectionSteps(methods: string[]): { label: string; values: str
     return values.length ? [{label, values}] : [];
   });
 }
-export type SourceSection = { topic: string; id: string; groups: { id: string; name: string; publishers: Source[]; historical: boolean; entries: SourceEntry[] }[] };
+export type SourceSection = { topic: string; id: string; groups: { id: string; name: string; publishers: Source[]; historical: boolean; entries: SourceEntry[]; checkpoints: SourceEntry[] }[] };
 export function sourceSections(entries: SourceEntry[]): SourceSection[] {
   const topics = ['Congress', 'Regulation', 'Elections', 'Law & courts'];
   const sections = new Map<string, SourceSection>();
@@ -214,10 +214,10 @@ export function sourceSections(entries: SourceEntry[]): SourceSection[] {
     const id = `${section.id}-${entry.table.family}`;
     let group = section.groups.find(group => group.id === id);
     if (!group) {
-      group = { id, name: sourceFamilyName(entry.table.family), publishers: [], historical: false, entries: [] };
+      group = { id, name: sourceFamilyName(entry.table.family), publishers: [], historical: false, entries: [], checkpoints: [] };
       section.groups.push(group);
     }
-    group.entries.push(entry);
+    (isProcessingEvidence(entry.table) ? group.checkpoints : group.entries).push(entry);
     group.historical ||= entry.historicalAttribution;
     const publishers = entry.table.sources.length ? entry.table.sources : entry.historicalAttribution ? entry.review?.sources ?? [] : [];
     for (const publisher of publishers) if (!group.publishers.some(source => source.id === publisher.id && source.name === publisher.name)) group.publishers.push(publisher);

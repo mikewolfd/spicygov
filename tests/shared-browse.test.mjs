@@ -3,6 +3,13 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 async function module(path){const {outputFiles}=await build({entryPoints:[path],bundle:true,platform:'node',format:'esm',write:false});return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`)}
 const {browseFields,browseTargets,congressContext}=await module('lib/shared-browse.ts');
+test('collection checkpoints do not become record targets through shared Congress fields',()=>{
+ const fields=[{name:'congress',type:'VARCHAR',description:''}];
+ const bill={id:'congress_bills',columns:fields,rows:1,metadataState:'current'};
+ const checkpoint={...bill,id:'bill_family_backfills',category:'processing_evidence'};
+ assert.deepEqual(browseFields(checkpoint),[]);
+ assert.deepEqual(browseTargets([bill,checkpoint],browseFields(bill)[0],'119').map(t=>t.table.id),['congress_bills']);
+});
 const {readLocation,makeHref}=await module('lib/explorer-location.ts');
 const {related,connectionFilters}=await module('lib/catalog.ts');
 const {matchesFilters}=await module('lib/filter-values.ts');

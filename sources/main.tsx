@@ -1,7 +1,7 @@
 import { sourceControlLabel } from '../lib/source-labels';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { count, publicationDate, type Dataset } from '../lib/catalog';
+import { count, publicationDate, isProcessingEvidence, type Dataset } from '../lib/catalog';
 import { useCollection } from '../lib/use-collection';
 import { useSourceDirectory } from '../lib/use-source-directory';
 import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, sourceMetadataSummary, sourceSections, collectionSteps, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
@@ -107,7 +107,8 @@ function SourcesPage() {
   const { review, warnings: reviewWarnings, pending } = useSourceDirectory(retry);
   const warnings = [...publicationWarnings, ...reviewWarnings];
   const entries = useMemo(() => sourceEntries(tables, [], review), [tables, review]);
-  const allTables = useMemo(() => entries.map(entry => entry.table), [entries]);
+  const dataEntries = entries.filter(entry => !isProcessingEvidence(entry.table));
+  const allTables = useMemo(() => entries.filter(entry => !isProcessingEvidence(entry.table)).map(entry => entry.table), [entries]);
   useEffect(() => {
     const controller = new AbortController(); setCoveragePublishers(undefined); setPublisherError(false);
     void loadCoveragePublishers(allTables, coverageMaps, controller.signal).then(value => {
@@ -116,6 +117,7 @@ function SourcesPage() {
     return () => controller.abort();
   }, [allTables, coverageMaps, retry]);
   const filtered = useMemo(() => filterEntries(entries, query, method, evidence), [entries, query, method, evidence]);
+  const filteredData = filtered.filter(entry => !isProcessingEvidence(entry.table));
   const sections = useMemo(() => sourceSections(filtered), [filtered]);
   const metadataSummary = sourceMetadataSummary(entries);
   const filtering = !!query || !!method || !!evidence;
@@ -158,7 +160,7 @@ function SourcesPage() {
         <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">{sourceControlLabel('With reviewed source logs')}</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">{sourceControlLabel('Source descriptions need attention')}</option></select></label>
         <button onClick={clearFilters}>Clear filters</button>
       </div>
-      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filtered.length} of {entries.length} published tables · {filtered.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
+      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filteredData.length} of {dataEntries.length} published tables · {filteredData.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
       <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
       {metadataSummary ? <p className="metadata-status" role="status">{metadataSummary} This concerns descriptions and connections, not record counts. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
       {publisherError && <p className="metadata-status" role="status">Publisher names could not load. Recorded IDs remain visible. <button onClick={() => setRetry(retry + 1)}>Retry publisher names</button></p>}
@@ -180,7 +182,8 @@ function SourcesPage() {
             </button>
             {isOpen && <div className="source-body" id={`${group.id}-body`}>
               {group.publishers.length > 1 && <details className="publisher-list"><summary>Recorded source names</summary>{group.historical && <p>Some names come from an earlier review and may be incomplete.</p>}<ul>{group.publishers.map(source => <li key={`${source.id}-${source.name}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a> : source.name}</li>)}</ul></details>}
-              <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">{sourceControlLabel('Coverage')}</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} coverageLoading={!coverageMaps && !timeError} />)}</tbody></table></div>
+              {!!items.length && <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">{sourceControlLabel('Coverage')}</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} coverageLoading={!coverageMaps && !timeError} />)}</tbody></table></div>}
+              {!!group.checkpoints.length && <section className="collection-checkpoints" aria-labelledby={`${group.id}-checkpoints`}><h4 id={`${group.id}-checkpoints`}>Collection status</h4><p>Saved checkpoints help collection resume and record incomplete work. Their counts describe processing, not source completeness.</p><ul className="readable-inputs">{group.checkpoints.map(({table}) => <li key={table.id}><strong>{table.label}</strong><span>{table.summary || 'Saved collection progress.'}</span><span>{table.rows ? `${count(table.rows)} saved checkpoints` : 'No checkpoints recorded in this release'} · {table.published ? `Released ${publicationDate(table.published)}` : 'Release date not recorded'}</span><a href={`/?table=${encodeURIComponent(table.id)}`}>Inspect collection evidence →</a></li>)}</ul></section>}
               {items.length > limit && <button className="show-more" onClick={() => setLimits(previous => ({...previous, [group.id]: limit + 8}))}>Show {Math.min(8, items.length-limit)} more tables ({items.length-limit} remaining)</button>}
             </div>}
           </div>;
