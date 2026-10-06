@@ -160,6 +160,39 @@ class RegulatoryCoverageSinglePassTests(unittest.TestCase):
                 root.mkdir()
                 _check_documents_uses_bulk_for_reviewed_source_and_keeps_row_fallback_parity(root, full_source)
 
+    def test_register_bulk_dispatch_keeps_full_keys_order_and_exact_row_fallback(self):
+        for dataset in ('federal_register', 'fr_docket_links'):
+            with self.subTest(dataset=dataset):
+                root = self.root / dataset
+                root.mkdir()
+                schema = pa.schema([(name, pa.int64() if dtype == 'BIGINT' else pa.string())
+                                    for name, dtype in SOURCE_COLUMNS[dataset]])
+                rows = []
+                for date, ordinal, docket in (('2025-06-30', 0, 'EPA-1'), ('2026-06-30', None, 'EPA-2')):
+                    raw = dict.fromkeys(schema.names)
+                    raw.update(document_number='2026-00001', publication_date=date, title='Repeated label')
+                    if dataset == 'fr_docket_links':
+                        raw.update(docket_source_ordinal=ordinal, docket_id=docket)
+                    rows.append(raw)
+                source = root / 'source.parquet'
+                pq.write_table(pa.Table.from_pylist(rows, schema=schema), source)
+                subject, receipts = write_held_dataset(dataset, source, root / 'native', generation_id='selected')
+                request = {'dataset':dataset, 'generationId':'selected', 'subjects':[_member(subject)],
+                           'receipts':_member(receipts), 'destination':str(root / 'restored')}
+                with patch.object(reader.regulations_bulk, '_materialize_selected',
+                                  wraps=reader.regulations_bulk._materialize_selected) as bulk, patch.object(
+                        reader, 'write_regulatory_facts', side_effect=AssertionError('Unexpected row fallback')):
+                    result = reader.restore(request)
+                self.assertEqual(bulk.call_count, 1)
+                expected = [{name:raw[name] for name, _ in reader.reviewed_schema(dataset)} for raw in rows]
+                actual = pq.read_table(result['urls'][0])
+                self.assertEqual(actual.to_pylist(), expected)
+                request['destination'] = str(root / 'fallback')
+                with patch.object(reader.regulations_bulk, '_materialize_selected',
+                                  side_effect=reader.etl_bulk.NotBulkEligible('Forced unproven batch')):
+                    fallback = reader.restore(request)
+                self.assertTrue(actual.equals(pq.read_table(fallback['urls'][0]), check_metadata=True))
+
     def test_late_invalid_selected_evidence_never_exposes_coverage_output(self):
         for change in ("digest", "version", "raw", "generation", "metadata", "failed-outcome"):
             with self.subTest(change=change):

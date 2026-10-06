@@ -4,7 +4,7 @@ Missing definitions, schema drift, failed scans and unreconciled dimensions fail
 the build. The previous published inventory is replaced only after every table
 passes. Presence measures retained rows; it never proves publisher completeness.
 """
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 import argparse
 import concurrent.futures
 import datetime
@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 
 import duckdb
 
@@ -28,6 +29,7 @@ from publication_census import census_digest, load, schema
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'public/coverage-maps.v1.json'
 CACHE = ROOT / '.cache/coverage-maps'
+HEAVY_NATIVE_SCAN_LOCK = threading.Lock()
 
 
 def measurement_revision(policy=None):
@@ -322,7 +324,11 @@ def timed_scan(item):
     try:
         # DuckDB's default spill directory is relative to the working directory.
         # Keep concurrent readers separate and clean up even after a timeout.
-        with tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
+        # Full selected receipt admission can use several GiB beyond DuckDB's
+        # memory limit. Queue these three readers before starting their timer;
+        # other scans keep the existing parallelism and cached maps return above.
+        serial = id in ('documents', 'federal_register', 'fr_docket_links') and policy.get('_additionalNativeProcessing')
+        with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = subprocess.run([sys.executable, __file__, '--scan'],
                 input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
                 capture_output=True, timeout=timeout_seconds, check=True, cwd=workdir)
