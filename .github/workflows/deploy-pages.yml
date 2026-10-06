@@ -1,13 +1,9 @@
-name: Deploy SpicyGov
+name: Qualify full failed coverage datasets
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: "23 6 * * *"
   workflow_dispatch:
     inputs:
       runner:
-        description: GitHub-hosted runner for build and deployment
+        description: GitHub-hosted runner for full coverage qualification
         type: choice
         default: ubuntu-latest
         options:
@@ -16,7 +12,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: github-pages
+  group: full-failed-coverage-qualification
   cancel-in-progress: false
 jobs:
   build:
@@ -119,11 +115,18 @@ jobs:
           key: ${{ runner.os }}-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             ${{ runner.os }}-coverage-v1-
-      - name: Verify coverage for every published table
+      - name: Qualify the full current failed datasets
         id: coverage-scan
+        shell: bash
         # A restored checkpoint is only a candidate. The builder rechecks exact
         # source, schema, policy, scanner, paired exports and UTC month bindings.
-        run: python scripts/build-coverage-maps.py
+        run: |
+          mkdir -p diagnostic-results
+          git rev-parse HEAD > diagnostic-results/website-commit.txt
+          git -C .coverage-navigation-backend rev-parse HEAD > diagnostic-results/source-commit.txt
+          free -b > diagnostic-results/runner-memory.txt
+          lscpu > diagnostic-results/runner-cpu.txt
+          /usr/bin/time -v -o diagnostic-results/resource-use.txt python scripts/build-coverage-maps.py --only documents federal_register fr_docket_links comment_periods rule_targets --output diagnostic-results/current-full-coverage.json 2>&1 | tee diagnostic-results/coverage.log
       - name: Save validated coverage checkpoints
         if: ${{ always() && steps.coverage-cache.outcome == 'success' && (steps.coverage-scan.outcome == 'success' || steps.coverage-scan.outcome == 'failure') && hashFiles('.cache/coverage-maps/*.json') != '' }}
         uses: actions/cache/save@v5
@@ -132,22 +135,17 @@ jobs:
           # requires every current table before it replaces the served map.
           path: .cache/coverage-maps
           key: ${{ steps.coverage-cache.outputs.cache-primary-key }}
-      - run: npm test
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - name: Preserve full qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: dist
-  deploy:
-    needs: build
-    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/configure-pages@v5
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: full-failed-coverage-${{ github.run_id }}
+          path: |
+            diagnostic-results/
+            .cache/coverage-maps/documents.json
+            .cache/coverage-maps/federal_register.json
+            .cache/coverage-maps/fr_docket_links.json
+            .cache/coverage-maps/comment_periods.json
+            .cache/coverage-maps/rule_targets.json
+          if-no-files-found: error
+          include-hidden-files: true
