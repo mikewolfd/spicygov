@@ -14,6 +14,9 @@ import pyarrow.parquet as pq
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import restore_source_navigation_coverage as reader
 import additional_native_coverage as adapter
+from coverage_inputs import CoverageInputs
+from congress_coverage import _member_service
+import duckdb
 from spicy_regs.congress_receipts import write_congress_dataset
 from spicy_regs.congress_subjects import INPUT_COLUMNS
 from spicy_regs.etl_receipts import ReceiptContext, write_dataset
@@ -39,6 +42,40 @@ class SourceCoverageTests(unittest.TestCase):
             adapter.bridge(["--schema","amendments"])
             self.assertEqual(run.call_args.args[0][1],env["SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE"])
 
+    def test_members_service_uses_restored_terms_from_the_same_generation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            members = root / "members.parquet"
+            terms = root / "member_terms.parquet"
+            pq.write_table(pa.Table.from_pylist([{"bioguide_id":"A000001"}]), members)
+            pq.write_table(pa.Table.from_pylist([
+                {"bioguide_id":"A000001", "term_index":0, "term_start":"2000-01-01", "term_end":"2000-02-01"},
+                {"bioguide_id":"A000001", "term_index":1, "term_start":"2001-01-01", "term_end":"2001-02-01"},
+            ]), terms)
+            child = {"family":"members", "artifactDigest":"selected-generation", "tableId":"members", "rows":1,
+                     "urls":[str(members)], "members":[{"url":str(members)}], "artifact":{"spec":{"etlReceipts":{"policies":[]}}}}
+            parent = {"family":"members", "artifactDigest":"selected-generation", "tableId":"member_terms", "rows":2,
+                      "urls":[str(terms)], "recordUrl":"selected-parent", "members":[]}
+            class Inputs(CoverageInputs):
+                def producing(self, table_id, table):
+                    return child
+                def table(self, family, generation, table_id, expected=None):
+                    if (family, generation, table_id) != ("members", "selected-generation", "member_terms"):
+                        raise ValueError("Parent lookup left the selected generation")
+                    return parent
+            selected = adapter.AdditionalInputs(Inputs(), root / "private")
+            dim = json.loads((Path(reader.ROOT) / "content/coverage-definitions/congress.json").read_text())["tables"]["members"]["dimensions"][1]
+            # Keep the real same-generation resolver and service scanner. Receipt
+            # restoration is checked separately by the native fixtures above.
+            with patch.object(selected, "restore", side_effect=lambda dataset, owner: owner) as restore, duckdb.connect() as conn:
+                measured = _member_service(conn, child, dim, selected)
+            restore.assert_called_once_with("member_terms", parent)
+            self.assertEqual(measured["parent"]["artifactDigest"], "selected-generation")
+            self.assertEqual(measured["placedRows"], 1)
+            self.assertIn("2000-01", measured["buckets"])
+            self.assertIn("2001-01", measured["buckets"])
+            self.assertNotIn("2000-06", measured["buckets"])
+
     def test_new_subjects_preserve_old_coverage_facts_and_exact_generation(self):
         for dataset in reader.DATASETS:
             with self.subTest(dataset=dataset), tempfile.TemporaryDirectory() as folder:
@@ -55,6 +92,12 @@ class SourceCoverageTests(unittest.TestCase):
                         raw.update(citation="PN129-10", number="129", part_number="10", received_date="2025-04-29", committees_json='[{"systemCode":"hsag"}]', hearings_json='[]', detail_read="true")
                     elif dataset == "committee_meetings":
                         raw.update(chamber="senate", event_id="1", meeting_date="2026-10-01", nomination_references_json='[{"number":129,"part":10}]', treaty_references_json='[]', detail_read="true")
+                    elif dataset == "members":
+                        raw.update(bioguide_id="A000001", name_first="Patricia", name_nickname="Pat", fec_ids_json='["H0CA00001"]', term_count="1", first_term_start="1990-01-03")
+                    elif dataset == "member_terms":
+                        raw.update(bioguide_id="A000001", term_index="0", term_type="rep", term_start="2000-01-01", term_end="2001-01-01")
+                    elif dataset == "member_party_affiliations":
+                        raw.update(bioguide_id="A000001", input_sha256="sha256:"+"0"*64, term_index="0", affiliation_index="0", party="D", term_party="D", affiliation_start="2000-01-01", affiliation_end="2001-01-01", start_status="stated", end_status="stated")
                     else:
                         raw.update(communication_id="ec1-119", communication_type="ec", number="1", source_route="congressional-record", record_package_id="CREC-2026-10-01", record_entry_text="Exact retained passage", detail_read="true")
                     source = root / "source.parquet"
@@ -71,6 +114,8 @@ class SourceCoverageTests(unittest.TestCase):
                     self.assertEqual(pq.read_table(subject).to_pylist()[0]["documents"][0]["src"],"https://example.gov/a.pdf")
                 else:
                     self.assertEqual(measured, {name:raw.get(name) for name,_ in reader.reviewed_schema(dataset)})
+                    if dataset == "members":
+                        self.assertEqual(pq.read_table(subject).to_pylist()[0]["name_nickname"], "Pat")
                 wrong = copy.deepcopy(request)
                 wrong["generationId"] = "different"
                 wrong["destination"] += "-wrong"
