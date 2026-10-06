@@ -999,8 +999,9 @@ h1 {
 }
 .record-fields dt {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 14px;
+  gap: 8px 14px;
   font:
     12px ui-monospace,
     monospace;
@@ -1010,6 +1011,7 @@ h1 {
 .record-fields dt span {
   font-size: 10px;
   flex-shrink: 0;
+  max-width: 100%;
   color: #98a28e;
 }
 .record-fields dd {
