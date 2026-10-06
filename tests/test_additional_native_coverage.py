@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
@@ -43,6 +44,16 @@ class BridgeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+
+    def test_documents_runtime_allowance_is_finite_and_scoped_to_restoration(self):
+        env = {'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': str(Path(adapter.__file__).resolve()),
+               'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON': sys.executable}
+        for dataset in ('documents', 'federal_register', 'fr_docket_links', 'nominations'):
+            for args in ([], ['--schema', dataset]):
+                with self.subTest(dataset=dataset, args=args), patch.dict(os.environ, env), patch.object(
+                        adapter.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}'})()) as run:
+                    self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
+                    self.assertEqual(run.call_args.kwargs['timeout'], 600 if dataset == 'documents' and not args else 300)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
         raw, request = fixture(self.root)

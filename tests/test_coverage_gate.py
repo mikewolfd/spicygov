@@ -215,6 +215,33 @@ class CoverageGateTest(unittest.TestCase):
             self.assertEqual(len(set(directories)), 2)
             self.assertTrue(all(not directory.exists() for directory in directories))
 
+    def test_heavy_native_readers_queue_without_blocking_cached_results(self):
+        started, release, second_started = (threading.Event() for _ in range(3))
+        def reader(command, **options):
+            id = json.loads(options['input'])['id']
+            self.assertEqual(options['timeout'], 900)
+            if id == 'federal_register':
+                started.set()
+                self.assertTrue(release.wait(timeout=5))
+            else:
+                second_started.set()
+            return mock.Mock(stdout=json.dumps({'reader': id}))
+        policy = {'_additionalNativeProcessing': True}
+        with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old == 'cached'), \
+             mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
+             concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(builder.timed_scan, ('federal_register', {}, policy, None))
+            try:
+                self.assertTrue(started.wait(timeout=5))
+                second = pool.submit(builder.timed_scan, ('fr_docket_links', {}, policy, None))
+                self.assertFalse(second_started.wait(timeout=0.1))
+                self.assertEqual(builder.timed_scan(('documents', {}, policy, 'cached')), ('documents', 'cached'))
+            finally:
+                release.set()
+            self.assertEqual(first.result()[0], 'federal_register')
+            self.assertEqual(second.result()[0], 'fr_docket_links')
+            self.assertTrue(second_started.is_set())
+
     def test_clock_dependent_counts_expire_even_without_future_anomalies(self):
         table, policy, measured = fixture()
         policy['dimensions'][0]['special'] = 'literal-date-anomalies'

@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
-          ref: 4ff55b3c1cd488e637cf0b198e548fe260b54d39
+          ref: 032c5a2ef9da7754a74be911254ccffc8dddfe53
           path: .coverage-navigation-backend
       - name: Check out the qualified court-citation key reader
         uses: actions/checkout@v4

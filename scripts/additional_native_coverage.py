@@ -50,9 +50,12 @@ def bridge(args=(), request=None):
     if not script or not Path(script).is_absolute() or not Path(script).is_file():
         raise ValueError("Additional native coverage requires the pinned restoration bridge")
     python = os.environ.get(prefix + "_COVERAGE_PYTHON", sys.executable)
+    # The complete documents restore passed locally but exceeded five minutes
+    # on the hosted runner. Keep the larger finite allowance scoped to it.
+    timeout = 600 if dataset == "documents" and not args else 300
     result = subprocess.run([python, script, *args],
                             input=None if request is None else json.dumps(request),
-                            text=True, capture_output=True, check=True, timeout=300)
+                            text=True, capture_output=True, check=True, timeout=timeout)
     return json.loads(result.stdout.splitlines()[-1])
 
 

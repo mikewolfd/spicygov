@@ -108,7 +108,7 @@ def restore_regulation(request, facts):
         raise ValueError("Selected regulatory generation has no receipt context")
     output = destination / "coverage-facts.parquet"
     selected = regulations_receipts.ReceiptInput(dataset, (subject,), scoped, request["generationId"])
-    if dataset == "documents":
+    if dataset in {"documents", "federal_register", "fr_docket_links"}:
         try:
             # This maintained path performs complete admission and exact source
             # reproduction. Its input is already scoped; avoid selecting twice.
