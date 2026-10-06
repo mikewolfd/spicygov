@@ -61,6 +61,9 @@ try {
     assert.deepEqual(await readColumnBatches(table,['id','large'],75,batch=>rows.push(...batch)),{rows:75,complete:false});
     assert.deepEqual(rows.map(row=>row.id),Array.from({length:75},(_,i)=>String(i)));
     assert.equal(typeof rows[74].large,'bigint');
+    const continued=[];
+    assert.deepEqual(await readColumnBatches(table,['id'],75,batch=>continued.push(...batch),75),{rows:65,complete:true});
+    assert.deepEqual(continued.map(row=>row.id),Array.from({length:65},(_,i)=>String(i+75)));
     const full=[];
     assert.deepEqual(await readColumnBatches(table,['id'],140,batch=>full.push(...batch)),{rows:140,complete:true});
     assert.equal(full.at(-1).id,'139');

@@ -132,3 +132,7 @@ match exactly and their counts do not amplify source rows. Within a run, each
 source projection and target key population is shared across its recipes; each
 member's footer is parsed once per projection. This audit runs separately from
 site builds and does not republish or recount the source data.
+
+A partial source scan continues after its last checked row when all targets
+were checked. A partial result with unchecked targets is reused until its limits
+or pins change; repeatedly scanning the same source prefix would add no evidence.

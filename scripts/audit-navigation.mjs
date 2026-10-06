@@ -38,17 +38,20 @@ const report={format:'spicygov-navigation-measurements',version:1,measuredAt:new
 const keyPopulations=new Map();
 const sourcePopulations=new Map();
 const pin=table=>table?{id:table.id,artifactDigest:table.artifactDigest,publicationIdentity:table.publicationIdentity,members:table.members,receipts:table.publication?.nativeReceipts}:null;
-const readRows=async(table,columns,limit,onRows)=>{
- const result=await readColumnBatches(table,columns,limit,onRows);
+const readRows=async(table,columns,limit,onRows,start=0)=>{
+ const result=await readColumnBatches(table,columns,limit,onRows,start);
  return result.complete;
 };
 for (const spec of recipes) {
  const source=tables.get(spec.source);
  const targetPins=spec.targets.map(target=>({table:target.table,columns:target.columns,pin:pin(tables.get(target.table))}));
  const fingerprint='sha256:'+createHash('sha256').update(JSON.stringify({implementationSha256,spec,source:pin(source),targets:targetPins})).digest('hex');
- const previous=old.results.find(result=>result.id===spec.id&&result.fingerprint===fingerprint&&result.status==='complete');
- if(previous) {report.results.push({...previous,reused:true}); continue;}
- const result={id:spec.id,source:spec.source,sourcePin:pin(source),targetPins,fingerprint,status:'unmeasured',counts:null,reused:false};
+ const previous=old.results.find(result=>result.id===spec.id&&result.fingerprint===fingerprint);
+ const limits={sourceRows:sourceLimit,targetRows:targetLimit};
+ if(previous?.status==='complete'||previous?.counts?.unchecked>0&&JSON.stringify(previous.limits)===JSON.stringify(limits)) {report.results.push({...previous,reused:true}); continue;}
+ const resume=previous?.status==='partial'&&previous.counts?.unchecked===0&&previous.sourceComplete===false;
+ const start=resume?previous.counts.sourceRows:0;
+ const result={id:spec.id,source:spec.source,sourcePin:pin(source),targetPins,fingerprint,status:'unmeasured',counts:null,reused:false,limits};
  try {
   const measurement=scalarMeasurements.get(spec.id);
   const retained=measurement&&retainedScalarCounts(measurement,source,tables.get(spec.targets[0].table));
@@ -71,20 +74,22 @@ for (const spec of recipes) {
     const complete=await readRows(table,target.columns,targetLimit,rows=>rows.forEach(row=>{const key=targetIdentity(row,target.columns);if(key!==undefined) keys.set(key,(keys.get(key)??0)+1);}));
     keyPopulations.set(identity,complete?keys:undefined);
    }
-   const counts=emptyCounts();
-   if(!sourcePopulations.has(source.id)) {
+   const counts=resume?structuredClone(previous.counts):emptyCounts();
+   const sourceKey=JSON.stringify([source.id,start]);
+   if(!sourcePopulations.has(sourceKey)) {
     const needed=[...new Set(recipes.filter(recipe=>recipe.source===source.id).flatMap(recipe=>[...navigationColumns(recipe),...(recipe.field?[recipe.field]:[]),...(source.receiptIdentity??[])]))].filter(column=>source.columns.some(c=>c.name===column));
     const rows=[];
-    const complete=await readRows(source,needed,sourceLimit,batch=>rows.push(...batch));
-    sourcePopulations.set(source.id,{rows,complete});
+    const complete=await readRows(source,needed,sourceLimit,batch=>rows.push(...batch),start);
+    sourcePopulations.set(sourceKey,{rows,complete});
    }
-   const population=sourcePopulations.get(source.id);
+   const population=sourcePopulations.get(sourceKey);
    countNavigation(spec,population.rows,(target,values)=>{
     const keys=keyPopulations.get(JSON.stringify([target.table,target.columns,pin(tables.get(target.table))]));
     return keys?keys.get(JSON.stringify(values))??0:undefined;
    },counts);
    const complete=population.complete;
-   result.counts=counts; result.status=complete&&!counts.unchecked?'complete':'partial';
+   result.counts=counts; result.sourceComplete=complete; result.status=complete&&!counts.unchecked?'complete':'partial';
+   if(resume) result.resumedAtSourceRow=start;
    if(!complete) result.reason='Source scan reached its explicit row limit; counts cover only the checked prefix.';
    else if(counts.unchecked) result.reason='Some target populations are unavailable, receipt-backed, or above the explicit target limit.';
   }
