@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
+import {renderToStaticMarkup} from 'react-dom/server';
 const {outputFiles}=await build({entryPoints:['lib/navigation.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {parseNavigation,targetKeys,elements,matchesConnection,forwardLinks,validConnection}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {parseNavigation,targetKeys,elements,matchesConnection,forwardLinks,validConnection,fccDocumentOutcome}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(transform?{transform}:{})});
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
@@ -51,6 +52,59 @@ test('FCC direct document arrays and retained raw records follow the same URL re
  const s={...spec,id:'fcc_documents',field:'documents',fields:['documents'],targets:[url],receiptFields:['native_fields_json'],elementPath:['documents']};
  assert.equal(forwardLinks(s,{documents:[{src:'https://example.test/document.pdf'}]})[0].values[0],'https://example.test/document.pdf');
  assert.equal(forwardLinks({...s,field:'native_fields_json'},{native_fields_json:JSON.stringify({documents:[{src:'https://example.test/document.pdf'}]})})[0].values[0],'https://example.test/document.pdf');
+});
+
+test('FCC offered document occurrences preserve order and repeated URLs',()=>{
+ const url={table:'@url',columns:['url'],keys:[{...key(part('src')),pattern:'https://[^\\s]+'}],guards:[]};
+ const s={...spec,id:'fcc_filing_documents',source:'fcc_filings',field:'documents',fields:['documents'],targets:[url],receiptFields:['native_fields_json','pdf_extraction_results_json'],elementPath:['documents']};
+ const documents=[{src:'javascript:alert(1)',filename:'invalid.pdf',description:'Not a link'},null,{src:'https://example.test/first.pdf',filename:'First literal name.pdf',description:'First occurrence'},{src:'https://example.test/second.pdf',filename:'Second literal name.pdf',description:'Second occurrence'},{src:'https://example.test/first.pdf',filename:'Repeated literal name.pdf',description:'Repeated occurrence'}];
+ const expected=documents.slice(2).map(d=>d.src);
+ assert.deepEqual(forwardLinks(s,{documents}).map(link=>link.values[0]),expected);
+ assert.deepEqual(forwardLinks({...s,field:'native_fields_json'},{native_fields_json:JSON.stringify({documents})}).map(link=>link.values[0]),expected);
+ const links=forwardLinks(s,{documents});
+ assert.deepEqual(links.map(link=>link.sourceOrdinal),[2,3,4]);
+ assert.deepEqual(links.map(link=>[link.values[0],link.sourceElement.filename,link.sourceElement.description]),documents.slice(2).map(d=>[d.src,d.filename,d.description]));
+ assert.equal(forwardLinks({...s,id:'another_recipe'},{documents})[0].sourceElement,undefined);
+});
+
+test('FCC receipt diagnostics report recorded outcomes with exact URL matching, without qualifying capture or text',()=>{
+ const url='https://docs.fcc.gov/public/attachments/DOC-425379A1.pdf', digest='sha256:'+'d'.repeat(64);
+ const diagnostic={url,source_sha256:digest,status:'ok',page_count:2,error:null};
+ const fields={pdf_extraction_results_json:JSON.stringify([diagnostic])};
+ const outcome=fccDocumentOutcome(url,fields);
+ assert.equal(outcome.state,'recorded');assert.equal(outcome.sourceSha256,digest);assert.equal(outcome.pageCount,2);
+ assert.equal(outcome.message,'Reported extraction: successful.');
+ assert.equal(fccDocumentOutcome(url,{},false).state,'unavailable');
+ assert.equal(fccDocumentOutcome(url,fields,false).state,'unavailable');
+ for(const other of ['https://other.test/DOC-425379A1.pdf',url+'?download=1',url.replace('DOC-425379A1','doc-425379a1')]) assert.equal(fccDocumentOutcome(other,fields).state,'unrecorded');
+ assert.equal(fccDocumentOutcome(url,{}).state,'unread');
+ for(const value of [null,'[]',JSON.stringify([{...diagnostic,url:'https://other.test/a.pdf'}])]) assert.equal(fccDocumentOutcome(url,{pdf_extraction_results_json:value}).state,'unrecorded');
+ assert.equal(fccDocumentOutcome(url,{pdf_extraction_results_json:JSON.stringify([diagnostic,diagnostic])}).state,'ambiguous');
+ for(const value of ['invalid','{}',undefined,'[null]',JSON.stringify([{...diagnostic,status:'captured'}]),JSON.stringify([{...diagnostic,source_sha256:'invalid'}]),JSON.stringify([{...diagnostic,page_count:'2'}]),JSON.stringify([{...diagnostic,page_count:0}]),JSON.stringify([{...diagnostic,error:'contradiction'}]),JSON.stringify([{url,status:'ok'}])]) assert.equal(fccDocumentOutcome(url,{pdf_extraction_results_json:value}).state,'malformed');
+ for(const status of ['empty','encrypted','error']) {
+  const result=fccDocumentOutcome(url,{pdf_extraction_results_json:JSON.stringify([{...diagnostic,status,page_count:0,error:status==='error'?'retained failure':null}])});
+  assert.equal(result.state,'recorded');assert.equal(result.sourceSha256,digest);assert.equal(result.pageCount,0);
+ }
+ const failed=fccDocumentOutcome(url,{pdf_extraction_results_json:JSON.stringify([{...diagnostic,status:'error',source_sha256:null,page_count:null,error:'fetch returned no bytes'}])});
+ assert.equal(failed.state,'recorded');assert.equal(failed.sourceSha256,undefined);assert.equal(failed.pageCount,undefined);assert.equal(failed.error,'fetch returned no bytes');
+});
+
+test('FCC document display keeps literal descriptors and compact status with expandable recorded facts',async()=>{
+ const {outputFiles}=await build({entryPoints:['components/source-connections.tsx'],bundle:true,platform:'node',format:'esm',write:false});
+ const {FccDocumentReference}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+ const url='https://example.test/not-the-offered-filename.pdf', digest='sha256:'+'a'.repeat(64);
+ const link={values:[url],sourceElement:{filename:'Literal & offered.pdf',description:'Publisher description'},sourceOrdinal:2};
+ const receipt={pdf_extraction_results_json:JSON.stringify([{url,source_sha256:digest,status:'ok',page_count:2,error:null}])};
+ const html=renderToStaticMarkup(FccDocumentReference({link,receipt,fieldAvailable:true}));
+ const [primary,details]=html.split('<details>');
+ assert.match(primary,/Literal &amp; offered.pdf/);assert.match(primary,/Publisher description/);
+ assert.match(primary,/Open offered document 3/);assert.match(primary,/Reported extraction: successful\. 2 pages\./);
+ assert.match(primary,/File and text access: not verified/);assert.ok(!primary.includes(digest));
+ assert.match(details,/<summary>Recorded details<\/summary>/);assert.ok(details.includes(digest));
+ assert.match(details,/do not establish access to retained file bytes or extracted text/);
+ const absent=renderToStaticMarkup(FccDocumentReference({link:{values:[url],sourceElement:{}},receipt:{},fieldAvailable:false}));
+ assert.match(absent,/unavailable in the published source details/);assert.ok(!absent.includes('not read yet'));
+ assert.ok(!absent.includes('Offered filename:'));assert.ok(!absent.includes('Description:'));
 });
 
 test('legal targets distinguish unresolved and ambiguous candidates from absent references',()=>{

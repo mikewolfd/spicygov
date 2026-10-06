@@ -1,20 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Dataset, Filter, Row } from '../lib/catalog';
 import { pretty, display } from '../lib/catalog';
-import { elements, forwardLinks, type Connection, type Navigation } from '../lib/navigation';
+import { at, elements, forwardLinks, fccDocumentOutcome, type Connection, type Navigation } from '../lib/navigation';
 type Props = {table: Dataset; catalog: Dataset[]; row: Row; navigation: Navigation[]; onOpen: (id:string,filters:Filter[],connection?:Connection)=>void};
+export function FccDocumentReference({link,receipt,fieldAvailable}:{link:ReturnType<typeof forwardLinks>[number];receipt:Row;fieldAvailable:boolean}) {
+  const outcome=fccDocumentOutcome(link.values[0],receipt,fieldAvailable);
+  const filename=at(link.sourceElement,['filename']),description=at(link.sourceElement,['description']);
+  return <>
+    {typeof filename==='string'&&<small style={{whiteSpace:'pre-wrap'}}>Offered filename: {filename}</small>}
+    {typeof description==='string'&&<small style={{whiteSpace:'pre-wrap'}}>Description: {description}</small>}
+    <a href={link.values[0]} target="_blank" rel="noreferrer">Open offered document {link.sourceOrdinal!==undefined?link.sourceOrdinal+1:''}</a>
+    <small>{outcome.message}{outcome.pageCount!==undefined&&` ${outcome.pageCount} ${outcome.pageCount===1?'page':'pages'}.`}</small>
+    <small>File and text access: not verified.</small>
+    {outcome.state==='recorded'&&<details><summary>Recorded details</summary>
+      {outcome.sourceSha256&&<small style={{overflowWrap:'anywhere'}}>Recorded source byte SHA-256: {outcome.sourceSha256}</small>}
+      {outcome.error&&<small>Reported error: {outcome.error}</small>}
+      <small>This selected receipt records an extraction outcome. These fields do not establish access to retained file bytes or extracted text.</small>
+    </details>}
+  </>;
+}
 export function SourceConnections({table,catalog,row,navigation,onOpen}: Props) {
   const outgoing=navigation.filter(s=>s.source===table.id), incoming=navigation.flatMap(s=>s.targets.map((t,i)=>({s,t,i}))).filter(({t})=>t.table===table.id);
-  const [held,setHeld]=useState<Row>({}), [busy,setBusy]=useState(false), [error,setError]=useState(''), [evidence,setEvidence]=useState<{records:Row[];partial:boolean;cursor:number;dataset:string;filters:Filter[]}|null>(null);
+  const selection=JSON.stringify([table.id,table.artifactDigest,table.publication?.nativeReceipts?.generationId,table.publication?.nativeReceipts?.sha256]);
+  const [receipt,setReceipt]=useState<{row:Row;selection:string;fields:Row}|null>(null), [busy,setBusy]=useState(false), [error,setError]=useState(''), [evidence,setEvidence]=useState<{records:Row[];partial:boolean;cursor:number;dataset:string;filters:Filter[]}|null>(null);
+  const held=receipt?.row===row&&receipt.selection===selection?receipt.fields:{};
   const worker=useRef<Worker|null>(null);
-  useEffect(()=>{setHeld({});setEvidence(null);setError('');setBusy(false);return()=>worker.current?.terminate();},[row,table.id]);
+  useEffect(()=>{setReceipt(null);setEvidence(null);setError('');setBusy(false);return()=>worker.current?.terminate();},[row,selection]);
   if(!outgoing.length&&!incoming.length)return null;
   const wanted=[...new Set([...outgoing.flatMap(s=>s.receiptFields), ...(Object.values(table.receiptContainers??{}).some(fields=>fields.includes('detail_read')) ? ['detail_read'] : [])])];
   const current={...row,...held};
   function load() {
     worker.current?.terminate();setBusy(true);setError('');
     const w=new Worker(new URL('../lib/parquet.worker.ts',import.meta.url),{type:'module'});worker.current=w;
-    w.onmessage=e=>{if(e.data.type==='receipt'){setHeld(e.data.fields);setBusy(false);w.terminate();}if(e.data.type==='error'){setError(e.data.message);setBusy(false);w.terminate();}};
+    w.onmessage=e=>{if(e.data.type==='receipt'){setReceipt({row,selection,fields:e.data.fields});setBusy(false);w.terminate();}if(e.data.type==='error'){setError(e.data.message);setBusy(false);w.terminate();}};
     w.onerror=()=>{setError('The receipt reader stopped. Retry this lookup.');setBusy(false);};
     w.postMessage({type:'receipt',table,row,fields:wanted});
   }
@@ -34,7 +52,9 @@ export function SourceConnections({table,catalog,row,navigation,onOpen}: Props) 
         return <div className="source-reference" key={s.id}>
           <p>{s.meaning}</p>
           {state==='ambiguous targets'&&<small>Ambiguous reference: each link is a separate candidate.</small>}
-          {links.map((link,i)=>link.target.table==='@url'?<a key={i} href={link.values[0]} target="_blank" rel="noreferrer">Open offered document <small>Capture and text extraction are not established by this link.</small></a>:<button key={i} disabled={!link.target.available} onClick={()=>link.target.table.startsWith("@receipt:")?readEvidence(link.target.table.slice(9),link.filters):onOpen(link.target.table,link.filters)}>
+          {links.map((link,i)=>link.target.table==='@url'?<div key={i}>
+            {s.id==='fcc_filing_documents'&&s.source==='fcc_filings'?<FccDocumentReference link={link} receipt={held} fieldAvailable={s.receiptFields.includes('pdf_extraction_results_json')}/>:<><a href={link.values[0]} target="_blank" rel="noreferrer">Open offered document</a><small>Capture and text extraction are not established by this link.</small></>}
+          </div>:<button key={i} disabled={!link.target.available} onClick={()=>link.target.table.startsWith("@receipt:")?readEvidence(link.target.table.slice(9),link.filters):onOpen(link.target.table,link.filters)}>
             <span>{link.target.table==='@receipt:congress_acquisition'?'Detail read attempts':catalog.find(t=>t.id===link.target.table)?.label??pretty(link.target.table.replace('@receipt:',''))}<small>{link.target.columns.map((c,i)=>`${c}: ${link.values[i]}`).join(' · ')}</small></span>
             {!link.target.available&&<small>Target is not published</small>}
           </button>)}
