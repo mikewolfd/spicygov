@@ -53,7 +53,12 @@ def bridge(args=(), request=None):
     # Full current documents and Register restores passed locally, but each
     # exceeded five minutes on the hosted runner. Keep their finite allowance
     # separate from schema requests and the other selected readers.
-    timeout = 600 if dataset in {"documents", "federal_register"} and not args else 300
+    timeout = 300
+    if not args:
+        if dataset == "court_opinions":
+            timeout = 900
+        elif dataset in {"documents", "federal_register"}:
+            timeout = 600
     try:
         result = subprocess.run([python, script, *args],
                                 input=None if request is None else json.dumps(request),
