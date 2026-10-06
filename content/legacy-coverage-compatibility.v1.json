@@ -36,8 +36,22 @@
   "revisionFiles": {
     "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
     "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
-    "additional_native_coverage.py": "939fc8cd1f507c8ace78bb8629d093c4bd26513187ddebe23314cdce5d197bb8",
+    "additional_native_coverage.py": "b71e25f70d977b1a9bfe56f4f0a28e30753c2fffc87779ca2132f1df7f46171a",
     "restore_additional_coverage.py": "8bff5cf9a6b9d16ca28980b5de973da9a5d65e6dbb2cd8063b44d6bf27ea9fbd",
     "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
+  },
+  "sourceNavigationReview": {
+    "scope": [
+      "committee_meetings",
+      "nominations",
+      "house_communications",
+      "fcc_filings"
+    ],
+    "reason": "The added whitelist and reader selection apply only to these changed native schemas. Legacy-equal schemas return before restoration. Original dimension readers, bindings, cached validation, and end-of-build checks are unchanged. Changed native readers retain their per-table implementation identities.",
+    "checks": [
+      "tests/test_source_navigation_coverage.py",
+      "tests/test_additional_native_coverage.py",
+      "tests/test_native_legislative_coverage.py"
+    ]
   }
 }

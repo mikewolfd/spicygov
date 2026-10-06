@@ -20,21 +20,26 @@ from native_legislative_coverage import ProcessingInputs, verify_file
 
 FAMILIES = {"amendments": "amendments", "court_dockets": "courtlistener",
             "court_docket_groups": "court-docket-groups"}
+SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "fcc_filings":"fcc-filings"}
+FAMILIES.update(SOURCE_NAVIGATION_FAMILIES)
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def bridge(args=(), request=None):
-    script = os.environ.get("SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE")
+    dataset = args[1] if len(args) == 2 and args[0] == "--schema" else request.get("dataset") if isinstance(request, dict) else None
+    source_navigation = dataset in SOURCE_NAVIGATION_FAMILIES or bool(args == ["--verify-artifacts"] and isinstance(request, list) and request and all(a.get("spec", {}).get("family") in SOURCE_NAVIGATION_FAMILIES.values() for a in request))
+    prefix = "SPICYGOV_SOURCE_NAVIGATION" if source_navigation else "SPICYGOV_ADDITIONAL"
+    script = os.environ.get(prefix + "_COVERAGE_BRIDGE")
     if not script or not Path(script).is_absolute() or not Path(script).is_file():
         raise ValueError("Additional native coverage requires the pinned restoration bridge")
-    python = os.environ.get("SPICYGOV_ADDITIONAL_COVERAGE_PYTHON", sys.executable)
+    python = os.environ.get(prefix + "_COVERAGE_PYTHON", sys.executable)
     result = subprocess.run([python, script, *args],
                             input=None if request is None else json.dumps(request),
                             text=True, capture_output=True, check=True, timeout=300)
     return json.loads(result.stdout.splitlines()[-1])
 
 
-@lru_cache(maxsize=3)
+@lru_cache(maxsize=7)
 def native_schema(dataset):
     return bridge(["--schema", dataset])
 
@@ -71,7 +76,7 @@ def measurement_revision(policy):
     names = ("additional_native_coverage.py", "restore_additional_coverage.py",
              "build-coverage-maps.py", "coverage_dimensions.py", "coverage_inputs.py",
              "publication_census.py", "collection_coverage.py", "congress_coverage.py",
-             "regulation_coverage.py", "native_receipt_coverage.py", "native_legislative_coverage.py")
+             "regulation_coverage.py", "native_receipt_coverage.py", "native_legislative_coverage.py", "restore_source_navigation_coverage.py")
     value = hashlib.sha256(policy["restorationImplementationSha256"].encode())
     for name in names:
         data = (ROOT / "scripts" / name).read_bytes()
