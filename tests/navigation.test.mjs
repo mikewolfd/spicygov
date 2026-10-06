@@ -26,6 +26,50 @@ test('array connections retain complete PN partitions and reject unstated scope'
  assert.equal(matchesConnection(row,spec,{id:spec.id,target:0,values:['118','PN14-2']}),true);
  assert.equal(matchesConnection(row,spec,{id:spec.id,target:0,values:['119','PN14-2']}),false);
 });
+test('publisher-padded nomination parts resolve without changing source occurrences',()=>{
+ const t={...target,guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'00|0*[1-9][0-9]*'}]};
+ const s={...spec,targets:[t]};
+ const references=[{congress:119,number:1272,part:'07'},{congress:119,number:1272,part:'07'},{congress:119,number:1272,part:'10'}];
+ const row={nomination_references_json:JSON.stringify(references)};
+ assert.deepEqual(forwardLinks(s,row).map(link=>link.values),[['119','PN1272-7'],['119','PN1272-10']]);
+ assert.equal(matchesConnection(row,s,{id:s.id,target:0,values:['119','PN1272-7']}),true);
+ assert.deepEqual(elements(s,row).values,references);
+ for(const value of [undefined,null,'',false,true,1.5,{},'0','000','-07','+07',' 07','07x']) assert.equal(targetKeys(t,{congress:119,number:1272,part:value},{}),undefined);
+});
+test('treaty references may omit a suffix and preserve a stated suffix',()=>{
+ const t={table:'treaties',columns:['congress_received','number','suffix'],keys:[key(part('congress')),key(part('number')),{...key(part('part','element','partition-value')),pattern:'[0-9]*'}],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part','element','partition-value'),pattern:'[0-9]*'}]};
+ const s={...spec,id:'meeting_treaties',field:'treaty_references_json',fields:['treaty_references_json'],targets:[t]};
+ assert.deepEqual(targetKeys(t,{congress:112,number:8},{}),['112','8','']);
+ assert.deepEqual(targetKeys(t,{congress:112,number:8,part:'02'},{}),['112','8','02']);
+ assert.deepEqual(targetKeys(t,{congress:112,number:8,part:0n},{}),['112','8','']);
+ assert.equal(targetKeys(t,{congress:112,number:8,part:18446744073709551616n},{}),undefined);
+ const row={treaty_references_json:JSON.stringify([{congress:112,number:8}])};
+ assert.equal(matchesConnection(row,s,{id:s.id,target:0,values:['112','8','']}),true);
+ for(const value of [false,true,1.5,{},'-2','+2',' 02','02x']) assert.equal(targetKeys(t,{congress:112,number:8,part:value},{}),undefined);
+});
+test('reference JSON retains exact integers and refuses decimal tokens without dropping siblings',()=>{
+ const t={...target,guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'00|0*[1-9][0-9]*'}]};
+ const s={...spec,targets:[t]};
+ const text='[{"congress":119,"number":14,"part":7.0},{"congress":119,"number":14,"part":7e0},{"congress":119,"number":14,"part":"07"},{"congress":119,"number":14,"part":18446744073709551615},{"congress":119,"number":14,"part":18446744073709551616}]';
+ const row={nomination_references_json:text};
+ assert.deepEqual(forwardLinks(s,row).map(link=>link.values),[['119','PN14-7'],['119','PN14-18446744073709551615']]);
+ assert.equal(elements(s,row).values.length,5);
+ assert.equal(row.nomination_references_json,text);
+ assert.equal(matchesConnection(row,s,{id:s.id,target:0,values:['119','PN14-18446744073709551615']}),true);
+ const treaty={table:'treaties',columns:['suffix'],keys:[{...key(part('part','element','partition-value')),pattern:'[0-9]*'}],guards:[{...part('part','element','partition-value'),pattern:'[0-9]*'}]};
+ const treatySpec={...s,targets:[treaty]};
+ assert.equal(forwardLinks(treatySpec,{nomination_references_json:'[{"part":0.0},{"part":7.0},{"part":7e0}]'}).length,0);
+ assert.deepEqual(forwardLinks(treatySpec,{nomination_references_json:'[{}]'}).map(link=>link.values),[['']]);
+ for(const field of ['congress','number']) assert.equal(forwardLinks(s,{nomination_references_json:`[{"congress":119,"number":14,"part":"07","${field}":7.0}]`}).length,0);
+});
+test('reference qualification refuses unverified numeric tokens on older JSON parsers',()=>{
+ const original=JSON.parse;
+ try {
+  JSON.parse=(text,reviver)=>original(text,reviver?function(key,value){return reviver.call(this,key,value);}:undefined);
+  assert.equal(forwardLinks(spec,{nomination_references_json:'[{"congress":119,"number":14,"part":"2"}]'}).length,0);
+  assert.equal(forwardLinks(spec,{nomination_references_json:'[{"congress":"119","number":"14","part":"2"}]'}).length,1);
+ } finally {JSON.parse=original;}
+});
 test('read states distinguish missing, empty and malformed source arrays',()=>{
  assert.equal(elements(spec,{detail_read:'false'}).state,'unread');
  assert.equal(elements(spec,{nomination_references_json:'[]'}).state,'empty');

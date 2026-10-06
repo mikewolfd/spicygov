@@ -1,4 +1,5 @@
 import type { Dataset, Filter, Row } from './catalog';
+import { parseExact } from './exact-json';
 export type Part = { path: string[]; from: 'row' | 'element'; transform?: string; literal?: string };
 export type Key = { parts: Part[]; separator: string; pattern: string };
 export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part };
@@ -26,14 +27,15 @@ export function parseNavigation(value: unknown): Navigation[] {
   return value as Navigation[];
 }
 export const validConnection = (v: unknown): v is Connection => object(v) && typeof v.id === 'string' && Number.isSafeInteger(v.target) && v.target >= 0 && strings(v.values) && v.values.length > 0 && v.values.length <= 8 && v.values.every(s => s.length <= 4096);
-const scalar = (v: unknown) => ['string','bigint'].includes(typeof v) || typeof v === 'number' && Number.isSafeInteger(v) ? String(v) : undefined;
+const scalar = (v: unknown) => typeof v === 'string' || typeof v === 'bigint' && v >= -(1n << 63n) && v <= (1n << 64n) - 1n || typeof v === 'number' && Number.isSafeInteger(v) ? String(v) : undefined;
 export function at(v: unknown, path: string[]): unknown { for (const p of path) { if (!object(v)) return undefined; v = v[p]; } return v; }
 function word(p: Part, element: unknown, row: Row): string | undefined {
   if (p.literal !== undefined) return p.literal;
   const raw = at(p.from === 'row' ? row : element, p.path), v = scalar(raw);
   if (p.transform === 'partition' || p.transform === 'partition-value') {
-    if (raw == null || raw === '' || raw === '00' || raw === 0) return '';
-    return v && /^[1-9][0-9]*$/.test(v) ? (p.transform === 'partition' ? '-' : '') + v : undefined;
+    if (raw == null || raw === '' || raw === '00' || raw === 0 || raw === 0n) return '';
+    if (p.transform === 'partition-value') return v && /^[0-9]+$/.test(v) ? v : undefined;
+    return v && /^0*[1-9][0-9]*$/.test(v) ? '-' + v.replace(/^0+/, '') : undefined;
   }
   if (v === undefined) return undefined;
   switch (p.transform) {
@@ -59,7 +61,7 @@ export function targetKeys(t: Target, element: unknown, row: Row): string[] | un
   }
   return result;
 }
-function decoded(v: unknown): unknown { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch { return undefined; } }
+function decoded(v: unknown, integerReferences = false): unknown { if (typeof v !== 'string') return v; try { return parseExact(v, integerReferences); } catch { return undefined; } }
 export type FccDocumentOutcome = { state: 'unavailable' | 'unread' | 'unrecorded' | 'malformed' | 'ambiguous' | 'recorded'; message: string; sourceSha256?: string; pageCount?: number; error?: string };
 // Pass only fields returned by the selected-generation receipt reader, never another filing's diagnostics.
 export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = true): FccDocumentOutcome {
@@ -89,7 +91,7 @@ export function elements(s: Navigation, row: Row): { state: string; values: unkn
   const field = s.field && s.field in row ? s.field : s.fields.find(f => f in row);
   const raw = field ? row[field] : undefined;
   if (raw == null) return {state: row.detail_read === 'false' ? 'unread' : row.detail_read === 'true' ? 'not stated' : 'unknown read state', values: []};
-  let value = decoded(raw);
+  let value = decoded(raw, true);
   if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
   if (!Array.isArray(value)) return {state: 'unsupported shape', values: []};
   const ambiguous = s.candidates && value.some(candidate => object(candidate) && candidate.target_status === 'ambiguous');

@@ -1,15 +1,8 @@
 import { matchesConnection, type Connection, type Navigation } from './navigation';
 import type { Dataset, Row } from './catalog';
 import { readPage } from './reader';
-export function parseExact(text: string): unknown {
-  return JSON.parse(text,(key:string,v:unknown,context?:{source:string})=>{
-    if(typeof v==='number'&&Number.isInteger(v)&&!Number.isSafeInteger(v)) {
-      if(!context?.source)throw new Error('This browser cannot preserve a large receipt integer.');
-      return BigInt(context.source);
-    }
-    return v;
-  });
-}
+import { parseExact } from './exact-json';
+export { parseExact } from './exact-json';
 export function unpack(v: unknown): unknown {
   if (!Array.isArray(v) || v.length !== 2 || typeof v[0] !== 'string') throw new Error('Unsupported receipt encoding.');
   const [tag, body] = v;
