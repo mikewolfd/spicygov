@@ -21,7 +21,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from spicy_regs import congress_bulk, earlier_receipt_policies, etl_bulk, etl_receipts, regulations_bulk, votes_batch_receipts
-from spicy_regs.etl_receipts import RECEIPT_SCHEMA, read_attempts, visit_receipt_bundle
+from spicy_regs.etl_receipts import RECEIPT_SCHEMA, read_attempts, read_with_receipts
 from spicy_regs.schemas import regulations_subjects
 from spicy_regs.native_types import described_schema
 from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
@@ -198,11 +198,11 @@ def restore_regulation(request, facts):
             with measured_stage(dataset, "maintained-batch-admission-and-reproduction"):
                 regulations_bulk._materialize_selected(selected, output, source_schema=schema)
         except etl_bulk.NotBulkEligible as error:
-            diagnostic(dataset, "batch-to-row-fallback", reason=str(error))
-            with measured_stage(dataset, "exact-row-admission-and-reproduction"):
+            diagnostic(dataset, "batch-adapter-fallback", reason=str(error))
+            with measured_stage(dataset, "maintained-admission-and-batch-reproduction"):
                 write_regulatory_facts(selected, output, schema)
     else:
-        with measured_stage(dataset, "exact-row-admission-and-reproduction"):
+        with measured_stage(dataset, "maintained-admission-and-batch-reproduction"):
             write_regulatory_facts(selected, output, schema)
     return restored_facts(request, facts, subject, output)
 
@@ -215,9 +215,8 @@ def write_regulatory_facts(selected, output, schema):
     metadata = None
     try:
         with pq.ParquetWriter(partial, schema) as writer:
-            def visit(dataset, row):
+            def coverage_fields(row, original):
                 nonlocal seen, metadata
-                original = regulations_receipts._processor_input(dataset, row)
                 current = row.get("input_metadata", {})
                 if not isinstance(current, dict):
                     raise ValueError("Regulatory input metadata is not a mapping")
@@ -226,12 +225,28 @@ def write_regulatory_facts(selected, output, schema):
                     raise ValueError("Regulatory input metadata differs across selected receipts")
                 metadata = current
                 seen += 1
-                pending.append({name: original.get(name) for name in schema.names})
+                return {name: original.get(name) for name in schema.names}
+
+            def write_batch(rows):
+                try:
+                    originals = regulations_receipts._processor_inputs(selected.dataset, rows)
+                except (ValueError, TypeError, OverflowError, RecursionError, pa.ArrowException):
+                    # A failed batch must preserve the original first refusal,
+                    # including metadata errors before a later reproduction error.
+                    fields = [coverage_fields(row, regulations_receipts._processor_input(selected.dataset, row))
+                              for row in rows]
+                else:
+                    fields = [coverage_fields(row, original) for row, original in zip(rows, originals)]
+                writer.write_table(pa.Table.from_pylist(fields, schema=schema))
+
+            for row in read_with_receipts(selected.subjects, [selected.receipts],
+                    regulations_receipts.policy(selected.dataset), generation_id=selected.generation_id):
+                pending.append(row)
                 if len(pending) == 2000:
-                    writer.write_table(pa.Table.from_pylist(pending, schema=schema))
+                    write_batch(pending)
                     pending.clear()
-            visit_receipt_bundle({selected.dataset:selected.subjects}, [selected.receipts],
-                [regulations_receipts.policy(selected.dataset)], generation_id=selected.generation_id, visit=visit)
+            if pending:
+                write_batch(pending)
             if not seen:
                 observed = [attempt["processing_fields"]["input_metadata"]
                             for attempt in read_attempts([selected.receipts], regulations_receipts.policy(selected.dataset),
@@ -241,8 +256,6 @@ def write_regulatory_facts(selected, output, schema):
                     raise ValueError("Empty input metadata differs across selected receipts")
                 if observed:
                     schema.with_metadata(observed[0])
-            if pending:
-                writer.write_table(pa.Table.from_pylist(pending, schema=schema))
         partial.replace(output)
     finally:
         partial.unlink(missing_ok=True)

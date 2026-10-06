@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -63,6 +64,76 @@ class BridgeTests(unittest.TestCase):
         self.assertIn("edition", dict(result["processingSchema"]))
         self.assertEqual(result["acceptedWitnessGroups"][0]["rows"], 1)
         self.assertEqual(result["generationId"], "selected")
+
+    def test_bulk_only_change_invalidates_description_and_restoration_identity(self):
+        raw, request = fixture(self.root)
+        described_before = reader.description(request["dataset"])
+        restored_before = reader.restore(request)
+        maintained_before = reader.MAINTAINED.implementation_identity()
+        read_bytes = Path.read_bytes
+        bulk = reader.ROOT / "src/spicy_regs/etl_bulk.py"
+
+        def changed_bytes(path):
+            data = read_bytes(path)
+            return data + b"\n# bulk dependency changed\n" if path == bulk else data
+
+        changed_request = {**request, "destination": str(self.root / "restored-again")}
+        with patch.object(Path, "read_bytes", changed_bytes):
+            described_after = reader.description(request["dataset"])
+            restored_after = reader.restore(changed_request)
+            self.assertEqual(reader.MAINTAINED.implementation_identity(), maintained_before)
+        before_identity = described_before.pop("implementationSha256")
+        after_identity = described_after.pop("implementationSha256")
+        self.assertNotEqual(before_identity, after_identity)
+        self.assertEqual(restored_before.pop("implementationSha256"), before_identity)
+        self.assertEqual(restored_after.pop("implementationSha256"), after_identity)
+        self.assertEqual(described_before, described_after)
+        for restored in (restored_before, restored_after):
+            self.assertEqual(pq.read_table(restored.pop("urls")[0]).to_pylist(), [raw])
+            for processing_member in restored["processingMembers"]:
+                processing_member.pop("path")
+        self.assertEqual(restored_before, restored_after)
+
+    def test_exact_maintained_identity_is_still_a_dependency(self):
+        before = reader.description("court_docket_groups")
+        with patch.object(reader.MAINTAINED, "implementation_identity", return_value="sha256:" + "a" * 64):
+            after = reader.description("court_docket_groups")
+        self.assertNotEqual(before.pop("implementationSha256"), after.pop("implementationSha256"))
+        self.assertEqual(before, after)
+
+    def test_selected_bill_bridge_preserves_the_maintained_restoration(self):
+        from spicy_regs.legislative_documents import field_registry
+        from spicy_regs.legislative_receipts import write_legislative_outputs
+        fields = field_registry()["bill_versions"]["fields"]
+        raw = {field["name"]: None for field in fields}
+        raw.update(bill_id="hr1-119", version_code="is", source="GovInfo original label",
+                   version_date="2025-01-03")
+        source = self.root / "bill_versions.parquet"
+        pq.write_table(pa.Table.from_pylist([raw], schema=pa.schema(
+            [(field["name"], pa.string()) for field in fields])), source)
+        native = self.root / "native"
+        manifest = write_legislative_outputs([source], native, generation_id="selected-bill")
+        request = {"dataset": "bill_versions", "generationId": "selected-bill",
+                   "subjects": [member(native / name) for name in manifest["subjects"]["bill_versions"]],
+                   "receipts": member(native / "etl_receipts.parquet"),
+                   "destination": str(self.root / "direct")}
+        direct = plain(reader.MAINTAINED.restore(request))
+        router = Path(reader.__file__).with_name("select_native_coverage_reader.py")
+        env = {**os.environ, "SPICYGOV_LEGACY_COVERAGE_BRIDGE": str(reader.ROOT / "scripts/restore_coverage_processing.py"),
+               "SPICYGOV_LEGACY_COVERAGE_PYTHON": sys.executable}
+        described = json.loads(subprocess.check_output(
+            [sys.executable, str(router), "--schema", "bill_versions"], env=env, text=True))
+        request["destination"] = str(self.root / "selected")
+        selected = json.loads(subprocess.check_output(
+            [sys.executable, str(router)], env=env, input=json.dumps(request), text=True))
+        self.assertEqual(selected["implementationSha256"], described["implementationSha256"])
+        self.assertNotEqual(selected["implementationSha256"], direct["implementationSha256"])
+        for result in (direct, selected):
+            self.assertEqual(pq.read_table(result.pop("urls")[0]).to_pylist(), [raw])
+            result.pop("implementationSha256")
+            for processing_member in result["processingMembers"]:
+                processing_member.pop("path")
+        self.assertEqual(direct, selected)
 
     def test_court_source_list_spelling_survives(self):
         raw = {"cl_docket_id": "1", "parties_json": '["Agency", null,"","Agency"]',

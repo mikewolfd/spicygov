@@ -59,7 +59,7 @@ def _check_one_admission_matches_original_row_reader_and_preserves_order(tmp_pat
         other = {**rows[0], "dataset":"unrelated", "generation_id":"other", "receipt_id":"invalid"}
         rows.insert(1, other)
     _change_receipts(request, add_unrelated)
-    with patch.object(reader, "visit_receipt_bundle", wraps=reader.visit_receipt_bundle) as visit, patch.object(
+    with patch.object(reader, "read_with_receipts", wraps=reader.read_with_receipts) as visit, patch.object(
             reader.MAINTAINED, "restore", side_effect=AssertionError("No redundant generic restore")):
         result = reader.restore(request)
     assert visit.call_count == 1
@@ -85,7 +85,7 @@ def _check_documents_uses_bulk_for_reviewed_source_and_keeps_row_fallback_parity
                "receipts":_member(receipts), "destination":str(tmp_path / "restored")}
     with patch.object(reader.regulations_bulk, "_materialize_selected",
                       wraps=reader.regulations_bulk._materialize_selected) as bulk, patch.object(
-            reader, "visit_receipt_bundle", wraps=reader.visit_receipt_bundle) as row:
+            reader, "read_with_receipts", wraps=reader.read_with_receipts) as row:
         result = reader.restore(request)
     assert bulk.call_count == 1
     assert row.call_count == int(full_source)
@@ -93,8 +93,8 @@ def _check_documents_uses_bulk_for_reviewed_source_and_keeps_row_fallback_parity
         {name:raw[name] for name, _ in reader.reviewed_schema("documents")}]
 
 
-def _check_late_invalid_selected_evidence_never_exposes_coverage_output(tmp_path, change):
-    request, _ = _fixture(tmp_path)
+def _check_late_invalid_selected_evidence_never_exposes_coverage_output(tmp_path, change, count=3):
+    request, _ = _fixture(tmp_path, count=count)
     def mutate(rows):
         row = next(row for row in reversed(rows) if row["outcome"] == "accepted")
         if change == "digest":
@@ -202,6 +202,27 @@ class RegulatoryCoverageSinglePassTests(unittest.TestCase):
 
     def test_empty_success_preserves_schema_and_requires_consistent_observed_metadata(self):
         _check_empty_success_preserves_schema_and_requires_consistent_observed_metadata(self.root)
+
+    def test_metadata_refusal_after_a_written_batch_removes_provisional_output(self):
+        _check_late_invalid_selected_evidence_never_exposes_coverage_output(self.root, "metadata", count=2001)
+
+    def test_metadata_refusal_precedes_later_reproduction_refusal(self):
+        request, _ = _fixture(self.root)
+        def mutate(rows):
+            accepted = [row for row in rows if row["outcome"] == "accepted"]
+            values = decode_exact_json(accepted[1]["processing_json"])
+            values["input_metadata"] = {"dump_date": "different"}
+            accepted[1]["processing_json"] = exact_json(values)
+            _redigest(accepted[1])
+            values = decode_exact_json(accepted[2]["processing_json"])
+            values["raw_conversion_inputs"]["heading"] = "Different native heading"
+            accepted[2]["processing_json"] = exact_json(values)
+            _redigest(accepted[2])
+        _change_receipts(request, mutate)
+        with self.assertRaisesRegex(ValueError, "Regulatory input metadata differs across selected receipts"):
+            reader.restore(request)
+        self.assertFalse((Path(request["destination"]) / "coverage-facts.parquet").exists())
+        self.assertFalse((Path(request["destination"]) / "provisional-coverage-facts.parquet").exists())
 
 
 if __name__ == "__main__":
