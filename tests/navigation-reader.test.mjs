@@ -37,6 +37,12 @@ try {
   const request={table:t,columns:['event_id'],filters:[],cursor:0,limit:1,connection:{id:s.id,target:0,values:['118','PN14-2']},navigation:s};
   const first=await readPage(request);assert.deepEqual(first.positions,[0]);
   const next=await readPage({...request,cursor:first.cursor});assert.deepEqual(next.positions,[3]);
+  const bounded=await readPage({...request,limit:40,maxScanRows:2});
+  assert.deepEqual(bounded.positions,[0]);assert.equal(bounded.cursor,2);assert.equal(bounded.done,false);
+  const continuation=await readPage({...request,limit:40,maxScanRows:2,cursor:bounded.cursor});
+  assert.deepEqual(continuation.positions,[3]);assert.equal(continuation.done,true);
+  const absent=await readPage({...request,limit:40,maxScanRows:2,connection:{...request.connection,values:['119','PN14-2']}});
+  assert.equal(absent.rows.length,0);assert.equal(absent.cursor,2);assert.equal(absent.done,false);
   const sorted=await readPage({...request,sort:{column:'event_id',direction:'desc'}});assert.deepEqual(sorted.positions,[3]);
   const empty=await readPage({...request,connection:{...request.connection,values:['119','PN14-2']}});assert.equal(empty.rows.length,0);assert.equal(empty.done,true);
  });

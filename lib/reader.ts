@@ -1,6 +1,6 @@
 import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
 import { matchesFilters, validFilter } from './filter-values';
-import { asyncBufferFromUrl, parquetReadObjects, rowIndex } from "hyparquet";
+import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
 import { compareEntries, retainEntry, sortValue, type RecordSort, type SortEntry } from "./record-sort";
@@ -10,6 +10,7 @@ export type ReadRequest = {
   filters: Filter[];
   cursor: number;
   limit?: number;
+  maxScanRows?: number;
   sort?: RecordSort;
   connection?: Connection;
   navigation?: Navigation;
@@ -70,9 +71,10 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   for (const member of table.members) {
     if (!member.rows) continue;
     const file = await remoteFile(member);
+    const metadata = await parquetMetadataAsync(file);
     for (let start = 0; start < member.rows; start += 50000) {
       const end = Math.min(member.rows, start + 50000);
-      const rows = await parquetReadObjects({ file, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+      const rows = await parquetReadObjects({ file, metadata, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
       for (const row of rows) {
         if (!matchesFilters(row, filters) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
@@ -93,11 +95,12 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
     const positions = selected.filter(entry => entry.position >= offset && entry.position < offset + member.rows).map(entry => entry.position - offset);
     if (positions.length) {
       const file = await remoteFile(member);
+      const metadata = await parquetMetadataAsync(file);
       for (let i = 0; i < positions.length;) {
         const start = positions[i];
         let end = start + 1;
         while (++i < positions.length && positions[i] === end) end++;
-        const rows = await parquetReadObjects({ file, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+        const rows = await parquetReadObjects({ file, metadata, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
         for (const row of rows) records.set(offset + row[rowIndex]!, row);
       }
     }
@@ -107,13 +110,14 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   return { rows: heap.map(entry => records.get(entry.position)!), positions: heap.map(entry => entry.position), cursor: heap.length ? heap.at(-1)!.position + 1 : cursor, done: remaining <= limit };
 }
 export async function readPage(
-  { table, columns, filters, cursor, limit = 40, sort, connection, navigation }: ReadRequest,
+  { table, columns, filters, cursor, limit = 40, sort, connection, navigation, maxScanRows = connection ? 250000 : undefined }: ReadRequest,
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
   if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
   if (!Number.isSafeInteger(cursor) || cursor < 0)
     throw new Error("Invalid record position.");
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid page size.');
+  if (maxScanRows !== undefined && (!Number.isSafeInteger(maxScanRows) || maxScanRows < 1)) throw new Error('Invalid scan size.');
   if (
     columns.some((n) => !table.columns.some((c) => c.name === n)) ||
     filters.some((f) => !table.columns.some((c) => c.name === f.column)) ||
@@ -131,6 +135,7 @@ export async function readPage(
   if (sort) return readSortedPage({ table, columns, filters, cursor, limit, sort, connection, navigation }, onProgress);
   let offset = 0,
     position = cursor;
+  const scanEnd = Math.min(table.rows, maxScanRows === undefined ? table.rows : cursor + maxScanRows);
   const results: Row[] = [],
     positions: number[] = [];
   const canPrune =
@@ -147,14 +152,17 @@ export async function readPage(
       continue;
     }
     const file = await remoteFile(member);
+    const metadata = await parquetMetadataAsync(file);
     let local = Math.max(0, position - offset);
-    while (local < member.rows && results.length < limit) {
+    while (local < member.rows && position < scanEnd && results.length < limit) {
       const end = Math.min(
         member.rows,
+        scanEnd - offset,
         local + (filters.length || connection ? 50000 : limit - results.length),
       );
       const rows = await parquetReadObjects({
         file,
+        metadata,
         compressors,
         columns: [...new Set([...columns, ...filters.map((f) => f.column), ...connectionColumns])],
         rowStart: local,
@@ -181,7 +189,7 @@ export async function readPage(
       position = offset + local;
       onProgress(position);
     }
-    if (results.length === limit) break;
+    if (results.length === limit || position >= scanEnd) break;
     offset += member.rows;
   }
   return {

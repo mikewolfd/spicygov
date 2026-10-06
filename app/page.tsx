@@ -279,7 +279,7 @@ export default function Explorer() {
     worker.current?.terminate();
     setBusy(false);
     setError("Reading stopped. Retry to finish checking this dataset.");
-    setDone(true);
+    setDone(false);
   }
   useExplorerTools(
     catalog,
@@ -666,7 +666,7 @@ export default function Explorer() {
                     <span>
                       {location.sort
                         ? `Sorting ${location.filters.length ? 'matching' : 'all'} records · ${count(progress)} of ${table ? count(table.rows) : '…'} rows checked`
-                        : location.filters.length
+                        : location.filters.length || location.connection
                         ? `Finding matches · ${count(progress)} of ${table ? count(table.rows) : "…"} rows checked`
                         : "Reading Parquet…"}
                     </span>
@@ -722,7 +722,7 @@ export default function Explorer() {
                 <span aria-live="polite">
                   {busy
                     ? "Reading…"
-                    : `${count(rows.length)} ${location.filters.length || location.connection ? "matching " : ""}records${done ? " · End of results" : ""}`}
+                    : `${count(rows.length)} ${location.filters.length || location.connection ? "matching " : ""}records${done && !error ? " · End of results" : ""}`}
                 </span>
                 <div className="pagination">
                   <Button
