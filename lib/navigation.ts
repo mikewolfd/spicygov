@@ -1,5 +1,5 @@
 import type { Dataset, Filter, Row } from './catalog';
-export type Part = { path: string[]; from: 'row' | 'element'; transform?: string };
+export type Part = { path: string[]; from: 'row' | 'element'; transform?: string; literal?: string };
 export type Key = { parts: Part[]; separator: string; pattern: string };
 export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part };
 export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string };
@@ -9,7 +9,7 @@ const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'par
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
 const pattern = (v: unknown) => { try { return typeof v === 'string' && v.length <= 300 && !!new RegExp(`^(?:${v})$`); } catch { return false; } };
-const validPart = (v: unknown) => object(v) && strings(v.path) && ['row','element'].includes(v.from) && transforms.includes(v.transform);
+const validPart = (v: unknown) => object(v) && strings(v.path) && ['row','element'].includes(v.from) && transforms.includes(v.transform) && (v.literal === undefined || typeof v.literal === 'string' && v.literal.length > 0 && v.literal.length <= 4096 && !v.transform);
 export function parseNavigation(value: unknown): Navigation[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) throw new Error('Invalid source connection definitions.');
@@ -29,6 +29,7 @@ export const validConnection = (v: unknown): v is Connection => object(v) && typ
 const scalar = (v: unknown) => ['string','bigint'].includes(typeof v) || typeof v === 'number' && Number.isSafeInteger(v) ? String(v) : undefined;
 export function at(v: unknown, path: string[]): unknown { for (const p of path) { if (!object(v)) return undefined; v = v[p]; } return v; }
 function word(p: Part, element: unknown, row: Row): string | undefined {
+  if (p.literal !== undefined) return p.literal;
   const raw = at(p.from === 'row' ? row : element, p.path), v = scalar(raw);
   if (p.transform === 'partition' || p.transform === 'partition-value') {
     if (raw == null || raw === '' || raw === '00' || raw === 0) return '';
