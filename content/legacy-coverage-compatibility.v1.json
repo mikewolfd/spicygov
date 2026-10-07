@@ -36,7 +36,7 @@
   "revisionFiles": {
     "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
     "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
-    "additional_native_coverage.py": "7e6a8cae433ce30aca531ce57b7a5886fd2ae74088c1dfbf83542855b7c0c7c0",
+    "additional_native_coverage.py": "a15ca237271d0da1e6c9df0a760a045724d98a15a18871dfebfbffe4fa62d8f3",
     "restore_additional_coverage.py": "6de7be6139b8f47049e10496f94706c2b4b4c162df954bf040de19b7081bc685",
     "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
   },
@@ -94,6 +94,28 @@
       "tests/test_regulatory_native_coverage.py",
       "tests/test_rulemaking_native_coverage.py",
       "tests/test_vote_coverage_receipt_scope.py"
+    ]
+  },
+  "courtRuntimeReview": {
+    "scope": "Full native court_opinions restoration timeout only. Existing legacy routing, scanners, validation and cache binding are unchanged; native readers keep per-table implementation identities.",
+    "priorWebsiteCommit": "d91d3bfd27795890eecdf744788207a9e131b29f",
+    "priorAdapterSha256": "7e6a8cae433ce30aca531ce57b7a5886fd2ae74088c1dfbf83542855b7c0c7c0",
+    "reviewedAdapterSha256": "a15ca237271d0da1e6c9df0a760a045724d98a15a18871dfebfbffe4fa62d8f3",
+    "changedFunction": "bridge",
+    "reason": "Only the full native court timeout changes to1800. Default/probe300 and documents/federal_register600 remain. All other adapter top-level nodes and functions retain identical ASTs. Legacy-equal schemas return before restoration; legacy and legislative-native checkpoint revisions retain their existing identity. Exact-file invalidation remains enforced.",
+    "actualHostedQualification": {
+      "run": "https://github.com/mikewolfd/spicy-regs/actions/runs/37534115614",
+      "source": "07915382a7a76c284cd50f70d3e8f3a0d2ea8c4f",
+      "consumer": "f4a80319e9e540bdd08ad11acf80da77efd3a478",
+      "seconds": 1473.496939116,
+      "boundSeconds": 1800
+    },
+    "checks": [
+      "tests/test_native_legislative_coverage.py",
+      "tests/test_additional_native_coverage.py",
+      "tests/test_selected_native_coverage.py",
+      "tests/test_bulk_court_coverage.py",
+      "tests/test_court_extraction_coverage.py"
     ]
   }
 }
