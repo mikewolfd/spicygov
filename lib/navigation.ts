@@ -7,7 +7,7 @@ export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part 
 export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string;sourceAvailable?:boolean;completeKey?:boolean;directions?:{forward:RouteCapability;reverse:RouteCapability};requiredMainFields?:{path:string;status:string}[];requiredElementFields?:{path:string;status:string}[] };
 export type Navigation = { id: string; source: string; fields: string[]; field?: string; targets: Target[]; mode: 'row' | 'array'; candidates?: boolean; meaning: string; receiptFields: string[]; elementPath: string[]; ruleVersion: string; available?: boolean; unavailableReason?: string };
 export type Connection = { id: string; target: number; values: string[] };
-const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress', 'native-boolean', 'fr-document-number', 'fr-publication-date'];
+const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress', 'native-boolean', 'canonical-date', 'fr-document-number', 'fr-publication-date'];
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
 const pattern = (v: unknown) => { try { return typeof v === 'string' && v.length <= 300 && !!new RegExp(`^(?:${v})$`); } catch { return false; } };
@@ -45,6 +45,7 @@ function word(p: Part, element: unknown, row: Row): string | undefined {
   if (p.literal !== undefined) return p.literal;
   const raw = at(p.from === 'row' ? row : element, p.path), v = scalar(raw);
   if (p.transform === 'native-boolean') return typeof raw === 'boolean' ? String(raw) : undefined;
+  if (p.transform === 'canonical-date') return typeof raw === 'string' ? federalRegisterIdentity(`date@${raw}`)?.date : undefined;
   if (p.transform === 'fr-document-number' || p.transform === 'fr-publication-date') {
     const identity = federalRegisterIdentity(raw);
     return p.transform === 'fr-document-number' ? identity?.number : identity?.date;

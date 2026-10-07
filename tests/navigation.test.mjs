@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {build} from 'esbuild';
 import {renderToStaticMarkup} from 'react-dom/server';
 const {outputFiles}=await build({entryPoints:['lib/navigation.ts'],bundle:true,platform:'node',format:'esm',write:false});
@@ -8,6 +9,14 @@ const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(trans
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
 const spec={id:'meeting_nominations',source:'committee_meetings',fields:['nomination_references_json'],field:'nomination_references_json',targets:[target],mode:'array',meaning:'Source-listed nominations',receiptFields:[],elementPath:[],ruleVersion:'source-navigation/1'};
+test('main-source transforms agree with all retained Python parity vectors',async()=>{
+ const vectors=JSON.parse(await readFile(new URL('./fixtures/main-navigation-transform-vectors.json',import.meta.url),'utf8'));
+ assert.equal(vectors.length,84);
+ for(const {transform,value,expected} of vectors) {
+  const t={table:'fixture',columns:['key'],keys:[key(part('value','row',transform))],guards:[]};
+  assert.deepEqual(targetKeys(t,{}, {value}),expected===null?undefined:[expected],`${transform}: ${JSON.stringify(value)}`);
+ }
+});
 test('court witness guards require a native boolean rather than a plausible string',()=>{
  const t={table:'court_opinions',columns:['id'],keys:[key(part('opinion_id','row'))],guards:[{...part('sha1_matches','row','native-boolean'),values:['true']}]};
  assert.deepEqual(targetKeys(t,{}, {opinion_id:42,sha1_matches:true}),['42']);
@@ -20,6 +29,12 @@ test('Federal Register references preserve the recorded number and exact calenda
   assert.deepEqual(targetKeys(t,{}, {evidence_id:`${id}@${date}`}),[id,date]);
  }
  for(const evidence_id of [null,42,{},'x@2023-02-29','x@1900-02-29','x@0000-01-01','x@2024-13-01','x@2024-04-31','x@2024-01-00','x@2024-1-01',' x@2024-01-01','x@2024-01-01 ','x@2024-01-01\n','x@y@2024-01-01','@2024-01-01','x/@2024-01-01']) assert.equal(targetKeys(t,{}, {evidence_id}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
+test('typed source-occurrence dates require an exact calendar date',()=>{
+ const t={table:'fr_documents',columns:['document_number','publication_date'],keys:[key(part('document_number')),key(part('publication_date','element','canonical-date'))],guards:[]};
+ assert.deepEqual(targetKeys(t,{document_number:'2024-1',publication_date:'2024-02-29'},{}),['2024-1','2024-02-29']);
+ for(const publication_date of [null,true,20240229,'2023-02-29','0000-01-01','2024-2-29','2024-02-29\n','2024-02-29T00:00:00Z','other@2024-02-29']) assert.equal(targetKeys(t,{document_number:'2024-1',publication_date},{}),undefined);
  assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
 });
 test('nomination hearings accept retained citation spellings with the complete hearing identity',()=>{
