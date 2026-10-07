@@ -321,13 +321,17 @@ def timed_scan(item):
     # Full saved-text reads across the comments release exceed the ordinary
     # table budget; keep the larger allowance limited to this measured case.
     timeout_seconds = 3600 if id in ('comments', 'fec_receipts') else 900
+    # The qualified court bridge alone may use 1800 seconds. Retain the
+    # ordinary 900-second allowance for preparation and coverage checks.
+    if id == 'court_opinions' and policy.get('_additionalNativeProcessing'):
+        timeout_seconds = 2700
     try:
         # DuckDB's default spill directory is relative to the working directory.
         # Keep concurrent readers separate and clean up even after a timeout.
         # Full selected receipt admission can use several GiB beyond DuckDB's
         # memory limit. Queue the measured large receipt readers before starting their timer;
         # other scans keep the existing parallelism and cached maps return above.
-        serial = id in ('documents', 'federal_register', 'fr_docket_links', 'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
+        serial = id in ('court_opinions', 'documents', 'federal_register', 'fr_docket_links', 'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
         with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = subprocess.run([sys.executable, __file__, '--scan'],
                 input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
