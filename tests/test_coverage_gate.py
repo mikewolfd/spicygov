@@ -216,12 +216,12 @@ class CoverageGateTest(unittest.TestCase):
             self.assertTrue(all(not directory.exists() for directory in directories))
 
     def test_heavy_native_readers_queue_without_blocking_cached_results(self):
-        for second_id in ('fr_docket_links', 'comment_periods', 'rule_targets'):
+        for second_id in ('court_opinions', 'fr_docket_links', 'comment_periods', 'rule_targets'):
             with self.subTest(second_id=second_id):
                 started, release, second_started = (threading.Event() for _ in range(3))
                 def reader(command, **options):
                     id = json.loads(options['input'])['id']
-                    self.assertEqual(options['timeout'], 900)
+                    self.assertEqual(options['timeout'], 2700 if id == 'court_opinions' else 900)
                     if id == 'federal_register':
                         started.set()
                         self.assertTrue(release.wait(timeout=5))
@@ -238,11 +238,28 @@ class CoverageGateTest(unittest.TestCase):
                         second = pool.submit(builder.timed_scan, (second_id, {}, policy, None))
                         self.assertFalse(second_started.wait(timeout=0.1))
                         self.assertEqual(builder.timed_scan(('documents', {}, policy, 'cached')), ('documents', 'cached'))
+                        self.assertEqual(builder.timed_scan(('court_opinions', {}, policy, 'cached')), ('court_opinions', 'cached'))
                     finally:
                         release.set()
                     self.assertEqual(first.result()[0], 'federal_register')
                     self.assertEqual(second.result()[0], second_id)
                     self.assertTrue(second_started.is_set())
+
+    def test_court_outer_allowance_is_limited_to_native_restoration(self):
+        cases = (
+            ('court_opinions', {'_additionalNativeProcessing': True}, 2700),
+            ('court_opinions', {}, 900),
+            ('court_dockets', {'_additionalNativeProcessing': True}, 900),
+            ('fr_docket_links', {'_additionalNativeProcessing': True}, 900),
+            ('comments', {}, 3600),
+            ('fec_receipts', {}, 3600),
+        )
+        for id, policy, expected in cases:
+            with self.subTest(id=id, policy=policy), \
+                 mock.patch.object(builder, 'cached', return_value=False), \
+                 mock.patch.object(builder.subprocess, 'run', return_value=mock.Mock(stdout='{}', stderr='')) as run:
+                self.assertEqual(builder.timed_scan((id, {}, policy, None)), (id, {}))
+                self.assertEqual(run.call_args.kwargs['timeout'], expected)
 
     def test_clock_dependent_counts_expire_even_without_future_anomalies(self):
         table, policy, measured = fixture()

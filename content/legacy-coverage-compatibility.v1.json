@@ -19,7 +19,7 @@
     "validate_members": "df37e93897a6fe10ea90e0f2edf9f93ecd26f0867a260b740aa1745c9725d3d3",
     "definitions": "090388e0e20de0b03bfc3a375cb142566d06580207abd45b17136fdd5ae1f4a4",
     "cached": "54b0065def1b7ac8d31af7500bb32ad1273a6d90ae94370d54dbd689c9d89740",
-    "timed_scan": "4abf74fd804ddafd75303945212f248b1eb3e7d5e68cbc1a5aaa4707c9f2877b"
+    "timed_scan": "b68ac7a2f70b990ade71f19332be8c3a133517b1bbc8e28d22697dd7dbeccf4e"
   },
   "topLevelSha256": "796522564c73a096564f8d2dd554a3e65b5d8d2f515cf6107208cb2bcac84bf7",
   "nativeLegacyGuardSha256": "4eb0f4c212f5dedc67f1e3fa00363f239565f4a19480268d0f890606662e123d",
@@ -36,7 +36,7 @@
   "revisionFiles": {
     "native_legislative_coverage.py": "cb268f21e5a44aace9567e797bcff79d0bca9bf849d31c6873fb01d0d88d38fb",
     "coverage_revision.py": "71bb8330767a8654e94a29464d04610da57ff0a49d899c06f8a6378828645a0c",
-    "additional_native_coverage.py": "a15ca237271d0da1e6c9df0a760a045724d98a15a18871dfebfbffe4fa62d8f3",
+    "additional_native_coverage.py": "0c0122e195d45df903c83025794802e22468844428363511b0f4ba0ee9767a2b",
     "restore_additional_coverage.py": "6de7be6139b8f47049e10496f94706c2b4b4c162df954bf040de19b7081bc685",
     "gao_receipt_policy.py": "76f3bdba59dbee24c028aadea8f45bc796f38b818347fc37e1d6988686ddae79"
   },
@@ -111,6 +111,22 @@
       "boundSeconds": 1800
     },
     "checks": [
+      "tests/test_native_legislative_coverage.py",
+      "tests/test_additional_native_coverage.py",
+      "tests/test_selected_native_coverage.py",
+      "tests/test_bulk_court_coverage.py",
+      "tests/test_court_extraction_coverage.py"
+    ]
+  },
+  "nativeScanRuntimeReview": {
+    "scope": "Native court outer deadline and existing large-reader queue; full fr_docket_links bridge allowance only. Existing legacy court deadline900, other outer deadlines, schemas/probes/default300, court inner1800 and maintained reader/value/identity/refusal checks remain.",
+    "priorWebsiteCommit": "1b8be63e7e57ec25d260b8f314c9cf66b2b2f5f9",
+    "reviewedAdapterSha256": "0c0122e195d45df903c83025794802e22468844428363511b0f4ba0ee9767a2b",
+    "reviewedTimedScanSha256": "b68ac7a2f70b990ade71f19332be8c3a133517b1bbc8e28d22697dd7dbeccf4e",
+    "reason": "Normal375538 proved outer900 stopped the qualified inner1800 court bridge. Native court outer2700 includes the existing900 preparation/coverage-check allowance; it joins the existing heavy-reader queue before its timer. New Register links have a changed selected generation; full restore exceeded300 in maintained admission and reproduction. Same finite600 allowance as other Register restoration is a candidate until actual normal all-table release passes. The observed documents control was slower in the failing run; no speed improvement or FR cause is claimed. Legacy checkpoint revisions retain exact byte and function guards. Additional native readers retain per-table measurement identities and will recheck changed implementation.",
+    "failedNormalRun": "https://github.com/mikewolfd/spicygov/actions/runs/37553802895",
+    "checks": [
+      "tests/test_coverage_gate.py",
       "tests/test_native_legislative_coverage.py",
       "tests/test_additional_native_coverage.py",
       "tests/test_selected_native_coverage.py",
