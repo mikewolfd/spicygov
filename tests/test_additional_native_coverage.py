@@ -46,15 +46,18 @@ class BridgeTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
-    def test_documents_and_register_runtime_allowance_is_finite_and_scoped_to_restoration(self):
+    def test_runtime_allowances_are_finite_and_scoped_to_selected_restoration(self):
         env = {'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': str(Path(adapter.__file__).resolve()),
-               'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON': sys.executable}
-        for dataset in ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets'):
+               'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON': sys.executable,
+               'SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE': str(Path(adapter.__file__).resolve()),
+               'SPICYGOV_ADDITIONAL_COVERAGE_PYTHON': sys.executable}
+        for dataset in ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets', 'court_opinions', 'court_dockets', 'amendments'):
             for args in ([], ['--schema', dataset]):
                 with self.subTest(dataset=dataset, args=args), patch.dict(os.environ, env), patch.object(
                         adapter.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}', 'stderr':''})()) as run:
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
-                    self.assertEqual(run.call_args.kwargs['timeout'], 600 if dataset in ('documents', 'federal_register') and not args else 300)
+                    expected = {'documents': 600, 'federal_register': 600, 'court_opinions': 1800}
+                    self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
         raw, request = fixture(self.root)
