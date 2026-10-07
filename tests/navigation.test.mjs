@@ -8,6 +8,20 @@ const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(trans
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
 const spec={id:'meeting_nominations',source:'committee_meetings',fields:['nomination_references_json'],field:'nomination_references_json',targets:[target],mode:'array',meaning:'Source-listed nominations',receiptFields:[],elementPath:[],ruleVersion:'source-navigation/1'};
+test('court witness guards require a native boolean rather than a plausible string',()=>{
+ const t={table:'court_opinions',columns:['id'],keys:[key(part('opinion_id','row'))],guards:[{...part('sha1_matches','row','native-boolean'),values:['true']}]};
+ assert.deepEqual(targetKeys(t,{}, {opinion_id:42,sha1_matches:true}),['42']);
+ for(const sha1_matches of [false,undefined,null,'true','false',1,0,1n,{},[]]) assert.equal(targetKeys(t,{}, {opinion_id:42,sha1_matches}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
+test('Federal Register references preserve the recorded number and exact calendar date',()=>{
+ const t={table:'fr_documents',columns:['document_number','publication_date'],keys:[key(part('evidence_id','row','fr-document-number')),key(part('evidence_id','row','fr-publication-date'))],guards:[]};
+ for(const [id,date] of [['2024-12345','2024-02-29'],['A_b.1-2','0001-01-01'],['x','2000-02-29'],['x','9999-12-31']]) {
+  assert.deepEqual(targetKeys(t,{}, {evidence_id:`${id}@${date}`}),[id,date]);
+ }
+ for(const evidence_id of [null,42,{},'x@2023-02-29','x@1900-02-29','x@0000-01-01','x@2024-13-01','x@2024-04-31','x@2024-01-00','x@2024-1-01',' x@2024-01-01','x@2024-01-01 ','x@2024-01-01\n','x@y@2024-01-01','@2024-01-01','x/@2024-01-01']) assert.equal(targetKeys(t,{}, {evidence_id}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
 test('nomination hearings accept retained citation spellings with the complete hearing identity',()=>{
  const t={table:'hearing_transcripts',columns:['congress','chamber','jacket_number'],keys:[key(part('citation','element','hearing-congress')),key(part('chamber','element','lower')),key(part('jacketNumber'))],guards:[]};
  for(const citation of ['S.Hrg.119-136','S.Hrg. 119-136']) {

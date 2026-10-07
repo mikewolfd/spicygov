@@ -7,7 +7,7 @@ export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part 
 export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string;sourceAvailable?:boolean;completeKey?:boolean;directions?:{forward:RouteCapability;reverse:RouteCapability};requiredMainFields?:{path:string;status:string}[];requiredElementFields?:{path:string;status:string}[] };
 export type Navigation = { id: string; source: string; fields: string[]; field?: string; targets: Target[]; mode: 'row' | 'array'; candidates?: boolean; meaning: string; receiptFields: string[]; elementPath: string[]; ruleVersion: string; available?: boolean; unavailableReason?: string };
 export type Connection = { id: string; target: number; values: string[] };
-const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress'];
+const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress', 'native-boolean', 'fr-document-number', 'fr-publication-date'];
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
 const pattern = (v: unknown) => { try { return typeof v === 'string' && v.length <= 300 && !!new RegExp(`^(?:${v})$`); } catch { return false; } };
@@ -30,9 +30,25 @@ export function parseNavigation(value: unknown): Navigation[] {
 export const validConnection = (v: unknown): v is Connection => object(v) && typeof v.id === 'string' && Number.isSafeInteger(v.target) && v.target >= 0 && strings(v.values) && v.values.length > 0 && v.values.length <= 8 && v.values.every(s => s.length <= 4096);
 const scalar = (v: unknown) => typeof v === 'string' || typeof v === 'bigint' && v >= -(1n << 63n) && v <= (1n << 64n) - 1n || typeof v === 'number' && Number.isSafeInteger(v) ? String(v) : undefined;
 export function at(v: unknown, path: string[]): unknown { for (const p of path) { if (!object(v)) return undefined; v = v[p]; } return v; }
+function federalRegisterIdentity(value: unknown): {number: string; date: string} | undefined {
+  if (typeof value !== 'string') return;
+  const match = /^([A-Za-z0-9._-]+)@([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(value);
+  if (!match || match[0] !== value) return;
+  const year = Number(match[2]), month = Number(match[3]), day = Number(match[4]);
+  if (year < 1 || month < 1 || month > 12) return;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (day < 1 || day > days[month - 1]) return;
+  return {number: match[1], date: `${match[2]}-${match[3]}-${match[4]}`};
+}
 function word(p: Part, element: unknown, row: Row): string | undefined {
   if (p.literal !== undefined) return p.literal;
   const raw = at(p.from === 'row' ? row : element, p.path), v = scalar(raw);
+  if (p.transform === 'native-boolean') return typeof raw === 'boolean' ? String(raw) : undefined;
+  if (p.transform === 'fr-document-number' || p.transform === 'fr-publication-date') {
+    const identity = federalRegisterIdentity(raw);
+    return p.transform === 'fr-document-number' ? identity?.number : identity?.date;
+  }
   if (p.transform === 'partition' || p.transform === 'partition-value') {
     if (raw == null || raw === '' || raw === '00' || raw === 0 || raw === 0n) return '';
     if (p.transform === 'partition-value') return v && /^[0-9]+$/.test(v) ? v : undefined;
