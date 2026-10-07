@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: mikewolfd/spicy-regs
-          ref: fe84a97de6782a091ec2dc6f7d1e7e5cacc82a7e
+          ref: 0f7dcf6e9c2e3791715fe43de95c0a9c499bb501
           path: .coverage-current-backend
       - name: Check out the qualified source-navigation reader
         uses: actions/checkout@v4
