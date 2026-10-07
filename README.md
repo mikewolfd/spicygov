@@ -47,6 +47,12 @@ The dedicated MCP connection guide is at `/mcp/`. Vite builds a separate HTML en
 
 Composite connection filters preserve every declared key in both directions, including edition, cycle, snapshot, dump date, or term when required. NULL or missing identifiers cannot be followed. Connections browse current published records; source fields such as `input_pins_json` retain historical input identity. Declared links are not inferred from matching column names.
 
+Forward links with a complete declared main identity offer **Open record**. The worker checks the current files for exactly one match before loading its details. Missing, duplicate and incomplete lookups remain explicit; broad keys and reverse links offer **Show related records**. Back restores the source filters and sort. Operational keys come from main columns and arrays; receipts remain separately inspectable evidence. Source-occurrence details preserve repeated references.
+
+Bill details reuse one complete, generation-bound `bill_id` projection per lookup worker. The cache holds subject positions, checks every member's row count and served ETag, and refuses duplicate or missing keys. It admits at most 500,000 rows within a 128 MiB conservative key budget; other lookups use 250,000-row continuations. Integer and date filters use native Parquet predicates. Timestamp filters preserve microseconds and nanoseconds and use an exact scan; decimal filtering reports an explicit precision limitation.
+
+`scripts/compare-bill-lookup.mjs` compares projected scans, the key cache and an experimental sorted locator against retained bytes that match the current publication. Write the preregistered decision and bounds beside its output before running. Measurements distinguish the first projection from repeated lookups; no experimental sidecar is published by this script.
+
 `npm test` covers metadata refresh, outage, unsupported formats, schema changes, missing and duplicate join keys, source URL safety, bidirectional composite navigation, missing publication dates, and Parquet reading. `node scripts/check-scorecard-joins.mjs` optionally checks live scorecard schemas and five record traversals.
 
 ## Sources directory

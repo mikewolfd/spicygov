@@ -9,7 +9,11 @@ export type Join = {
   parent_columns: string[];
   kind: string;
   reason: string;
+  completeKey?: {child:boolean;parent:boolean};
+  directions?: {forward:RouteCapability;reverse:RouteCapability};
 };
+export type RouteCapability = {available:boolean;measurement:{status:string;scope:string};lookup:{status:string;scope:string;requiresExactMatch:boolean}};
+export type RecordIdentity = {columns:string[];basis:'declared_main_key';uniqueness:'unknown'};
 export type TableMetadataState = 'loading' | 'current' | 'older-publication' | 'missing' | 'incompatible' | 'unavailable' | 'undocumented';
 export type MetadataStatus = {
   state: 'loading' | 'current' | 'partial' | 'unavailable';
@@ -42,6 +46,7 @@ export type TableMetadata = {
   sourceStatus: 'documented' | 'unknown';
   joinAudit?: { status: string; reason: string };
   receiptIdentity?: string[];
+  recordIdentity?: RecordIdentity;
   receiptContainers?: Record<string, string[]>;
 };
 export type PublicationDescriptor = {
@@ -85,6 +90,7 @@ function parseTable(value: unknown): TableMetadata | undefined {
   const sources = Array.isArray(value.sources) ? value.sources.filter(isObject).filter(s => typeof s.id === 'string' && typeof s.name === 'string').map(s => ({ id: s.id as string, name: s.name as string, url: safeUrl(s.url), kind: text(s.kind) ?? 'unknown', note: text(s.note) ?? '' })) : [];
   const columns = Array.isArray(value.columns) ? value.columns.filter(isObject).filter(c => typeof c.column_name === 'string' && typeof c.description === 'string').map(c => ({ column_name: c.column_name as string, description: c.description as string })) : [];
   return {
+    recordIdentity: isObject(value.recordIdentity) && value.recordIdentity.basis === 'declared_main_key' && value.recordIdentity.uniqueness === 'unknown' && Array.isArray(value.recordIdentity.columns) && value.recordIdentity.columns.length > 0 && value.recordIdentity.columns.every(v=>typeof v==='string' && (value.publicationSchema as unknown[]).some(c=>Array.isArray(c)&&c[0]===v)) ? value.recordIdentity as RecordIdentity : undefined,
     receiptIdentity: Array.isArray(value.receiptIdentity) ? value.receiptIdentity.filter((v): v is string => typeof v === "string") : [],
     receiptContainers: isObject(value.receiptContainers) ? Object.fromEntries(Object.entries(value.receiptContainers).filter((p): p is [string, string[]] => Array.isArray(p[1]) && p[1].every(v => typeof v === "string"))) : {},
     family: value.family, publicationSchema: value.publicationSchema as [string, string][],

@@ -20,6 +20,7 @@ test('dates, numbers, booleans and missing values retain their sort meaning', ()
 test('sort, filters and page history survive shared URLs; clearing sort removes its parameters', () => {
   const state = {id: 'records', filters: [{column: 'name', value: 'A & B'}], cursor: 93, view: 'records', sort: {column: 'event date', direction: 'desc'}, trail: [0, 47], from: 'Related records'};
   assert.deepEqual(readLocation(makeHref(state).slice(1)), state);
+  assert.deepEqual(readLocation(makeHref({...state,detail:true}).slice(1)),{...state,detail:true});
   const cleared = makeHref({...state, sort: undefined, cursor: 0, trail: []});
   assert.equal(new URLSearchParams(cleared.slice(2)).has('sort'), false);
   assert.equal(new URLSearchParams(cleared.slice(2)).has('order'), false);

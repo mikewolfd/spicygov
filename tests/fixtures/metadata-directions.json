@@ -1,0 +1,780 @@
+{
+  "format": "spicy-regs-explorer-metadata",
+  "version": 1,
+  "generatedAt": "2026-10-06T00:00:00Z",
+  "sourceRevision": "fixture-only",
+  "publication": {
+    "sha256": "sha256:de09e3a5661a344f544ba63b3a013341fb9309235d5d4a2361e2b4f10f8aa149",
+    "families": {
+      "fixture": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "extra_tables": {},
+  "tables": {
+    "bill_actions": {
+      "identity_columns": [
+        "bill_id",
+        "action_index"
+      ],
+      "columns": [
+        {
+          "column_name": "bill_id",
+          "column_type": "VARCHAR"
+        },
+        {
+          "column_name": "action_index",
+          "column_type": "BIGINT"
+        }
+      ],
+      "recordIdentity": {
+        "columns": [
+          "bill_id",
+          "action_index"
+        ],
+        "basis": "declared_main_key",
+        "uniqueness": "unknown"
+      },
+      "table": "bill_actions",
+      "family": "fixture",
+      "publicationSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "action_index",
+          "BIGINT"
+        ]
+      ],
+      "sources": [],
+      "inputs": [],
+      "transformation": null,
+      "modelGenerated": false,
+      "sourceStatus": "unknown",
+      "metadataStatus": "documented",
+      "receiptIdentity": [
+        "bill_id",
+        "action_index"
+      ],
+      "receiptContainers": {
+        "source_fields": [
+          "bill_id",
+          "action_index",
+          "action_date",
+          "action_time",
+          "action_text",
+          "action_code",
+          "action_type",
+          "source_system_code",
+          "source_system_name",
+          "recorded_vote_count",
+          "is_latest_action",
+          "stage",
+          "stage_rule",
+          "stage_matcher"
+        ]
+      },
+      "joinAudit": {
+        "status": "connected",
+        "availableJoins": 1,
+        "reviewedReason": null,
+        "reason": "1 declared relationships are available in the current explorer catalog."
+      }
+    },
+    "congress_bills": {
+      "identity_columns": [
+        "bill_id"
+      ],
+      "columns": [
+        {
+          "column_name": "bill_id",
+          "column_type": "VARCHAR"
+        }
+      ],
+      "recordIdentity": {
+        "columns": [
+          "bill_id"
+        ],
+        "basis": "declared_main_key",
+        "uniqueness": "unknown"
+      },
+      "table": "congress_bills",
+      "family": "fixture",
+      "publicationSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ]
+      ],
+      "sources": [],
+      "inputs": [],
+      "transformation": null,
+      "modelGenerated": false,
+      "sourceStatus": "unknown",
+      "metadataStatus": "documented",
+      "receiptIdentity": [
+        "bill_id"
+      ],
+      "receiptContainers": {
+        "source_fields": [
+          "bill_id",
+          "congress",
+          "bill_type",
+          "bill_number",
+          "title",
+          "origin_chamber",
+          "latest_action_date",
+          "latest_action_text",
+          "update_date",
+          "url",
+          "schema_version",
+          "update_date_including_text",
+          "introduced_date",
+          "policy_area",
+          "subjects_json",
+          "subject_count",
+          "sponsor_bioguide_id",
+          "sponsor_full_name",
+          "cosponsor_count",
+          "latest_action_code",
+          "latest_action_time",
+          "latest_action_source_system_code",
+          "latest_action_source_system_name",
+          "action_count",
+          "committee_count",
+          "version_count",
+          "public_law_number",
+          "law_type",
+          "statutes_at_large_cite",
+          "stage",
+          "stage_rule",
+          "stage_matcher",
+          "stage_action_index",
+          "stage_action_date",
+          "stage_source_text",
+          "signed_date",
+          "signed_date_rule",
+          "signed_date_action_index",
+          "signed_date_action_code",
+          "money_bill_kind",
+          "money_bill_rule",
+          "money_bill_reason_codes",
+          "fiscal_year",
+          "appropriations_subcommittee",
+          "referral_signals",
+          "short_title",
+          "related_bills_json",
+          "related_bill_count",
+          "cbo_cost_estimates_outcome",
+          "url_source",
+          "cosponsors_outcome"
+        ]
+      },
+      "joinAudit": {
+        "status": "connected",
+        "availableJoins": 1,
+        "reviewedReason": null,
+        "reason": "1 declared relationships are available in the current explorer catalog."
+      }
+    },
+    "nominations": {
+      "identity_columns": [
+        "congress",
+        "citation"
+      ],
+      "columns": [
+        {
+          "column_name": "congress",
+          "column_type": "BIGINT"
+        },
+        {
+          "column_name": "citation",
+          "column_type": "VARCHAR"
+        }
+      ],
+      "recordIdentity": {
+        "columns": [
+          "congress",
+          "citation"
+        ],
+        "basis": "declared_main_key",
+        "uniqueness": "unknown"
+      },
+      "table": "nominations",
+      "family": "fixture",
+      "publicationSchema": [
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "citation",
+          "VARCHAR"
+        ]
+      ],
+      "sources": [],
+      "inputs": [],
+      "transformation": null,
+      "modelGenerated": false,
+      "sourceStatus": "unknown",
+      "metadataStatus": "documented",
+      "receiptIdentity": [
+        "congress",
+        "citation"
+      ],
+      "receiptContainers": {
+        "source_fields": [
+          "citation",
+          "congress",
+          "number",
+          "part_number",
+          "description",
+          "organization",
+          "received_date",
+          "is_civilian",
+          "nomination_type_json",
+          "latest_action_date",
+          "latest_action_text",
+          "update_date",
+          "url",
+          "committees_json",
+          "hearings_json",
+          "detail_read"
+        ]
+      }
+    },
+    "roll_call_votes": {
+      "columns": [
+        {
+          "column_name": "documents",
+          "column_type": "STRUCT(type VARCHAR, number VARCHAR)[]"
+        }
+      ],
+      "table": "roll_call_votes",
+      "family": "fixture",
+      "publicationSchema": [
+        [
+          "documents",
+          "STRUCT(type VARCHAR, number VARCHAR)[]"
+        ]
+      ],
+      "sources": [],
+      "inputs": [],
+      "transformation": null,
+      "modelGenerated": false,
+      "sourceStatus": "unknown",
+      "metadataStatus": "unknown",
+      "receiptIdentity": [],
+      "receiptContainers": {
+        "source_fields": [
+          "vote_id",
+          "congress",
+          "chamber",
+          "session",
+          "roll_number",
+          "vote_date",
+          "source_url",
+          "question",
+          "result",
+          "yea",
+          "nay",
+          "present",
+          "not_voting",
+          "tallies_json",
+          "member_vote_count",
+          "bill_id",
+          "match_rule",
+          "match_action_index",
+          "match_url",
+          "conflict_count",
+          "tally_kind",
+          "documents_json",
+          "amendments_json",
+          "vote_day",
+          "legis_num",
+          "clerk_body_element",
+          "vote_desc",
+          "vote_question_text",
+          "vote_title",
+          "majority_requirement",
+          "modify_date",
+          "tie_breaker_by_whom",
+          "tie_breaker_vote",
+          "party_totals_json"
+        ]
+      },
+      "joinAudit": {
+        "status": "connected",
+        "availableJoins": 1,
+        "reviewedReason": null,
+        "reason": "1 declared relationships are available in the current explorer catalog."
+      }
+    },
+    "treaties": {
+      "identity_columns": [
+        "treaty_id"
+      ],
+      "columns": [
+        {
+          "column_name": "treaty_id",
+          "column_type": "VARCHAR"
+        }
+      ],
+      "recordIdentity": {
+        "columns": [
+          "treaty_id"
+        ],
+        "basis": "declared_main_key",
+        "uniqueness": "unknown"
+      },
+      "table": "treaties",
+      "family": "fixture",
+      "publicationSchema": [
+        [
+          "treaty_id",
+          "VARCHAR"
+        ]
+      ],
+      "sources": [],
+      "inputs": [],
+      "transformation": null,
+      "modelGenerated": false,
+      "sourceStatus": "unknown",
+      "metadataStatus": "documented",
+      "receiptIdentity": [
+        "treaty_id"
+      ],
+      "receiptContainers": {
+        "source_fields": [
+          "treaty_id",
+          "congress_received",
+          "congress_considered",
+          "number",
+          "suffix",
+          "old_number",
+          "old_number_display_name",
+          "topic",
+          "transmitted_date",
+          "in_force_date",
+          "resolution_text",
+          "formal_title",
+          "short_title",
+          "titles_json",
+          "countries_json",
+          "index_terms_json",
+          "related_docs_json",
+          "parts_json",
+          "action_count",
+          "actions_url",
+          "package_id",
+          "package_id_rule",
+          "update_date",
+          "url",
+          "detail_read"
+        ]
+      },
+      "joinAudit": {
+        "status": "connected",
+        "availableJoins": 1,
+        "reviewedReason": null,
+        "reason": "1 declared relationships are available in the current explorer catalog."
+      }
+    }
+  },
+  "joins": [
+    {
+      "child": "bill_actions",
+      "child_columns": [
+        "bill_id"
+      ],
+      "parent": "congress_bills",
+      "parent_columns": [
+        "bill_id"
+      ],
+      "kind": "complete",
+      "expected_cardinality": "unspecified",
+      "requiredFields": {
+        "child": [
+          {
+            "path": "bill_id",
+            "status": "published"
+          }
+        ],
+        "parent": [
+          {
+            "path": "bill_id",
+            "status": "published"
+          }
+        ]
+      },
+      "directions": {
+        "forward": {
+          "available": true,
+          "measurement": {
+            "status": "unknown",
+            "scope": "unknown"
+          },
+          "lookup": {
+            "status": "scan",
+            "scope": "selected_publication",
+            "requiresExactMatch": true
+          }
+        },
+        "reverse": {
+          "available": true,
+          "measurement": {
+            "status": "unknown",
+            "scope": "unknown"
+          },
+          "lookup": {
+            "status": "scan",
+            "scope": "selected_publication",
+            "requiresExactMatch": true
+          }
+        }
+      },
+      "completeKey": {
+        "child": false,
+        "parent": true
+      }
+    }
+  ],
+  "omittedJoins": [],
+  "navigation": [
+    {
+      "id": "vote_documents",
+      "source": "roll_call_votes",
+      "fields": [
+        "documents",
+        "documents_json"
+      ],
+      "targets": [
+        {
+          "table": "congress_bills",
+          "columns": [
+            "bill_id"
+          ],
+          "keys": [
+            {
+              "parts": [
+                {
+                  "path": [
+                    "congress"
+                  ],
+                  "from": "element"
+                },
+                {
+                  "path": [
+                    "type"
+                  ],
+                  "from": "element",
+                  "transform": "bill-type"
+                },
+                {
+                  "path": [
+                    "number"
+                  ],
+                  "from": "element"
+                }
+              ],
+              "separator": "-",
+              "pattern": ".+"
+            }
+          ],
+          "guards": [
+            {
+              "path": [
+                "type"
+              ],
+              "from": "element",
+              "values": [
+                "HR",
+                "S",
+                "HRES",
+                "SRES",
+                "HJRES",
+                "SJRES",
+                "HCONRES",
+                "SCONRES",
+                "H.R.",
+                "S.",
+                "H.Res.",
+                "S.Res.",
+                "H.J.Res.",
+                "S.J.Res.",
+                "H.Con.Res.",
+                "S.Con.Res."
+              ]
+            },
+            {
+              "path": [
+                "congress"
+              ],
+              "from": "element",
+              "pattern": "[1-9][0-9]*"
+            },
+            {
+              "path": [
+                "number"
+              ],
+              "from": "element",
+              "pattern": "[1-9][0-9]*"
+            }
+          ],
+          "requiredMainFields": [
+            {
+              "path": "documents",
+              "status": "published"
+            }
+          ],
+          "requiredElementFields": [
+            {
+              "path": "congress",
+              "status": "missing"
+            },
+            {
+              "path": "number",
+              "status": "published"
+            },
+            {
+              "path": "type",
+              "status": "published"
+            }
+          ],
+          "sourceAvailable": false,
+          "requiredTargetFields": [
+            {
+              "path": "bill_id",
+              "status": "published"
+            }
+          ],
+          "available": true,
+          "completeKey": true,
+          "directions": {
+            "forward": {
+              "available": false,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "unsupported",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            },
+            "reverse": {
+              "available": false,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "unsupported",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            }
+          },
+          "sourceUnavailableReason": "Required main source fields are not published: congress"
+        },
+        {
+          "table": "nominations",
+          "columns": [
+            "congress",
+            "citation"
+          ],
+          "keys": [
+            {
+              "parts": [
+                {
+                  "path": [
+                    "congress"
+                  ],
+                  "from": "element"
+                }
+              ],
+              "separator": "",
+              "pattern": "[1-9][0-9]*"
+            },
+            {
+              "parts": [
+                {
+                  "path": [
+                    "number"
+                  ],
+                  "from": "element",
+                  "transform": "nomination-citation"
+                }
+              ],
+              "separator": "",
+              "pattern": "PN[1-9][0-9]*(?:-[1-9][0-9]*)?"
+            }
+          ],
+          "guards": [
+            {
+              "path": [
+                "type"
+              ],
+              "from": "element",
+              "values": [
+                "PN"
+              ]
+            }
+          ],
+          "requiredMainFields": [
+            {
+              "path": "documents",
+              "status": "published"
+            }
+          ],
+          "requiredElementFields": [
+            {
+              "path": "congress",
+              "status": "missing"
+            },
+            {
+              "path": "number",
+              "status": "published"
+            },
+            {
+              "path": "type",
+              "status": "published"
+            }
+          ],
+          "sourceAvailable": false,
+          "requiredTargetFields": [
+            {
+              "path": "congress",
+              "status": "published"
+            },
+            {
+              "path": "citation",
+              "status": "published"
+            }
+          ],
+          "available": true,
+          "completeKey": true,
+          "directions": {
+            "forward": {
+              "available": false,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "unsupported",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            },
+            "reverse": {
+              "available": false,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "unsupported",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            }
+          },
+          "sourceUnavailableReason": "Required main source fields are not published: congress"
+        },
+        {
+          "table": "treaties",
+          "columns": [
+            "treaty_id"
+          ],
+          "keys": [
+            {
+              "parts": [
+                {
+                  "path": [
+                    "number"
+                  ],
+                  "from": "element"
+                }
+              ],
+              "separator": "",
+              "pattern": "[1-9][0-9]*-[1-9][0-9]*"
+            }
+          ],
+          "guards": [
+            {
+              "path": [
+                "type"
+              ],
+              "from": "element",
+              "values": [
+                "Treaty Doc."
+              ]
+            }
+          ],
+          "requiredMainFields": [
+            {
+              "path": "documents",
+              "status": "published"
+            }
+          ],
+          "requiredElementFields": [
+            {
+              "path": "number",
+              "status": "published"
+            },
+            {
+              "path": "type",
+              "status": "published"
+            }
+          ],
+          "sourceAvailable": true,
+          "requiredTargetFields": [
+            {
+              "path": "treaty_id",
+              "status": "published"
+            }
+          ],
+          "available": true,
+          "completeKey": true,
+          "directions": {
+            "forward": {
+              "available": true,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "scan",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            },
+            "reverse": {
+              "available": true,
+              "measurement": {
+                "status": "unknown",
+                "scope": "unknown"
+              },
+              "lookup": {
+                "status": "scan",
+                "scope": "selected_publication",
+                "requiresExactMatch": true
+              }
+            }
+          }
+        }
+      ],
+      "mode": "array",
+      "candidates": false,
+      "meaning": "Each independent source document reference; its own Congress and nomination partition are retained.",
+      "receiptFields": [],
+      "elementPath": [],
+      "ruleVersion": "source-navigation/1",
+      "field": "documents",
+      "available": true
+    }
+  ],
+  "retiredJoins": []
+}

@@ -1,13 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {build} from 'esbuild';
 import {renderToStaticMarkup} from 'react-dom/server';
 const {outputFiles}=await build({entryPoints:['lib/navigation.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {parseNavigation,targetKeys,elements,matchesConnection,forwardLinks,validConnection,fccDocumentOutcome}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {parseNavigation,targetKeys,elements,sourceOccurrences,matchesConnection,forwardLinks,validConnection,fccDocumentOutcome}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const part=(name,from='element',transform)=>({path:name?[name]:[],from,...(transform?{transform}:{})});
 const key=(...parts)=>({parts,separator:'',pattern:'.+'});
 const target={table:'nominations',columns:['congress','citation'],keys:[key(part('congress')),key(part('number','element','nomination-citation'),part('part','element','partition'))],guards:[{...part('congress'),pattern:'[1-9][0-9]*'},{...part('part'),pattern:'[0-9]+'}]};
 const spec={id:'meeting_nominations',source:'committee_meetings',fields:['nomination_references_json'],field:'nomination_references_json',targets:[target],mode:'array',meaning:'Source-listed nominations',receiptFields:[],elementPath:[],ruleVersion:'source-navigation/1'};
+test('main-source transforms agree with all retained Python parity vectors',async()=>{
+ const vectors=JSON.parse(await readFile(new URL('./fixtures/main-navigation-transform-vectors.json',import.meta.url),'utf8'));
+ assert.equal(vectors.length,84);
+ for(const {transform,value,expected} of vectors) {
+  const t={table:'fixture',columns:['key'],keys:[key(part('value','row',transform))],guards:[]};
+  assert.deepEqual(targetKeys(t,{}, {value}),expected===null?undefined:[expected],`${transform}: ${JSON.stringify(value)}`);
+ }
+});
+test('court witness guards require a native boolean rather than a plausible string',()=>{
+ const t={table:'court_opinions',columns:['id'],keys:[key(part('opinion_id','row'))],guards:[{...part('sha1_matches','row','native-boolean'),values:['true']}]};
+ assert.deepEqual(targetKeys(t,{}, {opinion_id:42,sha1_matches:true}),['42']);
+ for(const sha1_matches of [false,undefined,null,'true','false',1,0,1n,{},[]]) assert.equal(targetKeys(t,{}, {opinion_id:42,sha1_matches}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
+test('Federal Register references preserve the recorded number and exact calendar date',()=>{
+ const t={table:'fr_documents',columns:['document_number','publication_date'],keys:[key(part('evidence_id','row','fr-document-number')),key(part('evidence_id','row','fr-publication-date'))],guards:[]};
+ for(const [id,date] of [['2024-12345','2024-02-29'],['A_b.1-2','0001-01-01'],['x','2000-02-29'],['x','9999-12-31']]) {
+  assert.deepEqual(targetKeys(t,{}, {evidence_id:`${id}@${date}`}),[id,date]);
+ }
+ for(const evidence_id of [null,42,{},'x@2023-02-29','x@1900-02-29','x@0000-01-01','x@2024-13-01','x@2024-04-31','x@2024-01-00','x@2024-1-01',' x@2024-01-01','x@2024-01-01 ','x@2024-01-01\n','x@y@2024-01-01','@2024-01-01','x/@2024-01-01']) assert.equal(targetKeys(t,{}, {evidence_id}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
+test('typed source-occurrence dates require an exact calendar date',()=>{
+ const t={table:'fr_documents',columns:['document_number','publication_date'],keys:[key(part('document_number')),key(part('publication_date','element','canonical-date'))],guards:[]};
+ assert.deepEqual(targetKeys(t,{document_number:'2024-1',publication_date:'2024-02-29'},{}),['2024-1','2024-02-29']);
+ for(const publication_date of [null,true,20240229,'2023-02-29','0000-01-01','2024-2-29','2024-02-29\n','2024-02-29T00:00:00Z','other@2024-02-29']) assert.equal(targetKeys(t,{document_number:'2024-1',publication_date},{}),undefined);
+ assert.equal(parseNavigation([{...spec,targets:[t]}]).length,1);
+});
 test('nomination hearings accept retained citation spellings with the complete hearing identity',()=>{
  const t={table:'hearing_transcripts',columns:['congress','chamber','jacket_number'],keys:[key(part('citation','element','hearing-congress')),key(part('chamber','element','lower')),key(part('jacketNumber'))],guards:[]};
  for(const citation of ['S.Hrg.119-136','S.Hrg. 119-136']) {
@@ -108,7 +137,7 @@ test('FCC offered document occurrences preserve order and repeated URLs',()=>{
  const links=forwardLinks(s,{documents});
  assert.deepEqual(links.map(link=>link.sourceOrdinal),[2,3,4]);
  assert.deepEqual(links.map(link=>[link.values[0],link.sourceElement.filename,link.sourceElement.description]),documents.slice(2).map(d=>[d.src,d.filename,d.description]));
- assert.equal(forwardLinks({...s,id:'another_recipe'},{documents})[0].sourceElement,undefined);
+ assert.deepEqual(forwardLinks({...s,id:'another_recipe'},{documents})[0].sourceElement,documents[2]);
 });
 
 test('FCC receipt diagnostics report recorded outcomes with exact URL matching, without qualifying capture or text',()=>{
@@ -138,17 +167,31 @@ test('FCC document display keeps literal descriptors and compact status with exp
  const {FccDocumentReference}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
  const url='https://example.test/not-the-offered-filename.pdf', digest='sha256:'+'a'.repeat(64);
  const link={values:[url],sourceElement:{filename:'Literal & offered.pdf',description:'Publisher description'},sourceOrdinal:2};
- const receipt={pdf_extraction_results_json:JSON.stringify([{url,source_sha256:digest,status:'ok',page_count:2,error:null}])};
- const html=renderToStaticMarkup(FccDocumentReference({link,receipt,fieldAvailable:true}));
+ const row={extraction_results:[{url,source_sha256:digest,status:'ok',page_count:2n,error:null,url_status:'usable',digest_status:'recorded'}]};
+ const html=renderToStaticMarkup(FccDocumentReference({link,row,fieldAvailable:true}));
  const [primary,details]=html.split('<details>');
  assert.match(primary,/Literal &amp; offered.pdf/);assert.match(primary,/Publisher description/);
  assert.match(primary,/Open offered document 3/);assert.match(primary,/Reported extraction: successful\. 2 pages\./);
  assert.match(primary,/File and text access: not verified/);assert.ok(!primary.includes(digest));
  assert.match(details,/<summary>Recorded details<\/summary>/);assert.ok(details.includes(digest));
  assert.match(details,/do not establish access to retained file bytes or extracted text/);
- const absent=renderToStaticMarkup(FccDocumentReference({link:{values:[url],sourceElement:{}},receipt:{},fieldAvailable:false}));
+ const absent=renderToStaticMarkup(FccDocumentReference({link:{values:[url],sourceElement:{}},row:{},fieldAvailable:false}));
  assert.match(absent,/unavailable in the published source details/);assert.ok(!absent.includes('not read yet'));
  assert.ok(!absent.includes('Offered filename:'));assert.ok(!absent.includes('Description:'));
+});
+
+test('FCC main results take precedence and malformed siblings do not hide a matched observation',()=>{
+ const url='https://example.test/a.pdf';
+ const result={url,status:'ok',source_sha256:'sha256:'+'a'.repeat(64),page_count:2n,error:null,
+  url_status:'usable',digest_status:'recorded',offered_ordinals:[0n,2n]};
+ const row={extraction_results:[null,{url:'bad url',url_status:'invalid'},result],pdf_extraction_results_json:'invalid'};
+ assert.equal(fccDocumentOutcome(url,row).state,'recorded');
+ assert.equal(fccDocumentOutcome(url,row).pageCount,2);
+ assert.equal(fccDocumentOutcome(url,{...row,extraction_results:null}).state,'unrecorded');
+ assert.equal(fccDocumentOutcome(url,{extraction_results:[result,result]}).state,'ambiguous');
+ assert.equal(fccDocumentOutcome(url,{extraction_results:[{...result,digest_status:'invalid'}]}).state,'malformed');
+ for(const changed of [{page_count:0n},{source_sha256:null,page_count:null},{error:'contradiction'}])
+  assert.equal(fccDocumentOutcome(url,{extraction_results:[{...result,...changed}]}).state,'malformed');
 });
 
 test('legal targets distinguish unresolved and ambiguous candidates from absent references',()=>{
@@ -163,4 +206,17 @@ test('receipt routes constrain the event type as well as the exact source identi
  const s={...spec,mode:'row',field:undefined,fields:[],targets:[t]};
  assert.deepEqual(forwardLinks(s,{congress:'119',citation:'PN129-10'})[0].filters,[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}]);
  assert.throws(()=>parseNavigation([{...s,targets:[{...t,keys:[key({...part(''),literal:42}),...t.keys.slice(1)]}]}]),/keys/);
+});
+
+test('full guards refuse trailing newlines instead of accepting a prefix',()=>{
+ const t={...target,guards:[{...part('congress'),pattern:'[1-9][0-9]*'}]};
+ assert.equal(targetKeys(t,{congress:'119\n',number:14,part:'2'},{}),undefined);
+ assert.equal(targetKeys(t,{congress:'119\r\n',number:14,part:'2'},{}),undefined);
+});
+
+test('source occurrences retain unresolved, repeated and null legal candidates',()=>{
+ const s={...spec,candidates:true,field:'refs',fields:['refs']};
+ const values=[{target_status:'unsupported',candidate_keys:[]},{target_status:'ambiguous',candidate_keys:[{id:'a'},{id:'a'}]},null];
+ assert.deepEqual(sourceOccurrences(s,{refs:JSON.stringify(values)}),values);
+ assert.deepEqual(sourceOccurrences({...s,mode:'row'}, {refs:values}),[]);
 });

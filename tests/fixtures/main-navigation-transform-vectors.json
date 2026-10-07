@@ -1,0 +1,422 @@
+[
+  {
+    "transform": "native-boolean",
+    "value": true,
+    "expected": "true"
+  },
+  {
+    "transform": "native-boolean",
+    "value": false,
+    "expected": "false"
+  },
+  {
+    "transform": "native-boolean",
+    "value": 1,
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": 0,
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": null,
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "true",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "false",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "2024-02-29",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "0001-01-01",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "9999-12-31",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "20240101",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": " 2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "native-boolean",
+    "value": "2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": true,
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": false,
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": 1,
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": 0,
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": null,
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "true",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "false",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "2024-02-29",
+    "expected": "2024-02-29"
+  },
+  {
+    "transform": "canonical-date",
+    "value": "0001-01-01",
+    "expected": "0001-01-01"
+  },
+  {
+    "transform": "canonical-date",
+    "value": "9999-12-31",
+    "expected": "9999-12-31"
+  },
+  {
+    "transform": "canonical-date",
+    "value": "1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "20240101",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": " 2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "canonical-date",
+    "value": "2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": true,
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": false,
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": 1,
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": 0,
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": null,
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "true",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "false",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "2024-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "0001-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "9999-12-31",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "20240101",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": " 2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@2024-02-29",
+    "expected": "E6-1"
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@0001-01-01",
+    "expected": "E6-1"
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@9999-12-31",
+    "expected": "E6-1"
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@20240101",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "E6-1@2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": " x@2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-document-number",
+    "value": "x@2024-01-01@2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": true,
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": false,
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": 1,
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": 0,
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": null,
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "true",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "false",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "2024-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "0001-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "9999-12-31",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "20240101",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": " 2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@2024-02-29",
+    "expected": "2024-02-29"
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@0001-01-01",
+    "expected": "0001-01-01"
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@9999-12-31",
+    "expected": "9999-12-31"
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@1900-02-29",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@0000-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@2024-01-01\n",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@20240101",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "E6-1@2024-1-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": " x@2024-01-01",
+    "expected": null
+  },
+  {
+    "transform": "fr-publication-date",
+    "value": "x@2024-01-01@2024-01-01",
+    "expected": null
+  }
+]

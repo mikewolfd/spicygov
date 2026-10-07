@@ -6,6 +6,7 @@ export type View = 'records' | 'connections' | 'about';
 export type LocationState = {
   id: string; filters: Filter[]; cursor: number; view: View;
   connection?: Connection; sort?: RecordSort; from?: string; trail?: number[];
+  detail?:boolean;
 };
 export const initial: LocationState = { id: 'congress_bills', filters: [], cursor: 0, view: 'records' };
 export function readLocation(search = window.location.search): LocationState {
@@ -18,6 +19,7 @@ export function readLocation(search = window.location.search): LocationState {
   let connection: Connection | undefined;
   try { const c = JSON.parse(p.get("connection") ?? "null"); if (validConnection(c)) connection = c; } catch {}
   return {
+    ...(p.get('detail')==='1'?{detail:true}:{}),
     ...(connection ? {connection} : {}), id: p.get('table') ?? initial.id, filters, cursor: Math.max(0, Number(p.get('at')) || 0),
     view: ['records', 'connections', 'about'].includes(p.get('view') ?? '') ? p.get('view') as View : 'records',
     sort: p.get('sort') ? {column: p.get('sort')!, direction: p.get('order') === 'desc' ? 'desc' : 'asc'} : undefined,
@@ -27,6 +29,7 @@ export function readLocation(search = window.location.search): LocationState {
 }
 export function makeHref(state: LocationState) {
   const p = new URLSearchParams({table: state.id});
+  if(state.detail)p.set('detail','1');
   if (state.connection) p.set("connection", JSON.stringify(state.connection));
   if (state.filters.length) p.set('where', JSON.stringify(state.filters));
   if (state.cursor) p.set('at', String(state.cursor));

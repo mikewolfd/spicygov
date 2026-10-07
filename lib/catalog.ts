@@ -43,6 +43,7 @@ export type Dataset = {
   joinAudit?: { status: string; reason: string };
   connectionNotes: string[];
   receiptIdentity?: string[];
+  recordIdentity?: import('./metadata').RecordIdentity;
   receiptContainers?: Record<string, string[]>;
   group: string;
   family: string;
@@ -148,6 +149,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
           rows: member.rows,
           byteSize: member.byteSize,
           sha256: member.sha256,
+          etag: member.etag,
         })),
         published: validDate(family.publishedAt),
         group: groupFor(id),
@@ -177,7 +179,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     return {
       ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
       kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
-      receiptIdentity: metadata.receiptIdentity, receiptContainers: metadata.receiptContainers,
+      receiptIdentity: metadata.receiptIdentity, recordIdentity: metadata.recordIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
       columns: table.columns.map(column => ({ ...column, description: metadata.columns?.find(c => c.column_name === column.name)?.description ?? "" })),

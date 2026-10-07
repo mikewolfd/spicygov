@@ -27,6 +27,7 @@ import { TableProvenance } from "@/components/table-provenance";
 import { useExplorerTools } from "@/lib/webmcp";
 import { initial, readLocation, makeHref, type LocationState, type View } from '@/lib/explorer-location';
 import type { RecordSort } from '@/lib/record-sort';
+import {completeIdentity,type LookupResult} from '@/lib/record-lookup';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -100,7 +101,9 @@ export default function Explorer() {
     [filterValue, setFilterValue] = useState("");
   const worker = useRef<Worker | null>(null),
     recordWorker = useRef<Worker | null>(null);
+  const lookupWorker=useRef<Worker|null>(null),lookupRunning=useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const [lookup,setLookup]=useState<LookupResult|null>(null),[lookupProgress,setLookupProgress]=useState(0);
   const { tables: catalog, joins, navigation = [], metadata, error: catalogError, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
   const table = catalog.find((t) => t.id === location.id),
     connections = table ? related(table.id, joins) : [];
@@ -126,6 +129,9 @@ export default function Explorer() {
       if (listRef.current) listRef.current.scrollTop = 0;
     }
     setRecord(null);
+    setLookup(null);
+    recordWorker.current?.terminate();
+    stopLookup();
     setMobile(false);
     setError("");
   }
@@ -165,6 +171,7 @@ export default function Explorer() {
     if (table.recordsAvailable === false) {
       setBusy(false); setRows([]); setError('Records are paused until the physical fields match this data release. You can still download the published file or reload the catalog.'); return;
     }
+    if(location.detail){setBusy(false);setRows([]);setError('');return;}
     setBusy(true);
     setRows([]);
     setError("");
@@ -211,6 +218,7 @@ export default function Explorer() {
     table ? false : publicationsPending,
     table?.recordsAvailable,
     location.id,
+    location.detail,
     JSON.stringify(location.filters),
     JSON.stringify(location.connection),
     JSON.stringify(location.connection ? navigation.find(s=>s.id===location.connection?.id) : null),
@@ -220,7 +228,25 @@ export default function Explorer() {
     JSON.stringify(activeColumns),
     retry,
   ]);
-  useEffect(() => () => recordWorker.current?.terminate(), []);
+  useEffect(() => () => {recordWorker.current?.terminate();lookupWorker.current?.terminate();}, []);
+  function stopLookup(){if(lookupRunning.current){lookupWorker.current?.terminate();lookupWorker.current=null;lookupRunning.current=false;}}
+  function findRecord(cursor=0,positions:number[]=[]) {
+    if(!table)return;
+    recordWorker.current?.terminate();stopLookup();setRecord(null);setRecordBusy(true);setRecordError('');setLookup(null);setLookupProgress(cursor);setConnectionField(null);
+    const w=lookupWorker.current??new Worker(new URL('../lib/parquet.worker.ts',import.meta.url),{type:'module'});lookupWorker.current=w;lookupRunning.current=true;
+    w.onmessage=e=>{
+      if(e.data.type==='progress')setLookupProgress(e.data.scanned);
+      if(e.data.type==='lookup'){setLookup(e.data);setRecord(e.data.row??null);setRecordBusy(false);lookupRunning.current=false;}
+      if(e.data.type==='error'){setRecordError(e.data.message);setRecordBusy(false);lookupRunning.current=false;}
+    };
+    w.onerror=()=>{setRecordError('The record lookup stopped. Retry this lookup.');setRecordBusy(false);stopLookup();};
+    w.postMessage({type:'lookup',table,filters:location.filters,cursor,positions});
+  }
+  useEffect(()=>{
+    if(!location.detail){setLookup(null);return;}
+    if(table && table.metadataState!=='loading')findRecord();
+    return ()=>stopLookup();
+  },[location.detail,location.id,JSON.stringify(location.filters),JSON.stringify(table?.members),JSON.stringify(table?.recordIdentity),table?.metadataState,retry]);
   function openRecord(row: Row, index: number, field?: string) {
     if (!table) return;
     setConnectionField(field ?? null);
@@ -272,11 +298,12 @@ export default function Explorer() {
       cursor: 0,
       view: "records",
       from: table?.label,
+      detail: join.child===location.id&&join.direction!=='incoming'&&completeIdentity(catalog.find(d=>d.id===t.id)!,connectionFilters(join,location.id,row)!)||undefined,
     });
   }
-  function browse(id: string, filters: Filter[], connection?: import("../lib/navigation").Connection) {
+  function browse(id: string, filters: Filter[], connection?: import("../lib/navigation").Connection,detail?:boolean) {
     recordWorker.current?.terminate();
-    navigate({id, filters, connection, cursor: 0, view: "records", from: table?.label});
+    navigate({id, filters, connection, cursor: 0, view: "records", from: table?.label,detail:detail&& !connection||undefined});
   }
   function cancel() {
     worker.current?.terminate();
@@ -464,7 +491,8 @@ export default function Explorer() {
             </TabsList>
           </Tabs>
           {table && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} onOpen={browse} />}
-          {location.view === "records" && (
+          {location.view === 'records'&&location.detail&&<div className="section-intro"><h2>Record view</h2><p>Checking this complete identity against the current publication.</p><Button variant="outline" onClick={()=>navigate({...location,detail:undefined})}>Show related records</Button></div>}
+          {location.view === "records" && !location.detail && (
             <>
               <div className="table-toolbar">
                 <span className="table-name">{table?.id ?? location.id}</span>
@@ -894,11 +922,13 @@ export default function Explorer() {
         </SheetContent>
       </Sheet>
       <Sheet
-        open={record !== null}
+        open={record !== null||!!location.detail}
         onOpenChange={(open) => {
           if (!open) {
             recordWorker.current?.terminate();
+            stopLookup();
             setRecord(null);
+            if(location.detail){if(location.from)window.history.back();else navigate({...location,detail:undefined});}
           }
         }}
       >
@@ -907,16 +937,23 @@ export default function Explorer() {
             <p className="eyebrow">PUBLIC RECORD</p>
             <SheetTitle>{table?.label}</SheetTitle>
             <SheetDescription>
-              Follow the linked fields to keep exploring.
+              {location.detail&&lookup?.status==='found'?'One exact match in this publication.':'Follow the linked fields to keep exploring.'}
             </SheetDescription>
           </SheetHeader>
           <div className="record-scroll">
             {recordBusy && (
               <p className="record-loading" role="status">
-                Loading remaining fields…
+                {location.detail?`Checking exact identity · ${count(lookupProgress)} of ${table?count(table.rows):'…'} records`:'Loading remaining fields…'}
               </p>
             )}
             {recordError && <p className="error-state">{recordError}</p>}
+            {location.detail && !recordBusy && !record && <div className="source-reference" role="status">
+              {lookup?.status==='missing'&&<p>No record matches this complete identity in the current publication.</p>}
+              {lookup?.status==='ambiguous'&&<p>Multiple records match this identity. No single record was selected.</p>}
+              {lookup?.status==='incomplete'&&<><p>The lookup is incomplete. {lookup.positions.length?'One match has been found; remaining records must be checked.':'No match in the checked records.'}</p><Button onClick={()=>findRecord(lookup.cursor,lookup.positions)}>Continue checking</Button></>}
+              {recordError&&<Button variant="outline" onClick={()=>findRecord()}>Retry lookup</Button>}
+              <Button variant="outline" onClick={()=>navigate({...location,detail:undefined})}>Show related records</Button>
+            </div>}
             {record &&
               connections.some((j) =>
                 connectionFilters(j, location.id, record) !== null,
@@ -945,7 +982,7 @@ export default function Explorer() {
                         return (
                           <button
                             key={i}
-                            disabled={!target}
+                            disabled={!target||(j.child===location.id&&j.direction!=='incoming'?j.directions?.forward.available===false:j.directions?.reverse.available===false)}
                             onClick={() => follow(j, record)}
                             title={j.reason || `Join on ${t.local.join(", ")}`}
                           >
@@ -953,6 +990,7 @@ export default function Explorer() {
                             <span>
                               {connectionLabel(j, target?.label ?? pretty(t.id))}
                               <small>
+                                {j.child===location.id&&j.direction!=='incoming'&&target&&completeIdentity(target,connectionFilters(j,location.id,record)! )?'Open record · checks for one exact match · ':'Show related records · '}
                                 {t.local
                                   .map((k) => `${k}: ${display(record[k])}`)
                                   .join(" · ")}
