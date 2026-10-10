@@ -90,3 +90,50 @@ test('default reader invokes browser fetch with the global receiver', async () =
  const original=globalThis.fetch;
  try { globalThis.fetch=function(){ assert.equal(this,globalThis); return Promise.resolve(new Response(JSON.stringify(manifest))); }; const result=await new SourceCatalogReader('/manifest.json').manifest(); assert.equal(result.generation,generation); } finally { globalThis.fetch=original; }
 });
+
+const unknownStage = {status:'unknown',measurements:[]};
+const measurement = {count:1,unit:'captured-table-artifact-version',version:generation,evidenceBasis:'Retained publication snapshot; no live readback',scope:{table:'structure',capturedAt:'2026-10-09T00:00:00Z'},period:null};
+const coverage = {completenessDenominator:null,stages:{expected:unknownStage,advertised:unknownStage,acquired:unknownStage,processed:unknownStage,published:{status:'evidence-recorded',measurements:[measurement]}}};
+test('reader accepts independently scoped coverage and destination links, and older details remain readable', () => {
+ const parsed = parseCatalogDetail({...detail,coverage,planned:[{id:'code',status:'implemented-scoped-local',destinationIds:['current','historical']}]},generation,item.id);
+ assert.equal(parsed.coverage.stages.expected.status,'unknown');
+ assert.equal(parsed.coverage.stages.published.measurements[0].version,generation);
+ assert.deepEqual(parsed.planned[0].destinationIds,['current','historical']);
+ assert.equal(parseCatalogDetail(detail,generation,item.id).coverage,undefined);
+});
+test('coverage rejects unsupported fields, incomplete stages, empty scope and fabricated denominators', () => {
+ for (const bad of [
+  {...coverage,completenessDenominator:100},
+  {...coverage,stages:{published:coverage.stages.published}},
+  {...coverage,stages:{...coverage.stages,expected:{status:'complete',measurements:[]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'unknown',measurements:[measurement]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'evidence-recorded',measurements:[{...measurement,scope:{}}]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'evidence-recorded',measurements:[{...measurement,scope:{query:{agency:'X'}}}]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'evidence-recorded',measurements:[{...measurement,period:{raw:'private'}}]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'evidence-recorded',measurements:[{...measurement,verification:'internal'}]}}},
+  {...coverage,stages:{...coverage.stages,published:{status:'evidence-recorded',measurements:[{...measurement,version:'https://example.test/?signature=secret'}]}}},
+ ]) assert.throws(()=>parseCatalogDetail({...detail,coverage:bad},generation,item.id));
+ assert.throws(()=>parseCatalogDetail({...detail,planned:[{id:'code',status:'implemented',destinationIds:'current'}]},generation,item.id),/array/);
+});
+test('Python public coverage producer is accepted by the maintained TypeScript reader', () => {
+ const input = {stages:Object.fromEntries(['expected','advertised','acquired','processed','published'].map(stage=>[stage,{status:'unknown',measurements:[]}]))};
+ input.stages.processed = {status:'evidence-recorded',measurements:[{count:1,unit:'qualified-candidate-table-version',scope:{collection_id:item.id,table:'structure',qualification_scope:'Title 1 only'},version:generation,verification:'Recorded qualification; no publication inference',period:null,evidence_ids:['/Users/private/proof']}]};
+ const result=spawnSync('../spicy-regs/.venv/bin/python',['-c','import json,sys; from spicy_regs.source_catalog.exporter import public_coverage; print(json.dumps(public_coverage(json.load(sys.stdin))))'],{input:JSON.stringify(input),encoding:'utf8',env:{...process.env,PYTHONPATH:'../spicy-regs/src'}});
+ assert.equal(result.status,0,result.stderr);
+ const parsed = parseCatalogDetail({...detail,coverage:JSON.parse(result.stdout)},generation,item.id);
+ assert.equal(parsed.coverage.stages.processed.measurements[0].scope.qualificationScope,'Title 1 only');
+ assert.equal(parsed.coverage.stages.published.status,'unknown');
+});
+
+test('coverage presentation shows stage uncertainty, scoped versions and unpublished candidates without another fetch', async () => {
+ const { createRequire } = await import('node:module');
+ const { createElement } = await import('react');
+ const { renderToStaticMarkup } = await import('react-dom/server');
+ const output=await build({entryPoints:['components/source-catalog.tsx'],bundle:true,platform:'node',format:'cjs',write:false,external:['react','react/jsx-runtime']});
+ const loaded={exports:{}};
+ new Function('require','module','exports',output.outputFiles[0].text)(createRequire(import.meta.url),loaded,loaded.exports);
+ const data={...coverage,stages:{...coverage.stages,processed:{status:'evidence-recorded',measurements:[{...measurement,unit:'qualified-candidate-table-version',scope:{table:'structure',qualificationScope:'Title 1 native structure only'},evidenceBasis:'Recorded local qualification; no publication inference'}]},published:unknownStage}};
+ const html=renderToStaticMarkup(createElement(loaded.exports.CoverageAccounting,{coverage:data}));
+ for (const label of ['Expected','Advertised','Acquired','Processed','Published','Title 1 native structure only','Covered period unknown.','denominator remains unknown']) assert.ok(html.includes(label),label);
+ assert.ok(html.includes(generation));
+});

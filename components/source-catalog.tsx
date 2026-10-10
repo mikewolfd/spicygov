@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SourceCatalogReader, type CatalogManifest, type CatalogCollection, type CatalogDetail, type CatalogFilePage } from '../lib/source-catalog';
+import { SourceCatalogReader, type CatalogManifest, type CatalogCollection, type CatalogDetail, type CatalogFilePage, type CatalogCoverage, coverageStages } from '../lib/source-catalog';
 import type { Dataset } from '../lib/catalog';
 function text(value: unknown): string { return typeof value === 'string' ? value : JSON.stringify(value); }
+export function CoverageAccounting({ coverage }: { coverage: CatalogCoverage }) {
+  return <section aria-label="Source coverage accounting"><h4>Source coverage</h4>
+    <p>Each stage uses its recorded unit and selection. A complete publisher denominator remains unknown; these measurements do not establish a coverage percentage.</p>
+    <div className="source-table-scroll"><table className="catalog-route-table"><thead><tr><th scope="col">Stage</th><th scope="col">Recorded measurement</th><th scope="col">Scope and evidence</th></tr></thead><tbody>
+      {coverageStages.map(stage => { const data = coverage.stages[stage]; return <tr key={stage}><th scope="row">{stage.charAt(0).toUpperCase() + stage.slice(1)}</th>
+        <td>{data.measurements.length ? data.measurements.map((item, i) => <p key={i}>{item.count.toLocaleString()} {item.unit}</p>) : data.status === 'scope-withheld' ? 'Selected scope cannot be shown publicly.' : 'Unknown. No qualified measurement recorded.'}</td>
+        <td>{data.measurements.map((item, i) => <div key={i}>{item.scope.table && <p>Table: {item.scope.table}</p>}{item.scope.qualificationScope && <p>{item.scope.qualificationScope}</p>}{item.scope.capturedAt && <p>Publication snapshot: {item.scope.capturedAt}</p>}{item.scope.observationId && <p>Observation: <code>{item.scope.observationId}</code></p>}{item.routeId && <p>Route: <code>{item.routeId}</code></p>}<p>{item.period ? Object.values(item.period).join(' · ') : 'Covered period unknown.'}</p><p>{item.evidenceBasis}</p>{item.version && <code>{item.version}</code>}</div>)}</td>
+      </tr>; })}
+    </tbody></table></div>
+  </section>;
+}
 export function CollectionDetail({ reader, manifest, collection, tables }: { reader: SourceCatalogReader; manifest: CatalogManifest; collection: CatalogCollection; tables: Dataset[] }) {
   const pageRequest = useRef<AbortController | undefined>(undefined);
   const [detail, setDetail] = useState<CatalogDetail>(), [error, setError] = useState(''), [retry, setRetry] = useState(0);
@@ -11,6 +22,7 @@ export function CollectionDetail({ reader, manifest, collection, tables }: { rea
   if (error) return <p role="alert">Collection details unavailable: {error}. <button onClick={() => setRetry(retry + 1)}>Retry details</button></p>;
   if (!detail) return <p role="status">Loading collection details…</p>;
   return <div className="catalog-detail">
+    {detail.coverage && <CoverageAccounting coverage={detail.coverage} />}
     <h4>Routes and periods</h4><p>Each route keeps its recorded scope. Overlap or replacement requires supporting evidence.</p>
     {detail.routes.length ? <div className="source-table-scroll"><table className="catalog-route-table"><thead><tr><th scope="col">Route</th><th scope="col">Delivery and lifecycle</th><th scope="col">Custodian and behavior</th><th scope="col">Period and evidence basis</th></tr></thead><tbody>{detail.routes.map(route => <tr key={route.id}><th scope="row">{route.accessUrl ? <a href={route.accessUrl} target="_blank" rel="noreferrer">{route.label} ↗</a> : route.label}{route.status && <span className="table-note">{route.status}</span>}{route.note && <p>{route.note}</p>}</th><td>{route.deliveryMethod}<br />{route.lifecycle}</td><td>{route.custodian}<br />{route.contentBehavior}</td><td>{route.periods.length ? route.periods.map((period, i) => <p key={i}><strong>{period.kind}: {period.label}</strong><br />{period.start && <>{period.start}{period.end && `–${period.end}`}<br /></>}{period.basis}</p>) : 'Period unknown'}</td></tr>)}</tbody></table></div> : <p>No acquisition route recorded.</p>}
     <h4>Recorded table destinations</h4>{detail.tables.length ? <ul className="readable-inputs">{detail.tables.map(item => { const current = tables.find(table => table.id === item.id); const stale = current && item.artifactDigest && current.artifactDigest && current.artifactDigest !== item.artifactDigest; return <li key={`${item.family}-${item.id}`}><strong>{current?.label ?? item.id}</strong><span>{item.family} · {item.status}</span>{item.coverageNote && <span>{item.coverageNote}</span>}{stale && <span>Catalog evidence is stale for the current table generation.</span>}{!item.artifactDigest && <span>Output generation is not pinned in this catalog.</span>}{current && item.artifactDigest && !current.artifactDigest && <span>Current publication identity could not be compared.</span>}{current && <a href={`/?table=${encodeURIComponent(current.id)}&view=about`}>Explore published table →</a>}</li>; })}</ul> : <p>No table destination recorded.</p>}
