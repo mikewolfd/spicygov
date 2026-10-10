@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SourceCatalogReader, type CatalogManifest, type CatalogCollection, type CatalogDetail, type CatalogFilePage, type CatalogCoverage, coverageStages } from '../lib/source-catalog';
+import { SourceCatalogReader, type CatalogManifest, type CatalogCollection, type CatalogDetail, type CatalogFilePage, type CatalogCoverage, type PublicationObservation, coverageStages } from '../lib/source-catalog';
 import type { Dataset } from '../lib/catalog';
 function text(value: unknown): string { return typeof value === 'string' ? value : JSON.stringify(value); }
 export function CoverageAccounting({ coverage }: { coverage: CatalogCoverage }) {
@@ -13,6 +13,19 @@ export function CoverageAccounting({ coverage }: { coverage: CatalogCoverage }) 
     </tbody></table></div>
   </section>;
 }
+export function RetainedPublications({ observations }: { observations: PublicationObservation[] }) {
+  return <section aria-label="Retained publication observations"><h4>Retained publication observations</h4>
+    <p>These captured publication descriptions retain exact artifact and member identities. They do not establish current live status, source completeness or member content verification. Historical inventory and coverage remain separately recorded.</p>
+    {observations.map(item => <details key={item.id}><summary>{item.family} · captured {item.captureAt}</summary>
+      <p>Client capture time: {item.captureAt}<br />Family publication time: {item.familyPublishedAt}<br />Server HTTP Date: {item.serverDate}</p>
+      <p>{item.associationStatus === 'unqualified' ? 'Inventory association unqualified. No family alias or coverage assignment is inferred.' : 'Associated by exact inventory family and table names.'}</p>
+      <p>Response: <code>{item.responseSha256}</code><br />Artifact: <code>{item.artifactDigest}</code><br />Artifact prefix: <code>{item.artifactPrefix}</code></p>
+      <ul>{item.tables.map(table => <li key={table.table}><strong>{table.table}</strong> · {table.rows.toLocaleString()} rows · {table.bytes.toLocaleString()} bytes
+        {table.sha256 ? <p>Member: <code>{table.sha256}</code></p> : <details><summary>Partition member identities</summary><ul>{table.members?.map(member => <li key={member.key}><code>{member.key}</code> · {member.rows.toLocaleString()} rows · {member.bytes.toLocaleString()} bytes<br /><code>{member.sha256}</code></li>)}</ul></details>}
+      </li>)}</ul>
+    </details>)}
+  </section>;
+}
 export function CollectionDetail({ reader, manifest, collection, tables }: { reader: SourceCatalogReader; manifest: CatalogManifest; collection: CatalogCollection; tables: Dataset[] }) {
   const pageRequest = useRef<AbortController | undefined>(undefined);
   const [detail, setDetail] = useState<CatalogDetail>(), [error, setError] = useState(''), [retry, setRetry] = useState(0);
@@ -23,6 +36,7 @@ export function CollectionDetail({ reader, manifest, collection, tables }: { rea
   if (!detail) return <p role="status">Loading collection details…</p>;
   return <div className="catalog-detail">
     {detail.coverage && <CoverageAccounting coverage={detail.coverage} />}
+    {detail.publicationObservations && <RetainedPublications observations={detail.publicationObservations} />}
     <h4>Routes and periods</h4><p>Each route keeps its recorded scope. Overlap or replacement requires supporting evidence.</p>
     {detail.routes.length ? <div className="source-table-scroll"><table className="catalog-route-table"><thead><tr><th scope="col">Route</th><th scope="col">Delivery and lifecycle</th><th scope="col">Custodian and behavior</th><th scope="col">Period and evidence basis</th></tr></thead><tbody>{detail.routes.map(route => <tr key={route.id}><th scope="row">{route.accessUrl ? <a href={route.accessUrl} target="_blank" rel="noreferrer">{route.label} ↗</a> : route.label}{route.status && <span className="table-note">{route.status}</span>}{route.note && <p>{route.note}</p>}</th><td>{route.deliveryMethod}<br />{route.lifecycle}</td><td>{route.custodian}<br />{route.contentBehavior}</td><td>{route.periods.length ? route.periods.map((period, i) => <p key={i}><strong>{period.kind}: {period.label}</strong><br />{period.start && <>{period.start}{period.end && `–${period.end}`}<br /></>}{period.basis}</p>) : 'Period unknown'}</td></tr>)}</tbody></table></div> : <p>No acquisition route recorded.</p>}
     <h4>Recorded table destinations</h4>{detail.tables.length ? <ul className="readable-inputs">{detail.tables.map(item => { const current = tables.find(table => table.id === item.id); const stale = current && item.artifactDigest && current.artifactDigest && current.artifactDigest !== item.artifactDigest; return <li key={`${item.family}-${item.id}`}><strong>{current?.label ?? item.id}</strong><span>{item.family} · {item.status}</span>{item.coverageNote && <span>{item.coverageNote}</span>}{stale && <span>Catalog evidence is stale for the current table generation.</span>}{!item.artifactDigest && <span>Output generation is not pinned in this catalog.</span>}{current && item.artifactDigest && !current.artifactDigest && <span>Current publication identity could not be compared.</span>}{current && <a href={`/?table=${encodeURIComponent(current.id)}&view=about`}>Explore published table →</a>}</li>; })}</ul> : <p>No table destination recorded.</p>}

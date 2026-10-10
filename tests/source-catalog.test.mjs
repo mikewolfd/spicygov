@@ -137,3 +137,51 @@ test('coverage presentation shows stage uncertainty, scoped versions and unpubli
  for (const label of ['Expected','Advertised','Acquired','Processed','Published','Title 1 native structure only','Covered period unknown.','denominator remains unknown']) assert.ok(html.includes(label),label);
  assert.ok(html.includes(generation));
 });
+
+const publicationObservation = {
+ id:'publication:fixture',family:'laws',captureAt:'2026-10-10T19:54:12.354210+00:00',familyPublishedAt:'2026-10-10T01:36:31Z',serverDate:'2026-10-10T19:54:12+00:00',responseSha256:generation,artifactDigest:otherGeneration,artifactPrefix:'generations/laws/'+ 'b'.repeat(64),associationStatus:'exact-family',tables:[{table:'table3_records.parquet',bytes:54080,rows:2983,sha256:generation}],
+};
+test('retained publication is optional and preserves historical tables, coverage and separate timestamps', () => {
+ const historic = {...detail,tables:[{id:'table3_records',family:'laws',status:'publication-pinned',artifactDigest:generation}]};
+ const parsed = parseCatalogDetail({...historic,publicationObservations:[publicationObservation]},generation,item.id);
+ assert.deepEqual(parsed.tables,historic.tables); assert.equal(parsed.publicationObservations[0].artifactDigest,otherGeneration);
+ assert.notEqual(parsed.publicationObservations[0].captureAt,parsed.publicationObservations[0].serverDate);
+ assert.equal(parseCatalogDetail(detail,generation,item.id).publicationObservations,undefined);
+});
+test('retained publication reader accepts exact partitions and rejects ambiguous identities and internal fields', () => {
+ const partition = {...publicationObservation,associationStatus:'unqualified',tables:[{table:'bill_sections.parquet',bytes:4,rows:2,partitionColumns:['congress'],members:[{key:'bill_sections/congress=119/part-000.parquet',partition:{congress:'119'},bytes:4,rows:2,sha256:generation}]}]};
+ const parsed = parseCatalogDetail({...detail,publicationObservations:[partition]},generation,item.id);
+ assert.equal(parsed.publicationObservations[0].tables[0].members[0].partition.congress,'119');
+ const cases = [
+  {...partition,captureAt:'2026-10-10T19:54:12'},
+  {...partition,associationStatus:'qualified-current'},
+  {...partition,artifactDigest:'sha256:bad'},
+  {...partition,tables:[{...partition.tables[0],sha256:generation}]},
+  {...partition,tables:[{...partition.tables[0],rows:3}]},
+  {...partition,tables:[{...partition.tables[0],members:[{...partition.tables[0].members[0],key:'../escape'}]}]},
+  {...partition,tables:[{...partition.tables[0],members:[{...partition.tables[0].members[0],partition:{year:'119'}}]}]},
+  {...partition,localPath:'/Users/private/retained.json'},
+ ];
+ for (const row of cases) assert.throws(()=>parseCatalogDetail({...detail,publicationObservations:[row]},generation,item.id));
+ assert.throws(()=>parseCatalogDetail({...detail,publicationObservations:[partition,partition]},generation,item.id),/Duplicate/);
+});
+test('retained publication display states qualification limits and every distinct time', async () => {
+ const ui = await build({entryPoints:['components/source-catalog.tsx'],bundle:true,platform:'node',format:'esm',write:false,external:['react','react-dom/server'],jsx:'automatic'});
+ const folder = await mkdtemp(join(tmpdir(),'catalog-publication-ui-'));
+ try {
+  await symlink(join(process.cwd(),'node_modules'),join(folder,'node_modules'),'dir');
+  await writeFile(join(folder,'ui.mjs'),ui.outputFiles[0].contents);
+  const {RetainedPublications} = await import('file://'+join(folder,'ui.mjs'));
+  const React = await import('react'); const {renderToStaticMarkup} = await import('react-dom/server');
+  const html = renderToStaticMarkup(React.createElement(RetainedPublications,{observations:[{...publicationObservation,associationStatus:'unqualified'}]}));
+  for (const text of ['Client capture time','Family publication time','Server HTTP Date','Inventory association unqualified','current live status','table3_records.parquet','2,983',otherGeneration]) assert.ok(html.includes(text),text);
+ } finally {await rm(folder,{recursive:true,force:true});}
+});
+
+test('Python retained publication exporter and maintained reader agree while nested evidence stays private', () => {
+ const input = {...publicationObservation,localPath:'/Users/private/response.json',tables:[{table:'bill_sections.parquet',bytes:4,rows:2,partitionColumns:['congress'],localPath:'/Users/private/table',members:[{key:'bill_sections/congress=119/part.parquet',partition:{congress:'119'},sha256:generation,bytes:4,rows:2,localPath:'/Users/private/part'}]}]};
+ const result=spawnSync('../spicy-regs/.venv/bin/python',['-c','import json,sys; from spicy_regs.source_catalog.exporter import public_publication; print(json.dumps(public_publication(json.load(sys.stdin))))'],{input:JSON.stringify(input),encoding:'utf8',env:{...process.env,PYTHONPATH:'../spicy-regs/src'}});
+ assert.equal(result.status,0,result.stderr); assert.equal(result.stdout.includes('/Users/'),false);
+ const parsed = parseCatalogDetail({...detail,publicationObservations:[JSON.parse(result.stdout)]},generation,item.id);
+ assert.equal(parsed.publicationObservations[0].tables[0].members[0].partition.congress,'119');
+});
