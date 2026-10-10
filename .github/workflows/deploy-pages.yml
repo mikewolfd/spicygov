@@ -13,6 +13,14 @@ on:
         options:
           - ubuntu-latest
           - ubuntu-24.04-arm
+      source_catalog:
+        description: Opt in to the exact reviewed catalog build (requires separate authority)
+        type: boolean
+        default: false
+      build_only:
+        description: Catalog proposal supports build only; deployment needs reviewed artifact selection
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
@@ -34,6 +42,11 @@ jobs:
       SPICYGOV_PRINT_CITATION_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-print-citation-backend/.venv/bin/python
       SPICYGOV_NATIVE_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
     steps:
+      - name: Refuse an unqualified catalog deployment
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.source_catalog && !inputs.build_only }}
+        run: |
+          echo 'Catalog deployment requires separately reviewed exact artifact selection.' >&2
+          exit 1
       - uses: actions/checkout@v4
       - name: Check out the qualified native receipt reader
         uses: actions/checkout@v4
@@ -88,6 +101,15 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14
+      - name: Check bounded source catalog transport
+        run: python -B tests/test_source_catalog_archive.py
+      - name: Stage the exact reviewed source catalog
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.source_catalog && inputs.build_only }}
+        timeout-minutes: 10
+        run: |
+          python -I -B scripts/fetch-source-catalog.py \
+            --work-dir "${{ runner.temp }}/source-catalog-12870da6" \
+            --output "${{ github.workspace }}/public/source-catalog"
       - run: python tests/test_time_coverage.py
       - run: python tests/test_collection_coverage.py
       - run: python tests/test_publication_census.py
@@ -138,6 +160,8 @@ jobs:
         with:
           path: dist
   deploy:
+    # Catalog opt-in builds retain the artifact for separate review, never deploy.
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.source_catalog) }}
     needs: build
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     permissions:
