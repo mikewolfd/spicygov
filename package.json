@@ -12,7 +12,9 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
-    "check:data": "node scripts/check-public-data.mjs"
+    "check:data": "node scripts/check-public-data.mjs",
+    "dev:ops": "vite --config vite.ops.config.mjs --host 127.0.0.1 --open /ops/",
+    "check:catalog": "node scripts/catalog-public-validation.mjs public"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",

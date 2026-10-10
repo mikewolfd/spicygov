@@ -7,3 +7,6 @@ public/parquet-worker.js
 .DS_Store
 __pycache__/
 .cache/
+
+# Local generated public catalog staging; retained exports live in the corpus.
+/public/source-catalog/

@@ -150,3 +150,52 @@ were checked. A partial result with unchecked targets is reused until its limits
 or pins change; repeatedly scanning the same source prefix would add no evidence.
 
 The existing native coverage adapter also admits the small committee-report, roster, law, legal-reference, press-release, Record, Senate-expenditure, treaty and court-extraction families. It restores original values from the selected receipts before applying the reviewed dimensions. Section coverage keeps the complete same-generation parent keys; court extraction resolves its witnessed prior and that prior's recorded opinion input. Snapshot dimensions describe the selected publication. The original legacy scanners and their validated checkpoints keep their reviewed revision.
+
+## Shared source catalog
+
+The Sources page begins with shared catalog collections, including advertised
+sources and retained inputs without published tables. Existing published-table
+navigation, coverage and provenance remain below it. Missing or invalid catalog
+metadata produces an explicit error while the table directory remains usable.
+
+The public reader defaults to `/source-catalog/manifest.json`.
+`VITE_SOURCE_CATALOG_URL` may select another HTTP(S) manifest at build time.
+Partition paths stay under that manifest's directory and each returned partition
+must match its generation and collection ID. The reader cancels a response above
+16 MiB, including chunked transfers, and reports an error. Opening a collection requests its
+detail; file inventory loads only when requested, one page at a time. The reader
+rejects file pages above the exporter's supported maximum of 5,000 aliases.
+Route periods preserve their recorded kind and evidence basis; unknown periods
+remain unknown. Advertised, enumerated, held, planned and published states retain
+their separate meanings. Catalog table pins that differ from a loaded current
+table display a stale-evidence notice.
+
+Generate exports using the `spicy-regs` source-catalog CLI documented in that
+repository. Copy only its **public** directory into `public/source-catalog/` for
+a local production candidate, or serve it through the separately authorized data
+publication path. `npm run check:catalog` and `npm run build` reject internal
+fields, local paths, credential-bearing URLs and symlinks in catalog artifacts.
+The production build excludes the operations HTML entry and checks built files
+again before completion. Preserve the previous public generation until the
+candidate is validated; restoring the previous public directory restores its
+manifest and partitions together. No refresh or publication occurs in the UI.
+
+For the read-only local operations screen, keep the separate **internal** export
+outside this repository's `public/` and build directories:
+
+```sh
+SPICY_CATALOG_INTERNAL_DIR=/absolute/path/to/catalog/export/internal npm run dev:ops
+```
+
+Open the loopback URL at `/ops/`. This explicit dev-only configuration serves
+internal JSON from the selected real directory. It restricts remote address,
+Host and Origin to loopback, rejects writes and traversal, and refuses symlinks
+that leave that directory. Internal files add local paths, stored sizes and
+verification states. Local evidence and lineage remain inside the operations
+view. Both views use the same collection IDs and generation. Normal `npm run dev`
+blocks the operations entry and internal endpoint. The operations configuration
+refuses production builds and preview serving.
+
+`tests/source-catalog.test.mjs` covers lazy loading, upstream-only collections,
+route distinctions, generation drift, failure fallback, partition boundaries,
+public privacy validation and the operations server's access boundary.

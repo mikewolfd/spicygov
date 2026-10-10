@@ -1,3 +1,4 @@
+import { SourceCatalog } from '../components/source-catalog';
 import { sourceControlLabel } from '../lib/source-labels';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -159,6 +160,8 @@ function SourcesPage() {
     <header className="topbar"><a className="wordmark" href="/">spicygov<span className="brand-star" aria-hidden="true">✳</span></a><nav aria-label="Main"><a href="/">Explore</a><span className="nav-active" aria-current="page">Sources</span><a href="/mcp/">MCP</a><a href="https://docs.spicygov.ai">Data docs</a></nav></header>
     <main id="sources" className="sources-content">
       <div className="sources-heading"><h1>Sources</h1><p className="sources-intro">See what data we hold, the periods it covers, and what is missing.</p></div>
+      <SourceCatalog tables={allTables} retry={retry} manifestUrl={import.meta.env.VITE_SOURCE_CATALOG_URL || undefined} />
+      <h2 id="published-tables">Published tables</h2>
       <nav className="topic-shortcuts" aria-label="Jump to topic">{sections.map(section => <a key={section.id} href={`#${section.id}`}>{section.topic}<span>{section.groups.reduce((n,g) => n + g.entries.length, 0)} tables · {section.groups.reduce((n,g) => n + Object.values(g.supporting).reduce((total,rows) => total + rows.length, 0), 0)} supporting</span></a>)}</nav>
       <section className="time-controls" aria-label="Time coverage">
         <label>View <select value={timeView.mode} onChange={event => setTimeView({...timeView, mode:event.target.value as TimeView['mode']})}><option value="years">Years</option><option value="months">Months</option></select></label>
