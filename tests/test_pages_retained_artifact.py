@@ -14,6 +14,61 @@ spec = importlib.util.spec_from_file_location('pages', ROOT / 'scripts/pages-ret
 pages = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pages)
 
+class Response(io.BytesIO):
+    def __init__(self, status=200, headers=None, body=b'ok'):
+        super().__init__(body)
+        self.status = status
+        self.headers = {'Content-Length': '2'} if headers is None else headers
+
+
+class Compatibility(unittest.TestCase):
+    def attempt(self, status=200, headers=None, body=b'ok'):
+        sha = hashlib.sha256(b'ok').hexdigest()
+        item = {
+            'filename': 'members.json',
+            'bytes': 2,
+            'sha256': sha,
+            'url': pages.BASE + sha + '/members.json',
+        }
+
+        def build(*handlers):
+            self.assertEqual(handlers[0].proxies, {})
+            self.assertIsInstance(handlers[1], pages.NoRedirect)
+
+            class Opener:
+                def open(opener, request, timeout):
+                    self.assertEqual(request.get_header('User-agent'), 'SpicyGov-RetainedArtifact/1.0')
+                    self.assertEqual(request.get_header('Accept-encoding'), 'identity')
+                    self.assertEqual(request.full_url, item['url'])
+                    self.assertEqual(timeout, 30)
+                    return Response(status, headers, body)
+
+            return Opener()
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(pages.urllib.request, 'build_opener', side_effect=build):
+                pages.download(item, Path(directory) / 'members.json')
+
+    def test_compatible_headers_preserve_verified_fetch(self):
+        self.attempt()
+
+    def test_non200_refused(self):
+        with self.assertRaisesRegex(ValueError, 'framing'):
+            self.attempt(status=403)
+
+    def test_encoding_refused(self):
+        with self.assertRaisesRegex(ValueError, 'framing'):
+            self.attempt(headers={'Content-Length': '2', 'Content-Encoding': 'gzip'})
+
+    def test_length_refused(self):
+        with self.assertRaisesRegex(ValueError, 'framing'):
+            self.attempt(headers={'Content-Length': '3'})
+
+    def test_hash_refused(self):
+        with self.assertRaises(ValueError):
+            self.attempt(body=b'no')
+
+
 class Controls(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

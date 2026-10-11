@@ -90,7 +90,8 @@ def download(item, target):
     expected_url = BASE + digest(item['sha256']) + '/' + item['filename']
     if item['filename'] not in ('artifact.tar.gz', 'prior.zip', 'members.json') or item['url'] != expected_url:
         raise ValueError('Destination binding')
-    request = urllib.request.Request(item['url'], headers={'Accept-Encoding': 'identity'})
+    request = urllib.request.Request(item['url'], headers={'Accept-Encoding': 'identity',
+        'User-Agent': 'SpicyGov-RetainedArtifact/1.0'})
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     with opener.open(request, timeout=30) as response, target.open('xb') as output:
         if response.status != 200 or response.headers.get('Content-Encoding') is not None or response.headers.get('Content-Length') != str(item['bytes']):
