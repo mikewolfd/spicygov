@@ -57,7 +57,7 @@ def bridge(args=(), request=None):
     if not args:
         if dataset == "court_opinions":
             timeout = 1800
-        elif dataset in {"documents", "federal_register"}:
+        elif dataset in {"documents", "federal_register", "fr_docket_links"}:
             timeout = 600
     try:
         result = subprocess.run([python, script, *args],
