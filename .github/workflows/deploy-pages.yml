@@ -160,8 +160,8 @@ jobs:
         with:
           path: dist
   deploy:
-    # Catalog opt-in builds retain the artifact for separate review, never deploy.
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.source_catalog) }}
+    # Automatic and catalog opt-in builds retain artifacts for separate review.
+    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.build_only && !inputs.source_catalog }}
     needs: build
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     permissions:
