@@ -91,12 +91,17 @@ jobs:
         run: |
           test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 1048576
           python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role "$ROLE" --require-deployment-role --output "$RUNNER_TEMP/pages-input"
+      - name: Package verified content with standard GNU Pages tar
+        run: |
+          mkdir "$RUNNER_TEMP/pages-site" "$RUNNER_TEMP/pages-standard"
+          tar --extract --file "$RUNNER_TEMP/pages-input/artifact.tar" --directory "$RUNNER_TEMP/pages-site" --no-same-owner --no-same-permissions --delay-directory-restore
+          tar --format=gnu --dereference --hard-dereference --directory "$RUNNER_TEMP/pages-site" --create --file "$RUNNER_TEMP/pages-standard/artifact.tar" .
       - name: Upload the verified Pages tar in this run
         id: same_run_upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: github-pages-${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
-          path: ${{ runner.temp }}/pages-input/artifact.tar
+          path: ${{ runner.temp }}/pages-standard/artifact.tar
           if-no-files-found: error
           overwrite: false
           retention-days: 14

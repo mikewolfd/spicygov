@@ -1,12 +1,12 @@
 {
-  "state": "SAME_RUN_VERIFIED_FORWARD_DEPLOYMENT_AUTHORIZED",
+  "state": "VERIFIED_CONTENT_STANDARD_GNU_TAR_FORWARD_DEPLOYMENT_AUTHORIZED",
   "upload_authorized": true,
   "deployment_authorized": true,
   "exclusive_writers_confirmed": true,
   "expires_at": "2026-10-11T22:30:00+00:00",
   "expected_current": {
-    "generic_id": 7000909471,
-    "sha": "93ce5af230f795264d107143d3ce3fd228b3a22d",
+    "generic_id": 7001470352,
+    "sha": "4523e9eaed2395649065a9d02546259bed845632",
     "state": "failure",
     "pages_id": "9491ef0553f20e302fdfb257371a0adf01eb9547",
     "pages_status": "succeed"
