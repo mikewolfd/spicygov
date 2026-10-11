@@ -108,7 +108,7 @@ jobs:
         timeout-minutes: 10
         run: |
           python -I -B scripts/fetch-source-catalog.py \
-            --work-dir "${{ runner.temp }}/source-catalog-12870da6" \
+            --work-dir "${{ runner.temp }}/source-catalog-46443510" \
             --output "${{ github.workspace }}/public/source-catalog"
       - run: python tests/test_time_coverage.py
       - run: python tests/test_collection_coverage.py

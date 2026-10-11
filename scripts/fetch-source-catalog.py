@@ -12,16 +12,16 @@ import subprocess
 import time
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
-GENERATION = 'sha256:12870da6a4a3afa0f0a46ab26413dabb92a0612ffe27afa7aba2f3db8e1df552'
-SELECTION_SHA = 'sha256:2825c5abd168317ed2e2a44dfc8f86b8fb74b80b47062123978007251a87314d'
-ARCHIVE_SHA = 'sha256:c9d487c020802690fe03e258bd281c6e5c1df216601a89e20f5a3b204730ef9c'
+GENERATION = 'sha256:46443510ff63b1c989400cc9e632f730b521b93d847ff5573d6d083e72121cda'
+SELECTION_SHA = 'sha256:3b18dde7218277fb4c192bb8de1d5ba1a4dce527c488799c3d05aeba7061f0af'
+ARCHIVE_SHA = 'sha256:94cdca21d4ee95c2c881f3456f7ee03ffb66ec3c6e4a10c56d8fa293f3bd087d'
 PREFIX = ('https://data.spicygov.ai/source-catalog/releases/' + GENERATION[7:]
           + '/' + SELECTION_SHA[7:] + '/')
-ARCHIVE_BYTES = 50834268
-SELECTION_BYTES = 1068466
-DECODED_BYTES = 163584000
-MEMBERS = 4110
-MEMBER_BYTES = 160329709
+ARCHIVE_BYTES = 50842455
+SELECTION_BYTES = 1073646
+DECODED_BYTES = 163645440
+MEMBERS = 4130
+MEMBER_BYTES = 160379449
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
