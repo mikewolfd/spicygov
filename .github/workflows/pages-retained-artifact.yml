@@ -1,0 +1,101 @@
+name: Retained T01 Pages artifact
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        default: upload_only
+        options: [upload_only, deploy_forward, restore_prior]
+        description: Separate reviewed upload and exact artifact deployment
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  upload:
+    if: ${{ inputs.operation == 'upload_only' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/pages-retained-artifact.py
+            .github/pages-retained-binding.json
+      - name: Verify transferred containers and complete member maps
+        env:
+          ARTIFACT_WORK: ${{ runner.temp }}/t01-pages-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 1048576
+          mkdir "$ARTIFACT_WORK"
+          python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role prior --output "$ARTIFACT_WORK/prior"
+          python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role forward --output "$ARTIFACT_WORK/forward"
+      - name: Upload prior Pages tar
+        id: prior
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-pages-prior
+          path: ${{ runner.temp }}/t01-pages-${{ github.run_id }}-${{ github.run_attempt }}/prior/artifact.tar
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 14
+          compression-level: 6
+      - name: Upload forward Pages tar
+        id: forward
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-pages-forward
+          path: ${{ runner.temp }}/t01-pages-${{ github.run_id }}-${{ github.run_attempt }}/forward/artifact.tar
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 14
+          compression-level: 6
+      - name: Retain actual upload identities for root review
+        env:
+          PRIOR_ID: ${{ steps.prior.outputs.artifact-id }}
+          PRIOR_DIGEST: ${{ steps.prior.outputs.artifact-digest }}
+          FORWARD_ID: ${{ steps.forward.outputs.artifact-id }}
+          FORWARD_DIGEST: ${{ steps.forward.outputs.artifact-digest }}
+        run: |
+          python3 -I -B - <<'PY'
+          import json,os
+          keys=('GITHUB_RUN_ID','GITHUB_SHA','PRIOR_ID','PRIOR_DIGEST','FORWARD_ID','FORWARD_DIGEST')
+          print(json.dumps({k:os.environ[k] for k in keys},sort_keys=True))
+          PY
+  deploy:
+    if: ${{ inputs.operation == 'deploy_forward' || inputs.operation == 'restore_prior' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      deployments: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/pages-retained-artifact.py
+            .github/pages-retained-binding.json
+      - name: Submit exact previously admitted repository artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLE: ${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
+        run: |
+          python3 -I -B scripts/pages-retained-artifact.py deploy --binding .github/pages-retained-binding.json --role "$ROLE" --output "$RUNNER_TEMP/pages-deployment.json"
+      - name: Retain deployment attempt receipt
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pages-deployment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pages-deployment.json
+          if-no-files-found: warn
+          retention-days: 14

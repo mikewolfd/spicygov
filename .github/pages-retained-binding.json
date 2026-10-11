@@ -1,0 +1,47 @@
+{
+  "state": "EXACT_LOCAL_PACKAGE_ACCEPTED_REMOTE_UPLOAD_DEPLOYMENT_HELD",
+  "upload_authorized": false,
+  "deployment_authorized": false,
+  "exclusive_writers_confirmed": false,
+  "expires_at": "2026-10-11T00:00:00+00:00",
+  "expected_current": {
+    "generic_id": 6900179220,
+    "sha": "9491ef0553f20e302fdfb257371a0adf01eb9547",
+    "state": "success",
+    "pages_id": "9491ef0553f20e302fdfb257371a0adf01eb9547",
+    "pages_status": "succeed"
+  },
+  "roles": {
+    "prior": {
+      "container": {
+        "sha256": "37371c23ca72d35548c1ebe43bea9d9315d424124176893940f57cf6ab61630f",
+        "bytes": 1242943,
+        "filename": "prior.zip",
+        "url": "https://data.spicygov.ai/pages-retained/t01/37371c23ca72d35548c1ebe43bea9d9315d424124176893940f57cf6ab61630f/prior.zip"
+      },
+      "map": {
+        "sha256": "17502761e321bd545e28dc1c3eb95cc909d53b446cbdb94f0d4561a0d4bd418f",
+        "bytes": 2877,
+        "filename": "members.json",
+        "url": "https://data.spicygov.ai/pages-retained/t01/17502761e321bd545e28dc1c3eb95cc909d53b446cbdb94f0d4561a0d4bd418f/members.json"
+      },
+      "approved_artifact": null
+    },
+    "forward": {
+      "container": {
+        "sha256": "6c673e799cefdd24a79e9345eb91e8fd18dc9a7b3c6a1c55fa3bf5d8c5c7f15e",
+        "bytes": 52071492,
+        "filename": "artifact.tar.gz",
+        "url": "https://data.spicygov.ai/pages-retained/t01/6c673e799cefdd24a79e9345eb91e8fd18dc9a7b3c6a1c55fa3bf5d8c5c7f15e/artifact.tar.gz"
+      },
+      "map": {
+        "sha256": "275cfbfd87cff312e53b7ebb9e2d0f27e434cc9ee80a0aa3990acd299963a72e",
+        "bytes": 939653,
+        "filename": "members.json",
+        "url": "https://data.spicygov.ai/pages-retained/t01/275cfbfd87cff312e53b7ebb9e2d0f27e434cc9ee80a0aa3990acd299963a72e/members.json"
+      },
+      "approved_artifact": null
+    }
+  },
+  "deployment_role": null
+}
