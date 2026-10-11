@@ -85,17 +85,60 @@ jobs:
           sparse-checkout: |
             scripts/pages-retained-artifact.py
             .github/pages-retained-binding.json
-      - name: Submit exact previously admitted repository artifact
+      - name: Fetch and verify the exact immutable role content
+        env:
+          ROLE: ${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
+        run: |
+          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 1048576
+          python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role "$ROLE" --require-deployment-role --output "$RUNNER_TEMP/pages-input"
+      - name: Upload the verified Pages tar in this run
+        id: same_run_upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-pages-${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
+          path: ${{ runner.temp }}/pages-input/artifact.tar
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 14
+          compression-level: 6
+      - name: Download the exact new upload for complete member verification
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ steps.same_run_upload.outputs.artifact-id }}
+          path: ${{ runner.temp }}/pages-downloaded
+          merge-multiple: true
+      - name: Verify the downloaded tar and current writer before deployment
         env:
           GH_TOKEN: ${{ github.token }}
           ROLE: ${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
+          ARTIFACT_ID: ${{ steps.same_run_upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.same_run_upload.outputs.artifact-digest }}
         run: |
-          python3 -I -B scripts/pages-retained-artifact.py deploy --binding .github/pages-retained-binding.json --role "$ROLE" --output "$RUNNER_TEMP/pages-deployment.json"
-      - name: Retain deployment attempt receipt
+          python3 -I -B scripts/pages-retained-artifact.py preflight --binding .github/pages-retained-binding.json --role "$ROLE" --artifact-id "$ARTIFACT_ID" --artifact-digest "$ARTIFACT_DIGEST" --artifact-directory "$RUNNER_TEMP/pages-downloaded" --map "$RUNNER_TEMP/pages-input/members.json" --output "$RUNNER_TEMP/pages-admission.json"
+      - name: Deploy the verified artifact from this run
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
+        with:
+          artifact_name: github-pages-${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
+          timeout: 600000
+      - name: Retain admission and maintained action outcome
+        if: ${{ always() }}
+        env:
+          DEPLOYMENT_OUTCOME: ${{ steps.deployment.outcome }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          python3 -I -B - <<'PYOUT'
+          import json,os
+          from pathlib import Path
+          Path(os.environ['RUNNER_TEMP'],'pages-outcome.json').write_text(json.dumps({'action_outcome':os.environ['DEPLOYMENT_OUTCOME'],'page_url':os.environ['PAGE_URL'],'run':os.environ['GITHUB_RUN_ID'],'head':os.environ['GITHUB_SHA'],'reported_pages_identifier_source':'maintained action log; corroborate exact Pages endpoint; response ID fallback may be ambiguous'})+'\n')
+          PYOUT
+      - name: Retain deployment evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pages-deployment-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/pages-deployment.json
+          path: |
+            ${{ runner.temp }}/pages-admission.json
+            ${{ runner.temp }}/pages-outcome.json
           if-no-files-found: warn
           retention-days: 14

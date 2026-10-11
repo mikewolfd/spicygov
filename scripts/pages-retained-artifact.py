@@ -1,4 +1,4 @@
-"""T01 retained Pages bytes: package, verify, fetch, live-check and explicitly authorized deploy."""
+"""T01 retained Pages bytes: package, fetch, verify same-run admission and live-check."""
 import argparse
 import datetime as dt
 import hashlib
@@ -9,7 +9,6 @@ import re
 import signal
 import stat
 import tarfile
-import time
 import urllib.request
 import zipfile
 
@@ -18,6 +17,7 @@ MAX_MAP = 2 * 1024 * 1024
 MAX_TAR = 192 * 1024 * 1024
 BASE = 'https://data.spicygov.ai/pages-retained/t01/'
 HTML_FRAGMENT_SHA = 'f639ffee489b6bf2685ce5675ec83fd22e071ed2de5915bd84e437481c9c3bf6'
+HTML_FRAGMENT_SHAS = {HTML_FRAGMENT_SHA, 'cc727afab9ddfc1578fef5fb49c8eea005cf717c6337ca3b9c0a2927c8e8164d'}
 HTML_MEMBERS = {'index.html', 'sources/index.html', 'mcp/index.html'}
 
 def sha(raw):
@@ -227,22 +227,31 @@ def api(method, path, body=None):
             raise ValueError('API response cap')
         return json.loads(raw)
 
-def deploy(path, role, output):
+def preflight(path, role, artifact_id, artifact_digest, directory, map_path, output):
     obj = json.loads(path.read_text())
     item = binding(path, role, 'deploy')
-    approved = item['approved_artifact']
-    if not approved or approved['expired'] is not False:
-        raise ValueError('Actual uploaded artifact admission missing')
-    artifact = api('GET', 'actions/artifacts/' + str(approved['id']))
-    for key in ('id', 'name', 'digest', 'size_in_bytes', 'expired', 'expires_at'):
-        if artifact[key] != approved[key]:
-            raise ValueError('Provider artifact identity differs')
-    for key in ('id', 'head_sha'):
-        if artifact['workflow_run'][key] != approved['workflow_run'][key]:
-            raise ValueError('Artifact run identity differs')
+    if type(artifact_id) is not int or artifact_id <= 0:
+        raise ValueError('Exact uploaded artifact ID required')
+    expected_digest = 'sha256:' + digest(artifact_digest)
+    artifact = api('GET', 'actions/artifacts/' + str(artifact_id))
+    if artifact['expired'] is not False or (artifact['id'], artifact['name'], artifact['digest']) != (
+            artifact_id, 'github-pages-' + role, expected_digest):
+        raise ValueError('Provider artifact identity differs')
+    if (artifact['workflow_run']['id'], artifact['workflow_run']['head_sha']) != (
+            int(os.environ['GITHUB_RUN_ID']), os.environ['GITHUB_SHA']):
+        raise ValueError('Artifact is not from this control run')
+    if type(artifact['size_in_bytes']) is not int or not 0 < artifact['size_in_bytes'] <= MAX_CONTAINER:
+        raise ValueError('Uploaded artifact size cap')
     expires = dt.datetime.fromisoformat(artifact['expires_at'].replace('Z', '+00:00'))
     if expires.tzinfo is None or dt.datetime.now(dt.timezone.utc) >= expires:
         raise ValueError('Artifact already expired')
+    # The maintained download action selects this exact new upload ID. Verify
+    # its entire downloaded TAR against the accepted map, without extracting
+    # a site tree or trusting an upload's metadata as content proof.
+    if directory.is_symlink() or not directory.is_dir() or list(directory.iterdir()) != [directory / 'artifact.tar']:
+        raise ValueError('Unexpected downloaded artifact inventory')
+    members = read_map(map_path, item['map']['sha256'])
+    verify_tar(directory / 'artifact.tar', members)
     # Own environment job creates a generic record before this step. Identify
     # it by this run's log URL; unknown records cause refusal, never exclusion
     # merely because they share a SHA or appear queued.
@@ -266,43 +275,26 @@ def deploy(path, role, output):
     pages_status = api('GET', 'pages/deployments/' + expected['pages_id'])
     if pages_status['status'] != expected['pages_status']:
         raise ValueError('Prior Pages-specific status differs')
-    # Exact input artifact may come from an earlier admitted run. The REST API
-    # selects its repository artifact ID; deploy-pages' current-run discovery
-    # is deliberately not used. Provider acceptance is a future runtime gate.
-    token_url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']
-    from urllib.parse import urlsplit
-    host = urlsplit(token_url)
-    if host.scheme != 'https' or not host.hostname or not host.hostname.endswith('.actions.githubusercontent.com'):
-        raise ValueError('OIDC service origin')
-    request = urllib.request.Request(token_url, headers={'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-    with opener.open(request, timeout=30) as response:
-        raw = response.read(32769)
-        if len(raw) > 32768:
-            raise ValueError('OIDC response cap')
-        token = json.loads(raw)['value']
-    binding(path, role, 'deploy')  # Recheck authority expiry before the POST.
+    binding(path, role, 'deploy')  # Recheck authority after verification.
     if dt.datetime.now(dt.timezone.utc) >= expires:
-        raise ValueError('Artifact expired before submission')
-    # Write a pre-submit receipt so indeterminate POST failures stay visible.
-    receipt = {'state': 'submit-started', 'artifact': approved, 'prior': expected,
-               'workflow_sha': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'], 'role': role}
-    output.write_text(json.dumps(receipt) + '\n')
-    result = api('POST', 'pages/deployments', {'artifact_id': approved['id'],
-        'pages_build_version': os.environ['GITHUB_SHA'], 'oidc_token': token})
-    receipt.update(state='submitted', pages_response=result)
-    output.write_text(json.dumps(receipt) + '\n')
-    deployment_id = str(result['id'])
-    for unused in range(110):
-        result = api('GET', 'pages/deployments/' + deployment_id)
-        receipt.update(state='provider-status-observed', pages_status=result)
-        output.write_text(json.dumps(receipt) + '\n')
-        if result['status'] == 'succeed':
-            return
-        if result['status'] in ('deployment_failed', 'deployment_content_failed', 'deployment_cancelled', 'deployment_lost'):
-            raise ValueError('Pages deployment failed; no automatic restore')
-        time.sleep(5)
-    raise TimeoutError('Pages status deadline; no retry or automatic restore')
+        raise ValueError('Artifact expired before deployment')
+    receipt = {'state': 'same-run-artifact-and-current-state-verified',
+               'artifact': artifact, 'expected_current': expected,
+               'workflow_sha': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
+               'role': role, 'verified_members': len(members),
+               'content_bytes': sum(x['bytes'] for x in members.values())}
+    with output.open('x') as stream:
+        stream.write(json.dumps(receipt) + '\n')
+    # The maintained deploy-pages action owns OIDC, submission and status.
+    # This receipt is admission evidence; it is not a Pages response or success.
+
+def read_fragment(path):
+    if regular(path).st_size != 367:
+        raise ValueError('Hosting fragment size')
+    fragment = path.read_bytes()
+    if sha(fragment) not in HTML_FRAGMENT_SHAS:
+        raise ValueError('Hosting fragment identity')
+    return fragment
 
 def live_body(response, key, expected, fragment):
     if key not in HTML_MEMBERS or fragment is None:
@@ -322,7 +314,7 @@ def live_body(response, key, expected, fragment):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['package', 'fetch', 'live', 'deploy'])
+    parser.add_argument('command', choices=['package', 'fetch', 'live', 'preflight'])
     parser.add_argument('--map', type=Path)
     parser.add_argument('--map-sha')
     parser.add_argument('--root', type=Path)
@@ -331,6 +323,10 @@ def main():
     parser.add_argument('--role', choices=['prior', 'forward'])
     parser.add_argument('--html-fragment', type=Path)
     parser.add_argument('--public-map-output', type=Path)
+    parser.add_argument('--artifact-id', type=int)
+    parser.add_argument('--artifact-digest')
+    parser.add_argument('--artifact-directory', type=Path)
+    parser.add_argument('--require-deployment-role', action='store_true')
     args = parser.parse_args()
     signal.signal(signal.SIGALRM, lambda *unused: (_ for _ in ()).throw(TimeoutError('Whole operation deadline')))
     signal.alarm(600)
@@ -348,7 +344,7 @@ def main():
             result['public_map'] = {'bytes': len(raw), 'sha256': sha(raw)}
         print(json.dumps(result, sort_keys=True))
     elif args.command == 'fetch':
-        item = binding(args.binding, args.role, 'upload')
+        item = binding(args.binding, args.role, 'deploy' if args.require_deployment_role else 'upload')
         args.output.mkdir(exist_ok=False)
         download(item['map'], args.output / 'members.json')
         members = read_map(args.output / 'members.json', item['map']['sha256'])
@@ -356,8 +352,9 @@ def main():
         unpack(args.output / item['container']['filename'], item['container']['filename'], args.output / 'artifact.tar')
         verify_tar(args.output / 'artifact.tar', members)
         print(json.dumps({'verified_members': len(members), 'content_bytes': sum(x['bytes'] for x in members.values())}))
-    elif args.command == 'deploy':
-        deploy(args.binding, args.role, args.output)
+    elif args.command == 'preflight':
+        preflight(args.binding, args.role, args.artifact_id, args.artifact_digest,
+                  args.artifact_directory, args.map, args.output)
     else:
         # Root performs live readback using the same verified map on a retained
         # runner. A failed read never dispatches an automatic restoration.
@@ -365,11 +362,7 @@ def main():
         members = read_map(args.map, item['map']['sha256'])
         fragment = None
         if args.html_fragment is not None:
-            if regular(args.html_fragment).st_size != 367:
-                raise ValueError('Hosting fragment size')
-            fragment = args.html_fragment.read_bytes()
-            if sha(fragment) != HTML_FRAGMENT_SHA:
-                raise ValueError('Hosting fragment identity')
+            fragment = read_fragment(args.html_fragment)
         normalized = []
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
         for key, value in members.items():
