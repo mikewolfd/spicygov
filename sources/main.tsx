@@ -1,213 +1,734 @@
-import { SourceCatalog } from '../components/source-catalog';
-import { sourceControlLabel } from '../lib/source-labels';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { count, publicationDate, supportingSection, supportingSections, tableCountUnit, type SupportingSection, type Dataset } from '../lib/catalog';
-import { useCollection } from '../lib/use-collection';
-import { useSourceDirectory } from '../lib/use-source-directory';
-import { evidenceLinkLabel, sourceCatalogMessage, sourceMetadataMessage, sourceMetadataSummary, sourceSections, collectionSteps, filterEntries, methodLabels, parseGenerationDetails, reviewedGenerationLinks, sourceEntries, type GenerationDetails, type SourceEntry } from '../lib/source-directory';
-import { loadCoveragePublishers, type CoveragePublishers } from '../lib/coverage-publishers';
-import { loadObservationPreview, type ObservationPreview } from '../lib/source-observations';
-import { fetchJson, type EvidenceLink } from '../lib/publication-evidence';
-import { TableProvenance } from '../components/table-provenance';
-import type { TimeView } from '../components/time-coverage';
-import { TableCoverageMap } from '../components/coverage-map';
-import { coverageMapCounts, parseCoverageMaps, textAvailabilityDetails, type CoverageMaps } from '../lib/coverage-map';
-import '../app/globals.css';
-import './style.css';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  count,
+  publicationDate,
+  supportingSection,
+  tableCountUnit,
+} from "../lib/catalog";
+import { useCollection } from "../lib/use-collection";
+import { useSourceDirectory } from "../lib/use-source-directory";
+import { sourceEntries, type SourceEntry } from "../lib/source-directory";
+import {
+  SourceCatalogReader,
+  type CatalogManifest,
+  type CatalogCollection,
+} from "../lib/source-catalog";
+import {
+  collectionTitle,
+  readableCopy,
+  browserSearch,
+  readBrowserLocation,
+  searchRank,
+  collectionAvailability,
+  collectionAttention,
+  collectionTopic,
+  periodSummary,
+  tableAttention,
+  tablePublisher,
+  recordEntries,
+  pageSize,
+  type BrowserLocation,
+  type BrowserView,
+} from "../lib/source-browser";
+import "../app/globals.css";
+import "./style.css";
 
-function EvidenceLinks({ links }: { links: EvidenceLink[] }) {
-  return <ul className="evidence-links">{links.map((link, index) => <li key={`${link.url}-${index}`}><a href={link.url} target="_blank" rel="noreferrer">{evidenceLinkLabel(link.label)} ↗</a></li>)}</ul>;
-}
-function SupportingTables({ groupId, role, entries }: { groupId: string; role: SupportingSection; entries: SourceEntry[] }) {
-  if (!entries.length) return null;
-  const section = supportingSections[role], titleId = `${groupId}-${role}`;
-  return <section className="collection-checkpoints" aria-labelledby={titleId}>
-    <h4 id={titleId}>{section.label}</h4><p>{section.summary}</p>
-    <ul className="readable-inputs">{entries.map(({ table }) => <li key={table.id}>
-      <strong>{table.label}</strong><span>{table.summary}</span>
-      <span>{count(table.rows)} {tableCountUnit(table)} · {table.published ? `Released ${publicationDate(table.published)}` : 'Release date not recorded'}</span>
-      <a href={`/?table=${encodeURIComponent(table.id)}`}>{section.link}</a>
-    </li>)}</ul>
-  </section>;
-}
+const TableDetail = lazy(() =>
+  import("../components/source-table-detail").then((module) => ({
+    default: module.SourceTableDetail,
+  })),
+);
+const CollectionDetail = lazy(() =>
+  import("../components/source-collection-detail").then((module) => ({
+    default: module.SourceCollectionDetail,
+  })),
+);
+type Result = {
+  id: string;
+  title: string;
+  publisher: string;
+  summary: string;
+  topic: string;
+  rank: number;
+  attention?: string;
+  entry?: SourceEntry;
+  collection?: CatalogCollection;
+};
+const views: { id: BrowserView; label: string; description: string }[] = [
+  {
+    id: "available",
+    label: "Available data",
+    description: "Published datasets you can explore or download.",
+  },
+  {
+    id: "catalog",
+    label: "All sources",
+    description: "All known sources, including data we haven’t added yet.",
+  },
+  {
+    id: "attention",
+    label: "Needs attention",
+    description:
+      "Missing files, sources not yet downloaded, and notes that need checking.",
+  },
+];
 
-type ReadableDetails = GenerationDetails & { preview?: ObservationPreview; previewUnavailable?: boolean };
-function SourceRow({ entry, catalog, loadDetails, coverageMaps, timeView, publishers, onRetry, coverageLoading }: {
-  entry: SourceEntry; catalog: Dataset[]; coverageMaps?: CoverageMaps; timeView: TimeView; publishers?: CoveragePublishers; onRetry: () => void; coverageLoading: boolean;
-  loadDetails: (table: Dataset) => Promise<ReadableDetails>;
-}) {
-  const [open, setOpen] = useState(false), [details, setDetails] = useState<ReadableDetails>();
-  const [loading, setLoading] = useState(false), [error, setError] = useState('');
-  const { table, review: audit } = entry, publication = table.publication, receipts = publication?.nativeReceipts;
-  const textDetails = textAvailabilityDetails(table, coverageMaps);
-  const reviewedLinks = reviewedGenerationLinks(entry), copy = audit?.copy;
-  const titleUrl = entry.explorer ? `/?table=${encodeURIComponent(table.id)}&view=about` : table.members[0]?.url;
-  async function inspect() {
-    setLoading(true); setError('');
-    try { setDetails(await loadDetails(table)); } catch { setError('We could not load the recorded inputs. Try again.'); }
-    finally { setLoading(false); }
-  }
-  return <Fragment>
-    <tr>
-      <th scope="row"><span className="source-table-title">{table.label}</span>{entry.explorer && <a className="table-note" href={titleUrl}>Explore records →</a>}<p className="table-description"><strong>Contains:</strong> {copy?.summary || table.summary || 'Description not recorded.'}</p>
-        {!entry.explorer && <span className="table-note">Data available as a download</span>}
-        {entry.historicalAttribution && <span className="table-note">Source list may be out of date</span>}
-        <button className="details-toggle" aria-expanded={open} aria-controls={`details-${table.id}`} onClick={() => { setOpen(!open); if (!open && !details && !loading && publication?.kind === 'generation') void inspect(); }}>{open ? '−' : '+'} Source & limits<span className="sr-only"> for {table.label}</span></button>
-      </th>
-      <td data-label="Available records"><strong className="row-count">{count(table.rows)} rows</strong>{table.rows === 0 && <span className="empty-badge">No rows</span>}
-        <span className="table-note">{table.published ? `Data release: ${publicationDate(table.published)}` : 'Release date not recorded'}</span>
-        {table.modelGenerated && <span className="empty-badge">AI-generated</span>}
-        {textDetails.map(detail => <span className="table-note" key={detail.label}><strong>{detail.label}:</strong> {detail.rows === 0 ? 'No rows' : detail.notSaved === detail.rows ? 'Not saved' : <>{count(detail.withText)} with text{detail.notSaved > 0 && <> · {count(detail.notSaved)} not saved</>}{detail.blank > 0 && <> · {count(detail.blank)} blank</>}</>}</span>)}
-      </td>
-      <td data-label="Collection"><dl className="method-list">{audit?.methods.length ? collectionSteps(audit.methods).map(step => <div key={step.label}><dt>{step.label}</dt><dd>{step.values.join(' · ')}</dd></div>) : <div><dt>Collection</dt><dd>Not yet reviewed</dd></div>}</dl></td>
-      <td data-label={sourceControlLabel('Coverage')}><p className="coverage-summary"><strong>Data held:</strong> {copy?.scope ?? 'Collection scope has not been reviewed.'}</p>
-        <p className="coverage-gap"><strong>Missing or unknown:</strong> {copy?.gaps[0] ?? 'Source completeness has not been established.'}</p>{coverageLoading ? <p className="coverage-unavailable">Loading coverage counts…</p> : <TableCoverageMap table={table} maps={coverageMaps} view={timeView} publishers={publishers} onRetry={onRetry} />}
-      </td>
-    </tr>
-    {open && <tr className="source-detail-row"><td colSpan={4} id={`details-${table.id}`}>
-      <div className="source-detail-grid"><section><h3>{sourceControlLabel('How collected')}</h3>
-        {entry.explorer && sourceMetadataMessage(table.metadataState) && <p className="metadata-status">{sourceMetadataMessage(table.metadataState)}</p>}
-
-        {entry.historicalAttribution ? <><p className="review-date">Source names come from an earlier review and may be incomplete.</p><EvidenceLinks links={audit?.sources.flatMap(source => source.url ? [{ label: source.name, url: source.url }] : []) ?? []} /></> : entry.explorer ? <TableProvenance table={table} catalog={catalog} compact /> : null}
-        {audit?.evidence.length ? <details className="code-evidence"><summary>Code references</summary><EvidenceLinks links={audit.evidence.map(link => ({ ...link, label: link.url.split('/').pop() || 'Source code' }))} /></details> : null}
-      </section><section><h3>Additional limits</h3>{copy?.gaps.length && copy.gaps.length > 1 ? <ul className="gap-list">{copy.gaps.slice(1).map(gap => <li key={gap}>{gap}</li>)}</ul> : <p>No additional reviewed limits are listed.</p>}
-      </section></div>
-      <section className="readable-evidence"><h3>Evidence for this release</h3><p className="review-date">Receipts link records to saved source material or processing steps. This page does not check individual receipts.</p>
-        <p>{receipts ? 'Record receipts are available. They connect records to saved source material or a processing step; they do not always identify an original document.' : 'No record receipts are listed for this table. The collection notes describe its sources, but do not establish each row’s origin.'}</p>
-        {publication?.kind === 'comments' && <p>This export records the file size, row count and checksum. The download can change after publication; it does not provide a source receipt for each comment.</p>}
-        {publication?.kind === 'rulemaking' && <p>This is a calculated dataset. Its publication records the output files; the collection notes above explain the inputs and matching limits.</p>}
-        {loading && <p role="status">Reading the recorded inputs and source observations…</p>}
-        {error && <p role="alert">{error} <button onClick={inspect}>Retry</button></p>}
-        {details && <>
-          {details.parents.length > 0 && <><h4>Built using</h4><ul className="readable-inputs">{details.parents.map(parent => {
-            const input = catalog.find(item => item.id === parent.table);
-            return <li key={parent.table}><strong>{input?.label ?? parent.table.replaceAll('_', ' ')}</strong><span>A saved version was used for this release.</span><small>The current table may contain newer data.</small></li>;
-          })}</ul></>}
-          {details.carriedForward && <p>This table was carried over from an earlier release; publication does not mean the source was collected again.</p>}
-          {details.preview?.inherited && <p>Earlier source records remain in this release. These request examples do not describe their full collection history.</p>}
-          {!!details.preview?.observations.length && <><h4>{sourceControlLabel('Observed source requests')}</h4><p className="review-date">Examples from this release’s collection log, shared by its tables. These do not prove which request produced an individual row.</p><ul className="readable-inputs">{details.preview.observations.map((item, i) => <li key={i}><strong>{item.source}{(item.examples ?? 1) > 1 && <> · {item.examples} request examples</>}</strong><span className="request-endpoint">Endpoint: {item.endpoint}</span>{item.selection && <span className="request-endpoint">Recorded filters: {item.selection}</span>}<span>{item.purpose ?? 'Request purpose not recorded'}</span><span>{item.observedAt ? publicationDate(item.observedAt) : 'Observation date not recorded'}{item.lastObservedAt && publicationDate(item.lastObservedAt) !== publicationDate(item.observedAt) && <>–{publicationDate(item.lastObservedAt)}</>} · {item.status === undefined ? 'Response status unknown' : item.status >= 200 && item.status < 300 ? 'Response received' : `Response status ${item.status}`}</span><small>{item.saved === true ? 'Response content saved' : item.saved === false ? 'Response content not saved' : 'Saved content not documented'}</small></li>)}</ul></>}
-          {details.preview?.partial && <p className="review-date">Showing a limited preview of the source log, not the full collection history.</p>}
-          {details.previewUnavailable && <p>The source log could not be read. The collection notes above remain available.</p>}
-          {!details.previewUnavailable && !details.preview?.observations.length && <p>No source requests are shown in this preview. That does not mean none were made.</p>}
-        </>}
-        <details className="code-evidence"><summary>Technical files & identifiers</summary>
-          <p>Exact file versions and identifiers for this release. File checksums are not verified by this page.</p><p>Table ID: <code>{table.id}</code></p>
-          <EvidenceLinks links={[...(publication ? [{label:'Publication file (JSON)',url:publication.recordUrl}] : []), ...(receipts ? [{label:'Receipt file (Parquet)',url:receipts.url}] : []), ...(details?.links ?? reviewedLinks), ...(!entry.explorer && table.members[0] ? [{label:'Data file (Parquet)',url:table.members[0].url}] : [])]} />
-          {!!details?.identityFields.length && <p>Record identifiers: {details.identityFields.join(', ')}</p>}
-        </details>
-      </section>
-
-    </td></tr>}
-  </Fragment>;
-}
 function SourcesPage() {
-  const [coverageMaps, setCoverageMaps] = useState<CoverageMaps>();
-  const [coveragePublishers, setCoveragePublishers] = useState<CoveragePublishers>();
-  const [publisherError, setPublisherError] = useState(false);
-  const [timeError, setTimeError] = useState(false);
-  const [timeView, setTimeView] = useState<TimeView>({year: new Date().getFullYear(), mode: 'years'});
-
-  const [query, setQuery] = useState(''), [method, setMethod] = useState(''), [evidence, setEvidence] = useState('');
-  const [expanded, setExpanded] = useState(false), [retry, setRetry] = useState(0);
-  const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
-  const [limits, setLimits] = useState<Record<string, number>>({});
+  const [location, setLocation] = useState(() =>
+    readBrowserLocation(window.location.search),
+  );
+  const [retry, setRetry] = useState(0),
+    [catalogRetry, setCatalogRetry] = useState(0);
+  const [manifest, setManifest] = useState<CatalogManifest>(),
+    [catalogError, setCatalogError] = useState("");
+  const reader = useMemo(
+    () =>
+      new SourceCatalogReader(
+        import.meta.env.VITE_SOURCE_CATALOG_URL ||
+          "/source-catalog/manifest.json",
+      ),
+    [],
+  );
+  const {
+    tables,
+    error,
+    warnings: publicationWarnings = [],
+    publicationsPending,
+  } = useCollection(retry);
+  const {
+    review,
+    warnings: reviewWarnings,
+    pending: reviewPending,
+  } = useSourceDirectory(retry);
+  const entries = useMemo(
+    () => sourceEntries(tables, [], review),
+    [tables, review],
+  );
+  const records = useMemo(() => recordEntries(entries), [entries]);
+  const tableIds = useMemo(
+    () => new Set(tables.map((table) => table.id)),
+    [tables],
+  );
+  const listFocus = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const controller = new AbortController(); setTimeError(false);
-    void fetchJson('/coverage-maps.v1.json', controller.signal).then(parseCoverageMaps).then(setCoverageMaps).catch(() => { if (!controller.signal.aborted) { setCoverageMaps(undefined); setTimeError(true); } });
+    const controller = new AbortController();
+    setCatalogError("");
+    void reader
+      .manifest(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setManifest(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setCatalogError(
+            "The source catalog could not be loaded. Published data is still available.",
+          );
+      });
     return () => controller.abort();
-  }, [retry]);
-  const { tables, metadata, error, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
-  const { review, warnings: reviewWarnings, pending } = useSourceDirectory(retry);
-  const warnings = [...publicationWarnings, ...reviewWarnings];
-  const entries = useMemo(() => sourceEntries(tables, [], review), [tables, review]);
-  const dataEntries = entries.filter(entry => !supportingSection(entry.table));
-  const allTables = useMemo(() => entries.filter(entry => !supportingSection(entry.table)).map(entry => entry.table), [entries]);
+  }, [reader, catalogRetry]);
   useEffect(() => {
-    const controller = new AbortController(); setCoveragePublishers(undefined); setPublisherError(false);
-    void loadCoveragePublishers(allTables, coverageMaps, controller.signal).then(value => {
-      if (!controller.signal.aborted) setCoveragePublishers(value);
-    }).catch(() => { if (!controller.signal.aborted) setPublisherError(true); });
-    return () => controller.abort();
-  }, [allTables, coverageMaps, retry]);
-  const filtered = useMemo(() => filterEntries(entries, query, method, evidence), [entries, query, method, evidence]);
-  const filteredData = filtered.filter(entry => !supportingSection(entry.table));
-  const sections = useMemo(() => sourceSections(filtered), [filtered]);
-  const metadataSummary = sourceMetadataSummary(entries);
-  const filtering = !!query || !!method || !!evidence;
-  function clearFilters() { setQuery(''); setMethod(''); setEvidence(''); setGroupOverrides({}); }
-  function changeFilter(action: () => void) { action(); setGroupOverrides({}); setLimits({}); }
-  const generationCache = useMemo(() => new Map<string, Promise<unknown>>(), [retry]);
-  const observationCache = useMemo(() => new Map<string, Promise<ObservationPreview>>(), [retry]);
-  function loadDetails(table: Dataset) {
-    const url = table.publication!.recordUrl;
-    let request = generationCache.get(url);
-    if (!request) {
-      request = fetchJson(url).catch(error => { generationCache.delete(url); throw error; });
-      generationCache.set(url, request);
+    const onPop = () =>
+      setLocation(readBrowserLocation(window.location.search));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const selectedTable = location.table
+    ? entries.find((entry) => entry.table.id === location.table)
+    : undefined;
+  const selectedCollection = location.collection
+    ? manifest?.collections.find((item) => item.id === location.collection)
+    : undefined;
+  const selected = location.table || location.collection;
+  useEffect(() => {
+    if (selectedTable || selectedCollection) {
+      document.getElementById("detail-title")?.focus();
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
-    return request.then(async raw => {
-      const details = parseGenerationDetails(raw, table);
-      const log = details.links.find(link => link.label === 'Source observation journal');
-      if (!log) return details;
-      let preview = observationCache.get(log.url);
-      if (!preview) { preview = loadObservationPreview(log.url).catch(error => { observationCache.delete(log.url); throw error; }); observationCache.set(log.url, preview); }
-      try { return { ...details, preview: await preview }; } catch { return { ...details, previewUnavailable: true }; }
-    }).catch(error => { generationCache.delete(url); throw error; });
+  }, [selectedTable?.table.id, selectedCollection?.id]);
+  function navigate(change: Partial<BrowserLocation>, replace = false) {
+    const next = { ...location, ...change };
+    window.history[replace ? "replaceState" : "pushState"](
+      {},
+      "",
+      `/sources/${browserSearch(next)}`,
+    );
+    setLocation(next);
   }
-  return <div className="sources-page">
-    <a href="#sources" className="skip-link">Skip to sources</a>
-    <header className="topbar"><a className="wordmark" href="/">spicygov<span className="brand-star" aria-hidden="true">✳</span></a><nav aria-label="Main"><a href="/">Explore</a><span className="nav-active" aria-current="page">Sources</span><a href="/mcp/">MCP</a><a href="https://docs.spicygov.ai">Data docs</a></nav></header>
-    <main id="sources" className="sources-content">
-      <div className="sources-heading"><h1>Sources</h1><p className="sources-intro">See what data we hold, the periods it covers, and what is missing.</p></div>
-      <SourceCatalog tables={allTables} retry={retry} manifestUrl={import.meta.env.VITE_SOURCE_CATALOG_URL || undefined} />
-      <h2 id="published-tables">Published tables</h2>
-      <nav className="topic-shortcuts" aria-label="Jump to topic">{sections.map(section => <a key={section.id} href={`#${section.id}`}>{section.topic}<span>{section.groups.reduce((n,g) => n + g.entries.length, 0)} tables · {section.groups.reduce((n,g) => n + Object.values(g.supporting).reduce((total,rows) => total + rows.length, 0), 0)} supporting</span></a>)}</nav>
-      <section className="time-controls" aria-label="Time coverage">
-        <label>View <select value={timeView.mode} onChange={event => setTimeView({...timeView, mode:event.target.value as TimeView['mode']})}><option value="years">Years</option><option value="months">Months</option></select></label>
-        <label>{timeView.mode === 'years' ? sourceControlLabel('Through year') : 'Year'} <input aria-label="Coverage year" type="number" min="1" max="9999" value={timeView.year} onChange={event => { const year = Number(event.target.value); if (Number.isInteger(year) && year >= 1 && year <= 9999) setTimeView({...timeView,year}); }} /></label>
-        <p className="time-legend"><span>● Records counted</span><span>— No records counted</span><span>? Count unavailable</span></p>
-        <details className="time-explanation"><summary>What the colors mean</summary><p>Green shows records in the saved data, not a complete source. Empty periods do not prove the publisher had no records. Each table names the date, cycle, edition or snapshot being counted. Counts can include duplicates.</p></details>
-        {timeError ? <p role="status">Coverage counts could not load. <button onClick={() => setRetry(retry + 1)}>Retry coverage</button></p> : !coverageMaps ? <p role="status">Loading coverage counts…</p> : <p className="checked-date">Coverage checked: {new Date(coverageMaps.generatedAt).toLocaleDateString()}</p>}
-      </section>
-      <div className="sources-controls">
-        <label className="source-search"><span>Find a table or source</span><input type="search" placeholder="Try scorecards, bulk, comments…" value={query} onChange={event => changeFilter(() => setQuery(event.target.value))} /></label>
-        <label><span>{sourceControlLabel('How collected')}</span><select value={method} onChange={event => changeFilter(() => setMethod(event.target.value))}><option value="">All methods</option>{Object.entries(methodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span>Show</span><select value={evidence} onChange={event => changeFilter(() => setEvidence(event.target.value))}><option value="">All published tables</option><option value="native">Tables with receipt files</option><option value="journal">{sourceControlLabel('With reviewed source logs')}</option><option value="separate">Download-only tables</option><option value="empty">Empty tables</option><option value="unreviewed">Collection not reviewed</option><option value="source-details">{sourceControlLabel('Source descriptions need attention')}</option></select></label>
-        <button onClick={clearFilters}>Clear filters</button>
-      </div>
-      <div className="source-list-toolbar"><p className="sources-count" aria-live="polite">{filteredData.length} of {dataEntries.length} record tables · {filtered.length - filteredData.length} supporting {filtered.length - filteredData.length === 1 ? 'table' : 'tables'} · {filteredData.filter(entry => entry.table.publication?.nativeReceipts).length} with receipt files{publicationsPending ? ' · Checking other publications…' : ''}</p><button onClick={() => { setExpanded(true); setGroupOverrides({}); }}>Expand all</button><button onClick={() => { setExpanded(false); setGroupOverrides(Object.fromEntries(sections.flatMap(section => section.groups.map(group => [group.id, false])))); }}>Collapse all</button><button onClick={() => setRetry(retry + 1)}>Reload data</button></div>
-      <p className="sources-basis">Counts follow the latest published files. {review ? <>Collection notes reviewed {publicationDate(review.reviewedAt)}</> : pending ? 'Loading collection notes…' : 'Collection notes unavailable.'}</p>
-      {metadataSummary ? <p className="metadata-status" role="status">{metadataSummary} This concerns descriptions and connections, not record counts. <button onClick={() => changeFilter(() => { setQuery(''); setMethod(''); setEvidence('source-details'); })}>Show affected tables →</button></p> : sourceCatalogMessage(metadata) && tables.length > 0 ? <p className="metadata-status" role="status">{sourceCatalogMessage(metadata)} <button onClick={() => setRetry(retry + 1)}>Retry source details</button></p> : null}
-      {publisherError && <p className="metadata-status" role="status">Publisher names could not load. Recorded IDs remain visible. <button onClick={() => setRetry(retry + 1)}>Retry publisher names</button></p>}
-      {error && <p role="alert">Main table list: {error} <button onClick={() => setRetry(retry + 1)}>Retry table list</button></p>}
-      {warnings.map(warning => <p className="metadata-status" role="status" key={warning}>{warning} <button onClick={() => setRetry(retry + 1)}>Retry</button></p>)}
-      {!entries.length && !error && <p role="status">Loading published tables…</p>}
-      {!!entries.length && !sections.length && <p className="empty-results">No matching tables. <button onClick={clearFilters}>Clear filters</button></p>}
-      <div className="source-list">{sections.map(section => <section className="topic-section" id={section.id} key={section.id} aria-labelledby={`${section.id}-title`}>
-        <h2 id={`${section.id}-title`}>{section.topic}</h2>
-        {section.groups.map(group => {
-          const isOpen = groupOverrides[group.id] ?? (expanded || filtering);
-          const limit = limits[group.id] ?? 8;
-          const items = group.entries;
-          const supportingCount = Object.values(group.supporting).reduce((total, rows) => total + rows.length, 0);
-          const coverage = coverageMapCounts(items.map(entry => entry.table), coverageMaps);
-          return <div className="source-group" key={group.id}>
-            <button className="source-group-toggle" aria-expanded={isOpen} aria-controls={`${group.id}-body`} onClick={() => setGroupOverrides(previous => ({...previous, [group.id]: !isOpen}))}>
-              <span><h3>{group.name}</h3><span className="publisher-caption">{group.publishers.length ? `Sources: ${group.publishers[0].name}${group.publishers.length > 1 ? ` + ${group.publishers.length - 1} other ${group.publishers.length === 2 ? 'source' : 'sources'}` : ''}` : 'Publisher not recorded'}{group.historical ? ' · includes earlier source notes' : ''}</span></span>
-              <span className="group-count">{items.length} {items.length === 1 ? 'record table' : 'record tables'}{supportingCount ? ` · ${supportingCount} supporting ${supportingCount === 1 ? 'table' : 'tables'}` : ''}<span>{!items.length ? 'Collection and source details' : coverageMaps ? `${coverage.current + coverage.previous} with coverage maps${coverage.previous ? ` · ${coverage.previous} awaiting refresh` : ''}` : timeError ? 'Counts unavailable' : 'Loading coverage…'}</span></span><span className="fold-symbol" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+  function filter(change: Partial<BrowserLocation>, replace = false) {
+    navigate(
+      { ...change, page: 1, table: undefined, collection: undefined },
+      replace,
+    );
+  }
+  function openResult(result: Result) {
+    listFocus.current = result.id;
+    navigate({
+      table: result.entry?.table.id,
+      collection: result.collection?.id,
+    });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function back() {
+    navigate({ table: undefined, collection: undefined });
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLButtonElement>(
+          `[data-result-id="${CSS.escape(listFocus.current || "")}"]`,
+        )
+        ?.focus(),
+    );
+  }
+  const collectionResults = useMemo<Result[]>(
+    () =>
+      (manifest?.collections ?? []).map((item) => ({
+        id: item.id,
+        title: collectionTitle(item),
+        publisher: item.publisher || "Publisher not recorded",
+        summary: periodSummary(item),
+        topic: collectionTopic(item, tables),
+        rank: searchRank(
+          location.query,
+          item.title,
+          item.publisher,
+          `${item.description || ""} ${item.families.join(" ")} ${item.tables.join(" ")} ${item.id}`,
+        ),
+        attention: collectionAttention(item),
+        collection: item,
+      })),
+    [manifest, tables, location.query],
+  );
+  const tableResults = useMemo<Result[]>(
+    () =>
+      entries.map((entry) => ({
+        id: entry.table.id,
+        title: entry.table.label,
+        publisher: tablePublisher(entry),
+        summary: entry.review?.copy?.summary || entry.table.summary,
+        topic: entry.table.group,
+        rank: searchRank(
+          location.query,
+          entry.table.label,
+          tablePublisher(entry),
+          `${entry.table.id} ${entry.table.family} ${entry.review?.copy?.summary || entry.table.summary} ${entry.review?.sources.map((source) => source.name).join(" ") || ""}`,
+        ),
+        attention: tableAttention(entry),
+        entry,
+      })),
+    [entries, location.query],
+  );
+  const counts = {
+    available:
+      !entries.length && !error
+        ? undefined
+        : records.filter((entry) => entry.table.rows > 0).length,
+    catalog: manifest?.collections.length,
+    attention:
+      !manifest || publicationsPending
+        ? undefined
+        : tableResults.filter(
+            (item) => !supportingSection(item.entry!.table) && item.attention,
+          ).length + collectionResults.filter((item) => item.attention).length,
+  };
+  const resultPool =
+    location.view === "catalog"
+      ? collectionResults
+      : location.view === "attention"
+        ? [
+            ...tableResults.filter(
+              (item) => !supportingSection(item.entry!.table) && item.attention,
+            ),
+            ...collectionResults.filter((item) => item.attention),
+          ]
+        : tableResults.filter((item) =>
+            location.availability === "supporting"
+              ? !!supportingSection(item.entry!.table)
+              : !supportingSection(item.entry!.table) &&
+                (location.availability === "empty"
+                  ? item.entry!.table.rows === 0
+                  : item.entry!.table.rows > 0),
+          );
+  const topics = [...new Set(resultPool.map((item) => item.topic))]
+    .filter(Boolean)
+    .sort();
+  const results = resultPool
+    .filter(
+      (item) =>
+        item.rank > 0 &&
+        (!location.topic || location.topic === item.topic) &&
+        (!location.availability ||
+          location.availability === "supporting" ||
+          (item.collection
+            ? collectionAvailability(item.collection, tableIds).id ===
+              location.availability
+            : location.availability === "download"
+              ? !item.entry!.explorer
+              : location.availability === "empty"
+                ? item.entry!.table.rows === 0
+                : true)),
+    )
+    .sort(
+      (a, b) =>
+        b.rank - a.rank ||
+        Number(
+          !!b.entry || !!b.collection?.tables.some((id) => tableIds.has(id)),
+        ) -
+          Number(
+            !!a.entry || !!a.collection?.tables.some((id) => tableIds.has(id)),
+          ) ||
+        a.title.localeCompare(b.title),
+    );
+  const pages = Math.max(1, Math.ceil(results.length / pageSize)),
+    page = Math.min(location.page, pages);
+  const visible = results.slice((page - 1) * pageSize, page * pageSize);
+  const catalogMatches = collectionResults.filter(
+    (item) => item.rank > 0,
+  ).length;
+  const warnings = [...publicationWarnings, ...reviewWarnings];
+  const busy =
+    location.view === "catalog"
+      ? !manifest && !catalogError
+      : !entries.length && !error;
+  const detailPending = location.table
+    ? publicationsPending || (!entries.length && !error)
+    : !manifest && !catalogError;
+  return (
+    <div className="sources-page">
+      <a href="#sources" className="skip-link">
+        Skip to sources
+      </a>
+      <header className="topbar">
+        <a className="wordmark" href="/">
+          spicygov
+          <span className="brand-star" aria-hidden="true">
+            ✳
+          </span>
+        </a>
+        <nav aria-label="Main">
+          <a href="/">Explore</a>
+          <span className="nav-active" aria-current="page">
+            Sources
+          </span>
+          <a href="/mcp/">MCP</a>
+          <a href="https://docs.spicygov.ai">Data docs</a>
+        </nav>
+      </header>
+      <main
+        id="sources"
+        className={`sources-content ${selected ? "is-detail" : ""}`}
+      >
+        {selected ? (
+          <>
+            <button className="back-to-results" onClick={back}>
+              ← Back to results
+              {location.query && <span> for “{location.query}”</span>}
             </button>
-            {isOpen && <div className="source-body" id={`${group.id}-body`}>
-              {group.publishers.length > 1 && <details className="publisher-list"><summary>Recorded source names</summary>{group.historical && <p>Some names come from an earlier review and may be incomplete.</p>}<ul>{group.publishers.map(source => <li key={`${source.id}-${source.name}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a> : source.name}</li>)}</ul></details>}
-              {!!items.length && <div className="source-table-scroll"><table className="source-table"><thead><tr><th scope="col">Table & contents</th><th scope="col">Available records</th><th scope="col">Collection & processing</th><th scope="col">{sourceControlLabel('Coverage')}</th></tr></thead><tbody>{items.slice(0,limit).map(entry => <SourceRow key={`${entry.table.id}-${entry.table.artifactDigest ?? entry.table.publication?.snapshotId ?? entry.table.publication?.sha256}-${retry}`} entry={entry} catalog={allTables} loadDetails={loadDetails} coverageMaps={coverageMaps} timeView={timeView} publishers={coveragePublishers} onRetry={() => setRetry(retry + 1)} coverageLoading={!coverageMaps && !timeError} />)}</tbody></table></div>}
-              {(Object.keys(supportingSections) as SupportingSection[]).map(role => <SupportingTables key={role} groupId={group.id} role={role} entries={group.supporting[role]} />)}
-              {items.length > limit && <button className="show-more" onClick={() => setLimits(previous => ({...previous, [group.id]: limit + 8}))}>Show {Math.min(8, items.length-limit)} more tables ({items.length-limit} remaining)</button>}
-            </div>}
-          </div>;
-        })}
-      </section>)}</div>
-      <footer>Receipts link records to saved source material or processing steps; they do not establish source completeness. Collection methods do not show each method’s share of rows. Download-only tables open as Parquet files. <a href="https://docs.spicygov.ai">Data documentation ↗</a></footer>
-    </main>
-  </div>;
+            <Suspense
+              fallback={
+                <p className="loading-state" role="status">
+                  Opening details…
+                </p>
+              }
+            >
+              {selectedTable ? (
+                <TableDetail
+                  key={`${selectedTable.table.id}-${selectedTable.table.artifactDigest || selectedTable.table.publication?.sha256 || ""}`}
+                  entry={selectedTable}
+                  tables={tables}
+                  collections={manifest?.collections || []}
+                  onCollection={(id) =>
+                    navigate({ table: undefined, collection: id })
+                  }
+                />
+              ) : selectedCollection && manifest ? (
+                <CollectionDetail
+                  key={`${manifest.generation}-${selectedCollection.id}`}
+                  reader={reader}
+                  manifest={manifest}
+                  collection={selectedCollection}
+                  description={
+                    entries.find((entry) =>
+                      selectedCollection.tables.includes(entry.table.id),
+                    )?.review?.copy?.summary
+                  }
+                  tables={tables}
+                  onTable={(id) =>
+                    navigate({ table: id, collection: undefined })
+                  }
+                />
+              ) : (
+                <div className="empty-state">
+                  <h1>
+                    {detailPending
+                      ? "Loading source…"
+                      : "This item is not in the current catalog"}
+                  </h1>
+                  <p>
+                    {detailPending
+                      ? "Checking the selected catalog and publications."
+                      : "Return to the results to choose an available source or table."}
+                  </p>
+                </div>
+              )}
+            </Suspense>
+          </>
+        ) : (
+          <>
+            <header className="directory-heading">
+              <div>
+                <span className="page-kicker">DATA DIRECTORY</span>
+                <h1>Sources</h1>
+              </div>
+              <p>
+                Find the data you need. <br />
+                See where it comes from and what’s missing.
+              </p>
+            </header>
+            <div className="directory-search">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path d="m16 16 5 5" />
+              </svg>
+              <label className="sr-only" htmlFor="source-search">
+                Search sources and data
+              </label>
+              <input
+                id="source-search"
+                type="search"
+                placeholder="Search a dataset, source, or publisher…"
+                value={location.query}
+                onChange={(event) =>
+                  filter({ query: event.target.value }, true)
+                }
+              />
+              {location.query && (
+                <button
+                  aria-label="Clear search"
+                  onClick={() => filter({ query: "" }, true)}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <nav className="directory-views" aria-label="Browse sources">
+              {views.map((view) => (
+                <button
+                  key={view.id}
+                  aria-current={view.id === location.view ? "page" : undefined}
+                  onClick={() =>
+                    filter({ view: view.id, topic: "", availability: "" })
+                  }
+                >
+                  {view.label}
+                  <span>
+                    {counts[view.id] === undefined
+                      ? "…"
+                      : count(counts[view.id]!)}
+                  </span>
+                </button>
+              ))}
+            </nav>
+            <div className="directory-toolbar">
+              <p>
+                {views.find((view) => view.id === location.view)!.description}
+              </p>
+              <div className="directory-filters">
+                <label>
+                  <span className="sr-only">Topic</span>
+                  <select
+                    aria-label="Topic"
+                    value={location.topic}
+                    onChange={(event) => filter({ topic: event.target.value })}
+                  >
+                    <option value="">All topics</option>
+                    {topics.map((topic) => (
+                      <option key={topic}>{topic}</option>
+                    ))}
+                  </select>
+                </label>
+                {location.view !== "attention" && (
+                  <label>
+                    <span className="sr-only">Availability</span>
+                    <select
+                      aria-label="Availability"
+                      value={location.availability}
+                      onChange={(event) =>
+                        filter({ availability: event.target.value })
+                      }
+                    >
+                      <option value="">All availability</option>
+                      {location.view === "catalog" ? (
+                        <>
+                          <option value="linked">Has published data</option>
+                          <option value="held">Files saved</option>
+                          <option value="uncollected">Not downloaded</option>
+                          <option value="missing">Files missing</option>
+                          <option value="receipts">
+                            Download records only
+                          </option>
+                          <option value="external">Stored elsewhere</option>
+                          <option value="unknown">Files not confirmed</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="download">Download only</option>
+                          <option value="empty">No published records</option>
+                          <option value="supporting">Supporting data</option>
+                        </>
+                      )}
+                    </select>
+                  </label>
+                )}
+                {(location.topic || location.availability) && (
+                  <button
+                    className="text-button"
+                    onClick={() => filter({ topic: "", availability: "" })}
+                  >
+                    Reset filters
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="results-summary">
+              <p aria-live="polite">
+                {busy
+                  ? "Loading…"
+                  : `${count(results.length)} ${location.view === "available" ? "datasets" : location.view === "catalog" ? "sources" : "items"}`}
+                {location.query && <> matching “{location.query}”</>}
+              </p>
+              <span>
+                {location.view === "catalog" && manifest
+                  ? `Catalog updated: ${publicationDate(manifest.generatedAt)}`
+                  : publicationsPending || reviewPending
+                    ? "Checking publications…"
+                    : "Current publications"}
+              </span>
+            </div>
+            {(error || catalogError || warnings.length > 0) && (
+              <div className="directory-notices">
+                {error && (
+                  <p role="alert">
+                    Published data could not be loaded.{" "}
+                    <button onClick={() => setRetry(retry + 1)}>
+                      Retry publications
+                    </button>
+                  </p>
+                )}
+                {catalogError && (
+                  <p role="alert">
+                    {catalogError}{" "}
+                    <button onClick={() => setCatalogRetry(catalogRetry + 1)}>
+                      Retry catalog
+                    </button>
+                  </p>
+                )}
+                {warnings.length > 0 && (
+                  <details>
+                    <summary>Some descriptions are unavailable</summary>
+                    {warnings.map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                    <button onClick={() => setRetry(retry + 1)}>
+                      Retry descriptions
+                    </button>
+                  </details>
+                )}
+              </div>
+            )}
+            <div
+              className="directory-list"
+              aria-label="Search results"
+              aria-busy={busy}
+            >
+              <div className="directory-columns" aria-hidden="true">
+                <span>
+                  {location.view === "available"
+                    ? "Dataset & publisher"
+                    : "Source & publisher"}
+                </span>
+                <span>
+                  {location.view === "available"
+                    ? "What it covers"
+                    : "Availability"}
+                </span>
+                <span>
+                  {location.view === "available" ? "Records" : "Files saved"}
+                </span>
+                <span />
+              </div>
+              {visible.map((result) => {
+                const availability = result.collection
+                  ? collectionAvailability(result.collection, tableIds)
+                  : undefined;
+                return (
+                  <div
+                    className="directory-row"
+                    key={`${result.entry ? "table" : "source"}-${result.id}`}
+                  >
+                    <a
+                      className="result-open"
+                      data-result-id={result.id}
+                      href={`/sources/${browserSearch({ ...location, table: result.entry?.table.id, collection: result.collection?.id })}`}
+                      onClick={(event) => {
+                        if (
+                          event.button ||
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.altKey
+                        )
+                          return;
+                        event.preventDefault();
+                        openResult(result);
+                      }}
+                    >
+                      <span className="result-name">
+                        <strong>{result.title}</strong>
+                        <span className="result-publisher">
+                          {result.publisher}
+                        </span>
+                        {location.view === "attention" && (
+                          <span className="result-attention">
+                            {result.attention}
+                          </span>
+                        )}
+                        {location.query && result.rank === 10 && (
+                          <span className="result-match">
+                            Mentioned in source description
+                          </span>
+                        )}
+                      </span>
+                      <span className="result-state">
+                        {result.entry ? (
+                          <>
+                            <span className="scope-preview">
+                              {readableCopy(
+                                result.entry.review?.copy?.scope ||
+                                  "Dates and coverage are not yet described.",
+                              )}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              className={`availability-dot ${availability!.id === "linked" ? "is-available" : ""}`}
+                            />
+                            {availability!.label}
+                            <small>{result.summary}</small>
+                          </>
+                        )}
+                      </span>
+                      <span className="result-count">
+                        {result.entry ? (
+                          <>
+                            <strong>{count(result.entry.table.rows)}</strong>
+                            <small>{tableCountUnit(result.entry.table)}</small>
+                            <small>
+                              {result.entry.table.rows === 0
+                                ? "No records yet"
+                                : result.entry.explorer
+                                  ? "Ready to explore"
+                                  : "Download only"}
+                            </small>
+                          </>
+                        ) : (
+                          <>
+                            <strong>
+                              {result.collection!.holdings.objects
+                                ? count(result.collection!.holdings.objects)
+                                : "—"}
+                            </strong>
+                            <small>
+                              {result.collection!.holdings.objects
+                                ? result.collection!.holdings.objects === 1
+                                  ? "unique file saved"
+                                  : "unique files saved"
+                                : "Files not confirmed"}
+                            </small>
+                          </>
+                        )}
+                      </span>
+                      <span className="result-arrow" aria-hidden="true">
+                        →
+                      </span>
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+            {!busy && !results.length && (
+              <div className="empty-state">
+                <h2>
+                  No matching{" "}
+                  {location.view === "available" ? "datasets" : "sources"}
+                </h2>
+                <p>Try a source name, publisher, or a broader term.</p>
+                {location.view === "available" &&
+                  location.query &&
+                  catalogMatches > 0 && (
+                    <button
+                      className="secondary-action"
+                      onClick={() =>
+                        filter({ view: "catalog", topic: "", availability: "" })
+                      }
+                    >
+                      See {count(catalogMatches)} matches in the all sources →
+                    </button>
+                  )}
+                {(location.query ||
+                  location.topic ||
+                  location.availability) && (
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      filter({ query: "", topic: "", availability: "" })
+                    }
+                  >
+                    Clear search and filters
+                  </button>
+                )}
+              </div>
+            )}
+            {pages > 1 && (
+              <nav className="result-pagination" aria-label="Result pages">
+                <button
+                  disabled={page === 1}
+                  onClick={() => {
+                    navigate({ page: page - 1 });
+                    document.getElementById("source-search")?.focus();
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span>
+                  Page {page} of {pages}
+                </span>
+                <button
+                  disabled={page === pages}
+                  onClick={() => {
+                    navigate({ page: page + 1 });
+                    document.getElementById("source-search")?.focus();
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                  }}
+                >
+                  Next →
+                </button>
+              </nav>
+            )}
+            <footer className="directory-footer">
+              <p>
+                A source may offer more than we’ve collected. Open an item to
+                see its dates, known gaps, and original sources.
+              </p>
+              <a href="https://docs.spicygov.ai">Data documentation ↗</a>
+            </footer>
+          </>
+        )}
+      </main>
+    </div>
+  );
 }
-createRoot(document.getElementById('root')!).render(<SourcesPage />);
+const root = createRoot(document.getElementById("root")!);
+root.render(<SourcesPage />);
+if (import.meta.hot) import.meta.hot.dispose(() => root.unmount());
