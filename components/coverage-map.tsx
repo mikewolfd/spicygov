@@ -1,7 +1,7 @@
 import { coverageViewLabel } from '../lib/source-labels';
 import { useState } from 'react';
-import { count, type Dataset } from '../lib/catalog';
-import { coverageCategoryDisplay, coverageCategoryMatches, coverageFieldLabel, coverageItemNoun, coverageMapCounts, coverageMapForDisplay, coveragePeriodLabel, coveragePeriodNoun, coverageStatement, dimensionPeriodRows, scopeLabel, type CoverageDimension, type CoverageMaps } from '../lib/coverage-map';
+import { count, publicationDate, type Dataset } from '../lib/catalog';
+import { coverageReading, preferredCoverageDimension, coverageCategoryDisplay, coverageCategoryMatches, coverageFieldLabel, coverageItemNoun, coverageMapCounts, coverageMapForDisplay, coveragePeriodLabel, coveragePeriodNoun, coverageStatement, dimensionPeriodRows, scopeLabel, type CoverageDimension, type CoverageMaps } from '../lib/coverage-map';
 import { object } from '../lib/publication-evidence';
 import { coveragePublisherNames, type CoveragePublishers } from '../lib/coverage-publishers';
 import type { TimeView } from './time-coverage';
@@ -17,27 +17,26 @@ export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { t
   const display = coverageMapForDisplay(table, maps);
   if (!display) return <div className="coverage-map"><p className="coverage-unavailable">Coverage counts are not available for this table.</p>{onRetry && <button type="button" onClick={onRetry}>Reload published counts</button>}</div>;
   const {map, freshness} = display;
-  const preferred = map.dimensions.find(dim => ['month', 'year', 'season'].includes(dim.granularity) && dim.placedRows > 0)
-    ?? map.dimensions.find(dim => dim.granularity !== 'snapshot' && dim.placedRows > 0) ?? map.dimensions[0];
+  const preferred = preferredCoverageDimension(map);
+  const reading = coverageReading(table, maps)!;
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
   const statement = coverageStatement(dimension);
   const remainingMeaning = dimension.meaning.slice(statement.length).trim();
   const sourceInputs = (Array.isArray(dimension.parent) ? dimension.parent : [dimension.parent]).filter(object).flatMap(input => typeof input.tableId === 'string' ? [input.tableId] : []);
   const notes = [...new Set([remainingMeaning, ...(dimension.notes ?? []), map.note].filter(Boolean))];
   return <div className="coverage-map">
-    {freshness !== 'current' && <div className="coverage-previous" role="status">
-      <p><strong>{freshness === 'previous-release' ? 'Previous release' : 'Previous measurement'} · Refresh pending</strong></p>
-      <p>{freshness === 'previous-release'
-        ? <>Counts from {map.publishedAt ? <>the <time dateTime={map.publishedAt}>{coverageDate(map.publishedAt)} UTC</time> release</> : 'the last measured release'} · {rowsLabel(map.rows)}. The current release has not been checked.</>
-        : <>Checked <time dateTime={map.measuredAt}>{coverageDate(map.measuredAt)} UTC</time> · {rowsLabel(map.rows)}. Counts have not been refreshed for this month.</>}</p>
-      {onRetry && <button type="button" onClick={onRetry}>Reload published counts</button>}
-    </div>}
+    <div className={freshness === 'current' ? 'coverage-measurement' : 'coverage-previous'} role="status">
+      <p><strong>{reading.release}</strong> · {rowsLabel(map.rows)}</p>
+      <p>{freshness === 'previous-release' ? 'The current release has not been checked. ' : freshness === 'previous-measurement' ? 'Counts have not been refreshed for this month. ' : ''}Measured {publicationDate(map.measuredAt)}.</p>
+      {freshness !== 'current' && onRetry && <button type="button" onClick={onRetry}>Check for updated coverage</button>}
+    </div>
     {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
     <p className="coverage-meaning">{statement}</p>
     <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} publisherNames={coveragePublisherNames(table, maps, dimension, publishers)} />
     <details className="coverage-checks">
       <summary>How this count was checked<span className="sr-only"> for {table.label}, {coverageViewLabel(dimension.label)}</span></summary>
       <div className="coverage-checks-body">
+        <p>Measured <time dateTime={map.measuredAt}>{coverageDate(map.measuredAt)} UTC</time>.{map.publishedAt && <> Release published <time dateTime={map.publishedAt}>{coverageDate(map.publishedAt)} UTC</time>.</>}</p>
         <dl className="coverage-check-counts">
           <div><dt>Rows counted for {coverageViewLabel(dimension.label).toLowerCase()}</dt><dd>{count(dimension.placedRows)}</dd></div>
           {dimension.unplacedRows > 0 && <div><dt>Rows not counted for this field</dt><dd>{count(dimension.unplacedRows)}</dd></div>}

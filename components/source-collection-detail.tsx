@@ -5,6 +5,7 @@ import {
   readableCopy,
   collectionAvailability,
   collectionAttention,
+  collectionDownload,
   deliveryLabels,
   periodLabel,
   periodRange,
@@ -99,11 +100,13 @@ export function SourceCollectionDetail({
   const attention = collectionAttention(collection);
   const tabs = [
     { id: "overview", label: "Overview" },
-    { id: "routes", label: "Dates & sources" },
+    { id: "routes", label: "Sources & history" },
     { id: "files", label: "Files" },
     { id: "evidence", label: "Technical evidence" },
   ];
   const destinations = detail?.tables ?? [];
+  const published = tables.filter((table) => collection.tables.includes(table.id) && table.rows > 0);
+  const savedPeriods = uniquePeriods(collection.periods).filter((period) => period.kind === "observed-retained-scope" && period.start);
   useEffect(() => {
     document.getElementById("detail-title")?.focus();
   }, []);
@@ -117,31 +120,20 @@ export function SourceCollectionDetail({
         <h1 id="detail-title" tabIndex={-1}>
           {collectionTitle(collection)}
         </h1>
-        <p className="availability-line">
-          <span
-            className={`availability-dot ${availability.id === "linked" ? "is-available" : ""}`}
-          />
-          {availability.label}
-        </p>
+        <p>{readableCopy(description || (collection.publisher
+          ? `Data and documents from ${collection.publisher}.`
+          : "A known source of public records."))}</p>
+        <div className="detail-actions">
+          {published.length === 1 ? (
+            <a className="primary-action" href={published[0].recordsAvailable !== false
+              ? `/?table=${encodeURIComponent(published[0].id)}`
+              : `/sources/?table=${encodeURIComponent(published[0].id)}`}>{published[0].recordsAvailable !== false ? "Explore data →" : "View downloads →"}</a>
+          ) : published.length > 1 ? (
+            <a className="primary-action" href="#source-datasets" onClick={() => setSection("overview")}>Choose a dataset ↓</a>
+          ) : <span>No published dataset yet</span>}
+          <span>{availability.label}</span>
+        </div>
       </header>
-      <dl className="detail-facts">
-        <div>
-          <dt>Unique files saved</dt>
-          <dd>
-            {collection.holdings.objects
-              ? count(collection.holdings.objects)
-              : "Not confirmed"}
-          </dd>
-        </div>
-        <div>
-          <dt>Ways to get the data</dt>
-          <dd>{count(collection.routeCount)}</dd>
-        </div>
-        <div>
-          <dt>Catalog updated</dt>
-          <dd>{publicationDate(manifest.generatedAt)}</dd>
-        </div>
-      </dl>
       <nav className="detail-tabs" aria-label="Source details">
         {tabs.map((tab) => (
           <button
@@ -169,35 +161,26 @@ export function SourceCollectionDetail({
           {section === "overview" && (
             <>
               <section className="detail-section">
-                <h2>About this source</h2>
-                <p>
-                  {readableCopy(
-                    description ||
-                      (collection.publisher
-                        ? `This catalog entry records data from ${collection.publisher}.`
-                        : "This entry records a known source and the files or download records we have for it."),
-                  )}
-                </p>
+                <h2>Available periods</h2>
+                {savedPeriods.length ? <>
+                  <ul className="plain-list">{savedPeriods.map((period, index) => <li key={index}>{periodRange(period)}</li>)}</ul>
+                  <p className="detail-caption">Dates found in saved records. They may contain gaps and may differ from the published dataset.</p>
+                </> : <p>We haven’t confirmed the dates in the saved records.</p>}
+                <button className="text-button" onClick={() => setSection("routes")}>Compare sources and historical coverage →</button>
               </section>
               <section className="detail-section">
-                <h2>What we’ve saved</h2>
-                <p>
-                  {collection.holdings.objects
-                    ? `${count(collection.holdings.objects)} different files are saved for this source.`
-                    : availability.id === "uncollected"
-                      ? "This source is listed by its publisher; its data has not been downloaded."
-                      : "We haven’t confirmed which original files are saved for this source."}{" "}
-                  This does not tell us whether we have every available record.
-                </p>
+                <h2>Known gaps & uncertainty</h2>
                 {attention && <p className="context-note">{attention}.</p>}
-                {!collection.holdings.missing && (
-                  <p className="detail-caption">
-                    We don’t yet know how many other files may be available.
-                  </p>
-                )}
+                <dl className="reading-facts">
+                  <div><dt>Download status</dt><dd>{collectionDownload(collection)}</dd></div>
+                  <div><dt>Coverage</dt><dd>We haven’t confirmed whether every available record is included.</dd></div>
+                  <div><dt>Missing files</dt><dd>{collection.holdings.missing > 0
+                    ? `${count(collection.holdings.missing)} recorded files are missing. Other gaps may remain.`
+                    : "Missing-file count unknown."}</dd></div>
+                </dl>
               </section>
               <section className="detail-section">
-                <h2>Where it’s used</h2>
+                <h2 id="source-datasets">Published datasets</h2>
                 {destinations.length ? (
                   <ul className="destination-list">
                     {destinations.map((item) => {
@@ -253,25 +236,11 @@ export function SourceCollectionDetail({
                   </p>
                 )}
               </section>
-              <section className="detail-section">
-                <h2>Dates and older records</h2>
-                <p>
-                  A publisher may offer recent records through an online service
-                  and older records as downloadable files. See the dates for
-                  each source.
-                </p>
-                <button
-                  className="text-button"
-                  onClick={() => setSection("routes")}
-                >
-                  See dates and sources →
-                </button>
-              </section>
             </>
           )}
           {section === "routes" && (
             <>
-              <h2>Dates & sources</h2>
+              <h2>Sources & history</h2>
               <p>
                 For each source, we distinguish the dates the publisher offers
                 from the dates we asked for and the records we’ve saved. A date
@@ -287,6 +256,13 @@ export function SourceCollectionDetail({
                         {["legacy", "retired"].includes(route.lifecycle) &&
                           " · Historical source"}
                       </div>
+                      <p>{route.deliveryMethod === "bulk"
+                        ? "Downloads many records together, often by issue or period."
+                        : route.deliveryMethod === "archive"
+                          ? "Preserves older material that may not be included in an online service."
+                          : ["query-api", "api"].includes(route.deliveryMethod)
+                            ? "Lets us request individual records and updates from the publisher."
+                            : "Provides source documents or files. See the recorded dates below."}</p>
                       <h3>
                         {route.accessUrl ? (
                           <a
@@ -385,6 +361,7 @@ export function SourceCollectionDetail({
           {section === "files" && (
             <>
               <h2>Source files</h2>
+              <p>{count(collection.holdings.objects)} distinct files saved. Catalog updated {publicationDate(manifest.generatedAt)}.</p>
               <p>
                 {count(detail.files.total)} file references are recorded.
                 References can point to the same file; they are not a count of

@@ -21,10 +21,13 @@ import {
   readBrowserLocation,
   searchRank,
   collectionAvailability,
+  matchesCollectionAvailability,
   collectionAttention,
+  collectionLimitation,
   collectionTopic,
   periodSummary,
   tableAttention,
+  tableLimitation,
   tablePublisher,
   recordEntries,
   pageSize,
@@ -63,12 +66,12 @@ const views: { id: BrowserView; label: string; description: string }[] = [
   },
   {
     id: "catalog",
-    label: "All sources",
+    label: "All known sources",
     description: "All known sources, including data we haven’t added yet.",
   },
   {
     id: "attention",
-    label: "Needs attention",
+    label: "Gaps",
     description:
       "Missing files, sources not yet downloaded, and notes that need checking.",
   },
@@ -189,7 +192,7 @@ function SourcesPage() {
         topic: collectionTopic(item, tables),
         rank: searchRank(
           location.query,
-          item.title,
+          collectionTitle(item),
           item.publisher,
           `${item.description || ""} ${item.families.join(" ")} ${item.tables.join(" ")} ${item.id}`,
         ),
@@ -258,9 +261,10 @@ function SourcesPage() {
         (!location.topic || location.topic === item.topic) &&
         (!location.availability ||
           location.availability === "supporting" ||
-          (item.collection
-            ? collectionAvailability(item.collection, tableIds).id ===
-              location.availability
+          (location.availability === "review"
+            ? !!item.attention
+            : item.collection
+            ? matchesCollectionAvailability(item.collection, location.availability, tableIds)
             : location.availability === "download"
               ? !item.entry!.explorer
               : location.availability === "empty"
@@ -459,9 +463,10 @@ function SourcesPage() {
                       <option value="">All availability</option>
                       {location.view === "catalog" ? (
                         <>
-                          <option value="linked">Has published data</option>
-                          <option value="held">Files saved</option>
+                          <option value="linked">Published</option>
+                          <option value="held">Downloaded</option>
                           <option value="uncollected">Not downloaded</option>
+                          <option value="review">Needs review</option>
                           <option value="missing">Files missing</option>
                           <option value="receipts">
                             Download records only
@@ -587,11 +592,6 @@ function SourcesPage() {
                         <span className="result-publisher">
                           {result.publisher}
                         </span>
-                        {location.view === "attention" && (
-                          <span className="result-attention">
-                            {result.attention}
-                          </span>
-                        )}
                         {location.query && result.rank === 10 && (
                           <span className="result-match">
                             Mentioned in source description
@@ -617,6 +617,11 @@ function SourcesPage() {
                             <small>{result.summary}</small>
                           </>
                         )}
+                        <span className="result-attention">
+                          {readableCopy(result.entry
+                            ? tableLimitation(result.entry)
+                            : collectionLimitation(result.collection!))}
+                        </span>
                       </span>
                       <span className="result-count">
                         {result.entry ? (
@@ -648,8 +653,8 @@ function SourcesPage() {
                           </>
                         )}
                       </span>
-                      <span className="result-arrow" aria-hidden="true">
-                        →
+                      <span className="result-arrow">
+                        View details <span aria-hidden="true">→</span>
                       </span>
                     </a>
                   </div>
@@ -672,7 +677,7 @@ function SourcesPage() {
                         filter({ view: "catalog", topic: "", availability: "" })
                       }
                     >
-                      See {count(catalogMatches)} matches in the all sources →
+                      See {count(catalogMatches)} matches in all known sources →
                     </button>
                   )}
                 {(location.query ||

@@ -159,3 +159,23 @@ test("a missing end date and conflicting publisher notes remain explicit", () =>
     "Apr 13, 2026",
   );
 });
+
+test("download status stays separate from a published destination and unknown missing counts", () => {
+  const linked = collection({tables: ['records'], statuses: ['known-not-acquired']});
+  assert.equal(browser.collectionAvailability(linked, new Set(['records'])).id, 'linked');
+  assert.equal(browser.collectionDownload(linked), 'Not downloaded');
+  assert.equal(browser.collectionLimitation(linked), 'Source not downloaded');
+  const held = collection({statuses: ['published-with-baseline'], holdings: {objects: 10, missing: 0}});
+  assert.equal(browser.collectionDownload(held), 'Downloaded files available');
+  assert.match(browser.collectionLimitation(held), /earlier saved dataset/);
+  assert.match(browser.collectionLimitation(collection()), /not been confirmed/);
+});
+
+test('download and missing-file filters still find sources that have published destinations', () => {
+  const item = collection({tables: ['records'], holdings: {objects: 10, missing: 2}});
+  const tables = new Set(['records']);
+  for (const filter of ['held', 'missing', 'review', 'linked']) {
+    assert.equal(browser.matchesCollectionAvailability(item, filter, tables), true, filter);
+  }
+  assert.equal(browser.matchesCollectionAvailability(item, 'uncollected', tables), false);
+});

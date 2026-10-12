@@ -20,6 +20,7 @@ import {
 } from "../lib/source-observations";
 import {
   parseCoverageMaps,
+  coverageReading,
   textAvailabilityDetails,
   type CoverageMaps,
 } from "../lib/coverage-map";
@@ -282,39 +283,37 @@ export function SourceTableDetail({
     mode: "years",
   });
   useEffect(() => {
-    if (section !== "coverage") return;
     const controller = new AbortController();
     setCoverageError("");
     void fetchJson("/coverage-maps.v1.json", controller.signal)
       .then(parseCoverageMaps)
-      .then(async (value) => {
-        if (controller.signal.aborted) return;
-        setMaps(value);
-        try {
-          const next = await loadCoveragePublishers(
-            [table],
-            value,
-            controller.signal,
-          );
-          if (!controller.signal.aborted) setPublishers(next);
-        } catch {
-          /* Counts still work with their recorded publisher identifiers. */
-        }
+      .then((value) => {
+        if (!controller.signal.aborted) setMaps(value);
       })
       .catch(() => {
         if (!controller.signal.aborted)
           setCoverageError("Coverage counts could not be loaded.");
       });
     return () => controller.abort();
-  }, [table, section, retry]);
+  }, [table, retry]);
   useEffect(() => {
     document.getElementById("detail-title")?.focus();
   }, []);
+  useEffect(() => {
+    if (section !== "coverage" || !maps) return;
+    const controller = new AbortController();
+    void loadCoveragePublishers([table], maps, controller.signal)
+      .then((value) => { if (!controller.signal.aborted) setPublishers(value); })
+      .catch(() => { /* Recorded identifiers remain available if names cannot load. */ });
+    return () => controller.abort();
+  }, [table, maps, section]);
   const sources = relatedCollections(table, collections);
+  const coverage = coverageReading(table, maps);
   const tabs = [
     { id: "overview", label: "Overview" },
-    { id: "coverage", label: "Coverage" },
+    { id: "coverage", label: "Coverage by period" },
     { id: "sources", label: "Sources & history" },
+    { id: "files", label: "Files" },
     { id: "evidence", label: "Technical evidence" },
   ];
   return (
@@ -336,7 +335,7 @@ export function SourceTableDetail({
           {entry.explorer ? (
             <a
               className="primary-action"
-              href={`/?table=${encodeURIComponent(table.id)}&view=about`}
+              href={`/?table=${encodeURIComponent(table.id)}`}
             >
               Explore records <span aria-hidden="true">↗</span>
             </a>
@@ -390,14 +389,8 @@ export function SourceTableDetail({
       <div className="detail-panel" key={section}>
         {section === "overview" && (
           <>
-            {sourceMetadataMessage(table.metadataState) && (
-              <p className="context-note">
-                {sourceMetadataMessage(table.metadataState)} The record total
-                above follows the current publication.
-              </p>
-            )}
             <section className="detail-section">
-              <h2>What’s available</h2>
+              <h2>What it contains</h2>
               <p>
                 {readableCopy(
                   review?.copy?.scope ||
@@ -411,7 +404,27 @@ export function SourceTableDetail({
               )}
             </section>
             <section className="detail-section">
-              <h2>What to keep in mind</h2>
+              <h2>Available periods</h2>
+              {coverageError ? <p role="alert">{coverageError} <button className="text-button" onClick={() => setRetry(retry + 1)}>Try again</button></p>
+                : !maps ? <p role="status">Checking recorded coverage…</p>
+                : coverage ? <>
+                  <p className="measurement-label">{coverage.release}</p>
+                  <p><strong>{coverage.range || "This measurement does not establish a date range."}</strong></p>
+                  {coverage.range && <p className="detail-caption">{coverage.dimension.label}. These are the earliest and latest recorded periods; gaps may exist between them.</p>}
+                  {coverage.freshness === "previous-release" && <p className="context-note">The published dataset has changed since this coverage check. These dates describe the earlier release.</p>}
+                  {coverage.freshness === "previous-measurement" && <p className="context-note">This coverage check predates the current month.</p>}
+                </> : <p>We haven’t measured a date range for this dataset yet.</p>}
+              <button className="text-button" onClick={() => setSection("coverage")}>See counts by period →</button>
+            </section>
+            <section className="detail-section">
+              <h2>Known gaps & uncertainty</h2>
+            {sourceMetadataMessage(table.metadataState) && (
+              <p className="context-note">
+                {sourceMetadataMessage(table.metadataState)} The record total
+                above follows the current publication.
+              </p>
+            )}
+
               {review?.copy?.gaps.length ? (
                 <ul className="plain-list">
                   {review.copy.gaps.map((gap) => (
@@ -425,25 +438,6 @@ export function SourceTableDetail({
                 </p>
               )}
             </section>
-            <section className="detail-section">
-              <h2>How it’s collected</h2>
-              {review?.methods.length ? (
-                <dl className="collection-methods">
-                  {collectionSteps(review.methods).map((step) => (
-                    <div key={step.label}>
-                      <dt>{step.label}</dt>
-                      <dd>{step.values.join(" · ")}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p>We haven’t added collection notes for this dataset yet.</p>
-              )}
-            </section>
-            <p className="detail-caption">
-              Source notes describe the recorded collection process and may
-              predate the current release.
-            </p>
           </>
         )}
         {section === "coverage" && (
@@ -519,6 +513,25 @@ export function SourceTableDetail({
               Data may come from an online service, bulk downloads, or older
               archives. Each source has its own dates and limitations.
             </p>
+            <section className="detail-section">
+              <h2>How it’s collected</h2>
+              {review?.methods.length ? (
+                <dl className="collection-methods">
+                  {collectionSteps(review.methods).map((step) => (
+                    <div key={step.label}>
+                      <dt>{step.label}</dt>
+                      <dd>{step.values.join(" · ")}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p>We haven’t added collection notes for this dataset yet.</p>
+              )}
+            </section>
+            <p className="detail-caption">
+              Source notes describe the recorded collection process and may
+              predate the current release.
+            </p>
             {sources.length ? (
               <ul className="linked-sources">
                 {sources.map((item) => (
@@ -582,6 +595,18 @@ export function SourceTableDetail({
                 />
               </details>
             )}
+          </>
+        )}
+        {section === "files" && (
+          <>
+            <h2>Download data</h2>
+            <p>Files from the current published release, in Parquet format. Original downloads are listed under each source in Sources & history.</p>
+            <ul className="source-file-list">{table.members.map((member, index) => (
+              <li key={member.url}>
+                <a href={member.url}>Download {table.members.length === 1 ? "dataset" : `part ${index + 1}`} ↗</a>
+                <p>{count(member.rows)} {tableCountUnit(table)}</p>
+              </li>
+            ))}</ul>
           </>
         )}
         {section === "evidence" && (

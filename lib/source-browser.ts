@@ -70,7 +70,31 @@ export function collectionAttention(
     return "Download records saved; original files not confirmed";
   if (item.statuses.includes("known-not-acquired"))
     return "Source not downloaded";
+  if (item.statuses.includes("published-with-baseline"))
+    return "Some published records still depend on an earlier saved dataset";
   return undefined;
+}
+export function collectionDownload(item: CatalogCollection): string {
+  if (item.holdings.objects > 0) return "Downloaded files available";
+  if (item.statuses.includes("known-not-acquired")) return "Not downloaded";
+  if (item.statuses.includes("external-by-choice")) return "Stored elsewhere";
+  if (item.statuses.includes("receipt-only")) return "Download records only";
+  return "Downloads not confirmed";
+}
+export function matchesCollectionAvailability(item: CatalogCollection, filter: string, tables: ReadonlySet<string>): boolean {
+  if (!filter) return true;
+  if (filter === "held") return item.holdings.objects > 0;
+  if (filter === "uncollected") return item.statuses.includes("known-not-acquired");
+  if (filter === "missing") return item.holdings.missing > 0 || item.statuses.includes("missing-bytes");
+  if (filter === "review") return !!collectionAttention(item);
+  return collectionAvailability(item, tables).id === filter;
+}
+export function collectionLimitation(item: CatalogCollection): string {
+  return collectionAttention(item) || "Full source coverage has not been confirmed";
+}
+export function tableLimitation(entry: SourceEntry): string {
+  return entry.review?.copy?.gaps[0] || tableAttention(entry) ||
+    "Full source coverage has not been confirmed";
 }
 export function tableAttention(entry: SourceEntry): string | undefined {
   if (entry.table.rows === 0) return "No records published";

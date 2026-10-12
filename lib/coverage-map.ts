@@ -1,5 +1,5 @@
 import { sourceFieldLabel, sourceValueLabel, recordedScopeLabel } from './source-labels';
-import type { Dataset } from './catalog';
+import { publicationDate, type Dataset } from './catalog';
 import { object } from './publication-evidence';
 import { timeFingerprint } from './time-coverage';
 import { canonicalJson } from './separate-publications';
@@ -126,6 +126,31 @@ export function coverageMapCounts(tables: Dataset[], maps?: CoverageMaps): { cur
     if (display) counts[display.freshness === 'current' ? 'current' : 'previous']++;
   }
   return counts;
+}
+
+export function preferredCoverageDimension(map: CoverageMap): CoverageDimension {
+  return map.dimensions.find(dim => ['month', 'year', 'season'].includes(dim.granularity) && dim.placedRows > 0)
+    ?? map.dimensions.find(dim => dim.granularity !== 'snapshot' && dim.placedRows > 0) ?? map.dimensions[0];
+}
+
+/** Every period statement carries the release it actually measured. */
+export function coverageReading(table: Dataset, maps?: CoverageMaps) {
+  const display = coverageMapForDisplay(table, maps);
+  if (!display) return undefined;
+  const { map, freshness } = display;
+  const dimension = preferredCoverageDimension(map);
+  const periods = ['month', 'year', 'season'].includes(dimension.granularity)
+    ? Object.keys(dimension.buckets).sort() : [];
+  const range = periods.length ? [periods[0], periods.at(-1)!].filter((value, index, values) => values.indexOf(value) === index)
+    .map(period => dimension.granularity === 'month'
+      ? new Intl.DateTimeFormat('en', {month: 'short', year: 'numeric', timeZone: 'UTC'}).format(new Date(`${period}-01T00:00:00Z`))
+      : coveragePeriodLabel(dimension, period)).join(' – ') : undefined;
+  const release = freshness === 'previous-release'
+    ? `Coverage checked against ${map.publishedAt ? publicationDate(map.publishedAt) + ' release' : 'an earlier release'}`
+    : freshness === 'previous-measurement'
+      ? `Current release · coverage last checked ${publicationDate(map.measuredAt)}`
+      : 'Current release';
+  return { range, release, freshness, dimension, rows: map.rows, measuredAt: map.measuredAt };
 }
 
 export function textAvailabilityDetails(table: Dataset, maps?: CoverageMaps): { label: string; rows: number; withText: number; notSaved: number; blank: number }[] {

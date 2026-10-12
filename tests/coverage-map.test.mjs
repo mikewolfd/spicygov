@@ -11,7 +11,7 @@ async function module(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
 
-const {parseCoverageMaps, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
+const {parseCoverageMaps, coverageReading, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
 const {parseComments} = await module('lib/source-directory.ts');
 const {coverageInputsFingerprint} = await module('lib/coverage-map.ts');
 const {publisherNames, loadCoveragePublishers, coveragePublisherNames} = await module('lib/coverage-publishers.ts');
@@ -310,13 +310,14 @@ test('prior release maps stay visible with their original date and counts, witho
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,onRetry:()=>{},view:{year:2024,mode:'years'}}));
   assert.equal(currentCoverageMap(changed,maps),undefined);
   assert.equal(coverageMapForDisplay(changed,maps).freshness,'previous-release');
-  assert.match(html,/Previous release.*Refresh pending/);
-  assert.match(html,/datetime="2026-10-04T12:30:00Z"/i);
-  assert.match(html,/3 rows\. The current release has not been checked/);
+  assert.match(html,/Coverage checked against Oct 4, 2026 release/);
+  assert.match(html,/Measured Oct 5, 2026/);
+  assert.match(html,/3 rows/);
+  assert.match(html,/The current release has not been checked/);
   assert.doesNotMatch(html,/4 rows/);
   assert.match(html,/2024: 2 rows counted here/);
   assert.match(html,/Count by|Event date/);
-  assert.match(html,/Reload published counts/);
+  assert.match(html,/Check for updated coverage/);
   assert.doesNotMatch(html,/recalculate|scan records/i);
 });
 
@@ -328,8 +329,8 @@ test('expired monthly measurements stay visible with their check date and a dist
   assert.equal(currentCoverageMap(table,maps),undefined);
   assert.equal(coverageMapForDisplay(table,maps).freshness,'previous-measurement');
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
-  assert.match(html,/Previous measurement.*Refresh pending/);
-  assert.match(html,/datetime="2026-10-05T00:00:00Z"/i);
+  assert.match(html,/Current release · coverage last checked Oct 5, 2026/);
+  assert.match(html,/Measured Oct 5, 2026/);
   assert.match(html,/Counts have not been refreshed for this month/);
   assert.match(html,/2024: 2 rows counted here/);
   assert.doesNotMatch(html,/Previous release/);
@@ -362,7 +363,7 @@ test('previous publisher coverage keeps recorded IDs instead of borrowing names 
   const publishers={source,names:new Map([['afp','Americans for Prosperity']])};
   const changed={...source,artifactDigest:'sha256:'+'b'.repeat(64)};
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,publishers,view:{year:2026,mode:'years'}}));
-  assert.match(html,/Previous release/);
+  assert.match(html,/Coverage checked against an earlier release/);
   assert.match(html,/Publisher ID: afp/);
   assert.doesNotMatch(html,/Americans for Prosperity/);
 });
@@ -456,4 +457,18 @@ test('rendered matrices show readable fields and retain original codes without c
   assert.deepEqual(raw,before);
   assert.deepEqual(maps.tables.records.dimensions[0],before.tables.records.dimensions[0]);
   assert.ok(currentCoverageMap(table,maps));
+});
+
+test('overview periods use measured buckets and keep stale release identity', () => {
+  const maps = parseCoverageMaps(document());
+  const current = coverageReading(table, maps);
+  assert.equal(current.range, 'Jan 2024 – Feb 2024');
+  assert.equal(current.release, 'Current release');
+  const stale = coverageReading({...table, rows: 4}, maps);
+  assert.equal(stale.freshness, 'previous-release');
+  assert.equal(stale.release, 'Coverage checked against an earlier release');
+  assert.equal(stale.rows, 3);
+  assert.equal(coverageReading({...table, family: 'unrelated'}, maps), undefined);
+  maps.tables.records.dimensions = [{...dimension, granularity: 'category', buckets: {'["2024-01"]': 2}}];
+  assert.equal(coverageReading(table, maps).range, undefined);
 });
