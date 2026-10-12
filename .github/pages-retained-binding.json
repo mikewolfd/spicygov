@@ -1,44 +1,18 @@
 {
-  "state": "VERIFIED_CONTENT_STANDARD_GNU_TAR_FORWARD_DEPLOYMENT_AUTHORIZED",
+  "state": "SOURCES_REDESIGN_VERIFIED_CONTENT_DEPLOYMENT_AUTHORIZED",
   "upload_authorized": true,
   "deployment_authorized": true,
   "exclusive_writers_confirmed": true,
-  "expires_at": "2026-10-11T22:30:00+00:00",
+  "expires_at": "2026-10-12T02:49:20.144762+00:00",
   "expected_current": {
-    "generic_id": 7001470352,
-    "sha": "4523e9eaed2395649065a9d02546259bed845632",
-    "state": "failure",
-    "pages_id": "9491ef0553f20e302fdfb257371a0adf01eb9547",
+    "generic_id": 7001580654,
+    "sha": "57cc6fa977b57732f81e133132454911dcb7fe6a",
+    "state": "success",
+    "pages_id": "57cc6fa977b57732f81e133132454911dcb7fe6a",
     "pages_status": "succeed"
   },
   "roles": {
     "prior": {
-      "container": {
-        "sha256": "37371c23ca72d35548c1ebe43bea9d9315d424124176893940f57cf6ab61630f",
-        "bytes": 1242943,
-        "filename": "prior.zip",
-        "url": "https://data.spicygov.ai/pages-retained/t01/37371c23ca72d35548c1ebe43bea9d9315d424124176893940f57cf6ab61630f/prior.zip"
-      },
-      "map": {
-        "sha256": "17502761e321bd545e28dc1c3eb95cc909d53b446cbdb94f0d4561a0d4bd418f",
-        "bytes": 2877,
-        "filename": "members.json",
-        "url": "https://data.spicygov.ai/pages-retained/t01/17502761e321bd545e28dc1c3eb95cc909d53b446cbdb94f0d4561a0d4bd418f/members.json"
-      },
-      "approved_artifact": {
-        "id": 11712547519,
-        "name": "github-pages-prior",
-        "digest": "sha256:1145e018bf3941ed974d9529eb195d848f32a5f1ab68f8443671a0ff030c2e1f",
-        "size_in_bytes": 1242943,
-        "expired": false,
-        "expires_at": "2026-10-25T19:13:40Z",
-        "workflow_run": {
-          "id": 38167106038,
-          "head_sha": "8c82e9b2ef8774fdda0e393d08cb04bfde7f27af"
-        }
-      }
-    },
-    "forward": {
       "container": {
         "sha256": "37fa8672b6786c7b7497999af3f46ec3957ae4f99d8265d849ba615c08e64869",
         "bytes": 52079429,
@@ -52,16 +26,33 @@
         "url": "https://data.spicygov.ai/pages-retained/t01/6e7c7c36c57c4bd6c9694c17d024d0f82fa560170af354dd9ab73ca53271d856/members.json"
       },
       "approved_artifact": {
-        "id": 11712328489,
-        "name": "github-pages-forward",
-        "digest": "sha256:5594ec8520f96e328a6e106bb366564a2bffd73c118c3126a22e516ac3a91091",
-        "size_in_bytes": 49256903,
+        "digest": "sha256:9a7894a7382ec8eb520e5500827443ba8c2f543a5f7e0eab873ad16b527af7de",
         "expired": false,
-        "expires_at": "2026-10-25T19:13:41Z",
+        "expires_at": "2026-10-25T20:49:00Z",
+        "id": 11715286292,
+        "name": "github-pages-forward",
+        "size_in_bytes": 49429183,
         "workflow_run": {
-          "id": 38167106038,
-          "head_sha": "8c82e9b2ef8774fdda0e393d08cb04bfde7f27af"
+          "head_branch": "main",
+          "head_repository_id": 1403625131,
+          "head_sha": "57cc6fa977b57732f81e133132454911dcb7fe6a",
+          "id": 38173769567,
+          "repository_id": 1403625131
         }
+      }
+    },
+    "forward": {
+      "container": {
+        "sha256": "f34efb628b3dca47e948f479f2ba5ba82f5fe9e7294532be5977566ece02f33a",
+        "bytes": 52082994,
+        "filename": "artifact.tar.gz",
+        "url": "https://data.spicygov.ai/pages-retained/t01/f34efb628b3dca47e948f479f2ba5ba82f5fe9e7294532be5977566ece02f33a/artifact.tar.gz"
+      },
+      "map": {
+        "sha256": "56d910f38ef5abc216fa08229dd5fbd8fed88b9f4a032d93e8779e260d9af4ac",
+        "bytes": 942906,
+        "filename": "members.json",
+        "url": "https://data.spicygov.ai/pages-retained/t01/56d910f38ef5abc216fa08229dd5fbd8fed88b9f4a032d93e8779e260d9af4ac/members.json"
       }
     }
   },
