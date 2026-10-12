@@ -97,9 +97,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - uses: ./.github/actions/catalog-producer
       - run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14
       - name: Check bounded source catalog transport
         run: python -B tests/test_source_catalog_archive.py

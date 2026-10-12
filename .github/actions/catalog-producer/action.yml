@@ -1,0 +1,22 @@
+name: Set up catalog producer tests
+description: Use the same pinned Python producer for verification and deployment tests.
+runs:
+  using: composite
+  steps:
+    - name: Check out maintained catalog producer
+      uses: actions/checkout@v4
+      with:
+        repository: mikewolfd/spicy-regs
+        ref: 134d5346d951b084142a5261144020cce6e7bdbe
+        path: .ci/spicy-regs
+        persist-credentials: false
+        sparse-checkout: src/spicy_regs/source_catalog
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Configure producer integration tests
+      shell: bash
+      run: |
+        printf '%s\n' \
+          'SOURCE_CATALOG_PYTHON=python3' \
+          "SOURCE_CATALOG_PYTHONPATH=$GITHUB_WORKSPACE/.ci/spicy-regs/src" >> "$GITHUB_ENV"

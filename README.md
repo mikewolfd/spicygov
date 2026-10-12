@@ -8,6 +8,14 @@ A static React application deployed to GitHub Pages. The browser reads Parquet d
 
 Requires Node.js 22.13 or newer.
 
+The catalog integration tests also require Python 3.12 or newer and the
+maintained `spicy-regs` source checkout at `../spicy-regs`. Set
+`SOURCE_CATALOG_PYTHON` and `SOURCE_CATALOG_PYTHONPATH` to use another interpreter
+or source directory (the latter must point to `spicy-regs/src`). Both CI
+workflows use the exact producer revision pinned in
+`.github/actions/catalog-producer/action.yml`; the tests require only Python's
+standard library and do not need the backend virtual environment.
+
 ```sh
 npm ci
 npm run dev

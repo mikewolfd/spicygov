@@ -8,6 +8,19 @@ import { createServer, request } from 'node:http';
 import { spawnSync } from 'node:child_process';
 import { validatePublicDirectory } from '../scripts/catalog-public-validation.mjs';
 import { catalogOpsMiddleware, isLoopback, loopbackHost } from '../scripts/catalog-ops-server.mjs';
+const producerPython = process.env.SOURCE_CATALOG_PYTHON || 'python3';
+const producerSource = process.env.SOURCE_CATALOG_PYTHONPATH || '../spicy-regs/src';
+
+function exportWithProducer(name, input) {
+ const result = spawnSync(producerPython, ['-B', '-c', `import json,sys; from spicy_regs.source_catalog.exporter import ${name}; print(json.dumps(${name}(json.load(sys.stdin))))`], {
+  input: JSON.stringify(input), encoding: 'utf8', timeout: 30_000,
+  env: {...process.env, PYTHONPATH: producerSource, PYTHONNOUSERSITE: '1'},
+ });
+ assert.ifError(result.error);
+ assert.equal(result.status, 0, `Catalog producer failed (Python: ${producerPython}, source: ${producerSource}, signal: ${result.signal ?? 'none'}):\n${result.stderr}`);
+ return JSON.parse(result.stdout);
+}
+
 const built = await build({entryPoints:['lib/source-catalog.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const { parseCatalogManifest, parseCatalogDetail, parseCatalogFilePage, catalogPartitionUrl, SourceCatalogReader } = await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
 const generation = 'sha256:'+'a'.repeat(64), otherGeneration = 'sha256:'+'b'.repeat(64);
@@ -118,9 +131,8 @@ test('coverage rejects unsupported fields, incomplete stages, empty scope and fa
 test('Python public coverage producer is accepted by the maintained TypeScript reader', () => {
  const input = {stages:Object.fromEntries(['expected','advertised','acquired','processed','published'].map(stage=>[stage,{status:'unknown',measurements:[]}]))};
  input.stages.processed = {status:'evidence-recorded',measurements:[{count:1,unit:'qualified-candidate-table-version',scope:{collection_id:item.id,table:'structure',qualification_scope:'Title 1 only'},version:generation,verification:'Recorded qualification; no publication inference',period:null,evidence_ids:['/Users/private/proof']}]};
- const result=spawnSync('../spicy-regs/.venv/bin/python',['-c','import json,sys; from spicy_regs.source_catalog.exporter import public_coverage; print(json.dumps(public_coverage(json.load(sys.stdin))))'],{input:JSON.stringify(input),encoding:'utf8',env:{...process.env,PYTHONPATH:'../spicy-regs/src'}});
- assert.equal(result.status,0,result.stderr);
- const parsed = parseCatalogDetail({...detail,coverage:JSON.parse(result.stdout)},generation,item.id);
+ const exported = exportWithProducer('public_coverage', input);
+ const parsed = parseCatalogDetail({...detail,coverage:exported},generation,item.id);
  assert.equal(parsed.coverage.stages.processed.measurements[0].scope.qualificationScope,'Title 1 only');
  assert.equal(parsed.coverage.stages.published.status,'unknown');
 });
@@ -180,8 +192,8 @@ test('retained publication display states qualification limits and every distinc
 
 test('Python retained publication exporter and maintained reader agree while nested evidence stays private', () => {
  const input = {...publicationObservation,localPath:'/Users/private/response.json',tables:[{table:'bill_sections.parquet',bytes:4,rows:2,partitionColumns:['congress'],localPath:'/Users/private/table',members:[{key:'bill_sections/congress=119/part.parquet',partition:{congress:'119'},sha256:generation,bytes:4,rows:2,localPath:'/Users/private/part'}]}]};
- const result=spawnSync('../spicy-regs/.venv/bin/python',['-c','import json,sys; from spicy_regs.source_catalog.exporter import public_publication; print(json.dumps(public_publication(json.load(sys.stdin))))'],{input:JSON.stringify(input),encoding:'utf8',env:{...process.env,PYTHONPATH:'../spicy-regs/src'}});
- assert.equal(result.status,0,result.stderr); assert.equal(result.stdout.includes('/Users/'),false);
- const parsed = parseCatalogDetail({...detail,publicationObservations:[JSON.parse(result.stdout)]},generation,item.id);
+ const exported = exportWithProducer('public_publication', input);
+ assert.equal(JSON.stringify(exported).includes('/Users/'), false);
+ const parsed = parseCatalogDetail({...detail,publicationObservations:[exported]},generation,item.id);
  assert.equal(parsed.publicationObservations[0].tables[0].members[0].partition.congress,'119');
 });
