@@ -503,12 +503,18 @@ function SourcesPage() {
               </p>
               <span>
                 {location.view === "catalog" && manifest
-                  ? `Catalog updated: ${publicationDate(manifest.generatedAt)}`
+                  ? `Catalog input snapshot: ${publicationDate(manifest.generatedAt)}`
                   : publicationsPending || reviewPending
                     ? "Checking publications…"
                     : "Current publications"}
               </span>
             </div>
+            {location.view === "catalog" ? (
+              <p className="directory-notices">
+                Saved files and processing evidence describe this input snapshot.
+                Published datasets use the current publication index separately.
+              </p>
+            ) : null}
             {(error || catalogError || warnings.length > 0) && (
               <div className="directory-notices">
                 {error && (

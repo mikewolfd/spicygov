@@ -1,52 +1,18 @@
 {
-  "state": "SOURCES_READING_ORDER_VERIFIED_CONTENT_DEPLOYMENT_AUTHORIZED",
+  "state": "ROOT_AUTHORIZED_DATED_CATALOGUE_FORWARD",
   "upload_authorized": true,
   "deployment_authorized": true,
   "exclusive_writers_confirmed": true,
-  "expires_at": "2026-10-12T03:07:23.005799+00:00",
+  "expires_at": "2026-10-13T07:58:27.984023+00:00",
   "expected_current": {
-    "generic_id": 7004155238,
-    "sha": "558b109a11a67582dd8ddc3b91054f35c59e0ea1",
+    "generic_id": 7004349573,
+    "sha": "ae10a1662ed7f4e429195fd8e74ef87133a8d51e",
     "state": "success",
-    "pages_id": "558b109a11a67582dd8ddc3b91054f35c59e0ea1",
+    "pages_id": "ae10a1662ed7f4e429195fd8e74ef87133a8d51e",
     "pages_status": "succeed"
   },
   "roles": {
     "prior": {
-      "container": {
-        "sha256": "f34efb628b3dca47e948f479f2ba5ba82f5fe9e7294532be5977566ece02f33a",
-        "bytes": 52082994,
-        "filename": "artifact.tar.gz",
-        "url": "https://data.spicygov.ai/pages-retained/t01/f34efb628b3dca47e948f479f2ba5ba82f5fe9e7294532be5977566ece02f33a/artifact.tar.gz"
-      },
-      "map": {
-        "sha256": "56d910f38ef5abc216fa08229dd5fbd8fed88b9f4a032d93e8779e260d9af4ac",
-        "bytes": 942906,
-        "filename": "members.json",
-        "url": "https://data.spicygov.ai/pages-retained/t01/56d910f38ef5abc216fa08229dd5fbd8fed88b9f4a032d93e8779e260d9af4ac/members.json"
-      },
-      "approved_artifact": {
-        "archive_download_url": "https://api.github.com/repos/mikewolfd/spicygov/actions/artifacts/11720876229/zip",
-        "created_at": "2026-10-12T00:50:35Z",
-        "digest": "sha256:0dab7b16a003c2ea8b4c0b8e22a3820f01f7f370f55578d99fdeb6444d90ad80",
-        "expired": false,
-        "expires_at": "2026-10-26T00:50:32Z",
-        "id": 11720876229,
-        "name": "github-pages-forward",
-        "node_id": "MDg6QXJ0aWZhY3QxMTcyMDg3NjIyOQ==",
-        "size_in_bytes": 49431500,
-        "updated_at": "2026-10-12T00:50:35Z",
-        "url": "https://api.github.com/repos/mikewolfd/spicygov/actions/artifacts/11720876229",
-        "workflow_run": {
-          "head_branch": "main",
-          "head_repository_id": 1403625131,
-          "head_sha": "558b109a11a67582dd8ddc3b91054f35c59e0ea1",
-          "id": 38189484326,
-          "repository_id": 1403625131
-        }
-      }
-    },
-    "forward": {
       "container": {
         "sha256": "62d84e254b90c5d83d722a01dfa2baf5ffe34f71497cb0d9abfaaba9a277f8e0",
         "bytes": 52084190,
@@ -54,10 +20,24 @@
         "url": "https://data.spicygov.ai/pages-retained/t01/62d84e254b90c5d83d722a01dfa2baf5ffe34f71497cb0d9abfaaba9a277f8e0/artifact.tar.gz"
       },
       "map": {
-        "bytes": 1022080,
         "sha256": "fd7af4e5a3d1be576896bdc77eb0fe5bed257a6c7d4d88be26df0d1fcfe58dd4",
+        "bytes": 1022080,
         "filename": "members.json",
         "url": "https://data.spicygov.ai/pages-retained/t01/fd7af4e5a3d1be576896bdc77eb0fe5bed257a6c7d4d88be26df0d1fcfe58dd4/members.json"
+      }
+    },
+    "forward": {
+      "container": {
+        "sha256": "ad252e3cdb97404a6708cbe11db7ba81604a70c4eaf693d46bc8f94cb81bd1f7",
+        "bytes": 52141284,
+        "filename": "artifact.tar.gz",
+        "url": "https://data.spicygov.ai/pages-retained/t01/ad252e3cdb97404a6708cbe11db7ba81604a70c4eaf693d46bc8f94cb81bd1f7/artifact.tar.gz"
+      },
+      "map": {
+        "sha256": "eeead02b87ed4e1881d3f43f7e693dd4bb5eb9a8222566e3b11b2c0525023ba6",
+        "bytes": 943822,
+        "filename": "members.json",
+        "url": "https://data.spicygov.ai/pages-retained/t01/eeead02b87ed4e1881d3f43f7e693dd4bb5eb9a8222566e3b11b2c0525023ba6/members.json"
       }
     }
   },

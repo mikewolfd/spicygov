@@ -361,7 +361,7 @@ export function SourceCollectionDetail({
           {section === "files" && (
             <>
               <h2>Source files</h2>
-              <p>{count(collection.holdings.objects)} distinct files saved. Catalog updated {publicationDate(manifest.generatedAt)}.</p>
+              <p>{count(collection.holdings.objects)} distinct files saved. Catalog input snapshot {publicationDate(manifest.generatedAt)}.</p>
               <p>
                 {count(detail.files.total)} file references are recorded.
                 References can point to the same file; they are not a count of
