@@ -1,5 +1,6 @@
 "use client";
 import { SourceConnections } from '../components/source-connections';
+import { connectionCountStatus } from '../lib/connection-counts';
 import { useEffect, useRef, useState } from "react";
 import {
   Database,
@@ -804,6 +805,9 @@ export default function Explorer() {
                 {connections.map((j, i) => {
                   const t = joinTarget(j, location.id),
                     target = catalog.find((d) => d.id === t.id);
+                  const direction = isIncomingJoin(j, location.id) ? 'reverse' : 'forward';
+                  const countStatus = connectionCountStatus({direction, capability: j.directions?.[direction],
+                    source: catalog.find(d => d.id === j.child), target: catalog.find(d => d.id === j.parent)});
                   return (
                     <div className="connection-row" key={i}>
                       <Network size={20} />
@@ -818,25 +822,34 @@ export default function Explorer() {
                         </p>
                         {j.reason && (
                           <details>
-                            <summary>What this link means</summary>
+                            <summary>{countStatus.state === 'measured' ? 'Original join note' : 'What this link means'}</summary>
                             <p>{j.reason}</p>
                           </details>
                         )}
                         {!target && <p>Not in the current publication</p>}
+                        <small>{countStatus.detail}</small>
                       </div>
                       <span className="relation-type">
-                        {j.kind === "complete"
-                          ? "Declared join"
-                          : j.kind === "empty"
-                            ? "No key baseline"
-                            : j.kind === "scope"
-                              ? "Some targets missing"
-                              : j.kind === "unmeasured" ? "Awaiting key check" : "By design"}
+                        {countStatus.label}
                       </span>
                     </div>
                   );
                 })}
-                {sourceConnections.map(s=><div className="connection-row" key={s.id}><Network size={20}/><div><strong>{s.source===table?.id?s.targets.map(t=>t.table==='@url'?'Offered documents':catalog.find(d=>d.id===t.table)?.label??pretty(t.table)).join(' · '):catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}</strong><p>{s.meaning}</p><small>{s.available?'Open a record to follow its exact source references.':'Source fields are not published yet.'}</small></div><span className="relation-type">Source reference</span></div>)}
+                {sourceConnections.map(s=>{
+                  const direction = s.source === table?.id ? 'forward' : 'reverse';
+                  const targets = direction === 'forward' ? s.targets : s.targets.filter(t=>t.table === table?.id);
+                  return <div className="connection-row" key={s.id}><Network size={20}/><div><strong>{direction === 'forward' ? targets.map(t=>t.table==='@url'?'Offered documents':catalog.find(d=>d.id===t.table)?.label??pretty(t.table)).join(' · ') : catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}</strong><p>{s.meaning}</p>
+                    {targets.flatMap((target,i)=>{
+                      const directions: readonly ('forward' | 'reverse')[] = s.source === table?.id && target.table === table?.id ? ['forward', 'reverse'] : [direction];
+                      return directions.map(selected=>{
+                        const countStatus = connectionCountStatus({direction: selected, capability: target.directions?.[selected],
+                          source: catalog.find(d=>d.id === s.source), target: catalog.find(d=>d.id === target.table),
+                          external: target.table === '@url', available: s.available !== false && target.available !== false});
+                        return <p key={`${i}:${selected}`}><small>{directions.length > 1 && `${selected === 'forward' ? 'Outgoing' : 'Incoming'}: `}{targets.length > 1 && `${catalog.find(d=>d.id === target.table)?.label ?? pretty(target.table)}: `}{countStatus.label} · {countStatus.detail}</small></p>;
+                      });
+                    })}
+                    <small>{s.available?'Open a record to follow its exact source references.':'Source fields are not published yet.'}</small></div><span className="relation-type">Source reference</span></div>;
+                })}
                 {!connections.length && !sourceConnections.length && noConnectionsMessage(table) && (
                   <p className="small-empty">{noConnectionsMessage(table)}</p>
                 )}
