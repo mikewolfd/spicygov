@@ -272,6 +272,9 @@ export function noConnectionsMessage(table?: Dataset): string | undefined {
 export function related(id: string, joins: Join[]) {
   return joins.flatMap(j => j.child === id && j.parent === id ? [{...j, direction: undefined}, {...j, direction: 'incoming' as const}] : j.child === id || j.parent === id ? [j] : []);
 }
+export function isIncomingJoin(join: Join, id: string): boolean {
+  return join.parent === id && (join.child !== id || join.direction === 'incoming');
+}
 export function defaultColumns(table: Dataset): string[] {
   const preferred: Record<string, string[]> = {
     congress_bills: [
