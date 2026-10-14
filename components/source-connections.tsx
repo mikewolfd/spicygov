@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Dataset, Filter, Row } from '../lib/catalog';
-import { pretty, display } from '../lib/catalog';
+import type { Dataset, Filter, Row, Join } from '../lib/catalog';
+import { pretty, display, related, isIncomingJoin, joinTarget, connectionFilters, connectionLabel } from '../lib/catalog';
 import { at, elements, sourceOccurrences, forwardLinks, fccDocumentOutcome, type Connection, type Navigation } from '../lib/navigation';
-type Props = {table: Dataset; catalog: Dataset[]; row: Row; navigation: Navigation[]; onOpen: (id:string,filters:Filter[],connection?:Connection,detail?:boolean)=>void};
+type Props = {table: Dataset; catalog: Dataset[]; row: Row; joins: Join[]; navigation: Navigation[]; onOpen: (id:string,filters:Filter[],connection?:Connection,detail?:boolean)=>void};
 export function FccDocumentReference({link,row,fieldAvailable}:{link:ReturnType<typeof forwardLinks>[number];row:Row;fieldAvailable:boolean}) {
   const outcome=fccDocumentOutcome(link.values[0],row,fieldAvailable);
   const filename=at(link.sourceElement,['filename']),description=at(link.sourceElement,['description']);
@@ -19,14 +19,15 @@ export function FccDocumentReference({link,row,fieldAvailable}:{link:ReturnType<
     </details>}
   </>;
 }
-export function SourceConnections({table,catalog,row,navigation,onOpen}: Props) {
+export function SourceConnections({table,catalog,row,joins,navigation,onOpen}: Props) {
   const outgoing=navigation.filter(s=>s.source===table.id), incoming=navigation.flatMap(s=>s.targets.map((t,i)=>({s,t,i}))).filter(({t})=>t.table===table.id);
+  const incomingJoins=related(table.id,joins).filter(join=>isIncomingJoin(join,table.id));
   const selection=JSON.stringify([table.id,table.artifactDigest,table.publication?.nativeReceipts?.generationId,table.publication?.nativeReceipts?.sha256]);
   const [receipt,setReceipt]=useState<{row:Row;selection:string;fields:Row}|null>(null), [busy,setBusy]=useState(false), [error,setError]=useState(''), [evidence,setEvidence]=useState<{records:Row[];partial:boolean;cursor:number;dataset:string;filters:Filter[]}|null>(null);
   const held=receipt?.row===row&&receipt.selection===selection?receipt.fields:{};
   const worker=useRef<Worker|null>(null);
   useEffect(()=>{setReceipt(null);setEvidence(null);setError('');setBusy(false);return()=>worker.current?.terminate();},[row,selection]);
-  if(!outgoing.length&&!incoming.length)return null;
+  if(!outgoing.length&&!incoming.length&&!incomingJoins.length)return null;
   const wanted=[...new Set([...outgoing.flatMap(s=>s.receiptFields), ...(Object.values(table.receiptContainers??{}).some(fields=>fields.includes('detail_read')) ? ['detail_read'] : [])])];
   const current=row;
   function load() {
@@ -68,7 +69,13 @@ export function SourceConnections({table,catalog,row,navigation,onOpen}: Props) 
       {busy&&<p role="status">Reading selected generation evidence…</p>}
       {error&&<p role="alert">{error}</p>}
       {evidence&&<div className="source-reference"><strong>Retained source evidence</strong>{evidence.records.map((r,i)=><dl key={i}>{Object.entries(r).map(([k,v])=><div key={k}><dt>{pretty(k)}</dt><dd>{v==null?'Not stated':display(v)}</dd></div>)}</dl>)}{!evidence.records.length&&<p>{evidence.partial?'No match in the checked receipt rows. The search is incomplete.':'No matching source evidence in this selected generation.'}</p>}{evidence.partial&&<button disabled={busy} onClick={()=>readEvidence(evidence.dataset,evidence.filters,evidence.cursor)}>Continue checking source evidence</button>}</div>}
-      {incoming.length>0&&<details><summary>Records that reference this record</summary>
+      {(incoming.length>0||incomingJoins.length>0)&&<details open><summary>Records that reference this record</summary>
+        {incomingJoins.map((join,i)=>{
+          const target=joinTarget(join,table.id), dataset=catalog.find(d=>d.id===target.id), filters=connectionFilters(join,table.id,row);
+          return <button key={`join:${i}`} disabled={!filters||!dataset||join.directions?.reverse.available===false} onClick={()=>{if(filters)onOpen(target.id,filters);}} title={join.reason||`Join on ${target.local.join(', ')}`}>
+            <span>{connectionLabel(join,dataset?.label??pretty(target.id))}<small>{!filters?'This row has no complete target key.':!dataset?'Source is not published.':join.directions?.reverse.available===false?'This connection is unavailable for the selected publication.':`Show related records · ${target.local.map(column=>`${column}: ${display(row[column])}`).join(' · ')}`}</small></span>
+          </button>;
+        })}
         {incoming.map(({s,t,i})=>{
           const values=t.columns.map(c=>row[c]), complete=values.every(v=>v!=null&&['string','number','bigint'].includes(typeof v));
           return <button key={`${s.id}:${i}`} disabled={!complete||!t.available||t.directions?.reverse.available===false} onClick={()=>onOpen(s.source,[],{id:s.id,target:i,values:values.map(String)})}><span>{catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}<small>{!complete?'This row has no complete target key.':!t.available?'Source keys are not published.':'Show related records listing this exact key.'}</small></span></button>;

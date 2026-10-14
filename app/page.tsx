@@ -53,6 +53,7 @@ import {
   compact,
   display,
   related,
+  isIncomingJoin,
   joinTarget,
   connectionFilters,
   connectionLabel,
@@ -107,6 +108,7 @@ export default function Explorer() {
   const { tables: catalog, joins, navigation = [], metadata, error: catalogError, warnings: publicationWarnings = [], publicationsPending } = useCollection(retry);
   const table = catalog.find((t) => t.id === location.id),
     connections = table ? related(table.id, joins) : [];
+  const outgoingRecordConnections=connections.filter(join=>!isIncomingJoin(join,location.id));
   const sourceConnections = table ? navigation.filter(s=>s.source===table.id||s.targets.some(t=>t.table===table.id)) : [];
   const activeColumns = columns.length
     ? columns
@@ -955,7 +957,7 @@ export default function Explorer() {
               <Button variant="outline" onClick={()=>navigate({...location,detail:undefined})}>Show related records</Button>
             </div>}
             {record &&
-              connections.some((j) =>
+              outgoingRecordConnections.some((j) =>
                 connectionFilters(j, location.id, record) !== null,
               ) && (
                 <details
@@ -963,11 +965,11 @@ export default function Explorer() {
                   open={!!connectionField}
                 >
                   <summary>
-                    Connected records
+                    Referenced records
                     {connectionField ? ` · ${connectionField}` : ""}
                   </summary>
                   <div className="record-join-list">
-                    {connections
+                    {outgoingRecordConnections
                       .filter(
                         (j) =>
                           (!connectionField ||
@@ -1003,7 +1005,7 @@ export default function Explorer() {
                   </div>
                 </details>
               )}
-            {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} navigation={navigation} onOpen={browse}/> }
+            {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} joins={joins} navigation={navigation} onOpen={browse}/> }
             {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
             <dl className="record-fields">
               {table?.columns
