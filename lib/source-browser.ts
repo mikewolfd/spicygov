@@ -96,10 +96,14 @@ export function tableLimitation(entry: SourceEntry): string {
   return entry.review?.copy?.gaps[0] || tableAttention(entry) ||
     "Full source coverage has not been confirmed";
 }
+export function tableScope(entry: SourceEntry): string | undefined {
+  return entry.review?.copy?.scope.trim() ||
+    (entry.table.metadataState === "current" ? entry.table.coverage.trim() || undefined : undefined);
+}
 export function tableAttention(entry: SourceEntry): string | undefined {
   if (entry.table.rows === 0) return "No records published";
   if (sourceMetadataNeedsAttention(entry)) return "Source notes need checking";
-  if (!entry.review) return "Dates and coverage need checking";
+  if (!entry.review) return tableScope(entry) ? "Dates need checking" : "Dates and coverage need checking";
   return undefined;
 }
 export function collectionTopic(
