@@ -12,7 +12,12 @@ export type Join = {
   completeKey?: {child:boolean;parent:boolean};
   directions?: {forward:RouteCapability;reverse:RouteCapability};
 };
-export type RouteCapability = {available:boolean;measurement:{status:string;scope:string};lookup:{status:string;scope:string;requiresExactMatch:boolean}};
+export type RouteMeasurement = {
+  status: string; scope: string;
+  eligible?: number; matched?: number; missing?: number; ambiguous?: number; unsupported?: number;
+  matchedTargetRows?: number; unmatchedTargetRows?: number;
+};
+export type RouteCapability = {available:boolean;measurement:RouteMeasurement;lookup:{status:string;scope:string;requiresExactMatch:boolean}};
 export type RecordIdentity = {columns:string[];basis:'declared_main_key';uniqueness:'unknown'};
 export type TableMetadataState = 'loading' | 'current' | 'older-publication' | 'missing' | 'incompatible' | 'unavailable' | 'undocumented';
 export type MetadataStatus = {
