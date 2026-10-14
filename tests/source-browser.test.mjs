@@ -22,6 +22,25 @@ const collection = (overrides = {}) => ({
   periods: [],
   ...overrides,
 });
+test("source scope uses current admitted descriptions without inventing date coverage", () => {
+  const entry = {
+    explorer: true,
+    table: { rows: 157, metadataState: "current", coverage: "Selected retained comment files; broader publisher coverage is not implied." },
+  };
+  assert.equal(browser.tableScope(entry), entry.table.coverage);
+  assert.equal(browser.tableAttention(entry), "Dates need checking");
+  assert.equal(browser.tableScope({ ...entry, review: { copy: { scope: "Reviewed selected scope." } } }), "Reviewed selected scope.");
+  assert.equal(browser.tableScope({ ...entry, review: {} }), entry.table.coverage);
+  for (const metadataState of ["loading", "missing", "incompatible", "older-publication", "undocumented", "unavailable"]) {
+    const stale = { ...entry, table: { ...entry.table, metadataState } };
+    assert.equal(browser.tableScope(stale), undefined, metadataState);
+    assert.ok(browser.tableAttention(stale), metadataState);
+  }
+  const undescribed = { ...entry, table: { ...entry.table, coverage: "  " } };
+  assert.equal(browser.tableScope(undescribed), undefined);
+  assert.equal(browser.tableAttention(undescribed), "Dates and coverage need checking");
+  assert.equal(browser.tableAttention({ ...entry, table: { ...entry.table, rows: 0 } }), "No records published");
+});
 test("a source title wins over an incidental mention in a different publisher’s description", () => {
   const direct = browser.searchRank(
     "federal register",

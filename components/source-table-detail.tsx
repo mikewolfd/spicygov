@@ -33,6 +33,7 @@ import {
   readableCopy,
   relatedCollections,
   tablePublisher,
+  tableScope,
 } from "../lib/source-browser";
 import type { CatalogCollection } from "../lib/source-catalog";
 import { TableProvenance } from "./table-provenance";
@@ -393,7 +394,7 @@ export function SourceTableDetail({
               <h2>What it contains</h2>
               <p>
                 {readableCopy(
-                  review?.copy?.scope ||
+                  tableScope(entry) ||
                     "We haven’t confirmed which dates and records are included yet.",
                 )}
               </p>

@@ -28,6 +28,7 @@ import {
   periodSummary,
   tableAttention,
   tableLimitation,
+  tableScope,
   tablePublisher,
   recordEntries,
   pageSize,
@@ -609,7 +610,7 @@ function SourcesPage() {
                           <>
                             <span className="scope-preview">
                               {readableCopy(
-                                result.entry.review?.copy?.scope ||
+                                tableScope(result.entry) ||
                                   "Dates and coverage are not yet described.",
                               )}
                             </span>
