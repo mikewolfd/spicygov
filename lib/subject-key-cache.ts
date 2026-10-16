@@ -5,7 +5,7 @@ const MAX_ROWS=500000,MAX_BYTES=128*1024*1024;
 type KeyCache={binding:string;positions:Map<string,number>;estimatedBytes:number};
 let retained:KeyCache|undefined;
 export function subjectBinding(table:Dataset):string {
-  return JSON.stringify([RULE,table.id,table.rows,table.recordsAvailable,table.artifactDigest,table.publicationIdentity,table.recordIdentity,table.columns.map(c=>[c.name,c.type]),table.members]);
+  return JSON.stringify([RULE,table.id,table.rows,table.recordsAvailable,table.artifactDigest,table.publicationIdentity,table.fecCompatibility?.sha256,table.recordIdentity,table.columns.map(c=>[c.name,c.type]),table.members]);
 }
 /** One complete main-key projection, bounded and tied to the exact subject members. */
 export async function billKeyCache(table:Dataset,onProgress:(n:number)=>void=()=>{}):Promise<KeyCache|undefined> {

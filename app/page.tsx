@@ -220,6 +220,7 @@ export default function Explorer() {
     JSON.stringify(table?.members),
     table ? false : publicationsPending,
     table?.recordsAvailable,
+    table?.fecCompatibility?.sha256,
     location.id,
     location.detail,
     JSON.stringify(location.filters),
@@ -246,10 +247,13 @@ export default function Explorer() {
     w.postMessage({type:'lookup',table,filters:location.filters,cursor,positions});
   }
   useEffect(()=>{
+    recordWorker.current?.terminate();setRecord(null);setRecordBusy(false);setRecordError('');
+  },[table?.id,table?.fecCompatibility?.sha256]);
+  useEffect(()=>{
     if(!location.detail){setLookup(null);return;}
     if(table && table.metadataState!=='loading')findRecord();
     return ()=>stopLookup();
-  },[location.detail,location.id,JSON.stringify(location.filters),JSON.stringify(table?.members),JSON.stringify(table?.recordIdentity),table?.metadataState,retry]);
+  },[location.detail,location.id,JSON.stringify(location.filters),JSON.stringify(table?.members),JSON.stringify(table?.recordIdentity),table?.fecCompatibility?.sha256,table?.metadataState,retry]);
   function openRecord(row: Row, index: number, field?: string) {
     if (!table) return;
     setConnectionField(field ?? null);

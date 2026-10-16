@@ -1,3 +1,4 @@
+import {bindFecCompatibility, fecNavigation, loadFecCompatibility, type FecCompatibility} from './fec-compatibility';
 import { usableNavigation, type Navigation } from './navigation';
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
 import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
@@ -31,6 +32,9 @@ export type Dataset = {
   rulemakingSnapshot?: RulemakingSnapshot;
   published?: string;
   artifactDigest?: string;
+  logicalId?: string;
+  physicalColumns?: Dataset['columns'];
+  fecCompatibility?: FecCompatibility;
   publication?: PublicationEvidence;
   publicationIdentity?: string;
   recordsAvailable?: boolean;
@@ -135,7 +139,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
         id,
         family: familyId,
         label: pretty(id), summary: "", coverage: "", kind: "published",
-        metadataState: "loading", sources: [], inputs: [], modelGenerated: false, connectionNotes: [], artifactDigest: family.artifactDigest,
+        metadataState: "loading", sources: [], inputs: [], modelGenerated: false, connectionNotes: [], artifactDigest: family.artifactDigest, logicalId: family.logicalId,
         publication: generationEvidence(family.prefix, family.etlReceipts, id),
         rows: table.rows,
         bytes: table.byteSize,
@@ -158,7 +162,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
   return tables.sort((a, b) => a.label.localeCompare(b.label));
 }
 export type Collection = { tables: Dataset[]; joins: Join[]; navigation?: Navigation[]; metadata: MetadataStatus; warnings?: string[]; publicationsPending?: boolean };
-export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collection {
+export function applyMetadata(tables: Dataset[], bundle: MetadataBundle, compatibility?: FecCompatibility): Collection {
   const status: MetadataStatus = { ...loadingMetadata, state: "current", generatedAt: bundle.generatedAt };
   const enriched = tables.map((table): Dataset => {
     table = { ...table, connectionNotes: [] };
@@ -168,7 +172,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
       return { ...table, metadataState: "missing" };
     }
     const separate = table.publication?.kind === 'rulemaking' || table.publication?.kind === 'comments';
-    if (metadata.family !== table.family || JSON.stringify(metadata.publicationSchema) !== JSON.stringify(table.columns.map(c => [c.name, c.type])) || separate && !extraMetadataMatches(table, bundle)) {
+    if (metadata.family !== table.family || JSON.stringify(metadata.publicationSchema) !== JSON.stringify((table.physicalColumns ?? table.columns).map(c => [c.name, c.type])) || separate && !extraMetadataMatches(table, bundle)) {
       status.staleTables++;
       return { ...table, ...(separate ? {recordsAvailable: false, columns: []} : {}), metadataState: "incompatible" };
     }
@@ -215,7 +219,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle): Collec
     }
   }
   if (status.missingTables || status.staleTables || status.undocumentedTables || status.rejectedJoins) status.state = "partial";
-  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, navigation: usableNavigation(bundle.navigation ?? [], enriched), metadata: status };
+  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, navigation: usableNavigation(fecNavigation(bundle.navigation ?? [], enriched, compatibility), enriched), metadata: status };
 }
 export async function loadCollection(signal?: AbortSignal, onCatalog?: (collection: Collection) => void): Promise<Collection> {
   // Begin both requests together. Records can load as soon as the catalog arrives.
@@ -229,13 +233,15 @@ export async function loadCollection(signal?: AbortSignal, onCatalog?: (collecti
   const tables = await loadCatalog(signal);
   if (signal?.aborted) throw signal.reason;
   onCatalog?.({ tables, joins: [], metadata: loadingMetadata, publicationsPending: true });
-  const [bundle, others] = await Promise.all([metadata, separate]);
+  const compatibilityRequest = loadFecCompatibility(tables, DATA_BASE, signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000))
+    .then(value=>({value,warning:undefined as string|undefined})).catch(()=>({value:undefined,warning:'Qualified filing connections are unavailable for this release. Original records remain readable.'}));
+  const [bundle, others, compatibility] = await Promise.all([metadata, separate, compatibilityRequest]);
   if (signal?.aborted) throw signal.reason;
   const extra = await bindExtraTables(others.tables.filter(table => !tables.some(main => main.id === table.id)), bundle);
   if (signal?.aborted) throw signal.reason;
-  const combined = [...tables, ...extra];
-  const collection = bundle ? applyMetadata(combined, bundle) : {tables: combined.map(table => ({...table, metadataState: 'unavailable' as const})), joins: [], metadata: {...loadingMetadata, state: 'unavailable' as const}};
-  return {...collection, warnings: others.warnings, publicationsPending: false};
+  const combined = bindFecCompatibility([...tables, ...extra], compatibility.value);
+  const collection = bundle ? applyMetadata(combined, bundle, compatibility.value) : {tables: combined.map(table => ({...table, metadataState: 'unavailable' as const})), joins: [], metadata: {...loadingMetadata, state: 'unavailable' as const}};
+  return {...collection, warnings: [...others.warnings, ...(compatibility.warning ? [compatibility.warning] : [])], publicationsPending: false};
 }
 export function display(value: unknown): string {
   if (value == null) return "—";

@@ -1,3 +1,4 @@
+import {fecReadColumns, enrichFecRows} from './fec-compatibility';
 import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
 import { matchesFilters, parquetFilter, validFilter } from './filter-values';
 import { exactParsers } from './exact-parquet';
@@ -35,9 +36,9 @@ export async function readColumnBatches(table: Dataset, columns: string[], maxRo
     if(!member.rows)continue;
     for (let start = memberStart; start < member.rows && rows < maxRows;) {
       const end = Math.min(member.rows, start + 50000, start + maxRows - rows);
-      const batch = await parquetReadObjects({parsers:exactParsers,file, metadata, compressors, columns, rowStart:start, rowEnd:end, useOffsetIndex:true, usePageIndex:true});
+      const batch = await parquetReadObjects({parsers:exactParsers,file, metadata, compressors, columns:fecReadColumns(table,columns), rowStart:start, rowEnd:end, useOffsetIndex:true, usePageIndex:true});
       if (batch.length !== end - start) throw new Error('The audit projection returned an incomplete batch.');
-      await onBatch(batch);
+      await onBatch(enrichFecRows(table,batch));
       rows += batch.length; start = end;
     }
   }
@@ -102,8 +103,8 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
     if (!member.rows) continue;
     for (let start = 0; start < member.rows; start += 50000) {
       const end = Math.min(member.rows, start + 50000);
-      const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: scanColumns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
-      for (const row of rows) {
+      const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: fecReadColumns(table,scanColumns), rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+      for (const row of enrichFecRows(table,rows)) {
         if (!matchesFilters(row, filters, table.columns) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
         if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
@@ -128,8 +129,8 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
         const start = positions[i];
         let end = start + 1;
         while (++i < positions.length && positions[i] === end) end++;
-        const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns, rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
-        for (const row of rows) records.set(offset + row[rowIndex]!, row);
+        const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: fecReadColumns(table,columns), rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+        for (const row of enrichFecRows(table,rows)) records.set(offset + row[rowIndex]!, row);
       }
     }
     offset += member.rows;
@@ -170,7 +171,7 @@ export async function readPage(
   const scanEnd = Math.min(table.rows, maxScanRows === undefined ? table.rows : cursor + maxScanRows);
   const results: Row[] = [],
     positions: number[] = [];
-  const filter = connection ? undefined : parquetFilter(filters,table.columns);
+  const filter = connection || table.fecCompatibility ? undefined : parquetFilter(filters,table.columns);
   for (const member of table.members) {
     if(!member.rows){const file=await remoteFile(member);const metadata=await parquetMetadataAsync(file,{parsers:exactParsers});if(Number(metadata.num_rows)!==0)throw new Error('The Parquet footer differs from the published row count.');continue;}
     if (offset + member.rows <= position) {
@@ -191,7 +192,7 @@ export async function readPage(
         file,
         metadata,
         compressors,
-        columns: [...new Set([...columns, ...filters.map((f) => f.column), ...connectionColumns])],
+        columns: fecReadColumns(table,[...new Set([...columns, ...filters.map((f) => f.column), ...connectionColumns])]),
         rowStart: local,
         rowEnd: end,
         filter,
@@ -200,7 +201,7 @@ export async function readPage(
         usePageIndex: true,
       });
       let last = end;
-      for (const row of rows) {
+      for (const row of enrichFecRows(table,rows)) {
         if (
           matchesFilters(row, filters, table.columns) && (!connection || matchesConnection(row, navigation!, connection))
         ) {

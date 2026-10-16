@@ -1,0 +1,5 @@
+The semantic cases in `fec-semantic-fixtures.json` come from the maintained SpicyRegs SQL, emitted by `fec_serving_decisions.py` at commit `883840eceb764555a56f103016584212cbba005d`. SHA-256: `e30fe95714f736c40ce7f664342790366db0ac5335be4647f059ece4a9166d1b`.
+
+`fec-main.parquet` contains fixture cases 0, 2, 15, 16, 17, and 0 in that order. It adds a deliberately unqualified stored `filing_key` to verify that the logical main relation replaces it before filtering, sorting, connections, and detail reads. Every physical field has type VARCHAR; row groups contain two rows. Generate with the existing PyArrow runtime, not production data. These fixtures establish reader behavior and SQL parity; they do not qualify a data release.
+
+`fec-header-schema.json` captures the selected `784b23da` header-association physical schema. `fec-header.parquet` places the header-match semantic fixture into that schema using `header_record_id` and `header_locator_json`, with the remaining fields null. It checks alias projection and actual single-record lookup without rewriting a production table.

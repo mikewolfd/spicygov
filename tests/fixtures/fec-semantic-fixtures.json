@@ -1,0 +1,1788 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "filing_association_status": "resolved_native_filing_key",
+        "filing_key": "urn:fec:filing:official-fec:openfec-file-number:123"
+      },
+      "name": "number-0",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "resolved_native_filing_key",
+        "filing_key": "urn:fec:filing:official-fec:openfec-file-number:-123"
+      },
+      "name": "number-1",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "-123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_no_file_number",
+        "filing_key": null
+      },
+      "name": "number-2",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": null,
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_no_file_number",
+        "filing_key": null
+      },
+      "name": "number-3",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_no_file_number",
+        "filing_key": null
+      },
+      "name": "number-4",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "0",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_invalid_file_number",
+        "filing_key": null
+      },
+      "name": "number-5",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "00123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_invalid_file_number",
+        "filing_key": null
+      },
+      "name": "number-6",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": " 123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_invalid_file_number",
+        "filing_key": null
+      },
+      "name": "number-7",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123.0",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_target_not_retained",
+        "filing_key": null
+      },
+      "name": "number-8",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "900",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_target_observation_ambiguous",
+        "filing_key": null
+      },
+      "name": "number-9",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "124",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_target_identity_conflict",
+        "filing_key": null
+      },
+      "name": "number-10",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "125",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_target_identity_conflict",
+        "filing_key": null
+      },
+      "name": "number-11",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "126",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_source_authority",
+        "filing_key": null
+      },
+      "name": "number-12",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "unofficial",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_native_namespace",
+        "filing_key": null
+      },
+      "name": "number-13",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "unknown",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_native_namespace",
+        "filing_key": null
+      },
+      "name": "number-14",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "unknown",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_filer_identity_conflict",
+        "filing_key": null
+      },
+      "name": "number-15",
+      "row": {
+        "collection_id": "c",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000002",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "resolved_native_filing_key",
+        "filing_key": "urn:fec:filing:official-fec:openfec-file-number:123"
+      },
+      "name": "header-match",
+      "row": {
+        "collection_id": "c",
+        "filing_header_locator_json": "{\"collection_id\":\"c\",\"member\":null,\"ordinal\":0,\"sha256\":\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"source_record_id\":\"header\"}",
+        "filing_header_record_id": "header",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_header_locator_mismatch",
+        "filing_key": null
+      },
+      "name": "header-locator",
+      "row": {
+        "collection_id": "c",
+        "filing_header_locator_json": "{}",
+        "filing_header_record_id": "header",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "unresolved_header_association_absent",
+        "filing_key": null
+      },
+      "name": "header-missing",
+      "row": {
+        "collection_id": "c",
+        "filing_header_locator_json": "{\"collection_id\":\"c\",\"member\":null,\"ordinal\":0,\"sha256\":\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"source_record_id\":\"header\"}",
+        "filing_header_record_id": "absent",
+        "mapping_version": "fec-bulk-individual-receipt/2",
+        "record_id": "sha256:fed0e4820af42571c936e28300ccb88026f72e075232358cd1fae4e802fe902b",
+        "report_number": "123",
+        "reporting_committee_id": "C00000001",
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_locator_json": "{\"collection_id\": \"c\", \"source_record_id\": \"native-row\", \"member\": null}",
+        "source_namespace": "fec-bulk-individual-contributions",
+        "source_record_id": "native-row",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5"
+      }
+    },
+    {
+      "expected": {
+        "filing_association_status": "resolved_native_filing_key",
+        "filing_key": "urn:fec:filing:official-fec:openfec-file-number:123"
+      },
+      "name": "header-record-itself",
+      "row": {
+        "association_basis": "native-api-original-url",
+        "association_status": "resolved_native_filing_key",
+        "collection_id": "c",
+        "current_record_status": "unqualified",
+        "filing_key": "urn:fec:filing:official-fec:openfec-file-number:123",
+        "filing_observation_count": 2,
+        "filing_observation_ids": [
+          "one",
+          "two"
+        ],
+        "header_locator_json": "{\"collection_id\":\"c\",\"member\":null,\"ordinal\":0,\"sha256\":\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"source_record_id\":\"header\"}",
+        "header_record_id": "header",
+        "membership_completeness": "unqualified",
+        "namespace_evidence_sha256": null,
+        "policy_version": "fec-retained-filing-association/1",
+        "record_id": "sha256:ef81973fdd386d8cd479da1f1644ec23470c216b7e89030ff51bdb6733822197",
+        "referenced_filing_key": "urn:fec:filing:official-fec:openfec-file-number:123",
+        "replacement_mode": "unknown",
+        "report_number_raw": null,
+        "request_url": "https://docquery.fec.gov/dcdev/posted/123.fec",
+        "resolved_url": null,
+        "selection_evidence_sha256": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+        "source_authority": "official-fec",
+        "source_generation_pin": "sha256:e661f4c935e8a5a83349afb5e347695c2e972e967b50efcd618f93b0b7b4c24b",
+        "source_locator_json": "{\"collection_id\":\"c\",\"member\":null,\"ordinal\":0,\"sha256\":\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"source_record_id\":\"header\"}",
+        "source_record_id": "header",
+        "source_sha256": "sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5",
+        "target_record_id": "header",
+        "target_table": "fec_source_records"
+      }
+    }
+  ],
+  "format": "fec-serving-semantic-fixtures/1",
+  "program": {
+    "bindings": [
+      [
+        "route",
+        [
+          "lookup",
+          [
+            "literal",
+            "routes"
+          ],
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "source_namespace"
+            ]
+          ]
+        ]
+      ],
+      [
+        "filer",
+        [
+          "get",
+          [
+            "var",
+            "row"
+          ],
+          [
+            "get",
+            [
+              "var",
+              "route"
+            ],
+            [
+              "literal",
+              "filerField"
+            ]
+          ]
+        ]
+      ],
+      [
+        "headerId",
+        [
+          "if",
+          [
+            "not",
+            [
+              "eq",
+              [
+                "get",
+                [
+                  "var",
+                  "row"
+                ],
+                [
+                  "literal",
+                  "filing_header_record_id"
+                ]
+              ],
+              [
+                "literal",
+                null
+              ]
+            ]
+          ],
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "filing_header_record_id"
+            ]
+          ],
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "header_record_id"
+            ]
+          ]
+        ]
+      ],
+      [
+        "headerLocator",
+        [
+          "if",
+          [
+            "not",
+            [
+              "eq",
+              [
+                "get",
+                [
+                  "var",
+                  "row"
+                ],
+                [
+                  "literal",
+                  "filing_header_record_id"
+                ]
+              ],
+              [
+                "literal",
+                null
+              ]
+            ]
+          ],
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "filing_header_locator_json"
+            ]
+          ],
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "header_locator_json"
+            ]
+          ]
+        ]
+      ],
+      [
+        "key",
+        [
+          "if",
+          [
+            "and",
+            [
+              "regex",
+              [
+                "get",
+                [
+                  "var",
+                  "row"
+                ],
+                [
+                  "literal",
+                  "report_number"
+                ]
+              ],
+              [
+                "literal",
+                "-?[1-9][0-9]*"
+              ]
+            ],
+            [
+              "eq",
+              [
+                "get",
+                [
+                  "var",
+                  "row"
+                ],
+                [
+                  "literal",
+                  "source_authority"
+                ]
+              ],
+              [
+                "literal",
+                "official-fec"
+              ]
+            ],
+            [
+              "eq",
+              [
+                "get",
+                [
+                  "var",
+                  "row"
+                ],
+                [
+                  "literal",
+                  "mapping_version"
+                ]
+              ],
+              [
+                "get",
+                [
+                  "var",
+                  "route"
+                ],
+                [
+                  "literal",
+                  "mapper"
+                ]
+              ]
+            ],
+            [
+              "not",
+              [
+                "eq",
+                [
+                  "get",
+                  [
+                    "var",
+                    "route"
+                  ],
+                  [
+                    "literal",
+                    "evidence"
+                  ]
+                ],
+                [
+                  "literal",
+                  null
+                ]
+              ]
+            ]
+          ],
+          [
+            "concat",
+            [
+              "literal",
+              "urn:fec:filing:official-fec:openfec-file-number:"
+            ],
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "report_number"
+              ]
+            ]
+          ],
+          [
+            "literal",
+            null
+          ]
+        ]
+      ],
+      [
+        "target",
+        [
+          "lookup",
+          [
+            "literal",
+            "targets"
+          ],
+          [
+            "var",
+            "key"
+          ]
+        ]
+      ],
+      [
+        "header",
+        [
+          "lookup",
+          [
+            "literal",
+            "headers"
+          ],
+          [
+            "tuple",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "collection_id"
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_sha256"
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_authority"
+              ]
+            ],
+            [
+              "var",
+              "headerId"
+            ]
+          ]
+        ]
+      ],
+      [
+        "locator",
+        [
+          "json",
+          [
+            "get",
+            [
+              "var",
+              "row"
+            ],
+            [
+              "literal",
+              "source_locator_json"
+            ]
+          ]
+        ]
+      ],
+      [
+        "useHeader",
+        [
+          "not",
+          [
+            "eq",
+            [
+              "var",
+              "headerId"
+            ],
+            [
+              "literal",
+              null
+            ]
+          ]
+        ]
+      ],
+      [
+        "contextValid",
+        [
+          "and",
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "record_id"
+              ]
+            ],
+            [
+              "literal",
+              "[\\s\\S]+"
+            ]
+          ],
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "collection_id"
+              ]
+            ],
+            [
+              "literal",
+              "[\\s\\S]+"
+            ]
+          ],
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_record_id"
+              ]
+            ],
+            [
+              "literal",
+              "[\\s\\S]+"
+            ]
+          ],
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_authority"
+              ]
+            ],
+            [
+              "literal",
+              "[\\s\\S]+"
+            ]
+          ],
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_sha256"
+              ]
+            ],
+            [
+              "literal",
+              "sha256:[0-9a-f]{64}"
+            ]
+          ],
+          [
+            "regex",
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "selection_evidence_sha256"
+              ]
+            ],
+            [
+              "literal",
+              "sha256:[0-9a-f]{64}"
+            ]
+          ],
+          [
+            "eq",
+            [
+              "get",
+              [
+                "var",
+                "locator"
+              ],
+              [
+                "literal",
+                "collection_id"
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "collection_id"
+              ]
+            ]
+          ],
+          [
+            "eq",
+            [
+              "get",
+              [
+                "var",
+                "locator"
+              ],
+              [
+                "literal",
+                "source_record_id"
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "row"
+              ],
+              [
+                "literal",
+                "source_record_id"
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        "status",
+        [
+          "if",
+          [
+            "var",
+            "contextValid"
+          ],
+          [
+            "if",
+            [
+              "var",
+              "useHeader"
+            ],
+            [
+              "if",
+              [
+                "eq",
+                [
+                  "var",
+                  "header"
+                ],
+                [
+                  "literal",
+                  null
+                ]
+              ],
+              [
+                "literal",
+                "unresolved_header_association_absent"
+              ],
+              [
+                "if",
+                [
+                  "regex",
+                  [
+                    "get",
+                    [
+                      "var",
+                      "header"
+                    ],
+                    [
+                      "literal",
+                      "status"
+                    ]
+                  ],
+                  [
+                    "literal",
+                    "unresolved_header_(association_ambiguous|policy_version|policy_semantics)"
+                  ]
+                ],
+                [
+                  "get",
+                  [
+                    "var",
+                    "header"
+                  ],
+                  [
+                    "literal",
+                    "status"
+                  ]
+                ],
+                [
+                  "if",
+                  [
+                    "not",
+                    [
+                      "eq",
+                      [
+                        "var",
+                        "headerLocator"
+                      ],
+                      [
+                        "get",
+                        [
+                          "var",
+                          "header"
+                        ],
+                        [
+                          "literal",
+                          "locator"
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "literal",
+                    "unresolved_header_locator_mismatch"
+                  ],
+                  [
+                    "get",
+                    [
+                      "var",
+                      "header"
+                    ],
+                    [
+                      "literal",
+                      "status"
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            [
+              "if",
+              [
+                "not",
+                [
+                  "eq",
+                  [
+                    "get",
+                    [
+                      "var",
+                      "row"
+                    ],
+                    [
+                      "literal",
+                      "source_authority"
+                    ]
+                  ],
+                  [
+                    "literal",
+                    "official-fec"
+                  ]
+                ]
+              ],
+              [
+                "literal",
+                "unresolved_source_authority"
+              ],
+              [
+                "if",
+                [
+                  "or",
+                  [
+                    "eq",
+                    [
+                      "var",
+                      "route"
+                    ],
+                    [
+                      "literal",
+                      null
+                    ]
+                  ],
+                  [
+                    "not",
+                    [
+                      "eq",
+                      [
+                        "get",
+                        [
+                          "var",
+                          "row"
+                        ],
+                        [
+                          "literal",
+                          "mapping_version"
+                        ]
+                      ],
+                      [
+                        "get",
+                        [
+                          "var",
+                          "route"
+                        ],
+                        [
+                          "literal",
+                          "mapper"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "literal",
+                  "unresolved_native_namespace"
+                ],
+                [
+                  "if",
+                  [
+                    "eq",
+                    [
+                      "get",
+                      [
+                        "var",
+                        "route"
+                      ],
+                      [
+                        "literal",
+                        "evidence"
+                      ]
+                    ],
+                    [
+                      "literal",
+                      null
+                    ]
+                  ],
+                  [
+                    "literal",
+                    "unresolved_namespace_evidence"
+                  ],
+                  [
+                    "if",
+                    [
+                      "or",
+                      [
+                        "eq",
+                        [
+                          "get",
+                          [
+                            "var",
+                            "row"
+                          ],
+                          [
+                            "literal",
+                            "report_number"
+                          ]
+                        ],
+                        [
+                          "literal",
+                          null
+                        ]
+                      ],
+                      [
+                        "eq",
+                        [
+                          "get",
+                          [
+                            "var",
+                            "row"
+                          ],
+                          [
+                            "literal",
+                            "report_number"
+                          ]
+                        ],
+                        [
+                          "literal",
+                          ""
+                        ]
+                      ],
+                      [
+                        "eq",
+                        [
+                          "get",
+                          [
+                            "var",
+                            "row"
+                          ],
+                          [
+                            "literal",
+                            "report_number"
+                          ]
+                        ],
+                        [
+                          "literal",
+                          "0"
+                        ]
+                      ],
+                      [
+                        "eq",
+                        [
+                          "get",
+                          [
+                            "var",
+                            "row"
+                          ],
+                          [
+                            "literal",
+                            "report_number"
+                          ]
+                        ],
+                        [
+                          "literal",
+                          "-0"
+                        ]
+                      ]
+                    ],
+                    [
+                      "literal",
+                      "unresolved_no_file_number"
+                    ],
+                    [
+                      "if",
+                      [
+                        "not",
+                        [
+                          "regex",
+                          [
+                            "get",
+                            [
+                              "var",
+                              "row"
+                            ],
+                            [
+                              "literal",
+                              "report_number"
+                            ]
+                          ],
+                          [
+                            "literal",
+                            "-?[1-9][0-9]*"
+                          ]
+                        ]
+                      ],
+                      [
+                        "literal",
+                        "unresolved_invalid_file_number"
+                      ],
+                      [
+                        "if",
+                        [
+                          "eq",
+                          [
+                            "var",
+                            "target"
+                          ],
+                          [
+                            "literal",
+                            null
+                          ]
+                        ],
+                        [
+                          "literal",
+                          "unresolved_target_not_retained"
+                        ],
+                        [
+                          "if",
+                          [
+                            "not",
+                            [
+                              "eq",
+                              [
+                                "get",
+                                [
+                                  "var",
+                                  "target"
+                                ],
+                                [
+                                  "literal",
+                                  "status"
+                                ]
+                              ],
+                              [
+                                "literal",
+                                "resolved_native_filing_key"
+                              ]
+                            ]
+                          ],
+                          [
+                            "get",
+                            [
+                              "var",
+                              "target"
+                            ],
+                            [
+                              "literal",
+                              "status"
+                            ]
+                          ],
+                          [
+                            "if",
+                            [
+                              "and",
+                              [
+                                "not",
+                                [
+                                  "eq",
+                                  [
+                                    "var",
+                                    "filer"
+                                  ],
+                                  [
+                                    "literal",
+                                    null
+                                  ]
+                                ]
+                              ],
+                              [
+                                "not",
+                                [
+                                  "eq",
+                                  [
+                                    "var",
+                                    "filer"
+                                  ],
+                                  [
+                                    "literal",
+                                    ""
+                                  ]
+                                ]
+                              ],
+                              [
+                                "not",
+                                [
+                                  "eq",
+                                  [
+                                    "get",
+                                    [
+                                      "var",
+                                      "target"
+                                    ],
+                                    [
+                                      "literal",
+                                      "filer"
+                                    ]
+                                  ],
+                                  [
+                                    "literal",
+                                    null
+                                  ]
+                                ]
+                              ],
+                              [
+                                "not",
+                                [
+                                  "eq",
+                                  [
+                                    "var",
+                                    "filer"
+                                  ],
+                                  [
+                                    "get",
+                                    [
+                                      "var",
+                                      "target"
+                                    ],
+                                    [
+                                      "literal",
+                                      "filer"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ],
+                            [
+                              "literal",
+                              "unresolved_filer_identity_conflict"
+                            ],
+                            [
+                              "literal",
+                              "resolved_native_filing_key"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "literal",
+            "unresolved_source_context"
+          ]
+        ]
+      ]
+    ],
+    "format": "fec-row-expressions/1",
+    "lookups": {
+      "headers": {
+        "[\"c\",\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"official-fec\",\"header\"]": {
+          "count": 2,
+          "ids": [
+            "one",
+            "two"
+          ],
+          "key": "urn:fec:filing:official-fec:openfec-file-number:123",
+          "locator": "{\"collection_id\":\"c\",\"member\":null,\"ordinal\":0,\"sha256\":\"sha256:0682c5f2076f099c34cfdd15a9e063849ed437a49677e6fcc5b4198c76575be5\",\"source_record_id\":\"header\"}",
+          "recordId": "sha256:ef81973fdd386d8cd479da1f1644ec23470c216b7e89030ff51bdb6733822197",
+          "status": "resolved_native_filing_key"
+        }
+      },
+      "routes": {
+        "fec-bulk-committee-to-candidate-transactions": {
+          "evidence": null,
+          "filerField": "reporting_committee_id",
+          "mapper": "fec-bulk-committee-to-candidate-transactions/1"
+        },
+        "fec-bulk-communication-cost-csv": {
+          "evidence": null,
+          "filerField": "reporting_entity_id",
+          "mapper": "fec-bulk-communication-cost-csv/1"
+        },
+        "fec-bulk-independent-expenditure-csv": {
+          "evidence": null,
+          "filerField": "spender_native_id",
+          "mapper": "fec-bulk-independent-expenditure-csv/1"
+        },
+        "fec-bulk-individual-contributions": {
+          "evidence": "sha256:02f086eb77504748cf5130e6b17cc467b8b16d52b4f86c6237325033d4726294",
+          "filerField": "reporting_committee_id",
+          "mapper": "fec-bulk-individual-receipt/2"
+        },
+        "fec-bulk-operating-expense-ordered-header": {
+          "evidence": null,
+          "filerField": "reporting_committee_id",
+          "mapper": "fec-bulk-operating-expense-ordered-header/1"
+        },
+        "fec-bulk-other-committee-transactions": {
+          "evidence": null,
+          "filerField": "reporting_committee_id",
+          "mapper": "fec-bulk-other-committee-transactions/1"
+        }
+      },
+      "targets": {
+        "urn:fec:filing:official-fec:openfec-file-number:-123": {
+          "count": 1,
+          "filer": "C00000001",
+          "ids": [
+            "paper"
+          ],
+          "key": "urn:fec:filing:official-fec:openfec-file-number:-123",
+          "status": "resolved_native_filing_key"
+        },
+        "urn:fec:filing:official-fec:openfec-file-number:123": {
+          "count": 2,
+          "filer": "C00000001",
+          "ids": [
+            "one",
+            "two"
+          ],
+          "key": "urn:fec:filing:official-fec:openfec-file-number:123",
+          "status": "resolved_native_filing_key"
+        },
+        "urn:fec:filing:official-fec:openfec-file-number:124": {
+          "count": 2,
+          "filer": "C00000001",
+          "ids": [
+            "duplicate",
+            "duplicate"
+          ],
+          "key": null,
+          "status": "unresolved_target_observation_ambiguous"
+        },
+        "urn:fec:filing:official-fec:openfec-file-number:125": {
+          "count": 2,
+          "filer": "C00000001",
+          "ids": [
+            "filer-a",
+            "filer-b"
+          ],
+          "key": null,
+          "status": "unresolved_target_identity_conflict"
+        },
+        "urn:fec:filing:official-fec:openfec-file-number:126": {
+          "count": 1,
+          "filer": "C00000001",
+          "ids": [
+            "wrong-authority"
+          ],
+          "key": null,
+          "status": "unresolved_target_identity_conflict"
+        }
+      }
+    },
+    "outputs": {
+      "filing_association_evidence_generation_pin": [
+        "literal",
+        "sha256:e661f4c935e8a5a83349afb5e347695c2e972e967b50efcd618f93b0b7b4c24b"
+      ],
+      "filing_association_policy": [
+        "literal",
+        "fec-retained-filing-association/1"
+      ],
+      "filing_association_record_id": [
+        "if",
+        [
+          "var",
+          "useHeader"
+        ],
+        [
+          "get",
+          [
+            "var",
+            "header"
+          ],
+          [
+            "literal",
+            "recordId"
+          ]
+        ],
+        [
+          "literal",
+          null
+        ]
+      ],
+      "filing_association_referenced_key": [
+        "if",
+        [
+          "and",
+          [
+            "var",
+            "contextValid"
+          ],
+          [
+            "not",
+            [
+              "var",
+              "useHeader"
+            ]
+          ]
+        ],
+        [
+          "var",
+          "key"
+        ],
+        [
+          "literal",
+          null
+        ]
+      ],
+      "filing_association_source_generation_pin": [
+        "literal",
+        "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "filing_association_status": [
+        "var",
+        "status"
+      ],
+      "filing_association_target_count": [
+        "if",
+        [
+          "var",
+          "contextValid"
+        ],
+        [
+          "if",
+          [
+            "var",
+            "useHeader"
+          ],
+          [
+            "if",
+            [
+              "eq",
+              [
+                "var",
+                "headerLocator"
+              ],
+              [
+                "get",
+                [
+                  "var",
+                  "header"
+                ],
+                [
+                  "literal",
+                  "locator"
+                ]
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "header"
+              ],
+              [
+                "literal",
+                "count"
+              ]
+            ],
+            [
+              "literal",
+              null
+            ]
+          ],
+          [
+            "if",
+            [
+              "eq",
+              [
+                "var",
+                "target"
+              ],
+              [
+                "literal",
+                null
+              ]
+            ],
+            [
+              "literal",
+              0
+            ],
+            [
+              "get",
+              [
+                "var",
+                "target"
+              ],
+              [
+                "literal",
+                "count"
+              ]
+            ]
+          ]
+        ],
+        [
+          "literal",
+          null
+        ]
+      ],
+      "filing_association_target_generation_pin": [
+        "literal",
+        null
+      ],
+      "filing_association_target_generation_scope": [
+        "literal",
+        "self"
+      ],
+      "filing_association_target_record_ids": [
+        "if",
+        [
+          "var",
+          "contextValid"
+        ],
+        [
+          "if",
+          [
+            "var",
+            "useHeader"
+          ],
+          [
+            "if",
+            [
+              "eq",
+              [
+                "var",
+                "headerLocator"
+              ],
+              [
+                "get",
+                [
+                  "var",
+                  "header"
+                ],
+                [
+                  "literal",
+                  "locator"
+                ]
+              ]
+            ],
+            [
+              "get",
+              [
+                "var",
+                "header"
+              ],
+              [
+                "literal",
+                "ids"
+              ]
+            ],
+            [
+              "literal",
+              null
+            ]
+          ],
+          [
+            "if",
+            [
+              "eq",
+              [
+                "var",
+                "target"
+              ],
+              [
+                "literal",
+                null
+              ]
+            ],
+            [
+              "literal",
+              []
+            ],
+            [
+              "get",
+              [
+                "var",
+                "target"
+              ],
+              [
+                "literal",
+                "ids"
+              ]
+            ]
+          ]
+        ],
+        [
+          "literal",
+          null
+        ]
+      ],
+      "filing_key": [
+        "if",
+        [
+          "eq",
+          [
+            "var",
+            "status"
+          ],
+          [
+            "literal",
+            "resolved_native_filing_key"
+          ]
+        ],
+        [
+          "if",
+          [
+            "var",
+            "useHeader"
+          ],
+          [
+            "get",
+            [
+              "var",
+              "header"
+            ],
+            [
+              "literal",
+              "key"
+            ]
+          ],
+          [
+            "var",
+            "key"
+          ]
+        ],
+        [
+          "literal",
+          null
+        ]
+      ],
+      "filing_link_status": [
+        "var",
+        "status"
+      ]
+    }
+  }
+}
