@@ -46,10 +46,12 @@ review and selection.
 There is one supported reader route: the packaged
 `spicy_regs.coverage_reader` and the two spicygov adapters that run on it
 (`restore_additional_coverage.py`, `restore_source_navigation_coverage.py`).
-Earlier receipt policies, missing receipt fields and other generations are
-refused; refresh the data in the current format. Flat published tables are
-measured directly by the published-table scanner; native tables must be the
-reviewed native subject and use current-policy receipts.
+Undeclared or null receipt policies, missing receipt fields and other
+generations are refused; refresh the data in the current format. Receipts
+carried under a declared earlier policy version are admitted. Flat published
+tables are measured directly by the published-table scanner; native tables must
+be the reviewed native subject and use receipts under the current or a declared
+earlier policy version.
 
 The checked-in `public/coverage-maps.v1.json`, the existing (pre-amendment)
 `.cache/coverage-maps` checkpoints and the archived fixture releases are retained
