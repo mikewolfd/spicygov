@@ -402,7 +402,9 @@ class WarmCoverageTests(unittest.TestCase):
         with patch.object(self.driver, "header_matches") as check:
             self.assertFalse(self.driver.cached(table, policy, saved))
             check.assert_not_called()
-            rebound = {**saved, "measurementRevision": current}
+            # The checked-in entry also predates the current comments schema and definition.
+            rebound = {**saved, "measurementRevision": current, "schema": policy["schema"],
+                       "definitionDigest": self.driver.definition_digest(policy)}
             self.assertTrue(self.driver.cached(table, policy, rebound))
             self.assertEqual(check.call_count, 2)
             changed = {

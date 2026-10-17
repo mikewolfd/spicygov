@@ -7,7 +7,6 @@ import datetime
 import hashlib
 import json
 import re
-import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -153,48 +152,15 @@ def _receipt(inputs, key):
     return json.loads(data) if isinstance(data, (str, bytes)) else data
 
 
-def export_header(url):
-    """Read mutable export identity without treating an HTTP timestamp as data age."""
-    if not re.fullmatch(re.escape(BASE) + r'/[a-z0-9_]+\.parquet', url):
-        raise ValueError('Unrecognized mutable coverage export')
-    raw = subprocess.check_output(['curl', '-fsSI', '--max-time', '30', url]).decode()
-    headers = {line.split(':', 1)[0].lower(): line.split(':', 1)[1].strip()
-               for line in raw.splitlines() if ':' in line}
-    return headers.get('etag'), int(headers.get('content-length', '-1'))
-
-
-def _comments_binding(table, receipt, table_id):
-    file = table_id + '.parquet'
-    entry = receipt.get('files', {}).get(file)
-    if (not isinstance(entry, dict) or not digest(entry.get('sha256')) or not size(entry.get('rows'))
-            or not size(entry.get('bytes')) or not isinstance(entry.get('etag'), str)):
-        raise ValueError('Incomplete paired comments publication')
-    if (len(table['members']) != 1 or table['members'][0]['url'] != BASE + '/' + file
-            or table['rows'] != entry['rows'] or table['members'][0]['byteSize'] != entry['bytes']
-            or table.get('checksum') != entry['sha256'] or table.get('etag') != entry['etag']):
-        raise ValueError('Comments file differs from its retained publication receipt')
-    return entry
-
-
-def _check_export(file, entry):
-    if export_header(BASE + '/' + file) != (entry['etag'], entry['bytes']):
-        raise ValueError('Comments export changed relative to its retained receipt')
-
-
 def comments_index(conn, table_id, table, dim, inputs):
-    receipt = _receipt(inputs, 'comments-publication.json')
-    selected = _comments_binding(table, receipt, table_id)
-    files = receipt['files']
-    index = files.get('comments_index.parquet')
-    comments = files.get('comments.parquet')
-    if (not isinstance(index, dict) or not isinstance(comments, dict)
-            or any(not digest(e.get('sha256')) or not size(e.get('rows')) or not size(e.get('bytes'))
-                   or not isinstance(e.get('etag'), str) for e in (index, comments))):
-        raise ValueError('Missing paired comments index evidence')
-    # Both before and after: a scan racing replacement cannot silently succeed.
-    for file, entry in [('comments.parquet', comments), ('comments_index.parquet', index)]:
-        _check_export(file, entry)
-    urls = [BASE + '/comments_index.parquet']
+    """Weight the comments index by comment count, reading both files from one immutable generation."""
+    if table_id not in ('comments', 'comments_index') or table.get('kind') != 'generation' or table.get('family') != 'comments':
+        raise ValueError('Comments coverage needs the immutable comments generation')
+    family, generation = table['family'], table['artifactDigest']
+    # The generation cannot change, so the pair needs no header or ETag recheck.
+    comments = inputs.table(family, generation, 'comments', table['members'] if table_id == 'comments' else None)
+    index = inputs.table(family, generation, 'comments_index', table['members'] if table_id == 'comments_index' else None)
+    urls = index['urls']
     group_rows, represented = conn.execute(
         'SELECT count(*), sum(row_count) FROM read_parquet(?, hive_partitioning=false)', [urls]).fetchone()
     if group_rows != index['rows'] or represented != comments['rows']:
@@ -213,10 +179,9 @@ def comments_index(conn, table_id, table, dim, inputs):
                                         'placedRows': represented_map['placedRows'], 'unplacedRows': represented_map['unplacedRows']}
         result['unit'] = 'index groups'
     result['definitionDigest'] = definition_digest(dim)
-    result['evidence'] = {'recordUrl': BASE + '/comments-publication.json',
-                          'comments': comments, 'index': index, 'indexGroups': group_rows}
-    for file, entry in [('comments.parquet', comments), ('comments_index.parquet', index)]:
-        _check_export(file, entry)
+    result['evidence'] = {'recordUrl': comments['recordUrl'], 'artifactDigest': generation,
+                          'comments': {k: comments[k] for k in ('members', 'rows')},
+                          'index': {k: index[k] for k in ('members', 'rows')}, 'indexGroups': group_rows}
     return result
 
 

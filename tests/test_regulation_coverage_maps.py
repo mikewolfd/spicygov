@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from coverage_dimensions import scan_dimension, validate_definition
 from regulation_coverage import scan_special, snapshot_parent, flag_future
-from coverage_inputs import inherit_unique
+from coverage_inputs import CoverageInputs, inherit_unique
 from publication_census import BASE
 
 
@@ -174,46 +174,76 @@ class RegulationCoverageTests(unittest.TestCase):
             scan_special(self.conn, 'proceedings', {'members': [{'url': str(file)}], 'rows': 5},
                          self.dimension('proceeding-stage-events', ['stage_events_json'], 'list'), Inputs({}))
 
-    def paired_comments(self):
-        file = self.parquet('index.parquet', 'SELECT * FROM (VALUES (2020,1,10),(2020,1,5),(2021,2,2),(NULL,NULL,3)) t(year,month,row_count)')
-        entries = {'comments.parquet': {'sha256': 'a'*64, 'rows': 20, 'bytes': 200, 'etag': 'comments-etag'},
-                   'comments_index.parquet': {'sha256': 'b'*64, 'rows': 4, 'bytes': 40, 'etag': 'index-etag'}}
-        receipt = {'files': entries}
-        tables = {id: {'rows': e['rows'], 'checksum': e['sha256'], 'etag': e['etag'],
-                       'members': [{'url': BASE+'/'+id+'.parquet', 'byteSize': e['bytes']}]}
-                  for id, e in [(name[:-8], e) for name, e in entries.items()]}
-        # Local test uses the exact same projected query via a temporary local read alias.
-        original_execute = self.conn.execute
-        class Conn:
-            def execute(self, sql, args):
-                return original_execute(sql, [[file] if value == [BASE+'/comments_index.parquet'] else value for value in args])
-        return receipt, tables, Conn()
+    def comments_generation(self, weights=((2020, 1, 10), (2020, 1, 5), (2021, 2, 2), (None, None, 3)), comment_rows=20):
+        """One immutable comments generation: the published tables and an Inputs fake serving its local files."""
+        digest = 'sha256:' + 'c' * 64
+        values = ','.join(f'({y},{m},{w})'.replace('None', 'NULL') for y, m, w in weights)
+        index_file = self.parquet('index.parquet', f'SELECT * FROM (VALUES {values}) t(year,month,row_count)')
+        rows = {'comments': comment_rows, 'comments_index': len(weights)}
+        members = {id: [{'key': id + '.parquet', 'sha256': 'sha256:' + str(n) * 64, 'rows': rows[id], 'byteSize': 100 * n}]
+                   for n, id in enumerate(rows, 1)}
+        retained = {id: {'family': 'comments', 'artifactDigest': digest, 'tableId': id, 'members': members[id],
+                         'rows': rows[id], 'recordUrl': BASE + '/generations/comments/' + 'c' * 64 + '/artifact.json',
+                         'urls': [index_file if id == 'comments_index' else BASE + '/unread/' + id + '.parquet']} for id in rows}
+        published = {id: {'kind': 'generation', 'family': 'comments', 'artifactDigest': digest,
+                          'rows': rows[id], 'members': members[id]} for id in rows}
+        class GenerationInputs:
+            calls = []
+            def table(self, family, generation, table_id, expected=None):
+                self.calls.append((family, generation, table_id, expected))
+                return retained[table_id]
+        return published, GenerationInputs(), digest
 
-    def test_comments_weights_are_not_index_group_counts_and_races_refuse(self):
-        receipt, tables, conn = self.paired_comments()
-        def headers(url):
-            e = receipt['files'][url.rsplit('/', 1)[1]]; return e['etag'], e['bytes']
-        with patch('regulation_coverage.export_header', side_effect=headers) as header:
-            result = scan_special(conn, 'comments', tables['comments'],
-                                  self.dimension('comments-index-posted', ['posted_date']),
-                                  Inputs({'comments-publication.json': json.dumps(receipt).encode()}))
-            self.assertEqual(result['buckets'], {'2020-01': 15, '2021-02': 2})
-            self.assertEqual((result['placedRows'], result['unplacedRows'], result['rows']), (17, 3, 20))
-            self.assertEqual(header.call_count, 4)
-            groups = scan_special(conn, 'comments_index', tables['comments_index'],
-                                  self.dimension('comments-index-groups', ['year','month']),
-                                  Inputs({'comments-publication.json': json.dumps(receipt).encode()}))
-            self.assertEqual(groups['buckets'], {'2020-01': 2, '2021-02': 1})
-            self.assertEqual(groups['representedComments']['buckets'], result['buckets'])
-        with patch('regulation_coverage.export_header', side_effect=[headers(BASE+'/comments.parquet'),
-                   headers(BASE+'/comments_index.parquet'), ('changed-etag', 200)]):
-            with self.assertRaisesRegex(ValueError, 'changed'):
-                scan_special(conn, 'comments', tables['comments'], self.dimension('comments-index-posted', ['posted_date']),
-                             Inputs({'comments-publication.json': json.dumps(receipt).encode()}))
-        tables['comments']['checksum'] = 'c'*64
-        with self.assertRaisesRegex(ValueError, 'receipt'):
-            scan_special(conn, 'comments', tables['comments'], self.dimension('comments-index-posted', ['posted_date']),
-                         Inputs({'comments-publication.json': json.dumps(receipt).encode()}))
+    def test_comments_weights_are_not_index_group_counts_and_both_files_come_from_one_generation(self):
+        published, inputs, digest = self.comments_generation()
+        posted = self.dimension('comments-index-posted', ['posted_date'])
+        result = scan_special(self.conn, 'comments', published['comments'], posted, inputs)
+        self.assertEqual(result['buckets'], {'2020-01': 15, '2021-02': 2})
+        self.assertEqual((result['placedRows'], result['unplacedRows'], result['rows']), (17, 3, 20))
+        self.assertEqual((result['unit'], result['fields']), ('comments', ['posted_date']))
+        # Only the measured table is pinned to its publication; its pair is whatever the same generation holds.
+        self.assertEqual(inputs.calls, [('comments', digest, 'comments', published['comments']['members']),
+                                        ('comments', digest, 'comments_index', None)])
+        self.assertEqual(result['evidence']['artifactDigest'], digest)
+        self.assertEqual(result['evidence']['indexGroups'], 4)
+        self.assertEqual(result['evidence']['comments']['rows'], 20)
+        groups = scan_special(self.conn, 'comments_index', published['comments_index'],
+                              self.dimension('comments-index-groups', ['year', 'month'], 'date'), inputs)
+        self.assertEqual(groups['buckets'], {'2020-01': 2, '2021-02': 1})
+        self.assertEqual(groups['representedComments']['buckets'], result['buckets'])
+        self.assertEqual(inputs.calls[-2:], [('comments', digest, 'comments', None),
+                                             ('comments', digest, 'comments_index', published['comments_index']['members'])])
+
+    def test_comments_index_must_reconcile_and_carry_valid_weights(self):
+        posted = self.dimension('comments-index-posted', ['posted_date'])
+        published, inputs, _ = self.comments_generation(comment_rows=21)
+        with self.assertRaisesRegex(ValueError, 'reconcile'): scan_special(self.conn, 'comments', published['comments'], posted, inputs)
+        published, inputs, _ = self.comments_generation()
+        retained = inputs.table('comments', None, 'comments_index'); retained['rows'] = 5
+        with self.assertRaisesRegex(ValueError, 'reconcile'): scan_special(self.conn, 'comments', published['comments'], posted, inputs)
+        published, inputs, _ = self.comments_generation(weights=((2020, 1, 10), (2020, 1, 10), (2021, 2, -2), (None, None, 2)))
+        with self.assertRaisesRegex(ValueError, 'Invalid comment index weights'): scan_special(self.conn, 'comments', published['comments'], posted, inputs)
+
+    def test_comments_coverage_refuses_the_mutable_export_form(self):
+        posted = self.dimension('comments-index-posted', ['posted_date'])
+        published, inputs, _ = self.comments_generation()
+        for name, table in [('mutable', {**published['comments'], 'kind': 'comments', 'etag': '"e"'}),
+                            ('family', {**published['comments'], 'family': 'dockets'}),
+                            ('other table', published['comments'])]:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'immutable comments generation'):
+                scan_special(self.conn, 'dockets' if name == 'other table' else 'comments', table, posted, inputs)
+        self.assertEqual(inputs.calls, [])
+
+    def test_comments_bytes_must_match_the_publication_that_names_them(self):
+        published, _, digest = self.comments_generation()
+        member = published['comments']['members'][0]
+        class Generation(CoverageInputs):
+            def artifact(self, family, generation):
+                return 'generations/comments/' + digest[7:], {'spec': {}}, [
+                    {'objectKey': member['key'], 'role': 'table', 'sha256': member['sha256'],
+                     'recordCount': member['rows'], 'byteSize': member['byteSize'] + 1}]
+        with self.assertRaisesRegex(ValueError, 'differ'):
+            scan_special(self.conn, 'comments', published['comments'], self.dimension('comments-index-posted', ['posted_date']), Generation())
 
     def test_supplementary_parent_requires_exact_snapshot_and_file_sha(self):
         file = self.parquet('parent.parquet', "SELECT 'p1' proceeding_id, DATE '2020-01-01' event_date")
@@ -395,6 +425,25 @@ class RegulationCoverageTests(unittest.TestCase):
         self.assertEqual(pdf['parent'], {'table': 'court_opinions', 'mode': 'recorded-parent',
                                          'keys': [['opinion_id', 'opinion_id'], ['cluster_id', 'cluster_id']]})
         self.assertEqual(pdf['dimension']['fields'], ['dump_date'])
+        # No axis dates coverage by when a row was captured or processed.
+        capture_times = {'observed_at', 'recorded_at', 'read_at', 'last_modified', 'generation_id'}
+        for id, definition in definitions.items():
+            for axis in definition['dimensions']:
+                axis = axis.get('dimension', axis)
+                if axis['kind'] in ('date', 'year', 'interval', 'list'):
+                    self.assertFalse(capture_times & set(axis['fields']), (id, axis['id']))
+        # U.S. Code content is counted by edition and source, never by its section text.
+        sections = definitions['uscode_edition_sections']['dimensions']
+        self.assertFalse(any('body_text' in axis['fields'] for axis in sections))
+        edition_years = next(axis for axis in sections if axis['kind'] == 'inherited')
+        self.assertEqual(edition_years['parent'], {'table': 'uscode_editions', 'mode': 'same-generation',
+                                                   'keys': [['edition_id', 'edition_id']]})
+        self.assertEqual(edition_years, next(axis for axis in definitions['uscode_edition_structure']['dimensions'] if axis['kind'] == 'inherited'))
+        # Supreme Court opinion dates are M/DD/YY text, so only the term year dates those rows.
+        self.assertEqual([axis['kind'] for axis in definitions['supreme_court_opinion_observations']['dimensions']], ['year', 'category'])
+        # Every conversion-result table counts its files the same way.
+        self.assertEqual(definitions['laws_document_file_outcomes']['dimensions'],
+                         definitions['native_legal_references_document_file_outcomes']['dimensions'])
         # Extrema locate observed endpoints; they cannot fill an intervening month.
         for id, fields in [('org_committee_links', ['first_comment_date', 'last_comment_date']),
                            ('gao_recommendations', ['first_seen', 'last_seen']),
