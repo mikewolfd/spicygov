@@ -54,7 +54,7 @@ class CourtExtractionCoverageTests(CourtExtractionFixture, unittest.TestCase):
         self.assertEqual(result["rows"], 1)
         self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [self.raw])
         self.assertEqual(result["generationId"], "selected")
-        self.assertNotIn("source_url", dict(result["nativeSchema"]))
+        self.assertIn("source_url", dict(result["nativeSchema"]))
         self.assertIn("source_url", dict(result["processingSchema"]))
         self.assertEqual(sum(group["rows"] for group in result["acceptedWitnessGroups"]), 1)
         definitions = json.loads((Path(__file__).resolve().parents[1] /

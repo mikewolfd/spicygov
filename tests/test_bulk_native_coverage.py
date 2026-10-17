@@ -76,7 +76,7 @@ class BulkNativeCoverageTests(unittest.TestCase):
         self.assertIs(native["withdrawn"], True)
         self.assertEqual(native["additional_rins"], ["0099-AB01", None, "0099-AB01"])
         self.assertEqual(len(native["attachments"]), 2)
-        self.assertNotIn("file_url", native)
+        self.assertEqual(native["file_url"], "https://example.gov/source.pdf")
 
     def test_votes_restore_original_integer_spellings_and_repeated_references(self):
         native = self.check_restoration("roll_call_votes", {
@@ -104,7 +104,7 @@ class BulkNativeCoverageTests(unittest.TestCase):
             "term_index": "0002", "term_start": "2023-01-03", "term_end": "2029-01-03",
         })
         self.assertEqual(native["term_index"], 2)
-        self.assertNotIn("term_match", native)
+        self.assertEqual(native["term_match"], "matched")
 
 
 if __name__ == "__main__":
