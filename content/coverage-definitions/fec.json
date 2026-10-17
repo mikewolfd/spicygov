@@ -322,11 +322,11 @@
         ],
         [
           "record_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "relationship_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "record_outcome",
@@ -484,15 +484,15 @@
       "family": "fec-observations",
       "schema": [
         [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
           "subject_id",
           "VARCHAR"
         ],
         [
           "subject_type",
-          "VARCHAR"
-        ],
-        [
-          "subject_id_status",
           "VARCHAR"
         ],
         [
@@ -508,10 +508,6 @@
           "VARCHAR"
         ],
         [
-          "object_id_status",
-          "VARCHAR"
-        ],
-        [
           "object_name",
           "VARCHAR"
         ],
@@ -520,15 +516,19 @@
           "VARCHAR"
         ],
         [
-          "source_family",
-          "VARCHAR"
-        ],
-        [
           "cycle",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "candidate_election_year",
+          "INTEGER"
+        ],
+        [
+          "subject_id_status",
+          "VARCHAR"
+        ],
+        [
+          "object_id_status",
           "VARCHAR"
         ],
         [
@@ -540,16 +540,48 @@
           "VARCHAR"
         ],
         [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
           "source_locator_json",
           "VARCHAR"
         ],
         [
-          "source_fields_json",
+          "source_family",
           "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "subrecord_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "companion_status",
+          "VARCHAR"
+        ],
+        [
+          "subject_endpoint_status",
+          "VARCHAR"
+        ],
+        [
+          "object_endpoint_status",
+          "VARCHAR"
+        ],
+        [
+          "subrecord_ordinal",
+          "BIGINT"
         ]
       ],
       "classification": "selected-observations",
@@ -585,6 +617,10 @@
     "fec_source_records": {
       "family": "fec-observations",
       "schema": [
+        [
+          "observation_ordinal",
+          "BIGINT"
+        ],
         [
           "collection_id",
           "VARCHAR"
@@ -635,22 +671,6 @@
         ],
         [
           "source_locator_json",
-          "VARCHAR"
-        ],
-        [
-          "metadata_json",
-          "VARCHAR"
-        ],
-        [
-          "assets_json",
-          "VARCHAR"
-        ],
-        [
-          "embedded_bodies_json",
-          "VARCHAR"
-        ],
-        [
-          "source_record_json",
           "VARCHAR"
         ]
       ],
