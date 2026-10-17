@@ -45,11 +45,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def bridge(args=(), request=None):
     dataset = args[1] if len(args) == 2 and args[0] == "--schema" else request.get("dataset") if isinstance(request, dict) else None
     source_navigation = dataset in SOURCE_NAVIGATION_FAMILIES or dataset in RULEMAKING_DATASETS or bool(args == ["--verify-artifacts"] and isinstance(request, list) and request and all(a.get("spec", {}).get("family") in SOURCE_NAVIGATION_FAMILIES.values() for a in request))
-    prefix = "SPICYGOV_SOURCE_NAVIGATION" if source_navigation else "SPICYGOV_ADDITIONAL"
-    script = os.environ.get(prefix + "_COVERAGE_BRIDGE")
-    if not script or not Path(script).is_absolute() or not Path(script).is_file():
-        raise ValueError("Additional native coverage requires the pinned restoration bridge")
-    python = os.environ.get(prefix + "_COVERAGE_PYTHON", sys.executable)
+    script = str(Path(__file__).with_name('restore_source_navigation_coverage.py' if source_navigation else 'restore_additional_coverage.py'))
+    python = os.environ.get('SPICYGOV_COVERAGE_PYTHON', sys.executable)
     # Full current documents and Register restores passed locally, but each
     # exceeded five minutes on the hosted runner. Keep their finite allowance
     # separate from schema requests and the other selected readers.

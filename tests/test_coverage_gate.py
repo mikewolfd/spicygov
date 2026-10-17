@@ -26,6 +26,36 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_full_builder_owns_release_completion_and_refuses_failure_or_changed_capture(self):
+        import coverage_release
+        table,policy,measured=fixture()
+        for failure in ('none','scan','capture','partial'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as folder:
+                root=pathlib.Path(folder);output=root/'map.json';release=root/'release'
+                output.write_text('{"tables":{}}')
+                argv=['builder','--output',str(output),'--release-output',str(release)]
+                if failure=='partial':argv+=['--only','records']
+                result={'measurementRevision':'fixed','dimensions':[measured]}
+                captures=[({'records':table},{'publication.v2.json':b'original'}),
+                          ({'records':table},{'publication.v2.json':b'changed' if failure=='capture' else b'original'})]
+                with mock.patch.object(sys,'argv',argv), \
+                     mock.patch.object(builder,'CACHE',root/'cache'), \
+                     mock.patch.object(builder.duckdb,'connect'), \
+                     mock.patch.object(builder,'definitions',return_value={'records':policy}), \
+                     mock.patch.object(builder,'measurement_revision',return_value='fixed'), \
+                     mock.patch.object(builder,'timed_scan',side_effect=ValueError('scan refused') if failure=='scan' else None,return_value=('records',result)), \
+                     mock.patch.object(builder,'validate_native_implementations'), \
+                     mock.patch.object(builder.additional,'validate_native_implementations'), \
+                     mock.patch.object(builder.subprocess,'run'), \
+                     mock.patch.object(coverage_release,'capture_load',side_effect=captures), \
+                     mock.patch.object(coverage_release,'complete',return_value={'manifestSha256':'fixture'}) as complete:
+                    if failure=='none':
+                        builder.main();complete.assert_called_once()
+                        self.assertEqual(complete.call_args.args[3],{'publication.v2.json':b'original'})
+                    else:
+                        with self.assertRaises(ValueError):builder.main()
+                        complete.assert_not_called()
+
     def test_every_published_table_requires_review_and_changed_schema_requires_revalidation(self):
         table, policy, _ = fixture()
         builder.validate_plan({'records':table},{'records':policy})

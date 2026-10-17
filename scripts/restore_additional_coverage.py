@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import inspect
 import json
 from pathlib import Path
@@ -11,6 +10,7 @@ import sys
 
 import pyarrow as pa
 import pyarrow.parquet as pq
+from spicy_regs import coverage_reader as MAINTAINED
 from spicy_regs import court_receipts
 from spicy_regs.court_subjects import LEGACY_COLUMNS
 from spicy_regs.etl_receipts import read_attempts, select_receipts
@@ -19,17 +19,11 @@ from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
 
 DATASETS = frozenset(("amendments", "court_dockets", "court_docket_groups",
                       "court_opinion_pdf_extractions", "court_opinions"))
-ROOT = Path(inspect.getfile(court_receipts)).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location(
-    "maintained_coverage_bridge", ROOT / "scripts/restore_coverage_processing.py"
-)
-assert SPEC is not None and SPEC.loader is not None
-MAINTAINED = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MAINTAINED)
+PACKAGE = Path(inspect.getfile(court_receipts)).resolve().parent
 
 
 def implementation_identity():
-    files = [Path(__file__), *(ROOT / "src/spicy_regs" / name for name in (
+    files = [Path(__file__), *(PACKAGE / name for name in (
         "court_receipts.py", "court_subjects.py", "etl_receipts.py", "etl_bulk.py",
         "native_types.py", "parquet_rows.py", "transforms/parquet_rows.py",
     ))]
@@ -69,29 +63,13 @@ def description(dataset):
 
 
 def restore(request):
-    if not isinstance(request, dict) or set(request) != {
-        "dataset", "generationId", "subjects", "receipts", "destination"
-    }:
-        raise ValueError("Unsupported additional coverage restoration request")
-    dataset = request["dataset"]
-    policy = policy_for(dataset)
+    dataset = request.get("dataset") if isinstance(request, dict) else None
     if dataset == "amendments":
         result = MAINTAINED.restore(request)
         result["implementationSha256"] = implementation_identity()
         return result
-    if not isinstance(request["subjects"], list) or len(request["subjects"]) != 1:
-        raise ValueError("Court coverage requires one selected subject member")
-    subject = MAINTAINED.checked_member(request["subjects"][0])
-    receipts = MAINTAINED.checked_member(request["receipts"])
+    policy, (subject,), receipts, destination = MAINTAINED.checked_request(request, policy_for, one_subject=True)
     generation = request["generationId"]
-    if not isinstance(generation, str) or not generation:
-        raise ValueError("Missing selected court receipt generation")
-    for batch in pq.ParquetFile(receipts).iter_batches(columns=["dataset", "generation_id"], batch_size=2000):
-        if any(row["dataset"] == dataset and row["generation_id"] != generation for row in batch.to_pylist()):
-            raise ValueError("Court receipts differ from the selected generation")
-    destination = Path(request["destination"])
-    if not destination.is_absolute() or destination.exists():
-        raise ValueError("Coverage destination must be a new absolute directory")
     destination.mkdir(parents=True)
     output = court_receipts.restore_processing_input(
         subject, destination / (dataset + ".parquet"), dataset=dataset,

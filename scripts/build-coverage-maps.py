@@ -34,22 +34,17 @@ HEAVY_NATIVE_SCAN_LOCK = threading.Lock()
 
 def measurement_revision(policy=None):
     import hashlib
-    from coverage_revision import legacy_revision
     if policy and policy.get('_additionalNativeProcessing'):
         return additional.measurement_revision(policy)
-    affected = policy and policy.get('family') == 'gao-reports'
-    revision = legacy_revision(ROOT, __file__)
-    if revision and not affected:
-        if policy and policy.get('_nativeProcessing'):
-            proof = json.loads((ROOT / 'content/legacy-coverage-compatibility.v1.json').read_text())
-            return proof['nativeMeasurementRevision']
-        return revision
     paths = [pathlib.Path(__file__), *(ROOT / 'scripts' / name for name in (
         'coverage_dimensions.py', 'coverage_inputs.py', 'publication_census.py',
         'collection_coverage.py', 'congress_coverage.py', 'regulation_coverage.py', 'fec_coverage.py',
-        'native_receipt_coverage.py', 'native_legislative_coverage.py', 'coverage_revision.py',
+        'native_receipt_coverage.py', 'native_legislative_coverage.py',
         'gao_receipt_policy.py'))]
-    return 'sha256:' + hashlib.sha256(b''.join(path.read_bytes() for path in paths)).hexdigest()
+    value = hashlib.sha256(b''.join(path.read_bytes() for path in paths))
+    if policy and policy.get('_nativeProcessing'):
+        value.update(policy['restorationImplementationSha256'].encode())
+    return 'sha256:' + value.hexdigest()
 
 
 def definitions(folder=None):
@@ -168,7 +163,7 @@ def validate_members(conn, id, table, expected_schema):
             raise ValueError('Retained member row count differs from its publication: ' + id)
 
 
-def _scan_legacy_table(id, table, policy):
+def _scan_published_table(id, table, policy):
     revision = measurement_revision(policy)
     conn = duckdb.connect()
     try:
@@ -288,7 +283,7 @@ def _scan_native_table(id, table, policy):
 def scan_table(id, table, policy):
     if policy.get('_additionalNativeProcessing'):
         return additional.scan_table(id, table, policy, validate_members=validate_members, validate_counts=validate_counts)
-    return (_scan_native_table if policy.get('_nativeProcessing') else _scan_legacy_table)(id, table, policy)
+    return (_scan_native_table if policy.get('_nativeProcessing') else _scan_published_table)(id, table, policy)
 
 
 def cached(table, policy, old):
@@ -351,7 +346,10 @@ def main():
     parser.add_argument('--scan', action='store_true')
     parser.add_argument('--only', nargs='+')
     parser.add_argument('--output', type=pathlib.Path, default=OUTPUT)
+    parser.add_argument('--release-output', type=pathlib.Path)
     args = parser.parse_args()
+    if args.release_output and (args.only or args.scan):
+        raise ValueError('Completed releases require a full build')
     if args.scan:
         request = json.load(sys.stdin)
         print(json.dumps(scan_table(request['id'], request['table'], request['policy'])))
@@ -359,7 +357,12 @@ def main():
     if args.only and args.output.resolve() == OUTPUT.resolve():
         raise ValueError('Partial scans require a separate output file')
     setup = duckdb.connect(); setup.execute('INSTALL httpfs'); setup.close()
-    _, tables = load()
+    captured = None
+    if args.release_output:
+        from coverage_release import capture_load
+        tables, captured = capture_load()
+    else:
+        _, tables = load()
     reviewed_policies = definitions()
     policies = dict(reviewed_policies)
     validate_plan(tables, policies)
@@ -400,16 +403,26 @@ def main():
         raise ValueError('Coverage implementation changed during the build; rerun the reviewed code')
     if set(results) != set(selected): raise ValueError('Coverage build omitted a published table')
     # Confirm membership/bindings still match after all scans, including mutable receipts.
-    _, final_tables = load()
+    if args.release_output:
+        final_tables, final_capture = capture_load()
+        if final_capture != captured:
+            raise ValueError('Selected publication bytes changed during coverage build')
+    else:
+        _, final_tables = load()
     if census_digest(final_tables) != census_digest(tables): raise ValueError('Publication changed during coverage build; retry against the new release')
     document = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': bool(args.only),
                 'generatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'censusDigest': census_digest(tables), 'tables': dict(sorted(results.items()))}
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    temp = args.output.with_suffix('.tmp'); temp.write_text(json.dumps(document, separators=(',', ':')) + '\n')
+    completed_bytes = (json.dumps(document, separators=(',', ':')) + '\n').encode()
+    temp = args.output.with_suffix('.tmp'); temp.write_bytes(completed_bytes)
     if not args.only:
         subprocess.run(['node', str(ROOT / 'scripts/check-coverage-maps.mjs'), str(temp)], check=True, cwd=ROOT)
     temp.replace(args.output)
+    if args.release_output:
+        from coverage_release import complete
+        print(json.dumps(complete(ROOT, args.release_output, completed_bytes,
+                                  captured, policies, revisions)), flush=True)
     print(f'All {len(results)} requested coverage maps verified', flush=True)
 
 

@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -15,6 +14,7 @@ import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import additional_native_coverage as adapter
+import native_legislative_coverage as native
 import restore_additional_coverage as reader
 from spicy_regs.court_receipts import local_receipt_selection, write_court_rows
 from spicy_regs.congress_receipts import write_congress_dataset
@@ -47,15 +47,19 @@ class BridgeTests(unittest.TestCase):
         self.root = Path(self.temp.name)
 
     def test_runtime_allowances_are_finite_and_scoped_to_selected_restoration(self):
-        env = {'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': str(Path(adapter.__file__).resolve()),
-               'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON': sys.executable,
-               'SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE': str(Path(adapter.__file__).resolve()),
-               'SPICYGOV_ADDITIONAL_COVERAGE_PYTHON': sys.executable}
-        for dataset in ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets', 'court_opinions', 'court_dockets', 'amendments'):
+        # One interpreter runs every bridge; the removed per-reader variables are ignored.
+        env = {'SPICYGOV_COVERAGE_PYTHON': sys.executable,
+               'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': '/nonexistent'}
+        navigation = ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
+        additional = ('court_opinions', 'court_dockets', 'amendments')
+        for dataset in navigation + additional:
+            script = 'restore_source_navigation_coverage.py' if dataset in navigation else 'restore_additional_coverage.py'
             for args in ([], ['--schema', dataset]):
                 with self.subTest(dataset=dataset, args=args), patch.dict(os.environ, env), patch.object(
                         adapter.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}', 'stderr':''})()) as run:
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
+                    self.assertEqual(run.call_args.args[0][0], sys.executable)
+                    self.assertEqual(Path(run.call_args.args[0][1]).name, script)
                     expected = {'documents': 600, 'federal_register': 600, 'fr_docket_links': 600, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
 
@@ -74,7 +78,7 @@ class BridgeTests(unittest.TestCase):
         restored_before = reader.restore(request)
         maintained_before = reader.MAINTAINED.implementation_identity()
         read_bytes = Path.read_bytes
-        bulk = reader.ROOT / "src/spicy_regs/etl_bulk.py"
+        bulk = reader.PACKAGE / "etl_bulk.py"
 
         def changed_bytes(path):
             data = read_bytes(path)
@@ -84,7 +88,7 @@ class BridgeTests(unittest.TestCase):
         with patch.object(Path, "read_bytes", changed_bytes):
             described_after = reader.description(request["dataset"])
             restored_after = reader.restore(changed_request)
-            self.assertEqual(reader.MAINTAINED.implementation_identity(), maintained_before)
+            self.assertNotEqual(reader.MAINTAINED.implementation_identity(), maintained_before)
         before_identity = described_before.pop("implementationSha256")
         after_identity = described_after.pop("implementationSha256")
         self.assertNotEqual(before_identity, after_identity)
@@ -104,7 +108,7 @@ class BridgeTests(unittest.TestCase):
         self.assertNotEqual(before.pop("implementationSha256"), after.pop("implementationSha256"))
         self.assertEqual(before, after)
 
-    def test_selected_bill_bridge_preserves_the_maintained_restoration(self):
+    def test_native_bridge_runs_the_packaged_reader_end_to_end(self):
         from spicy_regs.legislative_documents import field_registry
         from spicy_regs.legislative_receipts import write_legislative_outputs
         fields = field_registry()["bill_versions"]["fields"]
@@ -114,29 +118,51 @@ class BridgeTests(unittest.TestCase):
         source = self.root / "bill_versions.parquet"
         pq.write_table(pa.Table.from_pylist([raw], schema=pa.schema(
             [(field["name"], pa.string()) for field in fields])), source)
-        native = self.root / "native"
-        manifest = write_legislative_outputs([source], native, generation_id="selected-bill")
+        generated = self.root / "native"
+        manifest = write_legislative_outputs([source], generated, generation_id="selected-bill")
         request = {"dataset": "bill_versions", "generationId": "selected-bill",
-                   "subjects": [member(native / name) for name in manifest["subjects"]["bill_versions"]],
-                   "receipts": member(native / "etl_receipts.parquet"),
+                   "subjects": [member(generated / name) for name in manifest["subjects"]["bill_versions"]],
+                   "receipts": member(generated / "etl_receipts.parquet"),
                    "destination": str(self.root / "direct")}
         direct = plain(reader.MAINTAINED.restore(request))
-        router = Path(reader.__file__).with_name("select_native_coverage_reader.py")
-        env = {**os.environ, "SPICYGOV_LEGACY_COVERAGE_BRIDGE": str(reader.ROOT / "scripts/restore_coverage_processing.py"),
-               "SPICYGOV_LEGACY_COVERAGE_PYTHON": sys.executable}
-        described = json.loads(subprocess.check_output(
-            [sys.executable, str(router), "--schema", "bill_versions"], env=env, text=True))
-        request["destination"] = str(self.root / "selected")
-        selected = json.loads(subprocess.check_output(
-            [sys.executable, str(router)], env=env, input=json.dumps(request), text=True))
-        self.assertEqual(selected["implementationSha256"], described["implementationSha256"])
-        self.assertNotEqual(selected["implementationSha256"], direct["implementationSha256"])
+        with patch.dict(os.environ, {"SPICYGOV_COVERAGE_PYTHON": sys.executable}):
+            described = native.bridge(["--schema", "bill_versions"])
+            request["destination"] = str(self.root / "selected")
+            selected = native.bridge(request=request)
+        identity = reader.MAINTAINED.implementation_identity()
+        self.assertEqual(described["implementationSha256"], identity)
+        self.assertEqual(selected["implementationSha256"], identity)
         for result in (direct, selected):
             self.assertEqual(pq.read_table(result.pop("urls")[0]).to_pylist(), [raw])
-            result.pop("implementationSha256")
             for processing_member in result["processingMembers"]:
                 processing_member.pop("path")
         self.assertEqual(direct, selected)
+
+    def test_court_receipts_refuse_earlier_policy_and_missing_field(self):
+        _, request = fixture(self.root)
+        path = Path(request["receipts"]["path"])
+        original = pq.read_table(path)
+        cases = {
+            "policy": (original.set_column(original.schema.get_field_index("policy_version"), "policy_version",
+                                           pa.array(["court-docket-groups/0"] * original.num_rows, type=pa.string())),
+                       "Unsupported coverage receipt policy"),
+            "field": (original.drop_columns(["policy_version"]), "Unsupported coverage receipt format"),
+        }
+        for name, (table, message) in cases.items():
+            with self.subTest(name=name):
+                pq.write_table(table, path)
+                altered = {**request, "receipts": member(path), "destination": str(self.root / ("refused-" + name))}
+                with self.assertRaisesRegex(ValueError, message):
+                    reader.restore(altered)
+                self.assertFalse(Path(altered["destination"]).exists())
+
+    def test_court_restore_hashes_and_scans_receipts_once(self):
+        _, request = fixture(self.root)
+        with (patch.object(reader.MAINTAINED, "checked_member", wraps=reader.MAINTAINED.checked_member) as hashed,
+              patch.object(reader.MAINTAINED, "current_receipts", wraps=reader.MAINTAINED.current_receipts) as scanned):
+            reader.restore(request)
+        self.assertEqual([c.args[0]["path"] for c in hashed.call_args_list].count(request["receipts"]["path"]), 1)
+        self.assertEqual(scanned.call_count, 1)
 
     def test_court_source_list_spelling_survives(self):
         raw = {"cl_docket_id": "1", "parties_json": '["Agency", null,"","Agency"]',
@@ -212,6 +238,8 @@ class BridgeTests(unittest.TestCase):
             result = adapter.variant("court_docket_groups", table, policy)
             self.assertTrue(result["_additionalNativeProcessing"])
             self.assertIs(adapter.variant("unrelated", table, policy), policy)
+            # A table still published in the flat reviewed shape is measured directly: no reader.
+            self.assertIs(adapter.variant("court_docket_groups", {**table, "columns": policy["schema"]}, policy), policy)
             for changed in ({**table, "family": "other"}, {**table, "columns": [["x", "VARCHAR"]]}):
                 with self.assertRaises(ValueError):
                     adapter.variant("court_docket_groups", changed, policy)

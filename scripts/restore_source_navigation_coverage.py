@@ -17,17 +17,17 @@ import time
 from contextlib import contextmanager
 
 import duckdb
-import pyarrow as pa
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from spicy_regs import congress_bulk, earlier_receipt_policies, etl_bulk, etl_receipts, regulations_bulk, votes_batch_receipts
-from spicy_regs.etl_receipts import RECEIPT_SCHEMA, read_attempts, read_with_receipts
+from spicy_regs import coverage_reader as MAINTAINED
+from spicy_regs.etl_receipts import RECEIPT_SCHEMA
 from spicy_regs.schemas import regulations_subjects
 from spicy_regs.native_types import described_schema
 from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
 from spicy_regs.transforms.government_receipts import POLICIES, internal_prior
 from spicy_regs.transforms import regulations_receipts, regulations_shape
-from restore_additional_coverage import MAINTAINED, verify_artifacts
+from restore_additional_coverage import verify_artifacts
 
 DATASETS = {"committee_meetings":"congress", "nominations":"congress", "house_communications":"congress", "members":"congress", "member_terms":"congress", "member_party_affiliations":"congress", "fcc_filings":"regulation",
     "committee_reports":"congress", "report_sections":"congress",
@@ -72,9 +72,13 @@ def implementation_identity(dataset):
     return "sha256:" + value.hexdigest()
 
 
-def description(dataset):
+def policy_for(dataset):
     reviewed_schema(dataset)
-    policy = POLICIES[dataset] if dataset == "fcc_filings" else dataset_policy(dataset)
+    return POLICIES[dataset] if dataset == "fcc_filings" else dataset_policy(dataset)
+
+
+def description(dataset):
+    policy = policy_for(dataset)
     return {"nativeSchema":described_schema(policy.subject_schema), "processingSchema":reviewed_schema(dataset),
             "policy":policy.descriptor(), "policyVersion":policy.policy_version,
             "receiptOnly":policy.receipt_only, "implementationSha256":implementation_identity(dataset)}
@@ -109,20 +113,9 @@ def measured_stage(dataset, stage):
 
 def selected_inputs(request):
     """Check original byte identities before retaining all selected receipt outcomes."""
-    dataset = request["dataset"]
-    if (set(request) != {"dataset", "generationId", "subjects", "receipts", "destination"}
-            or not isinstance(request["generationId"], str) or not request["generationId"]
-            or not isinstance(request["subjects"], list) or len(request["subjects"]) != 1):
-        raise ValueError("Unsupported selected coverage request")
+    dataset = request.get("dataset") if isinstance(request, dict) else None
     with measured_stage(dataset, "original-member-checks"):
-        subject = MAINTAINED.checked_member(request["subjects"][0])
-        receipts = MAINTAINED.checked_member(request["receipts"])
-    with pq.ParquetFile(receipts) as source:
-        if not source.schema_arrow.equals(RECEIPT_SCHEMA):
-            raise ValueError("Receipt schema differs from the shared schema")
-    destination = Path(request["destination"])
-    if not destination.is_absolute() or destination.exists():
-        raise ValueError("Coverage destination must be a new absolute directory")
+        _, (subject,), receipts, destination = MAINTAINED.checked_request(request, policy_for, one_subject=True)
     destination.mkdir(parents=True)
     scoped = destination / "selected-receipts.parquet"
     scanner = ds.dataset(receipts, format="parquet").scanner(
@@ -130,13 +123,8 @@ def selected_inputs(request):
     receipt_rows = 0
     with measured_stage(dataset, "selected-receipt-scoping"), pq.ParquetWriter(scoped, RECEIPT_SCHEMA) as writer:
         for batch in scanner.to_batches():
-            if any(value != request["generationId"] for value in batch.column(
-                    batch.schema.get_field_index("generation_id")).to_pylist()):
-                raise ValueError("Selected receipt context differs from the selected generation")
             writer.write_batch(batch)
             receipt_rows += batch.num_rows
-    if not receipt_rows:
-        raise ValueError("Selected generation has no receipt context")
     diagnostic(dataset, "selected-receipts", rows=receipt_rows,
                generationId=request["generationId"], originalSha256=request["receipts"]["sha256"])
     return subject, scoped, destination
@@ -184,109 +172,14 @@ def restore_votes(request, facts):
         partial.unlink(missing_ok=True)
 
 
-def restore_regulation(request, facts):
-    """Admit one complete selected dataset and write its reviewed source fields once."""
-    dataset = request["dataset"]
-    subject, scoped, destination = selected_inputs(request)
-    schema = arrow_schema(dataset)
-    output = destination / "coverage-facts.parquet"
-    selected = regulations_receipts.ReceiptInput(dataset, (subject,), scoped, request["generationId"])
-    if dataset in {"documents", "federal_register", "fr_docket_links"}:
-        try:
-            # This maintained path performs complete admission and exact source
-            # reproduction. Its input is already scoped; avoid selecting twice.
-            with measured_stage(dataset, "maintained-batch-admission-and-reproduction"):
-                regulations_bulk._materialize_selected(selected, output, source_schema=schema)
-        except etl_bulk.NotBulkEligible as error:
-            diagnostic(dataset, "batch-adapter-fallback", reason=str(error))
-            with measured_stage(dataset, "maintained-admission-and-batch-reproduction"):
-                write_regulatory_facts(selected, output, schema)
-    else:
-        with measured_stage(dataset, "maintained-admission-and-batch-reproduction"):
-            write_regulatory_facts(selected, output, schema)
-    return restored_facts(request, facts, subject, output)
-
-
-def write_regulatory_facts(selected, output, schema):
-    """Keep provisional output private until every receipt and subject is admitted."""
-    partial = output.with_name("provisional-coverage-facts.parquet")
-    pending = []
-    seen = 0
-    metadata = None
-    try:
-        with pq.ParquetWriter(partial, schema) as writer:
-            def coverage_fields(row, original):
-                nonlocal seen, metadata
-                current = row.get("input_metadata", {})
-                if not isinstance(current, dict):
-                    raise ValueError("Regulatory input metadata is not a mapping")
-                schema.with_metadata(current)
-                if seen and current != metadata:
-                    raise ValueError("Regulatory input metadata differs across selected receipts")
-                metadata = current
-                seen += 1
-                return {name: original.get(name) for name in schema.names}
-
-            def write_batch(rows):
-                try:
-                    originals = regulations_receipts._processor_inputs(selected.dataset, rows)
-                except (ValueError, TypeError, OverflowError, RecursionError, pa.ArrowException):
-                    # A failed batch must preserve the original first refusal,
-                    # including metadata errors before a later reproduction error.
-                    fields = [coverage_fields(row, regulations_receipts._processor_input(selected.dataset, row))
-                              for row in rows]
-                else:
-                    fields = [coverage_fields(row, original) for row, original in zip(rows, originals)]
-                writer.write_table(pa.Table.from_pylist(fields, schema=schema))
-
-            for row in read_with_receipts(selected.subjects, [selected.receipts],
-                    regulations_receipts.policy(selected.dataset), generation_id=selected.generation_id):
-                pending.append(row)
-                if len(pending) == 2000:
-                    write_batch(pending)
-                    pending.clear()
-            if pending:
-                write_batch(pending)
-            if not seen:
-                observed = [attempt["processing_fields"]["input_metadata"]
-                            for attempt in read_attempts([selected.receipts], regulations_receipts.policy(selected.dataset),
-                                generation_id=selected.generation_id, outcomes=frozenset({"observed"}))
-                            if attempt["diagnostics"].get("kind") == "input_file_metadata"]
-                if observed and any(value != observed[0] for value in observed):
-                    raise ValueError("Empty input metadata differs across selected receipts")
-                if observed:
-                    schema.with_metadata(observed[0])
-        partial.replace(output)
-    finally:
-        partial.unlink(missing_ok=True)
-
-
 def restore(request):
-    dataset = request.get("dataset")
+    dataset = request.get("dataset") if isinstance(request, dict) else None
     facts = description(dataset)
     if dataset == "roll_call_votes":
         return restore_votes(request, facts)
-    if dataset in regulations_shape.SOURCE_COLUMNS and dataset != "fcc_filings":
-        return restore_regulation(request, facts)
-    # The maintained reader checks byte identities, generation and subject/receipt agreement.
+    # checked_request admits byte identities, current receipts and generation once per route.
     if dataset == "fcc_filings":
-        if set(request) != {"dataset", "generationId", "subjects", "receipts", "destination"} or not isinstance(request["generationId"], str) or not request["generationId"] or len(request["subjects"]) != 1:
-            raise ValueError("Unsupported selected FCC coverage request")
-        subject = MAINTAINED.checked_member(request["subjects"][0])
-        receipts = MAINTAINED.checked_member(request["receipts"])
-        found = False
-        with pq.ParquetFile(receipts) as selected_receipts:
-            for batch in selected_receipts.iter_batches(columns=["dataset", "generation_id"], batch_size=2000):
-                for row in batch.to_pylist():
-                    if row["dataset"] == dataset:
-                        found = True
-                        if row["generation_id"] != request["generationId"]:
-                            raise ValueError("FCC receipts differ from the selected generation")
-        if not found:
-            raise ValueError("Selected FCC generation has no receipt context")
-        destination = Path(request["destination"])
-        if not destination.is_absolute() or destination.exists():
-            raise ValueError("Coverage destination must be a new absolute directory")
+        _, (subject,), receipts, destination = MAINTAINED.checked_request(request, policy_for, one_subject=True)
         destination.mkdir()
         copied = destination / "fcc_filings.parquet"
         shutil.copyfile(subject, copied)

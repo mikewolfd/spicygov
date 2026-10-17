@@ -1,0 +1,6 @@
+{
+  "format": "spicygov-coverage-release-selection",
+  "version": 1,
+  "directory": ".cache/completed-coverage-release",
+  "manifestSha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

@@ -1,0 +1,7 @@
+{
+  "format": "spicygov-source-catalog-release", "version": 1,
+  "generation": "sha256:46443510ff63b1c989400cc9e632f730b521b93d847ff5573d6d083e72121cda",
+  "selection": {"sha256": "sha256:3b18dde7218277fb4c192bb8de1d5ba1a4dce527c488799c3d05aeba7061f0af", "bytes": 1073646},
+  "archive": {"sha256": "sha256:94cdca21d4ee95c2c881f3456f7ee03ffb66ec3c6e4a10c56d8fa293f3bd087d", "bytes": 50842455},
+  "decodedBytes": 163645440, "members": 4130, "memberBytes": 160379449
+}

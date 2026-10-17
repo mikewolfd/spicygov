@@ -17,5 +17,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Check offline release boundaries
+        run: |
+          python -B tests/test_catalog_resume.py
+          python -B tests/test_coverage_release.py
+          python -B tests/test_release_workflows.py
       - run: npm test
       - run: npm run build

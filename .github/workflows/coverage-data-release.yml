@@ -1,0 +1,114 @@
+name: Prepare coverage data release
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        type: choice
+        default: ubuntu-latest
+        options: [ubuntu-latest, ubuntu-24.04-arm]
+      backend_revision:
+        description: Exact reviewed spicy-regs commit containing the current packaged coverage reader
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: coverage-data-release
+  cancel-in-progress: false
+jobs:
+  build:
+    timeout-minutes: 90
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    env:
+      SPICYGOV_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require an exact maintained backend revision
+        env:
+          BACKEND_REVISION: ${{ inputs.backend_revision }}
+        run: python -c "import os,re,sys; sys.exit(0 if re.fullmatch('[0-9a-f]{40}', os.environ['BACKEND_REVISION']) else 'An exact reviewed backend commit is required')"
+      - uses: actions/checkout@v4
+      - name: Check out the maintained current coverage reader
+        uses: actions/checkout@v4
+        with:
+          repository: mikewolfd/spicy-regs
+          ref: ${{ inputs.backend_revision }}
+          path: .coverage-backend
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: .coverage-backend/uv.lock
+      - name: Install the locked current reader
+        working-directory: .coverage-backend
+        run: uv sync --frozen --no-default-groups --group source-readers
+      - name: Check the supported packaged interface
+        run: |
+          "$SPICYGOV_COVERAGE_PYTHON" -m spicy_regs.coverage_reader --schema bill_versions > /dev/null
+          "$SPICYGOV_COVERAGE_PYTHON" scripts/restore_additional_coverage.py --schema amendments > /dev/null
+          "$SPICYGOV_COVERAGE_PYTHON" scripts/restore_source_navigation_coverage.py --schema roll_call_votes > /dev/null
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14
+      - name: Check offline release boundaries
+        run: |
+          python -B tests/test_catalog_resume.py
+          python -B tests/test_coverage_release.py
+          python -B tests/test_release_workflows.py
+      # The builder and its own tests run on the pinned system interpreter; only the
+      # restoration bridges and their tests need the one reviewed spicy-regs environment.
+      - run: python tests/test_time_coverage.py
+      - run: python tests/test_collection_coverage.py
+      - run: python tests/test_publication_census.py
+      - run: python tests/test_coverage_dimensions.py
+      - run: python tests/test_coverage_gate.py
+      - run: python tests/test_regulation_coverage_maps.py
+      - run: python tests/test_native_receipt_coverage.py
+      - run: python tests/test_fec_coverage_maps.py
+      - run: python tests/test_congress_coverage_maps.py
+      - run: python tests/test_native_legislative_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_additional_native_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_court_extraction_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_bulk_court_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_source_navigation_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_small_native_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_bulk_native_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_regulatory_native_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_rulemaking_native_coverage.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_regulatory_coverage_restore.py
+      - run: $SPICYGOV_COVERAGE_PYTHON tests/test_vote_coverage_receipt_scope.py
+      - name: Restore validated coverage checkpoints
+        # Reuse validated interrupted scans on every build, including pushes.
+        # The builder still checks each checkpoint against the current inputs.
+        id: coverage-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .cache/coverage-maps
+          key: ${{ runner.os }}-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-coverage-v1-
+      - name: Verify coverage for every published table
+        id: coverage-scan
+        # A restored checkpoint is only a candidate. The builder rechecks exact
+        # source, schema, policy, scanner, paired exports and UTC month bindings.
+        run: python scripts/build-coverage-maps.py --release-output .cache/completed-coverage-release
+      - name: Save validated coverage checkpoints
+        if: ${{ always() && steps.coverage-cache.outcome == 'success' && (steps.coverage-scan.outcome == 'success' || steps.coverage-scan.outcome == 'failure') && hashFiles('.cache/coverage-maps/*.json') != '' }}
+        uses: actions/cache/save@v5
+        with:
+          # Preserve completed tables after a failed scan; the builder still
+          # requires every current table before it replaces the served map.
+          path: .cache/coverage-maps
+          key: ${{ steps.coverage-cache.outputs.cache-primary-key }}
+      - name: Retain completed coverage data for independent selection
+        uses: actions/upload-artifact@v4
+        with:
+          name: completed-coverage-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/completed-coverage-release
+          if-no-files-found: error
+          overwrite: false
+

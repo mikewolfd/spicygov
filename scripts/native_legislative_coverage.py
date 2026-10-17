@@ -68,14 +68,9 @@ def verify_file(member):
 
 
 def bridge(args=(), request=None):
-    script = os.environ.get("SPICYGOV_NATIVE_COVERAGE_BRIDGE")
-    if not script or not Path(script).is_absolute() or not Path(script).is_file():
-        raise ValueError(
-            "Native coverage requires the pinned backend restoration bridge"
-        )
-    python = os.environ.get("SPICYGOV_NATIVE_COVERAGE_PYTHON", sys.executable)
+    python = os.environ.get("SPICYGOV_COVERAGE_PYTHON", sys.executable)
     result = subprocess.run(
-        [python, script, *args],
+        [python, "-m", "spicy_regs.coverage_reader", *args],
         input=None if request is None else json.dumps(request),
         text=True,
         capture_output=True,
@@ -107,6 +102,8 @@ def validate_native_implementations(policies):
 
 
 def variant(dataset, table, policy):
+    # A table still published in the flat reviewed shape is measured directly by
+    # the published-table scanner: no reader, receipts or restoration.
     if table.get("columns") == policy["schema"]:
         return policy
     if dataset not in DATASETS or table["family"] not in FAMILIES:

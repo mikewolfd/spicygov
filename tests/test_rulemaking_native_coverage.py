@@ -171,7 +171,7 @@ class RulemakingNativeCoverageTests(unittest.TestCase):
         manifest, pointer, inputs, download, _ = fixture(self.root)
         manifest["run_id"] = manifest["etlReceipts"]["generationId"] = "different-run"
         table = census.rulemaking_tables(pointer, manifest)["proceedings"]
-        with self.assertRaisesRegex(ValueError, "receipt context"):
+        with self.assertRaisesRegex(ValueError, "differ from the selected generation"):
             adapter.AdditionalInputs(inputs, self.root / "private", download).restore_snapshot("proceedings", table)
 
     def test_selected_table_and_pointer_cannot_drift_from_snapshot_manifest(self):

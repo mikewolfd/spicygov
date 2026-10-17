@@ -29,18 +29,22 @@ def member(path):
 
 
 class SourceCoverageTests(unittest.TestCase):
-    def test_source_navigation_routes_keep_the_existing_readers_separate(self):
-        env = {"SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE": str(Path(reader.__file__).resolve()), "SPICYGOV_SOURCE_NAVIGATION_COVERAGE_PYTHON": sys.executable, "SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE": str(Path(reader.__file__).with_name("restore_additional_coverage.py").resolve()), "SPICYGOV_ADDITIONAL_COVERAGE_PYTHON": sys.executable}
+    def test_bridge_selects_a_script_by_dataset_under_the_one_backend_interpreter(self):
+        # The removed per-reader variables are ignored: one interpreter, two spicygov adapters.
+        env = {"SPICYGOV_COVERAGE_PYTHON": sys.executable, "SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE": "/nonexistent"}
+        navigation, additional = "restore_source_navigation_coverage.py", "restore_additional_coverage.py"
         with patch.dict("os.environ", env), patch.object(adapter.subprocess, "run", return_value=subprocess.CompletedProcess([],0,stdout="{}")) as run:
+            def selected(*args, **kwargs):
+                adapter.bridge(*args, **kwargs)
+                self.assertEqual(run.call_args.args[0][0], sys.executable)
+                return Path(run.call_args.args[0][1]).name
             for name in reader.DATASETS:
-                adapter.bridge(["--schema",name])
-                self.assertEqual(run.call_args.args[0][1],env["SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE"])
-                adapter.bridge(request={"dataset":name})
-                self.assertEqual(run.call_args.args[0][1],env["SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE"])
-            adapter.bridge(["--verify-artifacts"],request=[{"spec":{"family":"fcc-filings"}}])
-            self.assertEqual(run.call_args.args[0][1],env["SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE"])
-            adapter.bridge(["--schema","amendments"])
-            self.assertEqual(run.call_args.args[0][1],env["SPICYGOV_ADDITIONAL_COVERAGE_BRIDGE"])
+                self.assertEqual(selected(["--schema",name]), navigation, name)
+                self.assertEqual(selected(request={"dataset":name}), navigation, name)
+            self.assertEqual(selected(["--verify-artifacts"],request=[{"spec":{"family":"fcc-filings"}}]), navigation)
+            for name in ("amendments", "court_dockets", "court_opinions"):
+                self.assertEqual(selected(["--schema",name]), additional, name)
+            self.assertEqual(selected(["--verify-artifacts"],request=[{"spec":{"family":"amendments"}}]), additional)
 
     def test_members_service_uses_restored_terms_from_the_same_generation(self):
         with tempfile.TemporaryDirectory() as folder:

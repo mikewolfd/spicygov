@@ -1,0 +1,148 @@
+"""Constructed full release fixtures; no source scan or production qualification."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'scripts'))
+from coverage_dimensions import binding, definition_digest
+from coverage_release import complete, implementation_files, sha
+from publication_census import census, census_digest
+from test_publication_census import documents
+
+
+class ReleaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        core, pointer, manifest, comments = documents()
+        self.captured = {key: json.dumps(value).encode() for key, value in {
+            'publication.v2.json':core, 'materialized/rulemaking/latest.json':pointer,
+            pointer['manifest_key']:manifest, 'comments-publication.json':comments}.items()}
+        self.tables = census(core,pointer,manifest,comments)
+        self.policies, maps, self.revisions = {}, {}, {}
+        for id, table in self.tables.items():
+            columns = table.get('columns') or [['day','DATE']]
+            policy = {'family':table['family'], 'classification':'fixture', 'schema':columns,
+                      'dimensions':[{'id':'snapshot','kind':'snapshot','label':'Saved rows','meaning':'Constructed test fixture.'}]}
+            self.policies[id] = policy
+            self.revisions[id] = 'sha256:'+'a'*64
+            maps[id] = {**binding({**table,'columns':columns}, policy), 'status':'measured',
+                        'classification':'fixture','note':'Constructed fixture, not a measured production release.',
+                        'measuredAt':'2026-10-16T00:00:00Z','measurementRevision':self.revisions[id],
+                        'dimensions':[{'id':'snapshot','label':'Saved rows','meaning':'Constructed test fixture.',
+                          'status':'measured','definitionDigest':definition_digest(policy['dimensions'][0]),
+                          'granularity':'snapshot','rows':table['rows'],'placedRows':table['rows'],
+                          'unplacedRows':0,'buckets':{}}]}
+        self.document = {'format':'spicygov-coverage-maps','version':1,'partial':False,
+                         'generatedAt':'2026-10-16T00:00:00Z','censusDigest':census_digest(self.tables),'tables':maps}
+        self.release = self.root/'release'
+
+    def create(self):
+        return complete(ROOT, self.release, json.dumps(self.document).encode(), self.captured, self.policies, self.revisions)
+
+    def consume(self, pin, check=True):
+        return subprocess.run(['node',str(ROOT/'scripts/consume-coverage-release.mjs'),
+            '--release',str(self.release),'--sha256',pin],text=True,capture_output=True,check=check,cwd=ROOT)
+
+    def reseal(self, member):
+        # A selected altered fixture must still pass independent semantics.
+        manifest = json.loads((self.release/'manifest.json').read_text())
+        raw = (self.release/member).read_bytes()
+        manifest['members'][member] = {'bytes':len(raw),'sha256':sha(raw)}
+        raw = json.dumps(manifest).encode(); (self.release/'manifest.json').write_bytes(raw)
+        return sha(raw)
+
+    def test_complete_fixture_is_consumed_offline_and_runtime_source_change_is_stale(self):
+        pin = self.create()['manifestSha256']
+        result = json.loads(self.consume(pin).stdout)
+        self.assertEqual((result['networkRequests'],result['sourceRestorations']),(0,0))
+        code = """
+import {consumeRelease} from './scripts/consume-coverage-release.mjs';
+import {build} from 'esbuild';
+const r=await consumeRelease(process.argv[1],process.argv[2]);
+const {outputFiles}=await build({entryPoints:['lib/coverage-map.ts'],bundle:true,platform:'node',format:'esm',write:false});
+const {currentCoverageMap,coverageMapForDisplay}=await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].contents).toString('base64'));
+const t=r.tables[0]; if(!currentCoverageMap(t,r.maps))throw Error('fixture not current');
+const changed={...t,rows:t.rows+1};
+if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed,r.maps).freshness!=='previous-release')throw Error('changed live publication accepted');
+"""
+        subprocess.run(['node','--input-type=module','-e',code,str(self.release),pin],check=True,cwd=ROOT)
+
+    def test_corruption_and_unselected_manifest_refuse(self):
+        pin = self.create()['manifestSha256']
+        self.assertNotEqual(self.consume('sha256:'+'f'*64,False).returncode,0)
+        (self.release/'coverage-maps.v1.json').write_bytes(b'{}')
+        self.assertNotEqual(self.consume(pin,False).returncode,0)
+
+    def test_workflow_argument_shape_uses_default_selection_and_unavailable_mode(self):
+        pin=self.create()['manifestSha256']
+        (self.root/'content').mkdir()
+        (self.root/'content/coverage-release-selection.v1.json').write_text(json.dumps({
+            'format':'spicygov-coverage-release-selection','version':1,
+            'directory':str(self.release),'manifestSha256':pin}))
+        # Replace only the asset compiler for this CLI-shape probe.
+        executable=self.root/'npm'
+        executable.write_text('#!/bin/sh\ntest "$1 $2" = "run build:assets" || exit 7\nmkdir -p dist\n')
+        executable.chmod(0o755)
+        env={**os.environ,'PATH':str(self.root)+os.pathsep+os.environ['PATH']}
+        script=str(ROOT/'scripts/build-ui.mjs')
+        for mode in ('completed','unavailable'):
+            subprocess.run(['node',script,'--coverage',mode],cwd=self.root,env=env,check=True,capture_output=True)
+            served=json.loads((self.root/'dist/coverage-maps.v1.json').read_text())
+            self.assertEqual(served['format'],'spicygov-coverage-maps' if mode=='completed' else 'spicygov-coverage-unavailable')
+        missing=subprocess.run(['node',script,'--coverage'],cwd=self.root,env=env,capture_output=True,text=True)
+        self.assertNotEqual(missing.returncode,0);self.assertIn('Missing value',missing.stderr)
+        (self.root/'empty').mkdir()
+        unselected=subprocess.run(['node',script,'--coverage','completed'],cwd=self.root/'empty',env=env,capture_output=True,text=True)
+        self.assertNotEqual(unselected.returncode,0);self.assertIn('reviewed selection',unselected.stderr);self.assertNotIn('Error: ENOENT',unselected.stderr)
+
+    def test_changed_source_selection_refuses_even_if_rehashed(self):
+        self.create()
+        path=self.release/'publications/publication.v2.json'
+        document=json.loads(path.read_text());document['families']['test']['tables']['records.parquet']['rows']+=1
+        path.write_text(json.dumps(document))
+        result=self.consume(self.reseal('publications/publication.v2.json'),False)
+        self.assertNotEqual(result.returncode,0);self.assertIn('source selection differs',result.stderr)
+
+    def test_partial_unknown_and_changed_policy_refuse(self):
+        self.document['partial']=True
+        with self.assertRaisesRegex(ValueError,'complete'):self.create()
+        self.document['partial']=False;self.create()
+        path=self.release/'coverage-maps.v1.json';document=json.loads(path.read_text())
+        document['tables']['records']['definitionDigest']='sha256:'+'f'*64;path.write_text(json.dumps(document))
+        self.assertNotEqual(self.consume(self.reseal('coverage-maps.v1.json'),False).returncode,0)
+
+    def test_changed_implementation_identity_refuses(self):
+        self.create()
+        manifest=json.loads((self.release/'manifest.json').read_text())
+        manifest['implementation']['scripts/build-coverage-maps.py']='sha256:'+'f'*64
+        raw=json.dumps(manifest).encode();(self.release/'manifest.json').write_bytes(raw)
+        result=self.consume(sha(raw),False)
+        self.assertNotEqual(result.returncode,0);self.assertIn('implementation changed',result.stderr)
+
+    def test_release_binding_removed_implementation_files_refuses_clearly(self):
+        self.create()
+        original=(self.release/'manifest.json').read_bytes()
+        for key in ('scripts/coverage_revision.py','content/legacy-coverage-compatibility.v1.json'):
+            with self.subTest(key=key):
+                manifest=json.loads(original);manifest['implementation'][key]='sha256:'+'f'*64
+                raw=json.dumps(manifest).encode();(self.release/'manifest.json').write_bytes(raw)
+                result=self.consume(sha(raw),False)
+                self.assertNotEqual(result.returncode,0);self.assertIn('implementation',result.stderr);self.assertNotIn('Error: ENOENT',result.stderr)
+
+    def test_bound_implementation_files_all_exist(self):
+        files=implementation_files(ROOT)
+        self.assertTrue(files and all(path.is_file() for path in files))
+        self.assertFalse({'coverage_revision.py','select_native_coverage_reader.py','legacy-coverage-compatibility.v1.json'}&{path.name for path in files})
+
+    def test_expired_measurement_month_refuses(self):
+        self.document['tables']['records']['dimensions'][0]['activityBoundary']={'month':'2001-01','basis':'measurement-month'}
+        with self.assertRaises(subprocess.CalledProcessError):self.create()
+
+
+if __name__=='__main__':unittest.main()

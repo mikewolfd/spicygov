@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -9,11 +10,12 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
+import additional_native_coverage as adapter
 import native_legislative_coverage as native
 
 
 class NativeCoverageTests(unittest.TestCase):
-    def test_legacy_schema_does_not_require_backend_or_restore(self):
+    def test_flat_published_schema_uses_the_published_scanner_without_restoration(self):
         policy = {"schema": [["source", "VARCHAR"]]}
         table = {"family": "bill-family", "columns": policy["schema"]}
         with patch.object(
@@ -24,6 +26,29 @@ class NativeCoverageTests(unittest.TestCase):
                 "bill_versions", table, policy, object()
             ) as result:
                 self.assertIs(result[0], table)
+
+    def test_bridge_runs_only_the_packaged_reader(self):
+        removed = {
+            "SPICYGOV_NATIVE_COVERAGE_BRIDGE": "/nonexistent",
+            "SPICYGOV_LEGACY_COVERAGE_BRIDGE": "/nonexistent",
+        }
+        done = type("Done", (), {"stdout": "{}\n"})()
+        with (
+            patch.dict("os.environ", {**removed, "SPICYGOV_COVERAGE_PYTHON": "/x/python"}),
+            patch.object(native.subprocess, "run", return_value=done) as run,
+        ):
+            native.bridge(["--schema", "bill_versions"])
+            self.assertEqual(
+                run.call_args.args[0],
+                ["/x/python", "-m", "spicy_regs.coverage_reader", "--schema", "bill_versions"],
+            )
+        with (
+            patch.dict("os.environ", removed),
+            patch.object(native.subprocess, "run", return_value=done) as run,
+        ):
+            os.environ.pop("SPICYGOV_COVERAGE_PYTHON", None)
+            native.bridge(["--schema", "bill_versions"])
+            self.assertEqual(run.call_args.args[0][:3], [sys.executable, "-m", "spicy_regs.coverage_reader"])
 
     def test_only_exact_reviewed_native_schema_has_a_processing_variant(self):
         policy = {"schema": [["source", "VARCHAR"]]}
@@ -51,6 +76,19 @@ class NativeCoverageTests(unittest.TestCase):
             with patch.object(native, "native_schema", return_value=bad):
                 with self.assertRaises(ValueError):
                     native.variant("bill_versions", table, policy)
+        # Neither the flat reviewed schema nor the reviewed native subject: refused.
+        unknown = {**table, "columns": [["x", "VARCHAR"]]}
+        with patch.object(
+            native,
+            "native_schema",
+            return_value={
+                "nativeSchema": table["columns"],
+                "receiptOnly": False,
+                "implementationSha256": "bridge",
+            },
+        ):
+            with self.assertRaisesRegex(ValueError, "not the reviewed native subject"):
+                native.variant("bill_versions", unknown, policy)
 
     def test_unrelated_schema_change_does_not_enable_restoration(self):
         policy = {"schema": [["old", "VARCHAR"]]}
@@ -209,8 +247,8 @@ class WarmCoverageTests(unittest.TestCase):
         cls.driver = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.driver)
 
-    def test_complete_mixed_native_and_legacy_inventory_uses_each_tables_revision(self):
-        legacy_schema = [["source", "VARCHAR"]]
+    def test_complete_mixed_native_and_published_inventory_uses_each_tables_revision(self):
+        source_schema = [["source", "VARCHAR"]]
         physical_schema = [["printing_id", "VARCHAR"]]
         dimension = {
             "id": "source",
@@ -223,10 +261,10 @@ class WarmCoverageTests(unittest.TestCase):
             id: {
                 "family": "bill-family",
                 "classification": "categorical",
-                "schema": legacy_schema,
+                "schema": source_schema,
                 "dimensions": [dimension],
             }
-            for id in ("legacy", "bill_versions")
+            for id in ("published", "bill_versions")
         }
         tables = {
             id: {
@@ -236,14 +274,14 @@ class WarmCoverageTests(unittest.TestCase):
                 "rows": 1,
             }
             for id, columns in (
-                ("legacy", legacy_schema),
+                ("published", source_schema),
                 ("bill_versions", physical_schema),
             )
         }
         native_policy = {
             **reviewed["bill_versions"],
             "schema": physical_schema,
-            "processingSchema": legacy_schema,
+            "processingSchema": source_schema,
             "_nativeProcessing": True,
             "restorationImplementationSha256": "qualified",
         }
@@ -282,12 +320,12 @@ class WarmCoverageTests(unittest.TestCase):
             ):
                 self.driver.main()
                 self.assertTrue(output.exists())
-                self.assertNotEqual(revisions["legacy"], revisions["bill_versions"])
+                self.assertNotEqual(revisions["published"], revisions["bill_versions"])
                 checker.assert_called_once()
                 self.assertEqual(
                     final_reader.call_args.args[0]["bill_versions"], native_policy
                 )
-                self.assertEqual(reviewed["bill_versions"]["schema"], legacy_schema)
+                self.assertEqual(reviewed["bill_versions"]["schema"], source_schema)
                 saved = json.loads(output.read_text())["tables"]
                 self.assertEqual(
                     {id: result["measurementRevision"] for id, result in saved.items()},
@@ -301,7 +339,7 @@ class WarmCoverageTests(unittest.TestCase):
                     side_effect=lambda item: (
                         item[0],
                         {
-                            "measurementRevision": revisions["legacy"],
+                            "measurementRevision": revisions["published"],
                             "dimensions": [dimension],
                         },
                     ),
@@ -310,7 +348,33 @@ class WarmCoverageTests(unittest.TestCase):
                         self.driver.main()
                 self.assertEqual(output.read_text(), previous)
 
-    def test_real_26_million_comment_checkpoint_remains_bound_without_scanning(self):
+    def test_flat_published_tables_in_the_measured_map_are_admitted_without_a_reader(self):
+        # The 2026-10-05 map measured most native-family tables in the flat published
+        # shape. That is the current published format: the plan admits them with no reader.
+        root = Path(__file__).parents[1]
+        saved = json.loads((root / "public/coverage-maps.v1.json").read_text())["tables"]
+        policies = self.driver.definitions()
+        flat = {
+            id: {"family": saved[id]["family"], "kind": "generation", "columns": policies[id]["schema"]}
+            for id in sorted((native.DATASETS | set(adapter.FAMILIES)) & set(saved))
+            if [list(c) for c in saved[id]["schema"]] == [list(c) for c in policies[id]["schema"]]
+        }
+        self.assertTrue({"bill_versions", "documents", "members"} <= set(flat))
+        chosen = {id: dict(policies[id]) for id in flat}
+        unneeded = AssertionError("a flat published table needs no reader")
+        with (
+            patch.object(native, "bridge", side_effect=unneeded),
+            patch.object(native, "native_schema", side_effect=unneeded),
+            patch.object(adapter, "bridge", side_effect=unneeded),
+            patch.object(adapter, "native_schema", side_effect=unneeded),
+        ):
+            self.driver.validate_plan(flat, chosen)
+        self.assertFalse(
+            [id for id, policy in chosen.items()
+             if policy.get("_nativeProcessing") or policy.get("_additionalNativeProcessing")]
+        )
+
+    def test_checkpoint_binding_and_historical_map_is_evidence_only(self):
         root = Path(__file__).parents[1]
         saved = json.loads((root / "public/coverage-maps.v1.json").read_text())[
             "tables"
@@ -332,11 +396,14 @@ class WarmCoverageTests(unittest.TestCase):
             ],
         }
         policy = self.driver.definitions()["comments"]
-        self.assertEqual(
-            self.driver.measurement_revision(policy), saved["measurementRevision"]
-        )
+        current = self.driver.measurement_revision(policy)
+        # The checked-in map predates the single reader route: retained as evidence, never reused.
+        self.assertNotEqual(current, saved["measurementRevision"])
         with patch.object(self.driver, "header_matches") as check:
-            self.assertTrue(self.driver.cached(table, policy, saved))
+            self.assertFalse(self.driver.cached(table, policy, saved))
+            check.assert_not_called()
+            rebound = {**saved, "measurementRevision": current}
+            self.assertTrue(self.driver.cached(table, policy, rebound))
             self.assertEqual(check.call_count, 2)
             changed = {
                 **table,
@@ -347,75 +414,24 @@ class WarmCoverageTests(unittest.TestCase):
                     }
                 ],
             }
-            self.assertFalse(self.driver.cached(changed, policy, saved))
+            self.assertFalse(self.driver.cached(changed, policy, rebound))
+
+    def test_native_revision_binds_the_reader_identity(self):
+        policy = self.driver.definitions()["comments"]
+        native_policy = {
+            "_nativeProcessing": True,
+            "restorationImplementationSha256": "sha256:" + "a" * 64,
+        }
+        first = self.driver.measurement_revision(native_policy)
+        self.assertNotEqual(first, self.driver.measurement_revision(policy))
         self.assertNotEqual(
-            self.driver.measurement_revision({"_nativeProcessing": True}),
-            saved["measurementRevision"],
+            first,
+            self.driver.measurement_revision(
+                {**native_policy, "restorationImplementationSha256": "sha256:" + "b" * 64}
+            ),
         )
-
-    def test_a_legacy_reader_or_validation_change_invalidates_compatibility(self):
-        from coverage_revision import legacy_revision
-        import shutil
-
-        root = Path(__file__).parents[1]
-        with tempfile.TemporaryDirectory() as folder:
-            target = Path(folder)
-            (target / "content").mkdir()
-            (target / "scripts").mkdir()
-            shutil.copyfile(
-                root / "content/legacy-coverage-compatibility.v1.json",
-                target / "content/legacy-coverage-compatibility.v1.json",
-            )
-            shutil.copyfile(
-                root / "scripts/native_legislative_coverage.py",
-                target / "scripts/native_legislative_coverage.py",
-            )
-            proof = json.loads(
-                (target / "content/legacy-coverage-compatibility.v1.json").read_text()
-            )
-            for name in set(proof["files"]) | set(proof.get("revisionFiles", {})):
-                shutil.copyfile(root / "scripts" / name, target / "scripts" / name)
-            driver = target / "scripts/build-coverage-maps.py"
-            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
-            self.assertEqual(
-                legacy_revision(target, driver), proof["measurementRevision"]
-            )
-            reader = target / "scripts/regulation_coverage.py"
-            reader.write_text(reader.read_text() + "\n# changed reader\n")
-            self.assertIsNone(legacy_revision(target, driver))
-            shutil.copyfile(root / "scripts/regulation_coverage.py", reader)
-            driver.write_text(
-                driver.read_text().replace(
-                    "def validate_counts(dimension, rows):",
-                    "def validate_counts(dimension, rows):\n    changed_validation = True",
-                )
-            )
-            self.assertIsNone(legacy_revision(target, driver))
-            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
-            driver.write_text(driver.read_text() + "\nCHANGED_GLOBAL = True\n")
-            self.assertIsNone(legacy_revision(target, driver))
-            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
-            driver.write_text(
-                driver.read_text().replace(
-                    "def scan_table(id, table, policy):",
-                    "def scan_table(id, table, policy):\n    table['rows'] = 0",
-                )
-            )
-            self.assertIsNone(legacy_revision(target, driver))
-            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
-            driver.write_text(
-                driver.read_text().replace(
-                    "def _scan_native_table(id, table, policy):",
-                    "def _scan_native_table(id, table, policy):\n    table['rows'] = 0",
-                )
-            )
-            self.assertIsNone(legacy_revision(target, driver))
-            shutil.copyfile(root / "scripts/build-coverage-maps.py", driver)
-            driver.write_text(
-                driver.read_text()
-                + "\ndef unexpected_legacy_helper():\n    return None\n"
-            )
-            self.assertIsNone(legacy_revision(target, driver))
+        with self.assertRaises(KeyError):
+            self.driver.measurement_revision({"_nativeProcessing": True})
 
 
 if __name__ == "__main__":

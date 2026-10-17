@@ -190,11 +190,10 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
 
     def test_bridge_preserves_diagnostics_on_success_failure_and_timeout(self):
         line = 'coverage-restore {"stage":"batch-to-row-fallback","reason":"exact refusal"}\n'
-        env = {"SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE":reader.__file__}
         completed = subprocess.CompletedProcess([], 0, '{"ok":true}\n', line)
         failures = (subprocess.CalledProcessError(1, [], stderr=line),
                     subprocess.TimeoutExpired([], 300, stderr=line.encode()))
-        with patch.dict(adapter.os.environ, env), redirect_stderr(io.StringIO()) as output:
+        with redirect_stderr(io.StringIO()) as output:
             with patch.object(adapter.subprocess, "run", return_value=completed):
                 self.assertEqual(adapter.bridge(request={"dataset":"roll_call_votes"}), {"ok":True})
             for failure in failures:
