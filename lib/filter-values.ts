@@ -36,16 +36,34 @@ function typedValue(value:string,type:string):string|number|bigint|boolean|undef
   if(['FLOAT','DOUBLE'].includes(type)) {const n=Number(value);return value.trim()===value&&value!==''&&Number.isFinite(n)?n:undefined;}
   return value;
 }
+/** Locator components use precisely the same primitive equality as filtering. */
+export function keyType(type: string): boolean {
+  return !!integerBits[type] || ['VARCHAR','DATE','BOOLEAN','FLOAT','DOUBLE'].includes(type) || type.startsWith('TIMESTAMP');
+}
+function keyComponent(value: unknown): string | undefined {
+  if (value == null || !['string','number','bigint','boolean'].includes(typeof value) ||
+      typeof value === 'number' && !Number.isFinite(value)) return;
+  return `${typeof value}:${String(value)}`;
+}
+export function filterKey(value: string, type: string): string | undefined {
+  return keyType(type) ? keyComponent(typedValue(value, type)) : undefined;
+}
+/** A stored value in the exact form filters compare; undefined never matches. */
+function storedValue(value: unknown, type?: string): unknown {
+  if (value == null || typeof value === 'number' && !Number.isSafeInteger(value) && (!type || !!integerBits[type])) return;
+  return type?.startsWith('TIMESTAMP') ? typeof value === 'string' ? exactTimestamp(value) : undefined : value;
+}
+export function rowKey(value: unknown, type: string): string | undefined {
+  return keyType(type) ? keyComponent(storedValue(value, type)) : undefined;
+}
 export function matchesFilters(row: Row, filters: Filter[], columns?:Dataset['columns']): boolean {
   return filters.every(f => {
-    const value=row[f.column],type=columns?.find(c=>c.name===f.column)?.type;
-    if(value==null)return false;
-    if(typeof value==='number' && !Number.isSafeInteger(value) && (!type||integerBits[type]))return false;
-    const actual=type?.startsWith('TIMESTAMP') ? (typeof value==='string'?exactTimestamp(value):undefined) : value;
-    const typed=!!type&&(!!integerBits[type]||['VARCHAR','DATE','BOOLEAN','FLOAT','DOUBLE'].includes(type)||type.startsWith('TIMESTAMP'));
+    const type=columns?.find(c=>c.name===f.column)?.type, actual=storedValue(row[f.column],type);
+    if(actual===undefined)return false;
+    const typed=!!type&&keyType(type);
     return (f.values??[f.value]).some(v=> {
       const expected=type?typedValue(v,type):v;
-      if(expected===undefined||actual===undefined)return false;
+      if(expected===undefined)return false;
       return typed ? actual===expected : ['string','bigint','number','boolean'].includes(typeof actual)&&String(actual)===expected;
     });
   });

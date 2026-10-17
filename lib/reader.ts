@@ -6,6 +6,7 @@ import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, rowIndex 
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
 import { compareEntries, retainEntry, sortValue, type RecordSort, type SortEntry } from "./record-sort";
+import { checkMemberCounts, subjectBinding, versionBound } from './reader-binding';
 export type ReadRequest = {
   table: Dataset;
   columns: string[];
@@ -21,12 +22,14 @@ export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; don
 
 /** Offline audit projection: one footer per pinned member, bounded batches. */
 export async function readColumnBatches(table: Dataset, columns: string[], maxRows: number, onBatch: (rows: Row[]) => void | Promise<void>, startRow = 0): Promise<{rows: number; complete: boolean}> {
+  checkMemberCounts(table);
   if (table.recordsAvailable === false || columns.some(name => !table.columns.some(column => column.name === name))) throw new Error('Audit fields are unavailable in this publication.');
   if (!Number.isSafeInteger(maxRows) || maxRows < 1) throw new Error('Invalid audit row limit.');
   if (!Number.isSafeInteger(startRow) || startRow < 0 || startRow > table.rows) throw new Error('Invalid audit continuation.');
   let rows = 0, offset = 0;
   for (const member of table.members) {
-    if (rows >= maxRows) break;
+    // A completed projection still checks declared-empty trailing members.
+    if (rows >= maxRows && startRow + rows < table.rows) break;
     const memberStart = Math.max(0, startRow - offset);
     offset += member.rows;
     if (member.rows && memberStart >= member.rows) continue;
@@ -48,7 +51,7 @@ export async function readColumnBatches(table: Dataset, columns: string[], maxRo
 async function remoteFile(member: Dataset['members'][number]) {
   const expectedEtag = member.etag?.replace(/^"|"$/g, '');
   const remote = await asyncBufferFromUrl({ url: member.url, byteLength: member.byteSize,
-    ...(expectedEtag ? {requestInit: {headers: {'If-Match': `"${expectedEtag}"`}}, fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+    ...(expectedEtag ? {requestInit: {cache: 'no-store' as RequestCache, headers: {'If-Match': `"${expectedEtag}"`}}, fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await fetch(input, init);
       const received = response.headers.get('etag')?.replace(/^"|"$/g, '');
       const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') ?? '');
@@ -69,6 +72,7 @@ async function remoteFile(member: Dataset['members'][number]) {
       const key = `${start}:${end}`;
       if (cache.has(key)) return cache.get(key)!;
       const buffer = await remote.slice(start, end);
+      if (buffer.byteLength !== (end ?? member.byteSize) - start) throw new Error('The published byte range is incomplete.');
       if (buffer.byteLength <= 16 * 1024 * 1024) {
         while (cacheBytes + buffer.byteLength > 16 * 1024 * 1024 && cache.size) {
           const k = cache.keys().next().value!;
@@ -83,20 +87,64 @@ async function remoteFile(member: Dataset['members'][number]) {
   };
 }
 
+/** Renew the complete population, including members absent from a cached page. */
+export async function renewTableVersion(table: Dataset): Promise<void> {
+  if (!versionBound(table)) throw new Error('This publication has no checked file version for cached records.');
+  for (const member of table.members) {
+    const file = await remoteFile(member);
+    await file.slice(0, 1);
+    if (!member.rows) {
+      const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
+      if (Number(metadata.num_rows) !== 0) throw new Error('The Parquet footer differs from the published row count.');
+    }
+  }
+}
+
+const SORT_ROWS = 100000, SORT_BYTES = 32 * 1024 * 1024;
+type SortedCache = { binding: string; entries: SortEntry[]; startCursor: number; remaining: number; complete: boolean };
+let sortedCache: SortedCache | undefined;
+const entryBytes = (entry: SortEntry) => 128 + (typeof entry.value === 'string' ? entry.value.length * 2 : 16);
+
 async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: number }, onProgress: (n: number) => void): Promise<ReadResult> {
   const { table, columns, filters, cursor, sort, limit, connection, navigation } = request;
   if (cursor > table.rows || !['asc', 'desc'].includes(sort.direction)) throw new Error('Invalid sort or record position.');
   if (limit > 1000) throw new Error('Sorted pages are limited to 1,000 records.');
+  const binding = JSON.stringify([subjectBinding(table), filters, sort, connection, navigation]);
+  const prior = sortedCache;
+  sortedCache = undefined;
+  let heap: SortEntry[] = [], remaining = 0, reused = false;
+  if (prior?.binding === binding && versionBound(table)) {
+    let start = cursor === prior.startCursor ? 0 : prior.entries.findIndex(e => e.position === cursor - 1) + 1;
+    // A physical cursor absent from a complete filtered population still has a value boundary.
+    if (cursor !== prior.startCursor && start === 0 && prior.complete && cursor) {
+      const page = await readPage({ table, columns: [sort.column], filters: [], cursor: cursor - 1, limit: 1 });
+      if (page.positions[0] !== cursor - 1) throw new Error('The sorted page boundary is no longer available.');
+      const boundary = { value: sortValue(page.rows[0][sort.column]), position: cursor - 1 };
+      start = prior.entries.findIndex(e => compareEntries(e, boundary, sort) > 0);
+      if (start < 0) start = prior.entries.length;
+    } else if (cursor !== prior.startCursor && start === 0) start = -1;
+    if (start >= 0 && (prior.entries.length - start >= limit || prior.remaining === prior.entries.length)) {
+      await renewTableVersion(table);
+      heap = prior.entries.slice(start, start + limit);
+      remaining = prior.remaining - start;
+      sortedCache = prior;
+      reused = true;
+      onProgress(table.rows);
+    }
+  }
   let boundary: SortEntry | undefined;
-  if (cursor) {
+  if (!reused && cursor) {
     const page = await readPage({ table, columns: [sort.column], filters: [], cursor: cursor - 1, limit: 1 });
     if (page.positions[0] !== cursor - 1) throw new Error('The sorted page boundary is no longer available.');
     boundary = { value: sortValue(page.rows[0][sort.column]), position: cursor - 1 };
   }
-  const heap: SortEntry[] = [];
-  let offset = 0, remaining = 0;
+  let offset = 0;
   const scanColumns = [...new Set([sort.column, ...filters.map(f => f.column), ...(navigation ? navigationColumns(navigation) : [])])];
-  for (const member of table.members) {
+  let all: SortEntry[] | undefined = !reused && versionBound(table) && table.rows <= SORT_ROWS ? [] : undefined;
+  let window: SortEntry[] | undefined = !reused && versionBound(table) && !all ? [] : undefined;
+  let allBytes = 0, windowBytes = 0;
+  const windowLimit = Math.min(limit * 8, 8000);
+  if (!reused) for (const member of table.members) {
     const file = await remoteFile(member);
     const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
     if (Number(metadata.num_rows) !== member.rows) throw new Error('The Parquet footer differs from the published row count.');
@@ -104,18 +152,36 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
     for (let start = 0; start < member.rows; start += 50000) {
       const end = Math.min(member.rows, start + 50000);
       const rows = await parquetReadObjects({parsers:exactParsers, file, metadata, compressors, columns: fecReadColumns(table,scanColumns), rowStart: start, rowEnd: end, includeRowIndex: true, useOffsetIndex: true, usePageIndex: true });
+      if (rows.length !== end - start) throw new Error('The sort projection returned an incomplete batch.');
       for (const row of enrichFecRows(table,rows)) {
         if (!matchesFilters(row, filters, table.columns) || connection && navigation && !matchesConnection(row, navigation, connection)) continue;
         const entry = { value: sortValue(row[sort.column]), position: offset + row[rowIndex]! };
         if (boundary && compareEntries(entry, boundary, sort) <= 0) continue;
         remaining++;
         retainEntry(heap, entry, limit, sort);
+        if (all) {
+          allBytes += entryBytes(entry);
+          if (allBytes <= SORT_BYTES) all.push(entry);
+          else all = undefined;
+        }
+        if (window) {
+          if (window.length < windowLimit) windowBytes += entryBytes(entry);
+          else if (compareEntries(entry, window[0], sort) < 0) windowBytes += entryBytes(entry) - entryBytes(window[0]);
+          if (windowBytes > SORT_BYTES) window = undefined;
+          else retainEntry(window, entry, windowLimit, sort);
+        }
       }
       onProgress(offset + end);
     }
     offset += member.rows;
   }
   heap.sort((a, b) => compareEntries(a, b, sort));
+  const admitted = all ?? window;
+  if (!reused && admitted) {
+    admitted.sort((a, b) => compareEntries(a, b, sort));
+    await renewTableVersion(table);
+    sortedCache = { binding, entries: admitted, startCursor: cursor, remaining, complete: cursor === 0 && !!all };
+  }
   // Read full visible fields only for the selected records, preserving their identities.
   const selected = [...heap].sort((a, b) => a.position - b.position);
   const records = new Map<number, Row>();
@@ -143,7 +209,7 @@ export async function readPage(
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
   if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
-  if(!Number.isSafeInteger(table.rows)||table.rows<0||table.members.some(m=>!Number.isSafeInteger(m.rows)||m.rows<0)||table.members.reduce((n,m)=>n+m.rows,0)!==table.rows)throw new Error('The selected member counts do not agree with this publication.');
+  checkMemberCounts(table);
   if (!Number.isSafeInteger(cursor) || cursor < 0)
     throw new Error("Invalid record position.");
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('Invalid page size.');

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {build} from 'esbuild';
-const {outputFiles}=await build({stdin:{contents:`export * from './lib/fec-compatibility'; export * from './lib/reader'; export * from './lib/navigation'; export * from './lib/catalog'; export * from './lib/record-lookup'; export * from './lib/subject-key-cache';`,resolveDir:process.cwd()},bundle:true,platform:'node',format:'esm',write:false});
+const {outputFiles}=await build({stdin:{contents:`export * from './lib/fec-compatibility'; export * from './lib/reader'; export * from './lib/navigation'; export * from './lib/catalog'; export * from './lib/record-lookup'; export * from './lib/reader-binding';`,resolveDir:process.cwd()},bundle:true,platform:'node',format:'esm',write:false});
 const api=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const fixtures=JSON.parse(readFileSync(new URL('./fixtures/fec-semantic-fixtures.json',import.meta.url)));
 const file=readFileSync(new URL('./fixtures/fec-main.parquet',import.meta.url));

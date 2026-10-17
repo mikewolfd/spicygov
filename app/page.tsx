@@ -29,6 +29,7 @@ import { useExplorerTools } from "@/lib/webmcp";
 import { initial, readLocation, makeHref, type LocationState, type View } from '@/lib/explorer-location';
 import type { RecordSort } from '@/lib/record-sort';
 import {completeIdentity,type LookupResult} from '@/lib/record-lookup';
+import {subjectBinding} from '@/lib/reader-binding';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -103,6 +104,7 @@ export default function Explorer() {
     [filterValue, setFilterValue] = useState("");
   const worker = useRef<Worker | null>(null),
     recordWorker = useRef<Worker | null>(null);
+  const listRunning = useRef(false);
   const lookupWorker=useRef<Worker|null>(null),lookupRunning=useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
   const [lookup,setLookup]=useState<LookupResult|null>(null),[lookupProgress,setLookupProgress]=useState(0);
@@ -180,12 +182,16 @@ export default function Explorer() {
     setError("");
     setProgress(location.sort ? 0 : location.cursor);
     setDone(false);
-    const w = new Worker(new URL('../lib/parquet.worker.ts', import.meta.url), { type: "module" });
+    const w = worker.current ?? new Worker(new URL('../lib/parquet.worker.ts', import.meta.url), { type: "module" });
     worker.current = w;
+    listRunning.current = true;
+    let active = true;
     w.onmessage = (e) => {
+      if (!active || worker.current !== w) return;
       const d = e.data;
       if (d.type === "progress") setProgress(d.scanned);
       if (d.type === "result") {
+        listRunning.current = false;
         setRows(d.rows);
         setPositions(d.positions);
         setNext(d.cursor);
@@ -193,11 +199,18 @@ export default function Explorer() {
         setBusy(false);
       }
       if (d.type === "error") {
+        listRunning.current = false;
+        w.terminate();
+        worker.current = null;
         setError(`We couldn’t read this file. ${d.message}`);
         setBusy(false);
       }
     };
     w.onerror = () => {
+      if (!active || worker.current !== w) return;
+      listRunning.current = false;
+      w.terminate();
+      worker.current = null;
       setError("The Parquet reader stopped. Try reloading this dataset.");
       setBusy(false);
     };
@@ -211,16 +224,19 @@ export default function Explorer() {
       navigation: navigation.find(s=>s.id===location.connection?.id),
     });
     return () => {
-      w.terminate();
-      worker.current = null;
+      active = false;
+      w.onmessage = null;
+      w.onerror = null;
+      if (listRunning.current) {
+        w.terminate();
+        worker.current = null;
+        listRunning.current = false;
+      }
     };
   }, [
     // Descriptions arriving must not cancel or restart an in-progress file scan.
-    table?.id,
-    JSON.stringify(table?.members),
+    table ? subjectBinding(table) : undefined,
     table ? false : publicationsPending,
-    table?.recordsAvailable,
-    table?.fecCompatibility?.sha256,
     location.id,
     location.detail,
     JSON.stringify(location.filters),
@@ -232,7 +248,7 @@ export default function Explorer() {
     JSON.stringify(activeColumns),
     retry,
   ]);
-  useEffect(() => () => {recordWorker.current?.terminate();lookupWorker.current?.terminate();}, []);
+  useEffect(() => () => {worker.current?.terminate();worker.current=null;listRunning.current=false;recordWorker.current?.terminate();lookupWorker.current?.terminate();}, []);
   function stopLookup(){if(lookupRunning.current){lookupWorker.current?.terminate();lookupWorker.current=null;lookupRunning.current=false;}}
   function findRecord(cursor=0,positions:number[]=[]) {
     if(!table)return;
@@ -253,7 +269,7 @@ export default function Explorer() {
     if(!location.detail){setLookup(null);return;}
     if(table && table.metadataState!=='loading')findRecord();
     return ()=>stopLookup();
-  },[location.detail,location.id,JSON.stringify(location.filters),JSON.stringify(table?.members),JSON.stringify(table?.recordIdentity),table?.fecCompatibility?.sha256,table?.metadataState,retry]);
+  },[location.detail,location.id,JSON.stringify(location.filters),table?subjectBinding(table):undefined,JSON.stringify(table?.recordIdentity),table?.metadataState,retry]);
   function openRecord(row: Row, index: number, field?: string) {
     if (!table) return;
     setConnectionField(field ?? null);
@@ -313,7 +329,10 @@ export default function Explorer() {
     navigate({id, filters, connection, cursor: 0, view: "records", from: table?.label,detail:detail&& !connection||undefined});
   }
   function cancel() {
+    if (worker.current) { worker.current.onmessage = null; worker.current.onerror = null; }
     worker.current?.terminate();
+    worker.current = null;
+    listRunning.current = false;
     setBusy(false);
     setError("Reading stopped. Retry to finish checking this dataset.");
     setDone(false);

@@ -30,20 +30,23 @@ const results={task:'T04',input:{path:resolve(input),sha256:digest,byteSize:byte
 async function measured(fn){requests=0;requestedBytes=0;const start=performance.now();const result=await fn();memory();return {result,milliseconds:performance.now()-start,requests,bytes:requestedBytes};}
 try {
  const referenceHash=createHash('sha256'),samples=new Map();let referenceRows=0;
- const audit=await measured(()=>reader.readColumnBatches(table,['bill_id'],registration.bounds.keyRows,rows=>{for(const row of rows){const key=row.bill_id;if(typeof key!=='string'||!key)throw new Error('Missing reference identity');referenceHash.update(key+'\0'+referenceRows+'\n');if([0,Math.floor(table.rows/2),table.rows-1].includes(referenceRows))samples.set(key,referenceRows);referenceRows++;}memory();}));
+ const keyFor=value=>locator.identityKey(table,[{column:'bill_id',value}]);
+ const audit=await measured(()=>reader.readColumnBatches(table,['bill_id'],registration.bounds.keyRows,rows=>{for(const row of rows){const key=row.bill_id;if(typeof key!=='string'||!key)throw new Error('Missing reference identity');referenceHash.update(keyFor(key)+'\0'+referenceRows+'\n');if([0,Math.floor(table.rows/2),table.rows-1].includes(referenceRows))samples.set(key,referenceRows);referenceRows++;}memory();}));
  if(!audit.result.complete||referenceRows!==table.rows)throw new Error('Full reference population is not complete and unique.');
  results.reference={...audit,result:undefined,keys:referenceRows};
- const cacheBuild=await measured(()=>locator.billKeyCache(table,memory)),cache=cacheBuild.result;
- const expectedDigest=referenceHash.digest('hex'),cacheHash=createHash('sha256');if(cache)for(const [key,position] of cache.positions)cacheHash.update(key+'\0'+position+'\n');if(!cache||cache.positions.size!==referenceRows||cacheHash.digest('hex')!==expectedDigest)throw new Error('A cached position differs from the maintained reader.');
+ const cacheBuild=await measured(()=>locator.recordKeyCache(table,memory)),cache=cacheBuild.result;
+ if(!cache)throw new Error('The key population exceeds the bounded key map; no cache arm was admitted.');
+ const uniqueEntries=[...cache.positions].map(([key,positions])=>{if(positions.length!==1)throw new Error('Ambiguous reference identity');return [key,positions[0]];});
+ const expectedDigest=referenceHash.digest('hex'),cacheHash=createHash('sha256');for(const [key,position] of uniqueEntries)cacheHash.update(key+'\0'+position+'\n');if(cache.positions.size!==referenceRows||cacheHash.digest('hex')!==expectedDigest)throw new Error('A cached position differs from the maintained reader.');
  results.arms.cache={build:{...cacheBuild,result:undefined},estimatedBytes:cache.estimatedBytes,checkedPositions:referenceRows,keyPositionSha256:expectedDigest};
- const sortedBuild=await measured(()=>[...cache.positions].sort(([a],[b])=>a<b?-1:a>b?1:0)),sorted=sortedBuild.result;
+ const sortedBuild=await measured(()=>uniqueEntries.sort(([a],[b])=>a<b?-1:a>b?1:0)),sorted=sortedBuild.result;
  const encoded=JSON.stringify(sorted);results.arms.sorted={build:{...sortedBuild,result:undefined},retainedBytes:Buffer.byteLength(encoded)};
  await writeFile(join(output,'bill-subject-locator.experimental.json'),encoded);
  function binary(key){let lo=0,hi=sorted.length;while(lo<hi){const mid=(lo+hi)>>>1;if(sorted[mid][0]<key)lo=mid+1;else hi=mid;}return sorted[lo]?.[0]===key?sorted[lo][1]:undefined;}
- if([...cache.positions].some(([key,position])=>binary(key)!==position))throw new Error('A sorted locator position differs from the maintained reader.');
+ if(uniqueEntries.some(([key,position])=>binary(key)!==position))throw new Error('A sorted locator position differs from the maintained reader.');
  results.arms.sorted.checkedPositions=referenceRows;
  const cases=[...samples.keys(),'not-a-retained-bill'];
- for(const [name,fn] of Object.entries({scan:async key=>{const result=await reader.readPage({table,columns:['bill_id'],filters:[{column:'bill_id',value:key}],cursor:0,limit:2});if(!result.done&&result.rows.length<2)throw new Error('Incomplete baseline');return result.positions;},cache:async key=>{const position=cache.positions.get(key);return position===undefined?[]:[position];},sorted:async key=>{const position=binary(key);return position===undefined?[]:[position];}})) {
+ for(const [name,fn] of Object.entries({scan:async key=>{const result=await reader.readPage({table,columns:['bill_id'],filters:[{column:'bill_id',value:key}],cursor:0,limit:2});if(!result.done&&result.rows.length<2)throw new Error('Incomplete baseline');return result.positions;},cache:async key=>{const current=await locator.recordKeyCache(table,memory);return current.positions.get(keyFor(key))??[];},sorted:async key=>{await reader.renewTableVersion(table);const position=binary(keyFor(key));return position===undefined?[]:[position];}})) {
   results.arms[name]??={};results.arms[name].trials=[];
   for(let repeat=0;repeat<3;repeat++)for(const key of cases){const trial=await measured(()=>fn(key));const expected=samples.get(key)??-1;if(JSON.stringify(trial.result)!==JSON.stringify(expected<0?[]:[expected]))throw new Error(`${name} disagrees for ${key}`);results.arms[name].trials.push({key,repeat,...trial});}
  }

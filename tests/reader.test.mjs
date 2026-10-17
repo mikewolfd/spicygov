@@ -10,20 +10,23 @@ const { outputFiles } = await build({
   format: "esm",
   write: false,
 });
-const { readPage, readColumnBatches } = await import(
+const { readPage, readColumnBatches, renewTableVersion } = await import(
   `data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString("base64")}`
 );
 const files = [0, 1].map((n) =>
   readFileSync(new URL(`./fixtures/part${n}.parquet`, import.meta.url)),
 );
+let rangeRequests = 0, renewalRequests = 0, changedMember = -1;
 const server = createServer((req, res) => {
+  rangeRequests++;
+  if (req.headers.range === 'bytes=0-0') renewalRequests++;
   const url = new URL(req.url, 'http://127.0.0.1'), index = Number(url.pathname.slice(1)), mode = url.searchParams.get('mode');
   const file = files[index];
   if (!file) {
     res.writeHead(404).end();
     return;
   }
-  const etag = `"fixture-${index}"`;
+  const etag = index === changedMember ? '"changed"' : `"fixture-${index}"`;
   if (req.headers['if-match'] && req.headers['if-match'] !== etag) {res.writeHead(412).end();return;}
   res.setHeader('ETag', mode === 'wrong-etag' ? '"changed"' : etag);
   const match = /bytes=(\d+)-(\d+)/.exec(req.headers.range ?? "");
@@ -56,6 +59,22 @@ const table = {
   })),
 };
 try {
+  await test('retained sorted pages preserve full multipart sequences and renew unselected members', async context => {
+    const guarded={...table,id:'cache-sequence',members:table.members.map((m,i)=>({...m,etag:`"fixture-${i}"`}))};
+    const request={table:guarded,columns:['id'],filters:[{column:'group',value:'a'}],cursor:0,limit:17,sort:{column:'key',direction:'asc'}};
+    rangeRequests=0;const first=await readPage(request),firstRequests=rangeRequests;
+    rangeRequests=0;renewalRequests=0;const second=await readPage({...request,cursor:first.cursor}),secondRequests=rangeRequests;
+    assert.ok(secondRequests<firstRequests);
+    assert.equal(renewalRequests,guarded.members.length);
+    context.diagnostic(JSON.stringify({case:'real-multipart-parquet',rows:140,firstPageRangeRequests:firstRequests,nextPageRangeRequests:secondRequests,versionRenewalRequests:renewalRequests}));
+    assert.equal(new Set([...first.positions,...second.positions]).size,34);
+    const empty={...request,filters:[{column:'id',value:'absent'}]};
+    assert.equal((await readPage(empty)).done,true);
+    changedMember=1;await assert.rejects(readPage(empty),/identity could not be checked/);changedMember=-1;
+    // Another semantic query evicts the one retained order; returning to it scans again.
+    await readPage(request);await readPage({...request,sort:{column:'key',direction:'desc'}});
+    rangeRequests=0;await readPage(request);assert.equal(rangeRequests,firstRequests);
+  });
   await test('audit projections preserve member boundaries, exact integers and partial-scan status', async () => {
     const rows=[];
     assert.deepEqual(await readColumnBatches(table,['id','large'],75,batch=>rows.push(...batch)),{rows:75,complete:false});
@@ -69,6 +88,9 @@ try {
     assert.equal(full.at(-1).id,'139');
     const wrong={...table,rows:141,members:[{...table.members[0],rows:71},table.members[1]]};
     await assert.rejects(readColumnBatches(wrong,['id'],141,()=>{}),/footer differs/);
+    const hidden={...table,members:[...table.members,{...table.members[0],rows:0}]};
+    await assert.rejects(readColumnBatches(hidden,['id'],140,()=>{}),/footer differs/);
+    await assert.rejects(renewTableVersion({...hidden,members:hidden.members.map(m=>({...m,etag:`"fixture-${new URL(m.url).pathname.slice(1)}"`}))}),/footer differs/);
     await assert.rejects(readColumnBatches(table,['unknown'],140,()=>{}),/fields are unavailable/);
   });
   await test('mutable published files require the matching ETag and exact bounded byte range', async () => {
