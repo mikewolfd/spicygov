@@ -2,22 +2,21 @@
 from __future__ import annotations
 
 import datetime
-from functools import lru_cache
-import hashlib
 import importlib
 import json
 import os
 import re
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 
 import duckdb
 
+import coverage_allowances as allowances
 from coverage_dimensions import binding, definition_digest, scan_dimension, validate_definition
 from coverage_inputs import CoverageInputs, inherit_unique
-from native_legislative_coverage import ProcessingInputs, verify_file
+from coverage_scan import measurement_revision
+from native_legislative_coverage import ProcessingInputs, describe_each, run_bridge, verify_file
 from publication_census import BASE, inputs_fingerprint, rulemaking_tables
 
 RULEMAKING_DATASETS = frozenset(("proceedings", "rule_targets", "comment_periods",
@@ -39,7 +38,6 @@ SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nomina
     "cfr_sections":"cfr-sections", "unified_agenda":"unified-agenda",
     "federal_register":"federal-register", "fr_docket_links":"fr-docket-links"}
 FAMILIES.update(SOURCE_NAVIGATION_FAMILIES)
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def bridge(args=(), request=None):
@@ -47,37 +45,32 @@ def bridge(args=(), request=None):
     source_navigation = dataset in SOURCE_NAVIGATION_FAMILIES or dataset in RULEMAKING_DATASETS or bool(args == ["--verify-artifacts"] and isinstance(request, list) and request and all(a.get("spec", {}).get("family") in SOURCE_NAVIGATION_FAMILIES.values() for a in request))
     script = str(Path(__file__).with_name('restore_source_navigation_coverage.py' if source_navigation else 'restore_additional_coverage.py'))
     python = os.environ.get('SPICYGOV_COVERAGE_PYTHON', sys.executable)
-    # Full current documents and Register restores passed locally, but each
-    # exceeded five minutes on the hosted runner. Keep their finite allowance
-    # separate from schema requests and the other selected readers.
-    timeout = 300
-    if not args:
-        if dataset == "court_opinions":
-            timeout = 1800
-        elif dataset in {"documents", "federal_register", "fr_docket_links"}:
-            timeout = 600
-    try:
-        result = subprocess.run([python, script, *args],
-                                input=None if request is None else json.dumps(request),
-                                text=True, capture_output=True, check=True, timeout=timeout)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
-        forward_restore_diagnostics(error.stderr)
-        raise
-    forward_restore_diagnostics(result.stderr)
-    return json.loads(result.stdout.splitlines()[-1])
+    # Only a full restore (no arguments) gets its dataset's allowance.
+    return run_bridge([python, script, *args], request,
+                      allowances.BRIDGE if args else allowances.bridge_seconds(dataset))
 
 
-def forward_restore_diagnostics(stderr):
-    if isinstance(stderr, bytes):
-        stderr = stderr.decode("utf-8", errors="replace")
-    for line in (stderr or "").splitlines():
-        if line.startswith("coverage-restore "):
-            print(line, file=sys.stderr, flush=True)
+# Each dataset is described once per build (describe_all) and handed to every
+# scan process (seed); an uncached dataset is described on first use.
+SCHEMAS = {}
 
 
-@lru_cache(maxsize=len(FAMILIES) + len(RULEMAKING_DATASETS))
-def native_schema(dataset):
+def describe(dataset):
     return bridge(["--schema", dataset])
+
+
+def describe_all(datasets):
+    SCHEMAS.update(describe_each(describe, set(datasets) - SCHEMAS.keys()))
+
+
+def seed(descriptions):
+    SCHEMAS.update(descriptions)
+
+
+def native_schema(dataset):
+    if dataset not in SCHEMAS:
+        SCHEMAS[dataset] = describe(dataset)
+    return SCHEMAS[dataset]
 
 
 def variant(dataset, table, policy):
@@ -109,28 +102,17 @@ def variant(dataset, table, policy):
 
 
 def validate_native_implementations(policies):
-    for dataset, policy in policies.items():
-        if not policy.get("_additionalNativeProcessing"):
-            continue
-        description = bridge(["--schema", dataset])
+    # Describe again, uncached and in parallel: this is the race check against a
+    # reader that changed while the build ran.
+    current = describe_each(
+        describe, (d for d, policy in policies.items() if policy.get("_additionalNativeProcessing")))
+    for dataset, description in current.items():
+        policy = policies[dataset]
         if (description.get("implementationSha256") != policy["restorationImplementationSha256"]
                 or description.get("nativeSchema") != policy["schema"]
                 or description.get("processingSchema") != policy["processingSchema"]
                 or description.get("receiptOnly") is not False):
             raise ValueError("Additional native coverage reader changed during the build")
-
-
-def measurement_revision(policy):
-    names = ("additional_native_coverage.py", "restore_additional_coverage.py",
-             "build-coverage-maps.py", "coverage_dimensions.py", "coverage_inputs.py",
-             "publication_census.py", "collection_coverage.py", "congress_coverage.py",
-             "regulation_coverage.py", "native_receipt_coverage.py", "native_legislative_coverage.py", "restore_source_navigation_coverage.py")
-    value = hashlib.sha256(policy["restorationImplementationSha256"].encode())
-    for name in names:
-        data = (ROOT / "scripts" / name).read_bytes()
-        value.update(len(data).to_bytes(8, "big"))
-        value.update(data)
-    return "sha256:" + value.hexdigest()
 
 
 class AdditionalInputs:

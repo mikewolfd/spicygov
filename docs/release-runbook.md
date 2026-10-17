@@ -53,12 +53,38 @@ tables are measured directly by the published-table scanner; native tables must
 be the reviewed native subject and use receipts under the current or a declared
 earlier policy version.
 
-The checked-in `public/coverage-maps.v1.json`, the existing (pre-amendment)
-`.cache/coverage-maps` checkpoints and the archived fixture releases are retained
-evidence. The current code does not reuse or admit them, so the first coverage data
-release rescans every table, possibly across several workflow runs: completed
-tables are checkpointed even when another scan fails, and checkpoints that the
-current code writes are reused as usual.
+The checked-in `public/coverage-maps.v1.json`, the pre-2026-10-17 `.cache/coverage-maps`
+checkpoints and the archived fixture releases are retained evidence. They carry measurement
+revisions the current code does not issue, so the first coverage data release measures every
+published table again.
+
+That includes the 73 tables whose generations have not changed since 2026-10-05: the owner
+chose a rescan over a one-time compatibility re-bind.
+
+The release may take several workflow runs. Each run checkpoints every table it completes.
+A later run reuses a checkpoint only while all of its bindings still match: generation bytes,
+schema, policy and dimension digests, the activity month, and the measurement revision. A table
+republished between runs is measured again.
+
+Measurement revisions are per scanner:
+
+- Orchestration, release and allowance edits (`build-coverage-maps.py`,
+  `coverage_release.py`, `coverage_allowances.py`) keep checkpoints.
+- An edit to `coverage_scan.py` or a shared helper re-measures every table.
+- An edit to one scanner module re-measures only that scanner's tables.
+- A new spicy-regs reader identity re-measures the native tables.
+
+Keep `backend_revision` fixed until the release completes.
+
+To resume an interrupted release, dispatch the workflow again with the **same**
+`backend_revision`; a different reader identity re-measures all native tables. The scan
+step stops at 300 minutes, inside the 330-minute job, so the checkpoints it completed are
+still saved. Each run reuses the checkpoints whose bindings still hold.
+
+- **Deterministic failure.** Fix it, push, re-dispatch. Allowance or orchestration edits keep
+  checkpoints. An edit to one scanner module re-measures only that scanner's tables.
+- **Memory failure** (exit 137 or "Killed" on documents, Register or court_opinions). Ask the
+  owner about a larger runner.
 
 No completed production release was invented for the historical checked-in map.
 Strict production adoption depends on an authorized full data refresh and review

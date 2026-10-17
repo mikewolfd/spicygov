@@ -4,14 +4,12 @@ Missing definitions, schema drift, failed scans and unreconciled dimensions fail
 the build. The previous published inventory is replaced only after every table
 passes. Presence measures retained rows; it never proves publisher completeness.
 """
-from contextlib import ExitStack, nullcontext
+from contextlib import nullcontext
 import argparse
 import concurrent.futures
 import datetime
-import importlib
 import json
 import pathlib
-import re
 import subprocess
 import sys
 import tempfile
@@ -19,32 +17,18 @@ import threading
 
 import duckdb
 
-from coverage_dimensions import binding, definition_digest, scan_dimension, validate_definition
-from coverage_inputs import CoverageInputs, inherit_unique
-from native_legislative_coverage import processing_context, variant
-from native_legislative_coverage import validate_native_implementations
+import coverage_allowances as allowances
+from coverage_dimensions import binding, definition_digest, validate_definition
+import native_legislative_coverage as native
+from native_legislative_coverage import forward_restore_diagnostics, validate_native_implementations, variant
 import additional_native_coverage as additional
+from coverage_scan import check_mutable, measurement_revision, scan_table, validate_counts
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'public/coverage-maps.v1.json'
 CACHE = ROOT / '.cache/coverage-maps'
 HEAVY_NATIVE_SCAN_LOCK = threading.Lock()
-
-
-def measurement_revision(policy=None):
-    import hashlib
-    if policy and policy.get('_additionalNativeProcessing'):
-        return additional.measurement_revision(policy)
-    paths = [pathlib.Path(__file__), *(ROOT / 'scripts' / name for name in (
-        'coverage_dimensions.py', 'coverage_inputs.py', 'publication_census.py',
-        'collection_coverage.py', 'congress_coverage.py', 'regulation_coverage.py', 'fec_coverage.py',
-        'native_receipt_coverage.py', 'native_legislative_coverage.py',
-        'gao_receipt_policy.py'))]
-    value = hashlib.sha256(b''.join(path.read_bytes() for path in paths))
-    if policy and policy.get('_nativeProcessing'):
-        value.update(policy['restorationImplementationSha256'].encode())
-    return 'sha256:' + value.hexdigest()
 
 
 def definitions(folder=None):
@@ -76,216 +60,6 @@ def validate_plan(tables, policies):
         validate_definition(policy, schema(policy.get('processingSchema', expected)))
 
 
-def validate_counts(dimension, rows):
-    if not isinstance(dimension, dict) or dimension.get('status') != 'measured':
-        raise ValueError('A required coverage dimension was not measured')
-    integers = ('rows', 'placedRows', 'unplacedRows')
-    if any(type(dimension.get(k)) is not int or dimension[k] < 0 for k in integers):
-        raise ValueError('Coverage counts must be nonnegative integers')
-    if dimension['rows'] != rows or dimension['placedRows'] + dimension['unplacedRows'] != rows:
-        raise ValueError('Coverage placed/unplaced counts do not reconcile')
-    buckets = dimension.get('buckets')
-    if (not isinstance(buckets, dict) or any(not isinstance(k, str) or not k
-            or type(n) is not int or n <= 0 for k, n in buckets.items())):
-        raise ValueError('Invalid coverage buckets')
-    grain = dimension.get('granularity')
-    if grain not in ('month', 'year', 'season', 'category', 'snapshot'):
-        raise ValueError('Invalid coverage granularity')
-    pattern = {'month': r'[0-9]{4}-(0[1-9]|1[0-2])', 'year': r'[0-9]{4}', 'season': r'[0-9]{4}-(spring|fall)'}.get(grain)
-    if pattern and any(not re.fullmatch(pattern, key) or key[:4] == '0000' for key in buckets):
-        raise ValueError('Coverage has an invalid period key')
-    if grain == 'snapshot' and buckets: raise ValueError('Snapshot cannot claim historical buckets')
-    if 'activityBoundary' in dimension:
-        boundary = dimension['activityBoundary']
-        if (not isinstance(boundary, dict) or boundary.get('basis') not in ('publication-month', 'measurement-month')
-                or not isinstance(boundary.get('month'), str)
-                or not re.fullmatch(r'[0-9]{4}-(0[1-9]|1[0-2])', boundary['month'])
-                or boundary['month'].startswith('0000')):
-            raise ValueError('Invalid activity boundary')
-    if 'snapshot' in dimension:
-        snapshot = dimension['snapshot']
-        if not isinstance(snapshot, dict): raise ValueError('Invalid snapshot facts')
-        if 'asOf' in snapshot:
-            stamp = snapshot['asOf']
-            if not isinstance(stamp, str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])', stamp):
-                raise ValueError('Snapshot calculation time must include its timezone')
-            try: datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
-            except ValueError as error: raise ValueError('Invalid snapshot calculation time') from error
-        if 'facts' in snapshot and (not isinstance(snapshot['facts'], list) or any(
-                not isinstance(fact, dict) or any(not isinstance(fact.get(key), str) or not fact[key].strip()
-                                                for key in ('label', 'value')) for fact in snapshot['facts'])):
-            raise ValueError('Invalid snapshot facts')
-    if 'overlapping' in dimension and type(dimension['overlapping']) is not bool:
-        raise ValueError('Coverage overlap must be a boolean')
-    for key in ('partialRows', 'matchedRows', 'unmatchedRows'):
-        if key in dimension and (type(dimension[key]) is not int or not 0 <= dimension[key] <= rows):
-            raise ValueError('Invalid auxiliary coverage count')
-    if 'matchedRows' in dimension and 'unmatchedRows' in dimension and dimension['matchedRows'] + dimension['unmatchedRows'] != rows:
-        raise ValueError('Inherited matched/unmatched counts do not reconcile')
-    if 'partialRows' in dimension and dimension['partialRows'] > dimension['placedRows']:
-        raise ValueError('Partial coverage exceeds placed rows')
-    if 'yearBuckets' in dimension and (not isinstance(dimension['yearBuckets'], dict)
-            or any(not re.fullmatch(r'[0-9]{4}', key) or key == '0000'
-                   or type(n) is not int or not 0 < n <= rows for key, n in dimension['yearBuckets'].items())):
-        raise ValueError('Invalid deduplicated year counts')
-    if 'notes' in dimension and (not isinstance(dimension['notes'], list)
-            or any(not isinstance(note, str) for note in dimension['notes'])):
-        raise ValueError('Coverage notes must be a list of text')
-    if grain != 'snapshot':
-        total = sum(buckets.values())
-        if dimension.get('overlapping'):
-            if total < dimension['placedRows'] or any(n > rows for n in buckets.values()):
-                raise ValueError('Overlapping coverage counts are inconsistent')
-        elif total != dimension['placedRows']:
-            raise ValueError('Coverage bucket counts do not reconcile')
-
-
-def header_matches(url, expected_etag, expected_bytes=None):
-    headers = subprocess.check_output(['curl', '-fsSI', '--retry', '2', '--max-time', '30', url]).decode()
-    values = {line.split(':', 1)[0].lower(): line.split(':', 1)[1].strip()
-              for line in headers.splitlines() if ':' in line}
-    if values.get('etag') != expected_etag:
-        raise ValueError('Mutable export differs from its publication ETag')
-    if expected_bytes is not None and values.get('content-length') != str(expected_bytes):
-        raise ValueError('Mutable export size differs from its publication receipt')
-
-
-def validate_members(conn, id, table, expected_schema):
-    # DESCRIBE on a file list describes only the first member. Check each footer
-    # independently so a later schema/count change cannot hide behind it.
-    for member in table['members']:
-        actual = [[row[0], row[1]] for row in conn.execute(
-            'DESCRIBE SELECT * FROM read_parquet(?, hive_partitioning=false)', [member['url']]).fetchall()]
-        if actual != expected_schema:
-            raise ValueError('Retained member schema differs from its coverage review: ' + id)
-        rows = conn.execute('SELECT count(*) FROM read_parquet(?, hive_partitioning=false)', [member['url']]).fetchone()[0]
-        if rows != member['rows']:
-            raise ValueError('Retained member row count differs from its publication: ' + id)
-
-
-def _scan_published_table(id, table, policy):
-    revision = measurement_revision(policy)
-    conn = duckdb.connect()
-    try:
-        # Render stored instants in UTC, regardless of the host's timezone.
-        conn.execute("SET TimeZone='UTC'")
-        conn.execute('LOAD httpfs')
-        conn.execute("SET memory_limit='512MB'")
-        conn.execute('SET threads=2')
-        conn.execute('SET http_timeout=30')
-        urls = [m['url'] for m in table['members']]
-        def check_mutable():
-            if table.get('coverageInputs'):
-                for entry in table['coverageInputs']:
-                    header_matches(entry['url'], entry['etag'], entry['byteSize'])
-            else:
-                if table.get('etag'): header_matches(urls[0], table['etag'], table['members'][0]['byteSize'])
-                if table.get('dateIndex'): header_matches(table['dateIndex'], table['dateIndexETag'])
-        check_mutable()
-        actual_schema = schema(policy['schema'])
-        validate_members(conn, id, table, actual_schema)
-        validate_definition(policy, actual_schema)
-        table = {**table, 'columns': actual_schema}
-        inputs = CoverageInputs()
-        # Use one resolver per table, shared by all its axes.
-        result = []
-        for dim in policy['dimensions']:
-            measured = None
-            if dim.get('special') or dim.get('method'):
-                helper = importlib.import_module(policy['_scanner'] + '_coverage')
-                measured = helper.scan_special(conn, id, table, dim, inputs)
-                if measured is None: raise ValueError('Unsupported specialized coverage dimension: ' + dim['id'])
-            elif dim['kind'] == 'inherited':
-                parent = inputs.parent(id, table, dim['parent'])
-                measured = inherit_unique(conn, urls, table['rows'], parent, dim['parent'], dim['dimension'])
-            else:
-                measured = scan_dimension(conn, urls, table['rows'], dim, snapshot={
-                    'publishedAt': table.get('publishedAt'), 'artifactDigest': table.get('artifactDigest'),
-                    'recordUrl': table.get('recordUrl'), 'publicationSha256': table.get('checksum')})
-            validate_counts(measured, table['rows'])
-            measured.update(id=dim['id'], label=dim['label'], meaning=dim['meaning'],
-                            definitionDigest=definition_digest(dim))
-            result.append(measured)
-        check_mutable()
-        if measurement_revision(policy) != revision: raise ValueError('Coverage implementation changed during this table scan')
-        return {**binding(table, policy), 'status': 'measured', 'classification': policy['classification'],
-                'note': policy.get('note', ''), 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                'measurementRevision': revision, 'dimensions': result}
-    finally: conn.close()
-
-
-def _scan_native_table(id, table, policy):
-    revision = measurement_revision(policy)
-    conn = duckdb.connect()
-    contexts = ExitStack()
-    try:
-        # Render stored instants in UTC, regardless of the host's timezone.
-        conn.execute("SET TimeZone='UTC'")
-        conn.execute('LOAD httpfs')
-        conn.execute("SET memory_limit='512MB'")
-        conn.execute('SET threads=2')
-        conn.execute('SET http_timeout=30')
-        urls = [m['url'] for m in table['members']]
-        def check_mutable():
-            if table.get('coverageInputs'):
-                for entry in table['coverageInputs']:
-                    header_matches(entry['url'], entry['etag'], entry['byteSize'])
-            else:
-                if table.get('etag'): header_matches(urls[0], table['etag'], table['members'][0]['byteSize'])
-                if table.get('dateIndex'): header_matches(table['dateIndex'], table['dateIndexETag'])
-        check_mutable()
-        actual_schema = schema(policy['schema'])
-        validate_members(conn, id, table, actual_schema)
-        validate_definition(policy, schema(policy.get('processingSchema', actual_schema)))
-        table = {**table, 'columns': actual_schema}
-        inputs = CoverageInputs()
-        physical_table = table
-        table, inputs = contexts.enter_context(processing_context(id, table, policy, inputs))
-        urls = table.get('_coverageUrls', urls)
-        table = {**table, 'members': [{**member, 'url': url} for member, url in zip(table['members'], urls)]}
-        # Use one resolver per table, shared by all its axes.
-        result = []
-        for dim in policy['dimensions']:
-            measured = None
-            if dim.get('special') or dim.get('method'):
-                helper = importlib.import_module(policy['_scanner'] + '_coverage')
-                measured = helper.scan_special(conn, id, table, dim, inputs)
-                if measured is None: raise ValueError('Unsupported specialized coverage dimension: ' + dim['id'])
-            elif dim['kind'] == 'inherited':
-                parent = inputs.parent(id, table, dim['parent'])
-                measured = inherit_unique(conn, urls, table['rows'], parent, dim['parent'], dim['dimension'])
-            else:
-                measured = scan_dimension(conn, urls, table['rows'], dim, snapshot={
-                    'publishedAt': table.get('publishedAt'), 'artifactDigest': table.get('artifactDigest'),
-                    'recordUrl': table.get('recordUrl'), 'publicationSha256': table.get('checksum')})
-            validate_counts(measured, table['rows'])
-            measured.update(id=dim['id'], label=dim['label'], meaning=dim['meaning'],
-                            definitionDigest=definition_digest(dim))
-            result.append(measured)
-        check_mutable()
-        if measurement_revision(policy) != revision: raise ValueError('Coverage implementation changed during this table scan')
-        return {**binding(physical_table, policy), 'status': 'measured', 'classification': policy['classification'],
-                'note': policy.get('note', ''), 'measuredAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                'measurementRevision': revision, 'dimensions': result,
-                **({'processingEvidence': {
-                    'dataset': table['_coverageProcessing']['dataset'],
-                    'generationId': table['_coverageProcessing']['generationId'],
-                    'rows': table['_coverageProcessing']['rows'],
-                    'subjects': [{k: v for k, v in member.items() if k != 'path'} for member in table['_coverageProcessing']['selection']['subjects']],
-                    'receipts': {k: v for k, v in table['_coverageProcessing']['selection']['receipts'].items() if k != 'path'},
-                    'qualification': 'Private source values restored by the maintained selected-prior reader.'
-                }} if table.get('_coverageProcessing') else {})}
-    finally:
-        contexts.close()
-        conn.close()
-
-
-def scan_table(id, table, policy):
-    if policy.get('_additionalNativeProcessing'):
-        return additional.scan_table(id, table, policy, validate_members=validate_members, validate_counts=validate_counts)
-    return (_scan_native_table if policy.get('_nativeProcessing') else _scan_published_table)(id, table, policy)
-
-
 def cached(table, policy, old):
     if not isinstance(old, dict) or old.get('status') != 'measured': return False
     if old.get('measurementRevision') != measurement_revision(policy): return False
@@ -300,12 +74,7 @@ def cached(table, policy, old):
             if dim.get('special') == 'literal-date-anomalies':
                 from regulation_coverage import activity_boundary
                 if measured.get('activityBoundary') != activity_boundary(table): return False
-        if table.get('coverageInputs'):
-            for entry in table['coverageInputs']:
-                header_matches(entry['url'], entry['etag'], entry['byteSize'])
-        else:
-            if table.get('etag'): header_matches(table['members'][0]['url'], table['etag'], table['members'][0]['byteSize'])
-            if table.get('dateIndex'): header_matches(table['dateIndex'], table['dateIndexETag'])
+        check_mutable(table)
     except (ValueError, OSError, subprocess.SubprocessError): return False
     return True
 
@@ -313,13 +82,10 @@ def cached(table, policy, old):
 def timed_scan(item):
     id, table, policy, old = item
     if cached(table, policy, old): return id, old
-    # Full saved-text reads across the comments release exceed the ordinary
-    # table budget; keep the larger allowance limited to this measured case.
-    timeout_seconds = 3600 if id in ('comments', 'fec_receipts') else 900
-    # The qualified court bridge alone may use 1800 seconds. Retain the
-    # ordinary 900-second allowance for preparation and coverage checks.
-    if id == 'court_opinions' and policy.get('_additionalNativeProcessing'):
-        timeout_seconds = 2700
+    timeout_seconds = allowances.scan_seconds(id, policy.get('_additionalNativeProcessing'))
+    # Every native dataset was described once by main(); the child reuses those descriptions.
+    request = {'id': id, 'table': table, 'policy': policy,
+               'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
     try:
         # DuckDB's default spill directory is relative to the working directory.
         # Keep concurrent readers separate and clean up even after a timeout.
@@ -329,15 +95,15 @@ def timed_scan(item):
         serial = id in ('court_opinions', 'documents', 'federal_register', 'fr_docket_links', 'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
         with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = subprocess.run([sys.executable, __file__, '--scan'],
-                input=json.dumps({'id': id, 'table': table, 'policy': policy}), text=True,
+                input=json.dumps(request), text=True,
                 capture_output=True, timeout=timeout_seconds, check=True, cwd=workdir)
-        additional.forward_restore_diagnostics(process.stderr)
+        forward_restore_diagnostics(process.stderr)
         return id, json.loads(process.stdout.splitlines()[-1])
     except subprocess.CalledProcessError as error:
-        additional.forward_restore_diagnostics(error.stderr)
+        forward_restore_diagnostics(error.stderr)
         raise ValueError(id + ': ' + error.stderr[-1500:]) from error
     except subprocess.TimeoutExpired as error:
-        additional.forward_restore_diagnostics(error.stderr)
+        forward_restore_diagnostics(error.stderr)
         raise ValueError(f'{id}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
 
 
@@ -352,6 +118,10 @@ def main():
         raise ValueError('Completed releases require a full build')
     if args.scan:
         request = json.load(sys.stdin)
+        # A scan without descriptions (a direct probe) describes datasets on demand.
+        descriptions = request.get('descriptions', {})
+        native.seed(descriptions.get('legislative', {}))
+        additional.seed(descriptions.get('additional', {}))
         print(json.dumps(scan_table(request['id'], request['table'], request['policy'])))
         return
     if args.only and args.output.resolve() == OUTPUT.resolve():
@@ -365,6 +135,9 @@ def main():
         _, tables = load()
     reviewed_policies = definitions()
     policies = dict(reviewed_policies)
+    # One reader call per native dataset, in parallel; validate_plan and every scan reuse it.
+    native.describe_all(native.DATASETS & tables.keys())
+    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & tables.keys())
     validate_plan(tables, policies)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -373,7 +146,6 @@ def main():
         if checkpoint.exists():
             try: previous[id] = json.loads(checkpoint.read_text())
             except (OSError, ValueError): pass
-    revision = measurement_revision()
     # A build has one UTC reference month; it is measurement context, not a
     # substitute publication date or part of the source census.
     as_of_month = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m')
@@ -399,7 +171,7 @@ def main():
         raise ValueError('Coverage definitions changed during the build; rerun the reviewed policies')
     validate_native_implementations({id: policies[id] for id in selected})
     additional.validate_native_implementations({id: policies[id] for id in selected})
-    if measurement_revision() != revision or any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items()):
+    if any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items()):
         raise ValueError('Coverage implementation changed during the build; rerun the reviewed code')
     if set(results) != set(selected): raise ValueError('Coverage build omitted a published table')
     # Confirm membership/bindings still match after all scans, including mutable receipts.

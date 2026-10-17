@@ -13,6 +13,7 @@ import pyarrow.parquet as pq
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import additional_native_coverage as adapter
+import coverage_scan
 import restore_source_navigation_coverage as reader
 from coverage_inputs import CoverageInputs
 from spicy_regs.legislative_documents import field_registry
@@ -66,10 +67,10 @@ class SmallNativeCoverageTests(unittest.TestCase):
         table = {**owner, "kind":"generation", "columns":description["nativeSchema"],
                  "members":[{**member, "url":url} for member, url in zip(owner["members"], owner["urls"])]}
         with patch.object(adapter, "bridge", side_effect=bridge):
-            adapter.native_schema.cache_clear()
-            self.addCleanup(adapter.native_schema.cache_clear)
+            adapter.SCHEMAS.clear()
+            self.addCleanup(adapter.SCHEMAS.clear)
             policy = adapter.variant(child, table, build.definitions()[child])
-            return adapter.scan_table(child, table, policy, validate_members=build.validate_members,
+            return adapter.scan_table(child, table, policy, validate_members=coverage_scan.validate_members,
                                       validate_counts=build.validate_counts, inputs=inputs, download=download)
 
     def test_law_sections_keep_same_generation_receipt_hash_key(self):

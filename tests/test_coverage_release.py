@@ -140,6 +140,11 @@ if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed
         self.assertTrue(files and all(path.is_file() for path in files))
         self.assertFalse({'coverage_revision.py','select_native_coverage_reader.py','legacy-coverage-compatibility.v1.json'}&{path.name for path in files})
 
+    def test_release_binds_files_that_no_measurement_revision_hashes(self):
+        # Allowances and orchestration keep checkpoints, but a release still records the exact code that ran.
+        bound={path.name for path in implementation_files(ROOT)}
+        self.assertLessEqual({'coverage_scan.py','coverage_allowances.py','build-coverage-maps.py','coverage_release.py'},bound)
+
     def test_expired_measurement_month_refuses(self):
         self.document['tables']['records']['dimensions'][0]['activityBoundary']={'month':'2001-01','basis':'measurement-month'}
         with self.assertRaises(subprocess.CalledProcessError):self.create()

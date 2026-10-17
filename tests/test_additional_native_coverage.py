@@ -56,11 +56,11 @@ class BridgeTests(unittest.TestCase):
             script = 'restore_source_navigation_coverage.py' if dataset in navigation else 'restore_additional_coverage.py'
             for args in ([], ['--schema', dataset]):
                 with self.subTest(dataset=dataset, args=args), patch.dict(os.environ, env), patch.object(
-                        adapter.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}', 'stderr':''})()) as run:
+                        native.subprocess, 'run', return_value=type('Result', (), {'stdout':'{}', 'stderr':''})()) as run:
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
                     self.assertEqual(run.call_args.args[0][0], sys.executable)
                     self.assertEqual(Path(run.call_args.args[0][1]).name, script)
-                    expected = {'documents': 600, 'federal_register': 600, 'fr_docket_links': 600, 'court_opinions': 1800}
+                    expected = {'documents': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):

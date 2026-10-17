@@ -33,7 +33,7 @@ class SourceCoverageTests(unittest.TestCase):
         # The removed per-reader variables are ignored: one interpreter, two spicygov adapters.
         env = {"SPICYGOV_COVERAGE_PYTHON": sys.executable, "SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE": "/nonexistent"}
         navigation, additional = "restore_source_navigation_coverage.py", "restore_additional_coverage.py"
-        with patch.dict("os.environ", env), patch.object(adapter.subprocess, "run", return_value=subprocess.CompletedProcess([],0,stdout="{}")) as run:
+        with patch.dict("os.environ", env), patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([],0,stdout="{}")) as run:
             def selected(*args, **kwargs):
                 adapter.bridge(*args, **kwargs)
                 self.assertEqual(run.call_args.args[0][0], sys.executable)

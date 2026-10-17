@@ -4,8 +4,8 @@ Physical subjects still own map schema/fingerprints. Restored inputs supply
 original source values and processing-only citation states to measurements.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from functools import lru_cache
 import fcntl
 import hashlib
 import json
@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 from uuid import uuid4
+import coverage_allowances as allowances
 from publication_census import BASE
 
 DATASETS = frozenset(
@@ -67,34 +68,84 @@ def verify_file(member):
     return actual
 
 
-def bridge(args=(), request=None):
-    python = os.environ.get("SPICYGOV_COVERAGE_PYTHON", sys.executable)
-    result = subprocess.run(
-        [python, "-m", "spicy_regs.coverage_reader", *args],
-        input=None if request is None else json.dumps(request),
-        text=True,
-        capture_output=True,
-        check=True,
-        timeout=900,
-    )
+def forward_restore_diagnostics(stderr):
+    """Show the reader's restore progress and any row-route fallback in the build log."""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    for line in (stderr or "").splitlines():
+        if line.startswith("coverage-restore ") or "route=row" in line:
+            print(line, file=sys.stderr, flush=True)
+
+
+def run_bridge(command, request, timeout):
+    """Run one reader request; its diagnostics reach the log even when it fails."""
+    try:
+        result = subprocess.run(
+            command,
+            input=None if request is None else json.dumps(request),
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=timeout,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        forward_restore_diagnostics(error.stderr)
+        raise
+    forward_restore_diagnostics(result.stderr)
     return json.loads(result.stdout.splitlines()[-1])
 
 
-@lru_cache(maxsize=32)
-def native_schema(dataset):
+def bridge(args=(), request=None):
+    python = os.environ.get("SPICYGOV_COVERAGE_PYTHON", sys.executable)
+    return run_bridge(
+        [python, "-m", "spicy_regs.coverage_reader", *args],
+        request,
+        allowances.LEGISLATIVE_BRIDGE,
+    )
+
+
+# Each dataset is described once per build (describe_all) and handed to every
+# scan process (seed); an uncached dataset is described on first use.
+SCHEMAS = {}
+
+
+def describe(dataset):
     return bridge(["--schema", dataset])
 
 
+def describe_each(function, datasets):
+    """One request per dataset, run in parallel: {dataset: description}."""
+    datasets = sorted(set(datasets))
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        return dict(zip(datasets, pool.map(function, datasets)))
+
+
+def describe_all(datasets):
+    SCHEMAS.update(describe_each(describe, set(datasets) - SCHEMAS.keys()))
+
+
+def seed(descriptions):
+    SCHEMAS.update(descriptions)
+
+
+def native_schema(dataset):
+    if dataset not in SCHEMAS:
+        SCHEMAS[dataset] = describe(dataset)
+    return SCHEMAS[dataset]
+
+
 def validate_native_implementations(policies):
-    for dataset, policy in policies.items():
-        if not policy.get("_nativeProcessing"):
-            continue
-        current = bridge(["--schema", dataset])
+    # Describe again, uncached and in parallel: this is the race check against a
+    # reader that changed while the build ran.
+    current = describe_each(
+        describe, (d for d, policy in policies.items() if policy.get("_nativeProcessing"))
+    )
+    for dataset, description in current.items():
         if (
-            current.get("implementationSha256")
-            != policy.get("restorationImplementationSha256")
-            or current.get("nativeSchema") != policy["schema"]
-            or current.get("receiptOnly") is not False
+            description.get("implementationSha256")
+            != policies[dataset].get("restorationImplementationSha256")
+            or description.get("nativeSchema") != policies[dataset]["schema"]
+            or description.get("receiptOnly") is not False
         ):
             raise ValueError(
                 "Native coverage reader changed during the build: " + dataset

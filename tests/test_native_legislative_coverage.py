@@ -1,9 +1,12 @@
 """Native coverage keeps physical publication and private input authorities separate."""
 
+from contextlib import redirect_stderr
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,6 +14,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
 import additional_native_coverage as adapter
+import coverage_scan
 import native_legislative_coverage as native
 
 
@@ -32,7 +36,7 @@ class NativeCoverageTests(unittest.TestCase):
             "SPICYGOV_NATIVE_COVERAGE_BRIDGE": "/nonexistent",
             "SPICYGOV_LEGACY_COVERAGE_BRIDGE": "/nonexistent",
         }
-        done = type("Done", (), {"stdout": "{}\n"})()
+        done = type("Done", (), {"stdout": "{}\n", "stderr": ""})()
         with (
             patch.dict("os.environ", {**removed, "SPICYGOV_COVERAGE_PYTHON": "/x/python"}),
             patch.object(native.subprocess, "run", return_value=done) as run,
@@ -49,6 +53,44 @@ class NativeCoverageTests(unittest.TestCase):
             os.environ.pop("SPICYGOV_COVERAGE_PYTHON", None)
             native.bridge(["--schema", "bill_versions"])
             self.assertEqual(run.call_args.args[0][:3], [sys.executable, "-m", "spicy_regs.coverage_reader"])
+
+    def test_bridge_has_a_finite_allowance_and_shows_diagnostics_on_success_and_failure(self):
+        line = "2026-10-17 | WARNING | regulatory restore route=row dataset=documents reason=x\n"
+        done = subprocess.CompletedProcess([], 0, "{}\n", "unrelated\n" + line)
+        failure = subprocess.CalledProcessError(1, [], stderr=line + "other\n")
+        with redirect_stderr(io.StringIO()) as shown:
+            with patch.object(native.subprocess, "run", return_value=done) as run:
+                native.bridge(["--schema", "bill_versions"])
+                self.assertEqual(run.call_args.kwargs["timeout"], 900)
+            with patch.object(native.subprocess, "run", side_effect=failure):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    native.bridge(["--schema", "bill_versions"])
+        self.assertEqual(shown.getvalue(), line * 2)
+
+    def test_each_dataset_is_described_once_then_served_from_the_build_cache(self):
+        calls = []
+
+        def bridge(args=(), request=None):
+            calls.append(args[1])
+            return {"nativeSchema": [["a", "VARCHAR"]], "receiptOnly": False,
+                    "implementationSha256": "bridge"}
+
+        policy = {"_nativeProcessing": True, "schema": [["a", "VARCHAR"]],
+                  "restorationImplementationSha256": "bridge"}
+        with patch.dict(native.SCHEMAS, clear=True), patch.object(native, "bridge", side_effect=bridge):
+            native.describe_all({"bill_versions", "bill_actions"})
+            native.describe_all({"bill_versions", "bill_actions"})
+            native.native_schema("bill_versions")
+            self.assertEqual(sorted(calls), ["bill_actions", "bill_versions"])
+            # The end-of-build race check never trusts the cache.
+            native.validate_native_implementations({"bill_versions": policy, "other": {}})
+            self.assertEqual(sorted(calls), ["bill_actions", "bill_versions", "bill_versions"])
+            native.native_schema("bill_sections")
+            self.assertEqual(calls[-1], "bill_sections")
+        with patch.dict(native.SCHEMAS, clear=True), patch.object(
+                native, "bridge", side_effect=AssertionError("seeded datasets need no reader")):
+            native.seed({"bill_versions": {"seeded": True}})
+            self.assertEqual(native.native_schema("bill_versions"), {"seeded": True})
 
     def test_only_exact_reviewed_native_schema_has_a_processing_variant(self):
         policy = {"schema": [["source", "VARCHAR"]]}
@@ -262,6 +304,7 @@ class WarmCoverageTests(unittest.TestCase):
                 "family": "bill-family",
                 "classification": "categorical",
                 "schema": source_schema,
+                "_scanner": "regulation",
                 "dimensions": [dimension],
             }
             for id in ("published", "bill_versions")
@@ -311,6 +354,8 @@ class WarmCoverageTests(unittest.TestCase):
                     ),
                 ),
                 patch.object(self.driver, "timed_scan", side_effect=scan),
+                patch.object(self.driver.native, "describe_all") as describe_native,
+                patch.object(self.driver.additional, "describe_all") as describe_additional,
                 patch.object(
                     self.driver, "validate_native_implementations"
                 ) as final_reader,
@@ -320,6 +365,9 @@ class WarmCoverageTests(unittest.TestCase):
             ):
                 self.driver.main()
                 self.assertTrue(output.exists())
+                # Each published native dataset is described once, before the plan needs it.
+                describe_native.assert_called_once_with({"bill_versions"})
+                describe_additional.assert_called_once_with(set())
                 self.assertNotEqual(revisions["published"], revisions["bill_versions"])
                 checker.assert_called_once()
                 self.assertEqual(
@@ -399,7 +447,7 @@ class WarmCoverageTests(unittest.TestCase):
         current = self.driver.measurement_revision(policy)
         # The checked-in map predates the single reader route: retained as evidence, never reused.
         self.assertNotEqual(current, saved["measurementRevision"])
-        with patch.object(self.driver, "header_matches") as check:
+        with patch.object(coverage_scan, "header_matches") as check:
             self.assertFalse(self.driver.cached(table, policy, saved))
             check.assert_not_called()
             rebound = {**saved, "measurementRevision": current}
@@ -419,6 +467,7 @@ class WarmCoverageTests(unittest.TestCase):
     def test_native_revision_binds_the_reader_identity(self):
         policy = self.driver.definitions()["comments"]
         native_policy = {
+            "_scanner": "regulation",
             "_nativeProcessing": True,
             "restorationImplementationSha256": "sha256:" + "a" * 64,
         }
@@ -431,7 +480,7 @@ class WarmCoverageTests(unittest.TestCase):
             ),
         )
         with self.assertRaises(KeyError):
-            self.driver.measurement_revision({"_nativeProcessing": True})
+            self.driver.measurement_revision({"_scanner": "regulation", "_nativeProcessing": True})
 
 
 if __name__ == "__main__":

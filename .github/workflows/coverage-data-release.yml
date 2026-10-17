@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    timeout-minutes: 90
+    timeout-minutes: 330
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     env:
       SPICYGOV_COVERAGE_PYTHON: ${{ github.workspace }}/.coverage-backend/.venv/bin/python
@@ -66,6 +66,7 @@ jobs:
       - run: python tests/test_publication_census.py
       - run: python tests/test_coverage_dimensions.py
       - run: python tests/test_coverage_gate.py
+      - run: python tests/test_coverage_scan_identity.py
       - run: python tests/test_regulation_coverage_maps.py
       - run: python tests/test_native_receipt_coverage.py
       - run: python tests/test_fec_coverage_maps.py
@@ -93,15 +94,18 @@ jobs:
             ${{ runner.os }}-coverage-v1-
       - name: Verify coverage for every published table
         id: coverage-scan
+        # The step ends before the job does, so the cache save below still runs
+        # and a long release keeps what it measured for the next run.
+        timeout-minutes: 300
         # A restored checkpoint is only a candidate. The builder rechecks exact
         # source, schema, policy, scanner, paired exports and UTC month bindings.
         run: python scripts/build-coverage-maps.py --release-output .cache/completed-coverage-release
       - name: Save validated coverage checkpoints
-        if: ${{ always() && steps.coverage-cache.outcome == 'success' && (steps.coverage-scan.outcome == 'success' || steps.coverage-scan.outcome == 'failure') && hashFiles('.cache/coverage-maps/*.json') != '' }}
+        if: ${{ always() && steps.coverage-cache.outcome == 'success' && steps.coverage-scan.outcome != 'skipped' && hashFiles('.cache/coverage-maps/*.json') != '' }}
         uses: actions/cache/save@v5
         with:
-          # Preserve completed tables after a failed scan; the builder still
-          # requires every current table before it replaces the served map.
+          # Preserve completed tables after a failed, timed-out or cancelled scan;
+          # the builder still requires every current table before it replaces the served map.
           path: .cache/coverage-maps
           key: ${{ steps.coverage-cache.outputs.cache-primary-key }}
       - name: Retain completed coverage data for independent selection
