@@ -195,7 +195,7 @@ def scan_special(conn, table_id, table, dim, inputs):
         return _committee_history(conn,table,dim)
     if method == 'committee-action-dates': return _committee_action_dates(conn,table,dim)
     if method == 'activity-bill-introduction': return _bill_introduction_events(conn,table,dim,inputs)
-    if method == 'committee-read-issue-dates': return _committee_read_dates(conn,table,dim,inputs)
+    if method == 'committee-read-issue-dates': return _committee_read_dates(conn,table_id,table,dim,inputs)
     if method == 'roster-file-date': return _roster_file_dates(conn,table,dim)
     if method == 'funding-year-span': return _funding_years(conn,table,dim)
     if method == 'affiliation-period': return _affiliation_periods(conn,table,dim)
@@ -290,12 +290,12 @@ def _bill_introduction_events(conn, table, dim, inputs):
 def _citation_scope(conn, table_id, table, dim, inputs):
     """Attach source periods through selected text-version receipts and exact schemas."""
     conn.read_parquet(_urls(table), hive_partitioning=False).create_view('coverage_citations',replace=True)
-    if table_id == 'document_citation_reads':
+    if table_id == 'document_citation_read_outcomes':
         read_table = inputs.producing(table_id,table)
         states = conn.execute('SELECT document_kind,document_key,text_sha256,input_family,input_generation,input_sha256 FROM coverage_citations').fetchall()
         groups = [(kind,key,text_sha,1) for kind,key,text_sha,*_ in states]
     else:
-        read_table = inputs.parent(table_id,table,{'table':'document_citation_reads','mode':'same-generation','keys':[['document_kind','document_kind'],['document_key','document_key'],['text_sha256','text_sha256']]})
+        read_table = inputs.parent(table_id,table,{'table':'document_citation_read_outcomes','mode':'same-generation','keys':[['document_kind','document_kind'],['document_key','document_key'],['text_sha256','text_sha256']]})
         conn.read_parquet(read_table['urls'], hive_partitioning=False).create_view('coverage_citation_reads',replace=True)
         states = conn.execute('SELECT document_kind,document_key,text_sha256,input_family,input_generation,input_sha256 FROM coverage_citation_reads').fetchall()
         groups = conn.execute('SELECT document_kind,document_key,text_sha256,count(*) FROM coverage_citations GROUP BY ALL').fetchall()
@@ -414,12 +414,14 @@ def _affiliation_periods(conn,table,dim):
     return measured
 
 
-def _committee_read_dates(conn, table, dim, inputs):
+def _committee_read_dates(conn, table_id, table, dim, inputs):
     """Issue dates of attempted package reads, with consistent report-part context."""
+    if table_id != 'committee_report_read_outcomes':
+        raise ValueError('Read-attempt issue dates are defined only for committee_report_read_outcomes')
     conn.read_parquet(_urls(table),hive_partitioning=False).create_view('coverage_read_attempts',replace=True)
     context={};sources=[]
     for name in ('committee_reports','hearing_transcripts'):
-        parent=inputs.parent('committee_report_reads',table,{'table':name,'mode':'same-generation','keys':[['package_id','package_id']]})
+        parent=inputs.parent(table_id,table,{'table':name,'mode':'same-generation','keys':[['package_id','package_id']]})
         sources.append({k:parent[k] for k in ('family','artifactDigest','tableId','recordUrl','members','rows')})
         for package,date in conn.execute('SELECT DISTINCT package_id,date_issued FROM read_parquet(?,hive_partitioning=false)',[parent['urls']]).fetchall():
             if package in context and context[package]!=date:

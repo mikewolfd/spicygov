@@ -2,6 +2,189 @@
   "format": "spicygov-coverage-definitions",
   "version": 1,
   "tables": {
+    "administration_policy_bill_links": {
+      "family": "administration-policy",
+      "schema": [
+        [
+          "link_id",
+          "VARCHAR"
+        ],
+        [
+          "statement_id",
+          "VARCHAR"
+        ],
+        [
+          "source_link_index",
+          "BIGINT"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "bill",
+          "VARCHAR"
+        ],
+        [
+          "native_bill_id",
+          "VARCHAR"
+        ],
+        [
+          "bill_id",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "inherited-statement-issue-dates",
+          "kind": "inherited",
+          "fields": [
+            "statement_id"
+          ],
+          "label": "Statement issue dates",
+          "meaning": "Issue dates of the policy statements these bill links belong to. A link has no date of its own.",
+          "parent": {
+            "table": "administration_policy_statements",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "statement_id",
+                "statement_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "date_issued",
+            "kind": "date",
+            "fields": [
+              "date_issued"
+            ],
+            "syntax": "iso",
+            "label": "Statement issue dates",
+            "meaning": "Issue date stated for the linked policy statement."
+          }
+        }
+      ]
+    },
+    "administration_policy_statements": {
+      "family": "administration-policy",
+      "schema": [
+        [
+          "statement_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "archive_commit",
+          "VARCHAR"
+        ],
+        [
+          "administration",
+          "VARCHAR"
+        ],
+        [
+          "source_record_index",
+          "BIGINT"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "document_title",
+          "VARCHAR"
+        ],
+        [
+          "date_issued",
+          "VARCHAR"
+        ],
+        [
+          "date_issued_status",
+          "VARCHAR"
+        ],
+        [
+          "rescinded",
+          "BOOLEAN"
+        ],
+        [
+          "archived_pdf_url",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_record_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "record-dates",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "statement-issue-dates",
+          "kind": "date",
+          "label": "Statement issue dates",
+          "meaning": "Issue dates stated in the archived administration policy metadata. A statement date does not date any archived PDF.",
+          "fields": [
+            "date_issued"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "administrations",
+          "kind": "category",
+          "fields": [
+            "administration"
+          ],
+          "label": "Administrations",
+          "meaning": "Administration labels as written in the archived metadata."
+        },
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "rescission",
+          "kind": "category",
+          "fields": [
+            "rescinded"
+          ],
+          "label": "Rescission status",
+          "meaning": "Statements the source marks as rescinded. Statements with no stated rescission stay unplaced; they are not shown as in force."
+        }
+      ]
+    },
     "amendments": {
       "family": "amendments",
       "schema": [
@@ -533,231 +716,86 @@
         }
       ]
     },
-    "bill_family_archives": {
+    "bill_family_document_file_outcomes": {
       "family": "bill-family",
       "schema": [
         [
-          "name",
+          "generation_id",
           "VARCHAR"
         ],
         [
-          "link",
+          "source_dataset",
           "VARCHAR"
         ],
         [
-          "formatted_last_modified_time",
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
           "VARCHAR"
         ],
         [
-          "modified_at",
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
           "VARCHAR"
         ],
         [
-          "size",
+          "original_byte_sha256",
           "VARCHAR"
         ],
         [
-          "congress",
+          "state_witness_sha256",
           "VARCHAR"
         ],
         [
-          "bill_type",
-          "VARCHAR"
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
         ],
         [
-          "observed_at",
-          "VARCHAR"
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
         ]
       ],
       "classification": "reference-or-processing-scope",
       "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
       "dimensions": [
         {
-          "id": "congress",
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "source-tables",
           "kind": "category",
-          "label": "Congress",
-          "meaning": "Congress numbers represented by saved records.",
           "fields": [
-            "congress"
+            "source_dataset"
           ],
-          "syntax": "positive-integer"
+          "label": "Converted source tables",
+          "meaning": "Source tables whose saved members were converted to the current layout. A listed table has a conversion record; the record does not show its rows are complete."
         },
         {
-          "id": "bill-type",
-          "kind": "category",
-          "label": "Bill type",
-          "meaning": "Bill types in saved archive-folder records. A folder record does not establish that every bill was collected.",
-          "fields": [
-            "bill_type"
-          ]
-        },
-        {
-          "id": "scope-congress-bill_type",
+          "id": "file-outcomes",
           "kind": "category",
           "fields": [
-            "congress",
-            "bill_type"
+            "source_dataset",
+            "state"
           ],
-          "label": "Congress and bill type",
-          "meaning": "Congress and bill type recorded together. Rows missing any of these values stay unplaced."
-        }
-      ]
-    },
-    "bill_family_backfill_walks": {
-      "family": "bill-family",
-      "schema": [
-        [
-          "congress",
-          "VARCHAR"
-        ],
-        [
-          "bill_type",
-          "VARCHAR"
-        ],
-        [
-          "declared_count",
-          "VARCHAR"
-        ],
-        [
-          "records_walked",
-          "VARCHAR"
-        ],
-        [
-          "pages_walked",
-          "VARCHAR"
-        ],
-        [
-          "list_completed",
-          "VARCHAR"
-        ],
-        [
-          "unwalkable_count",
-          "VARCHAR"
-        ],
-        [
-          "repeated_count",
-          "VARCHAR"
-        ],
-        [
-          "backfilled_count",
-          "VARCHAR"
-        ],
-        [
-          "observed_at",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "source-scope-and-observed-records",
-      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
-      "dimensions": [
-        {
-          "id": "congress",
-          "kind": "category",
-          "label": "Congress",
-          "meaning": "Congress numbers represented by saved records.",
-          "fields": [
-            "congress"
-          ],
-          "syntax": "positive-integer"
-        },
-        {
-          "id": "bill-type",
-          "kind": "category",
-          "label": "Bill type",
-          "meaning": "Bill types included in recorded archive searches.",
-          "fields": [
-            "bill_type"
-          ]
-        },
-        {
-          "id": "walk-outcome",
-          "kind": "category",
-          "label": "Archive search results",
-          "meaning": "Results of attempts to browse publisher bill listings. They describe searches, not collected bill text.",
-          "fields": [
-            "list_completed"
-          ]
-        },
-        {
-          "id": "scope-congress-bill_type",
-          "kind": "category",
-          "fields": [
-            "congress",
-            "bill_type"
-          ],
-          "label": "Congress and bill type",
-          "meaning": "Congress and bill type recorded together. Rows missing any of these values stay unplaced."
-        }
-      ]
-    },
-    "bill_family_backfills": {
-      "family": "bill-family",
-      "schema": [
-        [
-          "congress",
-          "VARCHAR"
-        ],
-        [
-          "bill_type",
-          "VARCHAR"
-        ],
-        [
-          "number",
-          "VARCHAR"
-        ],
-        [
-          "list_update_date_including_text",
-          "VARCHAR"
-        ],
-        [
-          "refusal",
-          "VARCHAR"
-        ],
-        [
-          "observed_at",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "source-scope-and-observed-records",
-      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
-      "dimensions": [
-        {
-          "id": "congress",
-          "kind": "category",
-          "label": "Congress",
-          "meaning": "Congress numbers represented by saved records.",
-          "fields": [
-            "congress"
-          ],
-          "syntax": "positive-integer"
-        },
-        {
-          "id": "bill-type",
-          "kind": "category",
-          "label": "Bill type",
-          "meaning": "Bill types included in recorded historical collection attempts.",
-          "fields": [
-            "bill_type"
-          ]
-        },
-        {
-          "id": "attempt-outcome",
-          "kind": "category",
-          "label": "Collection attempt results",
-          "meaning": "Recorded outcomes, including refused collection attempts.",
-          "fields": [
-            "refusal"
-          ]
-        },
-        {
-          "id": "scope-congress-bill_type",
-          "kind": "category",
-          "fields": [
-            "congress",
-            "bill_type"
-          ],
-          "label": "Congress and bill type",
-          "meaning": "Congress and bill type recorded together. Rows missing any of these values stay unplaced."
+          "label": "File conversion outcomes",
+          "meaning": "Recorded result for each converted member, including successful empty partitions. A conversion result does not date or complete the rows."
         }
       ]
     },
@@ -3053,9 +3091,124 @@
         }
       ]
     },
-    "committee_report_reads": {
+    "committee_meetings_detail_reads": {
+      "family": "committee-meetings",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "attempt_id",
+          "VARCHAR"
+        ],
+        [
+          "source_table",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "citation",
+          "VARCHAR"
+        ],
+        [
+          "number",
+          "VARCHAR"
+        ],
+        [
+          "part_number",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "event_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "read_field",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "error_type",
+          "VARCHAR"
+        ],
+        [
+          "recorded_at",
+          "VARCHAR"
+        ],
+        [
+          "shape_version",
+          "VARCHAR"
+        ],
+        [
+          "field_states",
+          "STRUCT(field VARCHAR, state VARCHAR)[]"
+        ],
+        [
+          "source_witnesses",
+          "STRUCT(source_url VARCHAR, sha256 VARCHAR, capture_id VARCHAR)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "read-outcomes",
+          "kind": "category",
+          "fields": [
+            "outcome"
+          ],
+          "label": "Read outcomes",
+          "meaning": "Recorded result of each detail read. A missing attempt means the record was not read, not that it has no detail."
+        },
+        {
+          "id": "read-fields",
+          "kind": "category",
+          "fields": [
+            "source_table",
+            "read_field",
+            "outcome"
+          ],
+          "label": "Fields read",
+          "meaning": "Source table, detail field and outcome of each recorded read. Fields never attempted do not appear."
+        }
+      ]
+    },
+    "committee_report_read_outcomes": {
       "family": "committee-reports",
       "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
         [
           "package_id",
           "VARCHAR"
@@ -3290,6 +3443,89 @@
           ],
           "label": "Congress and chamber",
           "meaning": "Congress and chamber recorded together. Rows missing any of these values stay unplaced."
+        }
+      ]
+    },
+    "committee_reports_document_file_outcomes": {
+      "family": "committee-reports",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_dataset",
+          "VARCHAR"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
+          "VARCHAR"
+        ],
+        [
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "original_byte_sha256",
+          "VARCHAR"
+        ],
+        [
+          "state_witness_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
+        ],
+        [
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "source-tables",
+          "kind": "category",
+          "fields": [
+            "source_dataset"
+          ],
+          "label": "Converted source tables",
+          "meaning": "Source tables whose saved members were converted to the current layout. A listed table has a conversion record; the record does not show its rows are complete."
+        },
+        {
+          "id": "file-outcomes",
+          "kind": "category",
+          "fields": [
+            "source_dataset",
+            "state"
+          ],
+          "label": "File conversion outcomes",
+          "meaning": "Recorded result for each converted member, including successful empty partitions. A conversion result does not date or complete the rows."
         }
       ]
     },
@@ -4240,6 +4476,299 @@
         }
       ]
     },
+    "house_communications_detail_reads": {
+      "family": "house-communications",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "attempt_id",
+          "VARCHAR"
+        ],
+        [
+          "source_table",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "citation",
+          "VARCHAR"
+        ],
+        [
+          "number",
+          "VARCHAR"
+        ],
+        [
+          "part_number",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "event_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "read_field",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "error_type",
+          "VARCHAR"
+        ],
+        [
+          "recorded_at",
+          "VARCHAR"
+        ],
+        [
+          "shape_version",
+          "VARCHAR"
+        ],
+        [
+          "field_states",
+          "STRUCT(field VARCHAR, state VARCHAR)[]"
+        ],
+        [
+          "source_witnesses",
+          "STRUCT(source_url VARCHAR, sha256 VARCHAR, capture_id VARCHAR)[]"
+        ],
+        [
+          "communication_type",
+          "VARCHAR"
+        ],
+        [
+          "stated_communication_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_status",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_rule",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_reason",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "read-outcomes",
+          "kind": "category",
+          "fields": [
+            "outcome"
+          ],
+          "label": "Read outcomes",
+          "meaning": "Recorded result of each detail read. A missing attempt means the record was not read, not that it has no detail."
+        },
+        {
+          "id": "read-fields",
+          "kind": "category",
+          "fields": [
+            "source_table",
+            "read_field",
+            "outcome"
+          ],
+          "label": "Fields read",
+          "meaning": "Source table, detail field and outcome of each recorded read. Fields never attempted do not appear."
+        },
+        {
+          "id": "communication-types",
+          "kind": "category",
+          "fields": [
+            "communication_type"
+          ],
+          "label": "Communication types",
+          "meaning": "Publisher communication types of the records read."
+        },
+        {
+          "id": "communication-key-status",
+          "kind": "category",
+          "fields": [
+            "communication_key_status"
+          ],
+          "label": "Communication key status",
+          "meaning": "How each communication key was established: stated by the source, constructed from its Congress, type and number, or refused. The status does not change the read outcome."
+        }
+      ]
+    },
+    "house_record_enrichment_results": {
+      "family": "house-communications",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "attempt_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "communication_type",
+          "VARCHAR"
+        ],
+        [
+          "number",
+          "VARCHAR"
+        ],
+        [
+          "congressional_record_date",
+          "VARCHAR"
+        ],
+        [
+          "record_calendar_day",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "qualified_occurrences",
+          "BIGINT"
+        ],
+        [
+          "complete_scope",
+          "BOOLEAN"
+        ],
+        [
+          "conflict_status",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "recorded_at",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "scope_packages",
+          "VARCHAR[]"
+        ],
+        [
+          "scope_read_results",
+          "STRUCT(package_id VARCHAR, outcome VARCHAR, marker VARCHAR, rule_version VARCHAR, input_generation VARCHAR, input_processing_sha256 VARCHAR, body_witnesses STRUCT(granule_id VARCHAR, sha256 VARCHAR, source_url VARCHAR)[])[]"
+        ],
+        [
+          "witnesses",
+          "STRUCT(record_package_id VARCHAR, record_granule_id VARCHAR, body_sha256 VARCHAR, body_url VARCHAR, marker VARCHAR, input_generation VARCHAR, input_processing_sha256 VARCHAR)[]"
+        ],
+        [
+          "stated_communication_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_status",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_rule",
+          "VARCHAR"
+        ],
+        [
+          "communication_key_reason",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "record-dates",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "congressional-record-dates",
+          "kind": "date",
+          "label": "Congressional Record dates",
+          "meaning": "Record dates stated by the communications. These are the dates the source names, not the dates a match was attempted or found.",
+          "fields": [
+            "congressional_record_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "record-match-outcomes",
+          "kind": "category",
+          "fields": [
+            "outcome"
+          ],
+          "label": "Record match outcomes",
+          "meaning": "Recorded result of each attempt to match a communication to a Congressional Record passage. Unread communications stay separate from matched and empty results."
+        },
+        {
+          "id": "conflict-status",
+          "kind": "category",
+          "fields": [
+            "conflict_status"
+          ],
+          "label": "Conflict status",
+          "meaning": "Conflict, no-conflict or not-checked result recorded for each attempt. Rows with no stated status stay unplaced."
+        },
+        {
+          "id": "complete-scope",
+          "kind": "category",
+          "fields": [
+            "complete_scope"
+          ],
+          "label": "Complete Record scope",
+          "meaning": "Whether every selected Record issue and granule was completely read. A partial scope cannot establish a match."
+        }
+      ]
+    },
     "member_vote_terms": {
       "family": "member-vote-terms",
       "schema": [
@@ -4668,6 +5197,117 @@
           ],
           "label": "Latest action dates",
           "meaning": "Latest action date for each saved nomination, separate from publisher updates and collection time."
+        }
+      ]
+    },
+    "nominations_detail_reads": {
+      "family": "nominations",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "attempt_id",
+          "VARCHAR"
+        ],
+        [
+          "source_table",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "citation",
+          "VARCHAR"
+        ],
+        [
+          "number",
+          "VARCHAR"
+        ],
+        [
+          "part_number",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "event_id",
+          "VARCHAR"
+        ],
+        [
+          "communication_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "read_field",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "error_type",
+          "VARCHAR"
+        ],
+        [
+          "recorded_at",
+          "VARCHAR"
+        ],
+        [
+          "shape_version",
+          "VARCHAR"
+        ],
+        [
+          "field_states",
+          "STRUCT(field VARCHAR, state VARCHAR)[]"
+        ],
+        [
+          "source_witnesses",
+          "STRUCT(source_url VARCHAR, sha256 VARCHAR, capture_id VARCHAR)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "read-outcomes",
+          "kind": "category",
+          "fields": [
+            "outcome"
+          ],
+          "label": "Read outcomes",
+          "meaning": "Recorded result of each detail read. A missing attempt means the record was not read, not that it has no detail."
+        },
+        {
+          "id": "read-fields",
+          "kind": "category",
+          "fields": [
+            "source_table",
+            "read_field",
+            "outcome"
+          ],
+          "label": "Fields read",
+          "meaning": "Source table, detail field and outcome of each recorded read. Fields never attempted do not appear."
         }
       ]
     },
@@ -5217,15 +5857,23 @@
         }
       ]
     },
-    "document_citation_reads": {
+    "document_citation_read_outcomes": {
       "family": "print-citations",
       "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
         [
           "document_kind",
           "VARCHAR"
         ],
         [
           "document_key",
+          "VARCHAR"
+        ],
+        [
+          "body_version_id",
           "VARCHAR"
         ],
         [
@@ -5242,7 +5890,7 @@
         ],
         [
           "citation_rows",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "source_table",
@@ -5281,26 +5929,6 @@
           "fields": [
             "source_table"
           ]
-        },
-        {
-          "id": "historical-source-year",
-          "kind": "year",
-          "fields": [
-            "document_key"
-          ],
-          "method": "cited-read-source-year",
-          "label": "Selected document years",
-          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
-        },
-        {
-          "id": "historical-source-month",
-          "kind": "date",
-          "fields": [
-            "document_key"
-          ],
-          "method": "cited-read-source-month",
-          "label": "Selected document months",
-          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
         }
       ]
     },
@@ -5387,26 +6015,6 @@
           "fields": [
             "document_kind"
           ]
-        },
-        {
-          "id": "historical-source-year",
-          "kind": "year",
-          "fields": [
-            "document_key"
-          ],
-          "method": "citing-source-year",
-          "label": "Citing document years",
-          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
-        },
-        {
-          "id": "historical-source-month",
-          "kind": "date",
-          "fields": [
-            "document_key"
-          ],
-          "method": "citing-source-month",
-          "label": "Citing document months",
-          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
         }
       ]
     },
@@ -5608,6 +6216,89 @@
           ],
           "label": "Publication Congress and session",
           "meaning": "Congress and session that published the activity report, separate from the Congress it covers."
+        }
+      ]
+    },
+    "print_citations_document_file_outcomes": {
+      "family": "print-citations",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_dataset",
+          "VARCHAR"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
+          "VARCHAR"
+        ],
+        [
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "original_byte_sha256",
+          "VARCHAR"
+        ],
+        [
+          "state_witness_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
+        ],
+        [
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "source-tables",
+          "kind": "category",
+          "fields": [
+            "source_dataset"
+          ],
+          "label": "Converted source tables",
+          "meaning": "Source tables whose saved members were converted to the current layout. A listed table has a conversion record; the record does not show its rows are complete."
+        },
+        {
+          "id": "file-outcomes",
+          "kind": "category",
+          "fields": [
+            "source_dataset",
+            "state"
+          ],
+          "label": "File conversion outcomes",
+          "meaning": "Recorded result for each converted member, including successful empty partitions. A conversion result does not date or complete the rows."
         }
       ]
     },
@@ -6098,6 +6789,54 @@
         [
           "amendment_id",
           "VARCHAR"
+        ],
+        [
+          "source_snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ],
+        [
+          "resolution_status",
+          "VARCHAR"
+        ],
+        [
+          "resolution_rule",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "candidate_count",
+          "INTEGER"
+        ],
+        [
+          "candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "source_context_json",
+          "VARCHAR"
+        ],
+        [
+          "input_pins_json",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -6389,6 +7128,62 @@
         [
           "bioguide_id",
           "VARCHAR"
+        ],
+        [
+          "source_snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ],
+        [
+          "term_candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "override_version",
+          "VARCHAR"
+        ],
+        [
+          "resolution_status",
+          "VARCHAR"
+        ],
+        [
+          "resolution_rule",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "candidate_count",
+          "INTEGER"
+        ],
+        [
+          "candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "source_context_json",
+          "VARCHAR"
+        ],
+        [
+          "input_pins_json",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -6660,6 +7455,22 @@
         [
           "publisher_position_text",
           "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -6921,6 +7732,22 @@
         [
           "reason_text",
           "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -7156,7 +7983,7 @@
         ],
         [
           "value_number",
-          "DECIMAL(38,19)"
+          "VARCHAR"
         ],
         [
           "value_status_text",
@@ -7168,6 +7995,22 @@
         ],
         [
           "notes_text",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
           "VARCHAR"
         ]
       ],
@@ -7433,6 +8276,22 @@
         [
           "notes_text",
           "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -7632,6 +8491,22 @@
         [
           "disclosure_status",
           "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -7822,6 +8697,22 @@
         ],
         [
           "combination_rule_text",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
           "VARCHAR"
         ]
       ],
@@ -8146,6 +9037,22 @@
         [
           "counts_toward_metric",
           "BOOLEAN"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -8410,6 +9317,22 @@
         [
           "rank_population_text",
           "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -8612,6 +9535,18 @@
         [
           "scorecard_index_url",
           "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
         ]
       ],
       "classification": "reference-or-processing-scope",
@@ -8625,6 +9560,129 @@
           "fields": [
             "publisher_id"
           ]
+        }
+      ]
+    },
+    "scorecard_snapshots": {
+      "family": "scorecards",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "scorecard_id",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "capture_ids",
+          "VARCHAR[]"
+        ],
+        [
+          "parser_version",
+          "VARCHAR"
+        ],
+        [
+          "methodology_digest",
+          "VARCHAR"
+        ],
+        [
+          "completeness_status",
+          "VARCHAR"
+        ],
+        [
+          "completeness_rule",
+          "VARCHAR"
+        ],
+        [
+          "source_declared_counts_json",
+          "VARCHAR"
+        ],
+        [
+          "parsed_counts_json",
+          "VARCHAR"
+        ],
+        [
+          "evidence_policy",
+          "VARCHAR"
+        ],
+        [
+          "capture_roles",
+          "STRUCT(capture_id VARCHAR, \"role\" VARCHAR, field_groups VARCHAR[])[]"
+        ],
+        [
+          "rendition_selection_rule",
+          "VARCHAR"
+        ],
+        [
+          "identity_rule_version",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "inherited-publisher-id",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id"
+          ],
+          "label": "Edition publishers",
+          "meaning": "Publishers of the saved editions.",
+          "parent": {
+            "table": "scorecards",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "publisher_id",
+            "kind": "category",
+            "fields": [
+              "publisher_id"
+            ],
+            "label": "Edition publishers",
+            "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
+        },
+        {
+          "id": "snapshot-completeness",
+          "kind": "category",
+          "fields": [
+            "completeness_status"
+          ],
+          "label": "Snapshot completeness",
+          "meaning": "Completeness recorded for each accepted edition capture. This describes one capture and parse, not the publisher’s whole archive."
+        },
+        {
+          "id": "evidence-policy",
+          "kind": "category",
+          "fields": [
+            "evidence_policy"
+          ],
+          "label": "Evidence policy",
+          "meaning": "Whether the capture retains full bodies, hashes only or metadata only. It states what evidence is public, not how complete the edition is."
         }
       ]
     },
@@ -8693,6 +9751,22 @@
         ],
         [
           "updated_at_text",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
           "VARCHAR"
         ]
       ],
@@ -8952,6 +10026,89 @@
           "fields": [
             "grid_kind"
           ]
+        }
+      ]
+    },
+    "senate_expenditures_document_file_outcomes": {
+      "family": "senate-expenditures",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_dataset",
+          "VARCHAR"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
+          "VARCHAR"
+        ],
+        [
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "original_byte_sha256",
+          "VARCHAR"
+        ],
+        [
+          "state_witness_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
+        ],
+        [
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "source-tables",
+          "kind": "category",
+          "fields": [
+            "source_dataset"
+          ],
+          "label": "Converted source tables",
+          "meaning": "Source tables whose saved members were converted to the current layout. A listed table has a conversion record; the record does not show its rows are complete."
+        },
+        {
+          "id": "file-outcomes",
+          "kind": "category",
+          "fields": [
+            "source_dataset",
+            "state"
+          ],
+          "label": "File conversion outcomes",
+          "meaning": "Recorded result for each converted member, including successful empty partitions. A conversion result does not date or complete the rows."
         }
       ]
     },
