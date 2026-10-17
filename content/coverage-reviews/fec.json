@@ -760,19 +760,19 @@
         ],
         [
           "first_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
           "last_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
-          "cycles_json",
-          "VARCHAR"
+          "cycles",
+          "INTEGER[]"
         ],
         [
-          "candidate_ids_json",
-          "VARCHAR"
+          "candidate_ids",
+          "VARCHAR[]"
         ]
       ],
       "publication": {
@@ -2053,7 +2053,7 @@
         {
           "kind": "year-list",
           "fields": [
-            "cycles_json"
+            "cycles"
           ],
           "label": "Cycles",
           "meaning": "JSON array of election-cycle years the committee was active in (e.g. `[2018, 2020, 2022]`).",
@@ -3430,7 +3430,79 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "evidence": {
+        "probedAt": "2026-10-17",
+        "artifact": "https://data.spicygov.ai/generations/fec-committees/47bf9dd075aad32590ad23b039eccac605e109df821cbf50bf6659000e647edb/artifact.json",
+        "members": [
+          {
+            "key": "fec_committees.parquet",
+            "url": "https://data.spicygov.ai/generations/fec-committees/47bf9dd075aad32590ad23b039eccac605e109df821cbf50bf6659000e647edb/fec_committees.parquet",
+            "rows": 89844,
+            "byteSize": 6344670,
+            "sha256": "sha256:f6cde91b6fbc81197c4a1a6c3dc59b46410169378ef33a8e9ec6fa9b49393518"
+          }
+        ],
+        "expectedRows": 89844,
+        "schemaChange": "first_file_date and last_file_date are DATE; cycles_json became cycles INTEGER[]; candidate_ids_json became candidate_ids VARCHAR[].",
+        "probe": {
+          "first_file_date": {
+            "granularity": "month",
+            "placedRows": 89753,
+            "unplacedRows": 91,
+            "partialRows": 0,
+            "bucketCount": 626,
+            "firstBucket": "1972-04",
+            "lastBucket": "2026-10"
+          },
+          "last_file_date": {
+            "granularity": "month",
+            "placedRows": 89753,
+            "unplacedRows": 91,
+            "partialRows": 0,
+            "bucketCount": 602,
+            "firstBucket": "1975-12",
+            "lastBucket": "2026-10"
+          },
+          "cycles": {
+            "granularity": "year",
+            "placedRows": 89844,
+            "unplacedRows": 0,
+            "partialRows": 0,
+            "bucketCount": 26,
+            "firstBucket": "1976",
+            "lastBucket": "2026",
+            "buckets": {
+              "1976": 2174,
+              "1978": 4358,
+              "1980": 7884,
+              "1982": 8291,
+              "1984": 8465,
+              "1986": 8518,
+              "1988": 9218,
+              "1990": 9134,
+              "1992": 10759,
+              "1994": 10815,
+              "1996": 11073,
+              "1998": 9973,
+              "2000": 9574,
+              "2002": 9103,
+              "2004": 9321,
+              "2006": 9279,
+              "2008": 10013,
+              "2010": 11101,
+              "2012": 14444,
+              "2014": 14884,
+              "2016": 17653,
+              "2018": 19021,
+              "2020": 18284,
+              "2022": 19793,
+              "2024": 20938,
+              "2026": 20928
+            }
+          }
+        }
+      }
     },
     {
       "tableId": "fec_collections",
@@ -40980,6 +41052,10 @@
       "rows": 26,
       "schema": [
         [
+          "observation_ordinal",
+          "BIGINT"
+        ],
+        [
           "source_family",
           "VARCHAR"
         ],
@@ -41001,10 +41077,6 @@
         ],
         [
           "references_json",
-          "VARCHAR"
-        ],
-        [
-          "source_metadata_json",
           "VARCHAR"
         ],
         [
@@ -41110,7 +41182,42 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "evidence": {
+        "probedAt": "2026-10-17",
+        "artifact": "https://data.spicygov.ai/generations/fec-source-catalog/237c6d5e26688af613f698268b0ae7f0c70cf91be62cf060be13ff270baa0e8a/artifact.json",
+        "members": [
+          {
+            "key": "fec_source_catalog.parquet",
+            "url": "https://data.spicygov.ai/generations/fec-source-catalog/237c6d5e26688af613f698268b0ae7f0c70cf91be62cf060be13ff270baa0e8a/fec_source_catalog.parquet",
+            "rows": 26,
+            "byteSize": 11232,
+            "sha256": "sha256:8c4cc5b81977d4c6a35d7658f0865bed1afdf19288201dd6e83c028158334cf6"
+          }
+        ],
+        "expectedRows": 26,
+        "schemaChange": "source_metadata_json was removed and observation_ordinal BIGINT was added as the first column.",
+        "probe": {
+          "catalogued_at": {
+            "granularity": "month",
+            "placedRows": 26,
+            "unplacedRows": 0,
+            "partialRows": 0,
+            "bucketCount": 1,
+            "firstBucket": "2026-09",
+            "lastBucket": "2026-09"
+          },
+          "source_family": {
+            "granularity": "category",
+            "placedRows": 26,
+            "unplacedRows": 0,
+            "partialRows": 0,
+            "bucketCount": 26,
+            "firstBucket": "[\"fec_access\"]",
+            "lastBucket": "[\"fec_summaries\"]"
+          }
+        }
+      }
     }
   ],
   "completenessFollowup": {

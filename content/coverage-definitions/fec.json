@@ -242,19 +242,19 @@
         ],
         [
           "first_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
           "last_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
-          "cycles_json",
-          "VARCHAR"
+          "cycles",
+          "INTEGER[]"
         ],
         [
-          "candidate_ids_json",
-          "VARCHAR"
+          "candidate_ids",
+          "VARCHAR[]"
         ]
       ],
       "classification": "selected-observations",
@@ -279,10 +279,10 @@
           "meaning": "The committee’s latest filing date reported by the FEC."
         },
         {
-          "id": "cycles_json",
+          "id": "cycles",
           "kind": "list",
           "fields": [
-            "cycles_json"
+            "cycles"
           ],
           "label": "Election cycles",
           "meaning": "Election cycles in which the source says the committee was active.",
@@ -17438,6 +17438,10 @@
       "family": "fec-source-catalog",
       "schema": [
         [
+          "observation_ordinal",
+          "BIGINT"
+        ],
+        [
           "source_family",
           "VARCHAR"
         ],
@@ -17459,10 +17463,6 @@
         ],
         [
           "references_json",
-          "VARCHAR"
-        ],
-        [
-          "source_metadata_json",
           "VARCHAR"
         ],
         [
