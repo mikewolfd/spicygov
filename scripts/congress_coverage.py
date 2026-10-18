@@ -287,6 +287,10 @@ def _bill_introduction_events(conn, table, dim, inputs):
     return measured
 
 
+class _Unresolved(ValueError):
+    """A retained source occurrence cannot be found; the rows stay unplaced."""
+
+
 def _citation_scope(conn, table_id, table, dim, inputs):
     """Attach source periods through selected text-version receipts and exact schemas."""
     conn.read_parquet(_urls(table), hive_partitioning=False).create_view('coverage_citations',replace=True)
@@ -309,9 +313,11 @@ def _citation_scope(conn, table_id, table, dim, inputs):
     retained_cache,scoped_views={}, {}
     if not hasattr(inputs,'congress_context_cache'):inputs.congress_context_cache={}
     context_cache=inputs.congress_context_cache.setdefault((table_id,table.get('artifactDigest')), {})
-    def retained(family,generation,name):
-        key=(family,generation,name)
-        if key not in retained_cache:retained_cache[key]=inputs.table(family,generation,name)
+    def retained(family,generation,name,published=False):
+        key=(family,generation,name,published)
+        # published=True reads the pinned published member (input_sha256 names it) rather than the restored
+        # processing view: only the published bill_sections file carries the printing_id its document_key uses.
+        if key not in retained_cache:retained_cache[key]=(getattr(inputs,'inputs',inputs) if published else inputs).table(family,generation,name)
         return retained_cache[key]
     def view(source):
         key=(source['family'],source['artifactDigest'],source['tableId'])
@@ -320,10 +326,10 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         return quote(scoped_views[key])
     def one(source,keys,values,fields):
         schema={r[0] for r in conn.execute('DESCRIBE '+view(source)).fetchall()}
-        if any(f not in schema for f in keys+fields):raise ValueError('Historical coverage key or period is absent from its source schema')
+        if any(f not in schema for f in keys+fields):raise _Unresolved('Historical coverage key or period is absent from its source schema')
         pred=' AND '.join('cast('+quote(f)+' AS VARCHAR) IS NOT DISTINCT FROM ?' for f in keys)
         rows=conn.execute('SELECT '+','.join(quote(f) for f in fields)+' FROM '+view(source)+' WHERE '+pred+' LIMIT 2',values).fetchall()
-        if len(rows)!=1:raise ValueError('Historical source occurrence is missing or ambiguous')
+        if len(rows)!=1:raise _Unresolved('Historical source occurrence is missing or ambiguous')
         return rows[0]
     def context(kind,key,text_sha):
         cache_key=(kind,key,text_sha)
@@ -335,12 +341,12 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             result={'date':date,'source':source['recordUrl'],'attribution':'retained print issue date'}
         else:
             state=state_by_key.get(cache_key)
-            if not state:raise ValueError('Citation text-version has no retained input receipt')
+            if not state:raise _Unresolved('Citation text-version has no retained input receipt')
             _,_,_,family,generation,input_sha=state
             if not re.fullmatch(r'sha256:[a-f0-9]{64}',generation or ''):raise ValueError('Citation source generation is unpinned')
             names_by_kind={'bill_section':'bill_sections','report_section':'report_sections','lobbying_activity':'lobbying_activities','communication_authority':'house_communications','communication_report_nature':'house_communications','communication_record_entry':'house_communications','court_opinion_derived_pdf':'court_opinion_pdf_extractions'}
             if kind not in names_by_kind:raise ValueError('Unsupported retained citation source kind: '+str(kind))
-            source=retained(family,generation,names_by_kind[kind])
+            source=retained(family,generation,names_by_kind[kind],published=kind=='bill_section')
             if len(source['members'])!=1 or source['members'][0]['sha256']!=input_sha:
                 raise ValueError('Citation source table differs from its original input hash; a partitioned receipt needs its declared aggregate verification')
             columns={r[0] for r in conn.execute('DESCRIBE '+view(source)).fetchall()}
@@ -371,11 +377,13 @@ def _citation_scope(conn, table_id, table, dim, inputs):
                 if (len(clusters['members'])!=1 or clusters['members'][0]['sha256']!=descriptor['sha256'] or clusters['rows']!=descriptor['rows']):raise ValueError('Court context table differs from its saved snapshot')
                 date,approximate=one(clusters,['cluster_id'],[cluster],['date_filed','date_filed_is_approximate']);result.update(date=date,approximate=str(approximate).lower() not in ('false','f','0'),attribution='contextual filing date from original saved read snapshot; not a declared acquisition parent',context=clusters['recordUrl'])
         context_cache[cache_key]=result;return result
-    buckets,years,placed,coarse=defaultdict(int),defaultdict(int),0,0
+    buckets,years,placed,coarse,unresolved=defaultdict(int),defaultdict(int),0,0,0
     overlapping=False
     yearly=dim['method'].endswith('year')
     for kind,key,text_sha,n in groups:
-        scope=context(kind,key,text_sha);keys=[]
+        try:scope=context(kind,key,text_sha)
+        except _Unresolved:unresolved+=n;continue
+        keys=[]
         if scope.get('year') and re.fullmatch(r'[0-9]{4}',scope['year']) and scope['year']!='0000':
             if yearly:keys=[scope['year']]
             else:
@@ -393,7 +401,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         for key in set(keys):buckets[key]+=n
         for year in {key[:4] for key in keys}:years[year]+=n
     return _result(table,dim,'year' if yearly else 'month',buckets,placed,
-                   coarseRows=coarse,overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
+                   coarseRows=coarse,unresolvedRetainedOccurrences=unresolved,overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
                    notes=['Source periods come from exact retained text versions. Court filing dates use explicitly labeled saved context; annual lobbying scope remains annual; explicitly named quarters cover their source-stated three-month span.'])
 
 

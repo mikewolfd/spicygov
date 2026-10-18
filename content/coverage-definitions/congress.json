@@ -4750,15 +4750,6 @@
           "meaning": "Recorded result of each attempt to match a communication to a Congressional Record passage. Unread communications stay separate from matched and empty results."
         },
         {
-          "id": "conflict-status",
-          "kind": "category",
-          "fields": [
-            "conflict_status"
-          ],
-          "label": "Conflict status",
-          "meaning": "Conflict, no-conflict or not-checked result recorded for each attempt. Rows with no stated status stay unplaced."
-        },
-        {
           "id": "complete-scope",
           "kind": "category",
           "fields": [
@@ -5929,6 +5920,26 @@
           "fields": [
             "source_table"
           ]
+        },
+        {
+          "id": "historical-source-year",
+          "kind": "year",
+          "fields": [
+            "document_key"
+          ],
+          "method": "cited-read-source-year",
+          "label": "Selected document years",
+          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
+        },
+        {
+          "id": "historical-source-month",
+          "kind": "date",
+          "fields": [
+            "document_key"
+          ],
+          "method": "cited-read-source-month",
+          "label": "Selected document months",
+          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
         }
       ]
     },
@@ -6015,6 +6026,26 @@
           "fields": [
             "document_kind"
           ]
+        },
+        {
+          "id": "historical-source-year",
+          "kind": "year",
+          "fields": [
+            "document_key"
+          ],
+          "method": "citing-source-year",
+          "label": "Citing document years",
+          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
+        },
+        {
+          "id": "historical-source-month",
+          "kind": "date",
+          "fields": [
+            "document_key"
+          ],
+          "method": "citing-source-month",
+          "label": "Citing document months",
+          "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
         }
       ]
     },

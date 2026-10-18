@@ -17207,15 +17207,6 @@
           "meaning": "Recorded result of each attempt to match a communication to a Congressional Record passage. Unread communications stay separate from matched and empty results."
         },
         {
-          "id": "conflict-status",
-          "kind": "category",
-          "fields": [
-            "conflict_status"
-          ],
-          "label": "Conflict status",
-          "meaning": "Conflict, no-conflict or not-checked result recorded for each attempt. Rows with no stated status stay unplaced."
-        },
-        {
           "id": "complete-scope",
           "kind": "category",
           "fields": [
@@ -17247,18 +17238,6 @@
             ],
             "min": "false",
             "max": "true"
-          },
-          "conflict_status": {
-            "distinct": 0,
-            "blankRows": 4841,
-            "counts": [
-              [
-                null,
-                4841
-              ]
-            ],
-            "min": null,
-            "max": null
           },
           "congress": {
             "distinct": 1,
@@ -17338,8 +17317,8 @@
           "result": "OK",
           "scan": {
             "status": "measured",
-            "measuredAt": "2026-10-17T14:51:28.586217+00:00",
-            "measurementRevision": "sha256:7a76e30b189126ec12b4b15006ba32ead38b664c6b50ae82b2c152390932c255",
+            "measuredAt": "2026-10-18T03:03:19.748077+00:00",
+            "measurementRevision": "sha256:2a7c4121ff6990303be5cce5e2fd37180b5f1f00723168a2adf0bae9dba52af7",
             "dimensions": [
               {
                 "id": "congress",
@@ -17369,15 +17348,6 @@
                 "unplacedRows": 0,
                 "partialRows": 0,
                 "bucketCount": 3
-              },
-              {
-                "id": "conflict-status",
-                "granularity": "category",
-                "rows": 4841,
-                "placedRows": 0,
-                "unplacedRows": 4841,
-                "partialRows": 0,
-                "bucketCount": 0
               },
               {
                 "id": "complete-scope",
@@ -17423,8 +17393,8 @@
       ],
       "limits": [
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
-        "4772 of 4841 attempts are unread, and conflict_status is unstated on 4841 rows, so the conflict-status axis places no rows until the producer states it.",
-        "A match needs a complete Record scope; unread and partial-scope attempts establish nothing about the Record."
+        "4772 of 4841 attempts are unread; a match needs a complete Record scope, so unread and partial-scope attempts establish nothing about the Record.",
+        "conflict_status is unstated on every row, so no conflict-status axis is defined until the producer fills it."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.house_record_enrichment_results",
@@ -17432,10 +17402,9 @@
         "congress",
         "congressional-record-dates",
         "record-match-outcomes",
-        "conflict-status",
         "complete-scope"
       ],
-      "reviewNote": "The plan listed one joint [outcome, conflict_status] category. conflict_status is unstated on every row, so a joint axis would place no rows and hide the outcome counts; the two fields are separate axes."
+      "reviewNote": "The plan listed a joint [outcome, conflict_status] category. conflict_status is unstated on every row (4841 of 4841), so it is left out and outcome is its own axis."
     },
     {
       "tableId": "member_vote_terms",
@@ -25565,6 +25534,46 @@
         "reconciled": true,
         "probedAt": "2026-10-17",
         "columns": {
+          "document_key": {
+            "distinct": 11,
+            "blankRows": 0,
+            "counts": [
+              [
+                "[\"119\",\"ec\",\"1278\"]",
+                2
+              ],
+              [
+                "[\"119\",\"ec\",\"4554\"]",
+                2
+              ],
+              [
+                "[\"0055065e-7545-4b25-99ba-cfeacc85437c\",\"0\"]",
+                1
+              ],
+              [
+                "[\"0055065e-7545-4b25-99ba-cfeacc85437c\",\"1\"]",
+                1
+              ],
+              [
+                "[\"119-hr-10534\",\"introduced-in-house\",\"printing:23dcf228cfb5a956c667666048bc6471e1fe6018791001e080858ce57470e6b4\",\"5\"]",
+                1
+              ],
+              [
+                "[\"119-hr-10534\",\"introduced-in-house\",\"printing:23dcf228cfb5a956c667666048bc6471e1fe6018791001e080858ce57470e6b4\",\"8\"]",
+                1
+              ],
+              [
+                "[\"CRPT-119srpt144\",\"CRPT-119srpt144\",\"10\"]",
+                1
+              ],
+              [
+                "[\"CRPT-119srpt144\",\"CRPT-119srpt144\",\"8\"]",
+                1
+              ]
+            ],
+            "min": "[\"0055065e-7545-4b25-99ba-cfeacc85437c\",\"0\"]",
+            "max": "court-opinion-body:dbd3895b5a0d0fdac85f242895a8bba5dab029b57c0a2cb26575ccec59afe084"
+          },
           "document_kind": {
             "distinct": 6,
             "blankRows": 0,
@@ -25631,8 +25640,8 @@
           "result": "OK",
           "scan": {
             "status": "measured",
-            "measuredAt": "2026-10-17T17:32:44.653400+00:00",
-            "measurementRevision": "sha256:7a76e30b189126ec12b4b15006ba32ead38b664c6b50ae82b2c152390932c255",
+            "measuredAt": "2026-10-18T03:05:28.343755+00:00",
+            "measurementRevision": "sha256:b90bae226998b22de59b7586032116cb9497f8f0bca36795a5ac3ea7c76171c6",
             "dimensions": [
               {
                 "id": "read-document-kinds",
@@ -25651,6 +25660,28 @@
                 "unplacedRows": 0,
                 "partialRows": 0,
                 "bucketCount": 5
+              },
+              {
+                "id": "historical-source-year",
+                "granularity": "year",
+                "rows": 13,
+                "placedRows": 8,
+                "unplacedRows": 5,
+                "partialRows": 0,
+                "bucketCount": 3,
+                "firstBucket": "2020",
+                "lastBucket": "2026"
+              },
+              {
+                "id": "historical-source-month",
+                "granularity": "month",
+                "rows": 13,
+                "placedRows": 8,
+                "unplacedRows": 5,
+                "partialRows": 0,
+                "bucketCount": 5,
+                "firstBucket": "2020-01",
+                "lastBucket": "2026-09"
               }
             ]
           }
@@ -25689,13 +25720,15 @@
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
         "13 selected text-version reads carry exact historical input pins; read_at must not become document history.",
         "Exact source-year and source-month attribution reconciles every currently published row. Explicit first-quarter lobbying scope spans January–March; saved original court filing context is labeled as contextual attribution rather than acquisition lineage.",
-        "The historical source-year and source-month dimensions are not defined: the live document_key for bill sections is a printing identity ('printing:<hash>') that the pinned historical bill_sections input, keyed by source name, cannot resolve, so source periods cannot be attributed. Citation counts by document type remain measured."
+        "5 of 13 rows stay unplaced because their retained source occurrence cannot be resolved (court PDF extractions lack the stored body id in the published member, or no input receipt is retained); bill sections are read from the pinned published member, which carries the printing id. The count is reported as unresolvedRetainedOccurrences."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.document_citation_read_outcomes",
       "executableDimensions": [
         "read-document-kinds",
-        "read-source-tables"
+        "read-source-tables",
+        "historical-source-year",
+        "historical-source-month"
       ],
       "renamedFrom": "document_citation_reads"
     },
@@ -27167,12 +27200,14 @@
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
         "Kinds include 35790 GovInfo report occurrences,17033 budget occurrences and72 selected held-field occurrences. Zero citations do not show an absent document. Historical text digests coexist.",
         "Exact source-year and source-month attribution reconciles every currently published row. Explicit first-quarter lobbying scope spans January–March; saved original court filing context is labeled as contextual attribution rather than acquisition lineage.",
-        "The historical source-year and source-month dimensions are not defined: the live document_key for bill sections is a printing identity ('printing:<hash>') that the pinned historical bill_sections input, keyed by source name, cannot resolve, so source periods cannot be attributed. Citation counts by document type remain measured."
+        "27 of 52895 rows stay unplaced because their retained source occurrence cannot be resolved (court PDF extractions lack the stored body id in the published member, or no input receipt is retained); bill sections are read from the pinned published member, which carries the printing id. The count is reported as unresolvedRetainedOccurrences."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.document_citations",
       "executableDimensions": [
-        "citing-source-kinds"
+        "citing-source-kinds",
+        "historical-source-year",
+        "historical-source-month"
       ]
     },
     {
@@ -56700,14 +56735,14 @@
     "completenessProbeScript": "/tmp/spicygov-coverage-audit-20261005/congress/completeness-live.py",
     "completenessStatus": "All18accepted new/changed axes fully probed; counts reconcile to the same reviewed publication.",
     "definitionTableCount": 69,
-    "definitionDimensionCount": 272,
+    "definitionDimensionCount": 275,
     "liveBodyAvailabilityDimensions": 4,
     "liveBodyAvailabilityFailures": 0,
     "bodyAvailabilityProbeFile": "/tmp/spicygov-coverage-audit-20261005/congress/final-body-availability-executable-results.json"
   },
   "completionAudit": {
     "logicalTableCount": 69,
-    "dimensionCount": 272,
+    "dimensionCount": 275,
     "familyCount": 20,
     "addedBodyAvailabilityAxes": {
       "bill_versions": [
