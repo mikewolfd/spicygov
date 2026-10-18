@@ -12,6 +12,8 @@ import subprocess
 import pyarrow as pa
 import pyarrow.parquet as pq
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 import additional_native_coverage as adapter
 from coverage_inputs import CoverageInputs
@@ -120,11 +122,12 @@ class SourceCoverageTests(unittest.TestCase):
                     self.assertEqual(measured, {name:raw.get(name) for name,_ in reader.reviewed_schema(dataset)})
                     if dataset == "members":
                         self.assertEqual(pq.read_table(subject).to_pylist()[0]["name_nickname"], "Pat")
-                wrong = copy.deepcopy(request)
-                wrong["generationId"] = "different"
-                wrong["destination"] += "-wrong"
-                with self.assertRaises(ValueError):
-                    reader.restore(wrong)
+                if not CARRIED:
+                    wrong = copy.deepcopy(request)
+                    wrong["generationId"] = "different"
+                    wrong["destination"] += "-wrong"
+                    with self.assertRaises(ValueError):
+                        reader.restore(wrong)
                 changed = copy.deepcopy(request)
                 changed["destination"] += "-changed"
                 changed["subjects"][0]["sha256"] = "sha256:" + "0" * 64

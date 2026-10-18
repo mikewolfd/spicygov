@@ -130,8 +130,13 @@ class NativeReceiptTests(unittest.TestCase):
             with self.subTest(target=target):
                 f=self.fixture();f[target].pop()
                 with self.assertRaisesRegex(ValueError,'matching|exact subject'):self.read(f)
-    def test_wrong_generation_policy_and_forged_digest_are_refused(self):
-        for target,value in [('generation_id','other'),('policy_version','unknown'),('receipt_id','sha256:'+'f'*64)]:
+    def test_carried_receipt_generation_is_accepted_but_not_an_empty_one(self):
+        f=self.fixture();f['receipts'][0]['generation_id']='earlier-generation';self.resign(f['receipts'][0])
+        self.read(f)
+        f=self.fixture();f['receipts'][0]['generation_id']='';self.resign(f['receipts'][0])
+        with self.assertRaises(ValueError):self.read(f)
+    def test_wrong_policy_and_forged_digest_are_refused(self):
+        for target,value in [('policy_version','unknown'),('receipt_id','sha256:'+'f'*64)]:
             with self.subTest(target=target):
                 f=self.fixture();f['receipts'][0][target]=value
                 if target!='receipt_id':self.resign(f['receipts'][0])

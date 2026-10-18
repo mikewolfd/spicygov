@@ -118,7 +118,8 @@ def validate_context(row, generation, descriptors):
     dataset = row['dataset']
     if dataset not in descriptors or row['policy_version'] != descriptors[dataset]['policy_version']:
         raise ValueError('Receipt dataset or policy differs from recorded descriptor')
-    if row['generation_id'] != generation: raise ValueError('Receipt generation differs from selected release')
+    # A carried receipt keeps the generation that first wrote it (receipt_history.carry_receipt_history); the selected
+    # release binds receipts by their pinned file bytes, so the label here only has to be present.
     if any(not isinstance(row[k], str) or not row[k] for k in ('attempt_id', 'processor', 'generation_id')):
         raise ValueError('Receipt processing identity is incomplete')
     if row['receipt_id'] != content_hash({k: v for k, v in row.items() if k != 'receipt_id'}):

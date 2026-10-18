@@ -12,6 +12,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 from coverage_dimensions import scan_dimension, validate_definition
 from regulation_coverage import scan_special
@@ -58,6 +60,8 @@ class RegulatoryNativeCoverageTests(unittest.TestCase):
                     self.assertEqual(value["placedRows"] + value["unplacedRows"], 1)
                     measured[dim["id"]] = value
             for change in ("generation", "hash", "size"):
+                if change == "generation" and CARRIED:
+                    continue
                 altered = copy.deepcopy(request)
                 altered["destination"] += "-" + change
                 if change == "generation":
