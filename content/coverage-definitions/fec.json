@@ -242,19 +242,19 @@
         ],
         [
           "first_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
           "last_file_date",
-          "VARCHAR"
+          "DATE"
         ],
         [
-          "cycles_json",
-          "VARCHAR"
+          "cycles",
+          "INTEGER[]"
         ],
         [
-          "candidate_ids_json",
-          "VARCHAR"
+          "candidate_ids",
+          "VARCHAR[]"
         ]
       ],
       "classification": "selected-observations",
@@ -279,10 +279,10 @@
           "meaning": "The committee’s latest filing date reported by the FEC."
         },
         {
-          "id": "cycles_json",
+          "id": "cycles",
           "kind": "list",
           "fields": [
-            "cycles_json"
+            "cycles"
           ],
           "label": "Election cycles",
           "meaning": "Election cycles in which the source says the committee was active.",
@@ -322,11 +322,11 @@
         ],
         [
           "record_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "relationship_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "record_outcome",
@@ -484,15 +484,15 @@
       "family": "fec-observations",
       "schema": [
         [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
           "subject_id",
           "VARCHAR"
         ],
         [
           "subject_type",
-          "VARCHAR"
-        ],
-        [
-          "subject_id_status",
           "VARCHAR"
         ],
         [
@@ -508,10 +508,6 @@
           "VARCHAR"
         ],
         [
-          "object_id_status",
-          "VARCHAR"
-        ],
-        [
           "object_name",
           "VARCHAR"
         ],
@@ -520,15 +516,19 @@
           "VARCHAR"
         ],
         [
-          "source_family",
-          "VARCHAR"
-        ],
-        [
           "cycle",
-          "VARCHAR"
+          "INTEGER"
         ],
         [
           "candidate_election_year",
+          "INTEGER"
+        ],
+        [
+          "subject_id_status",
+          "VARCHAR"
+        ],
+        [
+          "object_id_status",
           "VARCHAR"
         ],
         [
@@ -540,16 +540,48 @@
           "VARCHAR"
         ],
         [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
           "source_locator_json",
           "VARCHAR"
         ],
         [
-          "source_fields_json",
+          "source_family",
           "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "subrecord_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "companion_status",
+          "VARCHAR"
+        ],
+        [
+          "subject_endpoint_status",
+          "VARCHAR"
+        ],
+        [
+          "object_endpoint_status",
+          "VARCHAR"
+        ],
+        [
+          "subrecord_ordinal",
+          "BIGINT"
         ]
       ],
       "classification": "selected-observations",
@@ -574,6 +606,61 @@
           "meaning": "The candidate’s election year reported by the source, when stated."
         },
         {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        },
+        {
           "id": "snapshot",
           "kind": "snapshot",
           "fields": [],
@@ -585,6 +672,10 @@
     "fec_source_records": {
       "family": "fec-observations",
       "schema": [
+        [
+          "observation_ordinal",
+          "BIGINT"
+        ],
         [
           "collection_id",
           "VARCHAR"
@@ -635,22 +726,6 @@
         ],
         [
           "source_locator_json",
-          "VARCHAR"
-        ],
-        [
-          "metadata_json",
-          "VARCHAR"
-        ],
-        [
-          "assets_json",
-          "VARCHAR"
-        ],
-        [
-          "embedded_bodies_json",
-          "VARCHAR"
-        ],
-        [
-          "source_record_json",
           "VARCHAR"
         ]
       ],
@@ -17438,6 +17513,10 @@
       "family": "fec-source-catalog",
       "schema": [
         [
+          "observation_ordinal",
+          "BIGINT"
+        ],
+        [
           "source_family",
           "VARCHAR"
         ],
@@ -17459,10 +17538,6 @@
         ],
         [
           "references_json",
-          "VARCHAR"
-        ],
-        [
-          "source_metadata_json",
           "VARCHAR"
         ],
         [
