@@ -46,9 +46,10 @@ review and selection.
 There is one supported reader route: the packaged
 `spicy_regs.coverage_reader` and the two spicygov adapters that run on it
 (`restore_additional_coverage.py`, `restore_source_navigation_coverage.py`).
-Undeclared or null receipt policies, missing receipt fields and other
-generations are refused; refresh the data in the current format. Receipts
-carried under a declared earlier policy version are admitted. Flat published
+Undeclared or null receipt policies and missing receipt fields or generation labels
+are refused. Carried receipts keep their original generation and may use a declared
+earlier policy version. The selected receipt-file size and SHA-256 bind the exact
+bytes; complete subject-to-receipt admission still proves every selected row. Flat published
 tables are measured directly by the published-table scanner; native tables must
 be the reviewed native subject and use receipts under the current or a declared
 earlier policy version.

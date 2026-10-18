@@ -10,8 +10,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 from spicy_regs.congress_receipts import write_congress_dataset
 from spicy_regs.congress_subjects import INPUT_COLUMNS
@@ -51,13 +49,11 @@ class BulkNativeCoverageTests(unittest.TestCase):
                              [{name: raw[name] for name, _ in reader.reviewed_schema(dataset)}])
             self.assertEqual(result["processingSchema"], reader.reviewed_schema(dataset))
             for change in ("generation", "hash", "size"):
-                if change == "generation" and CARRIED:
-                    continue
                 with self.subTest(dataset=dataset, change=change):
                     altered = copy.deepcopy(request)
                     altered["destination"] += "-" + change
                     if change == "generation":
-                        altered["generationId"] = "different"
+                        altered["generationId"] = ""
                     elif change == "hash":
                         altered["receipts"]["sha256"] = "sha256:" + "0" * 64
                     else:

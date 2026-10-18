@@ -13,8 +13,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from carried_generations import CARRIED  # noqa: E402
 import additional_native_coverage as adapter
 import native_legislative_coverage as native
 import restore_additional_coverage as reader
@@ -188,16 +186,14 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [raw])
         self.assertNotIn("url", dict(result["nativeSchema"]))
 
-    def test_wrong_generation_hash_size_and_subject_are_refused(self):
+    def test_empty_generation_hash_size_and_subject_are_refused(self):
         _, request = fixture(self.root)
         for change in ("generation", "hash", "size", "subject"):
-            if change == "generation" and CARRIED:
-                continue
             with self.subTest(change=change):
                 altered = copy.deepcopy(request)
                 altered["destination"] += "-" + change
                 if change == "generation":
-                    altered["generationId"] = "unselected"
+                    altered["generationId"] = ""
                 elif change == "hash":
                     altered["receipts"]["sha256"] = "sha256:" + "0" * 64
                 elif change == "size":

@@ -12,8 +12,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 from coverage_dimensions import scan_dimension, validate_definition
 from regulation_coverage import scan_special
@@ -44,6 +42,12 @@ class RegulatoryNativeCoverageTests(unittest.TestCase):
             self.assertEqual(result["selection"], {key: request[key] for key in ("subjects", "receipts")})
             self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(),
                              [{name: raw[name] for name, _ in reader.reviewed_schema(dataset)}])
+            carried = copy.deepcopy(request)
+            carried["generationId"] = "next-selection"
+            carried["destination"] += "-carried"
+            restored = reader.restore(carried)
+            self.assertEqual(pq.read_table(restored["urls"][0]).to_pylist(),
+                             pq.read_table(result["urls"][0]).to_pylist())
             policy = json.loads((reader.ROOT / "content/coverage-definitions/regulation.json").read_text())["tables"][dataset]
             self.assertEqual(result["processingSchema"], policy["schema"])
             validate_definition(policy, result["processingSchema"])
@@ -60,12 +64,10 @@ class RegulatoryNativeCoverageTests(unittest.TestCase):
                     self.assertEqual(value["placedRows"] + value["unplacedRows"], 1)
                     measured[dim["id"]] = value
             for change in ("generation", "hash", "size"):
-                if change == "generation" and CARRIED:
-                    continue
                 altered = copy.deepcopy(request)
                 altered["destination"] += "-" + change
                 if change == "generation":
-                    altered["generationId"] = "different"
+                    altered["generationId"] = ""
                 elif change == "hash":
                     altered["receipts"]["sha256"] = "sha256:" + "0" * 64
                 else:

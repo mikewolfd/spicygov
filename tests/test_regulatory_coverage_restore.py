@@ -11,8 +11,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 from spicy_regs.etl_receipts import RECEIPT_SCHEMA, _digest, decode_exact_json, exact_json
 from spicy_regs.transforms.regulations_receipts import write_held_dataset
@@ -80,7 +78,7 @@ def _check_late_invalid_selected_evidence_never_exposes_coverage_output(tmp_path
         if change == "version":
             row["subject_version"] = "sha256:" + "0" * 64
         elif change == "generation":
-            row["generation_id"] = "different"
+            row["generation_id"] = ""
         elif change == "failed-outcome":
             row["outcome"] = "error"
         else:
@@ -174,8 +172,6 @@ class RegulatoryCoverageRestoreTests(unittest.TestCase):
 
     def test_late_invalid_selected_evidence_never_exposes_coverage_output(self):
         for change in ("digest", "version", "raw", "generation", "metadata", "failed-outcome"):
-            if change == "generation" and CARRIED:
-                continue
             with self.subTest(change=change):
                 root = self.root / change
                 root.mkdir()

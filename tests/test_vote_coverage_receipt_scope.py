@@ -16,8 +16,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from carried_generations import CARRIED  # noqa: E402
 import restore_source_navigation_coverage as reader
 import additional_native_coverage as adapter
 import native_legislative_coverage as legislative
@@ -102,15 +100,13 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
 
     def test_mismatch_refusals_never_publish_facts(self):
         for change in ("generation", "hash", "size", "schema", "late-selected-digest", "late-selected-version", "late-refused-digest"):
-            if change == "generation" and CARRIED:
-                continue  # carried receipts keep their own generation; the pinned bytes bind the selection
             with self.subTest(change=change):
                 root = self.root / change
                 root.mkdir()
                 request, _, _ = fixture(root)
                 path = Path(request["receipts"]["path"])
                 if change == "generation":
-                    request["generationId"] = "different"
+                    request["generationId"] = ""
                 elif change == "hash":
                     request["receipts"]["sha256"] = "sha256:" + "0" * 64
                 elif change == "size":
@@ -133,7 +129,6 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
                 self.assertFalse((Path(request["destination"]) / "coverage-facts.parquet").exists())
                 self.assertFalse((Path(request["destination"]) / "provisional-coverage-facts.parquet").exists())
 
-    @unittest.skipUnless(CARRIED, "the pinned spicy-regs coverage reader still binds receipts to the selected generation")
     def test_carried_receipts_of_earlier_generations_restore(self):
         request, raw, _ = fixture(self.root)
         path = Path(request["receipts"]["path"])
@@ -158,8 +153,6 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
 
     def test_duplicate_context_nonaccepted_generation_and_conflicting_footers_refuse(self):
         for change in ("duplicate-accepted", "duplicate-receipt", "observed-generation", "refused-generation", "conflicting-footer", "no-selected-context"):
-            if change.endswith("-generation") and CARRIED:
-                continue
             with self.subTest(change=change):
                 root = self.root / change
                 root.mkdir()
@@ -186,7 +179,7 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
                 else:
                     row = next(row for row in rows if row["dataset"] == "roll_call_votes" and row["outcome"] ==
                                ("observed" if change.startswith("observed") else "refused"))
-                    row["generation_id"] = "other-nonempty"
+                    row["generation_id"] = ""
                     row["receipt_id"] = _digest({key:value for key, value in row.items() if key != "receipt_id"})
                 pq.write_table(pa.Table.from_pylist(rows, schema=RECEIPT_SCHEMA), path)
                 request["receipts"] = member(path)
