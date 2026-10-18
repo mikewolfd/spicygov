@@ -19,6 +19,24 @@ import native_legislative_coverage as native
 
 
 class NativeCoverageTests(unittest.TestCase):
+    def test_bill_subjects_native_route_keeps_restored_acquisition_values(self):
+        root = Path(__file__).parents[1]
+        policy = json.loads((root / "content/coverage-definitions/congress.json").read_text())["tables"]["bill_subjects"]
+        physical = [["bill_id", "VARCHAR"], ["policy_area", "VARCHAR"],
+                    ["subjects", "VARCHAR[]"], ["subject_count", "BIGINT"]]
+        table = {"family": "bill-subjects", "columns": physical}
+        with patch.object(native, "native_schema", return_value={
+                "nativeSchema": physical, "receiptOnly": False, "implementationSha256": "reviewed-reader"}):
+            selected = native.variant("bill_subjects", table, policy)
+        self.assertTrue(selected["_nativeProcessing"])
+        self.assertEqual(selected["schema"], physical)
+        self.assertEqual(selected["processingSchema"], policy["schema"])
+        self.assertIn(["carrier", "VARCHAR"], selected["processingSchema"])
+        self.assertNotIn("carrier", dict(selected["schema"]))
+        self.assertEqual([(d["id"], d["fields"]) for d in selected["dimensions"]],
+                         [("subject-acquisition-route", ["carrier"])])
+        self.assertIn("does not record a bill-family parent", selected["note"])
+
     def test_flat_published_schema_uses_the_published_scanner_without_restoration(self):
         policy = {"schema": [["source", "VARCHAR"]]}
         table = {"family": "bill-family", "columns": policy["schema"]}

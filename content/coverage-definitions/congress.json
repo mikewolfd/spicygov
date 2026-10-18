@@ -2898,7 +2898,7 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "note": "Coverage uses original acquisition records retained with the published native subjects. This generation does not record a bill-family parent, so Congress coverage is unavailable. Counts describe saved records; empty periods do not prove the publisher has no records.",
       "dimensions": [
         {
           "id": "subject-acquisition-route",
@@ -2908,35 +2908,6 @@
           "fields": [
             "carrier"
           ]
-        },
-        {
-          "id": "inherited-congress-bills-congress",
-          "kind": "inherited",
-          "fields": [
-            "bill_id"
-          ],
-          "label": "Bill Congress",
-          "meaning": "Congress of the exact bill input saved with these subjects. Enrichment time does not supply a historical date.",
-          "parent": {
-            "table": "congress_bills",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "bill_id",
-                "bill_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "congress",
-            "kind": "category",
-            "fields": [
-              "congress"
-            ],
-            "label": "Subject bill Congress · congress",
-            "meaning": "Congress of the exact pinned bill input; enriched_at is processing time.",
-            "syntax": "positive-integer"
-          }
         }
       ]
     },

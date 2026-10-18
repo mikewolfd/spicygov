@@ -25,6 +25,7 @@ DATASETS = frozenset(
         "bill_sections",
         "bill_publisher_summaries",
         "bill_summaries",
+        "bill_subjects",
         "cbo_cost_estimates",
         "diff_summaries",
         "financial_changes",
@@ -45,7 +46,7 @@ DATASETS = frozenset(
         "public_activity_events",
     )
 )
-FAMILIES = frozenset(("bill-family", "print-citations"))
+FAMILIES = frozenset(("bill-family", "print-citations", "bill-subjects"))
 
 
 def verify_file(member):
