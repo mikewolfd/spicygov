@@ -195,7 +195,7 @@ def scan_special(conn, table_id, table, dim, inputs):
         return _committee_history(conn,table,dim)
     if method == 'committee-action-dates': return _committee_action_dates(conn,table,dim)
     if method == 'activity-bill-introduction': return _bill_introduction_events(conn,table,dim,inputs)
-    if method == 'committee-read-issue-dates': return _committee_read_dates(conn,table,dim,inputs)
+    if method == 'committee-read-issue-dates': return _committee_read_dates(conn,table_id,table,dim,inputs)
     if method == 'roster-file-date': return _roster_file_dates(conn,table,dim)
     if method == 'funding-year-span': return _funding_years(conn,table,dim)
     if method == 'affiliation-period': return _affiliation_periods(conn,table,dim)
@@ -287,15 +287,22 @@ def _bill_introduction_events(conn, table, dim, inputs):
     return measured
 
 
+class _Unresolved(ValueError):
+    """A retained source occurrence cannot be found; the rows stay unplaced. args[0] names the reason."""
+
+
+_ABSENT_KEY_REASON = {'court_opinion_derived_pdf': 'court PDF extraction without body id'}
+
+
 def _citation_scope(conn, table_id, table, dim, inputs):
     """Attach source periods through selected text-version receipts and exact schemas."""
     conn.read_parquet(_urls(table), hive_partitioning=False).create_view('coverage_citations',replace=True)
-    if table_id == 'document_citation_reads':
+    if table_id == 'document_citation_read_outcomes':
         read_table = inputs.producing(table_id,table)
         states = conn.execute('SELECT document_kind,document_key,text_sha256,input_family,input_generation,input_sha256 FROM coverage_citations').fetchall()
         groups = [(kind,key,text_sha,1) for kind,key,text_sha,*_ in states]
     else:
-        read_table = inputs.parent(table_id,table,{'table':'document_citation_reads','mode':'same-generation','keys':[['document_kind','document_kind'],['document_key','document_key'],['text_sha256','text_sha256']]})
+        read_table = inputs.parent(table_id,table,{'table':'document_citation_read_outcomes','mode':'same-generation','keys':[['document_kind','document_kind'],['document_key','document_key'],['text_sha256','text_sha256']]})
         conn.read_parquet(read_table['urls'], hive_partitioning=False).create_view('coverage_citation_reads',replace=True)
         states = conn.execute('SELECT document_kind,document_key,text_sha256,input_family,input_generation,input_sha256 FROM coverage_citation_reads').fetchall()
         groups = conn.execute('SELECT document_kind,document_key,text_sha256,count(*) FROM coverage_citations GROUP BY ALL').fetchall()
@@ -309,24 +316,27 @@ def _citation_scope(conn, table_id, table, dim, inputs):
     retained_cache,scoped_views={}, {}
     if not hasattr(inputs,'congress_context_cache'):inputs.congress_context_cache={}
     context_cache=inputs.congress_context_cache.setdefault((table_id,table.get('artifactDigest')), {})
-    def retained(family,generation,name):
-        key=(family,generation,name)
-        if key not in retained_cache:retained_cache[key]=inputs.table(family,generation,name)
+    def retained(family,generation,name,published=False):
+        key=(family,generation,name,published)
+        # published=True reads the pinned published member (input_sha256 names it) rather than the restored
+        # processing view: only the published bill_sections file carries the printing_id its document_key uses.
+        if key not in retained_cache:retained_cache[key]=(getattr(inputs,'inputs',inputs) if published else inputs).table(family,generation,name)
         return retained_cache[key]
     def view(source):
         key=(source['family'],source['artifactDigest'],source['tableId'])
         if key not in scoped_views:
             alias='coverage_context_'+str(len(scoped_views));conn.read_parquet(source['urls'], hive_partitioning=False).create_view(alias,replace=True);scoped_views[key]=alias
         return quote(scoped_views[key])
+    current={}
     def one(source,keys,values,fields):
         schema={r[0] for r in conn.execute('DESCRIBE '+view(source)).fetchall()}
-        if any(f not in schema for f in keys+fields):raise ValueError('Historical coverage key or period is absent from its source schema')
+        if any(f not in schema for f in keys+fields):raise _Unresolved(_ABSENT_KEY_REASON.get(current.get('kind'),'source key absent from the pinned member'))
         pred=' AND '.join('cast('+quote(f)+' AS VARCHAR) IS NOT DISTINCT FROM ?' for f in keys)
         rows=conn.execute('SELECT '+','.join(quote(f) for f in fields)+' FROM '+view(source)+' WHERE '+pred+' LIMIT 2',values).fetchall()
-        if len(rows)!=1:raise ValueError('Historical source occurrence is missing or ambiguous')
+        if len(rows)!=1:raise _Unresolved('source occurrence missing or ambiguous')
         return rows[0]
     def context(kind,key,text_sha):
-        cache_key=(kind,key,text_sha)
+        cache_key=(kind,key,text_sha);current['kind']=kind
         if cache_key in context_cache:return context_cache[cache_key]
         if kind in ('govinfo_package','budget_volume'):
             name='house_activity_reports' if kind=='govinfo_package' else 'budget_volumes'
@@ -335,12 +345,12 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             result={'date':date,'source':source['recordUrl'],'attribution':'retained print issue date'}
         else:
             state=state_by_key.get(cache_key)
-            if not state:raise ValueError('Citation text-version has no retained input receipt')
+            if not state:raise _Unresolved('no retained input receipt')
             _,_,_,family,generation,input_sha=state
             if not re.fullmatch(r'sha256:[a-f0-9]{64}',generation or ''):raise ValueError('Citation source generation is unpinned')
             names_by_kind={'bill_section':'bill_sections','report_section':'report_sections','lobbying_activity':'lobbying_activities','communication_authority':'house_communications','communication_report_nature':'house_communications','communication_record_entry':'house_communications','court_opinion_derived_pdf':'court_opinion_pdf_extractions'}
             if kind not in names_by_kind:raise ValueError('Unsupported retained citation source kind: '+str(kind))
-            source=retained(family,generation,names_by_kind[kind])
+            source=retained(family,generation,names_by_kind[kind],published=kind=='bill_section')
             if len(source['members'])!=1 or source['members'][0]['sha256']!=input_sha:
                 raise ValueError('Citation source table differs from its original input hash; a partitioned receipt needs its declared aggregate verification')
             columns={r[0] for r in conn.execute('DESCRIBE '+view(source)).fetchall()}
@@ -351,6 +361,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             elif kind=='lobbying_activity':keys=['filing_uuid','activity_index'];body='description'
             elif kind.startswith('communication_'):keys=['congress','communication_type','number'];body={'communication_authority':'legal_authority','communication_report_nature':'report_nature','communication_record_entry':'record_entry_text'}[kind]
             else:keys=['opinion_id','source_sha256'] if len(values)==2 else ['opinion_body_id'];body='text_content'
+            if kind=='bill_section' and len(values)==4 and str(values[2]).startswith('printing:') and 'printing_id' not in columns:raise _Unresolved('bill section without printing_id')
             if len(keys)!=len(values):raise ValueError('Citation key does not match its retained source schema')
             text,=one(source,keys,values,[body])
             if not isinstance(text,str) or 'sha256:'+hashlib.sha256(text.encode()).hexdigest()!=text_sha:
@@ -371,11 +382,13 @@ def _citation_scope(conn, table_id, table, dim, inputs):
                 if (len(clusters['members'])!=1 or clusters['members'][0]['sha256']!=descriptor['sha256'] or clusters['rows']!=descriptor['rows']):raise ValueError('Court context table differs from its saved snapshot')
                 date,approximate=one(clusters,['cluster_id'],[cluster],['date_filed','date_filed_is_approximate']);result.update(date=date,approximate=str(approximate).lower() not in ('false','f','0'),attribution='contextual filing date from original saved read snapshot; not a declared acquisition parent',context=clusters['recordUrl'])
         context_cache[cache_key]=result;return result
-    buckets,years,placed,coarse=defaultdict(int),defaultdict(int),0,0
+    buckets,years,placed,coarse,unresolved=defaultdict(int),defaultdict(int),0,0,defaultdict(int)
     overlapping=False
     yearly=dim['method'].endswith('year')
     for kind,key,text_sha,n in groups:
-        scope=context(kind,key,text_sha);keys=[]
+        try:scope=context(kind,key,text_sha)
+        except _Unresolved as error:unresolved[error.args[0]]+=n;continue
+        keys=[]
         if scope.get('year') and re.fullmatch(r'[0-9]{4}',scope['year']) and scope['year']!='0000':
             if yearly:keys=[scope['year']]
             else:
@@ -393,7 +406,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         for key in set(keys):buckets[key]+=n
         for year in {key[:4] for key in keys}:years[year]+=n
     return _result(table,dim,'year' if yearly else 'month',buckets,placed,
-                   coarseRows=coarse,overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
+                   coarseRows=coarse,unresolvedRetainedOccurrences=dict(sorted(unresolved.items())),overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
                    notes=['Source periods come from exact retained text versions. Court filing dates use explicitly labeled saved context; annual lobbying scope remains annual; explicitly named quarters cover their source-stated three-month span.'])
 
 
@@ -414,12 +427,14 @@ def _affiliation_periods(conn,table,dim):
     return measured
 
 
-def _committee_read_dates(conn, table, dim, inputs):
+def _committee_read_dates(conn, table_id, table, dim, inputs):
     """Issue dates of attempted package reads, with consistent report-part context."""
+    if table_id != 'committee_report_read_outcomes':
+        raise ValueError('Read-attempt issue dates are defined only for committee_report_read_outcomes')
     conn.read_parquet(_urls(table),hive_partitioning=False).create_view('coverage_read_attempts',replace=True)
     context={};sources=[]
     for name in ('committee_reports','hearing_transcripts'):
-        parent=inputs.parent('committee_report_reads',table,{'table':name,'mode':'same-generation','keys':[['package_id','package_id']]})
+        parent=inputs.parent(table_id,table,{'table':name,'mode':'same-generation','keys':[['package_id','package_id']]})
         sources.append({k:parent[k] for k in ('family','artifactDigest','tableId','recordUrl','members','rows')})
         for package,date in conn.execute('SELECT DISTINCT package_id,date_issued FROM read_parquet(?,hive_partitioning=false)',[parent['urls']]).fetchall():
             if package in context and context[package]!=date:
