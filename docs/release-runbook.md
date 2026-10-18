@@ -85,6 +85,33 @@ still saved. Each run reuses the checkpoints whose bindings still hold.
   checkpoints. An edit to one scanner module re-measures only that scanner's tables.
 - **Memory failure** (exit 137 or "Killed" on documents, Register or court_opinions). Ask the
   owner about a larger runner.
+- **Setup time.** Record the first run's time before the scan step starts. If it exceeds about
+  20 minutes, raise the job `timeout-minutes` to 345 so the cache save still has room.
+- **After the bill-subjects refresh.** `bill_subjects` becomes a native table: add it to
+  `native_legislative_coverage.DATASETS` and `bill-subjects` to its `FAMILIES`, update its
+  definition if the restored schema differs, probe it, then start the release. Do not add it
+  earlier; the current reader does not describe it.
+
+**Completion run.** The final check refuses if any of the 4 captured publication documents
+changes during the run (`build-coverage-maps.py`), and every spicy-regs family rollup rewrites
+`publication.v2.json`. Start the last, short run between about 07:30 and 12:30 UTC, when no
+rollup is scheduled, and only after
+`gh run list -R mikewolfd/spicy-regs --status in_progress` and `--status queued` show no rollup.
+
+**Readback that proves completion:**
+
+1. `gh run view <run> -R mikewolfd/spicygov --json conclusion -q .conclusion` returns `success`,
+   and the log has `All <N> requested coverage maps verified` and the
+   `{"directory": ".cache/completed-coverage-release", "manifestSha256": "sha256:..."}` line.
+   N is the census table count.
+2. `gh api repos/mikewolfd/spicygov/actions/runs/<run>/artifacts` shows
+   `completed-coverage-release-<run>-<attempt>`; record its id and digest.
+3. With the owner's approval to download it, `gh run download` it into a new empty directory,
+   check `shasum -a 256 <dir>/manifest.json` equals the logged `manifestSha256`, then run
+   `node scripts/consume-coverage-release.mjs --release <dir> --sha256 sha256:<hex>` in a
+   checkout at the dispatched commit. It is offline and prints `"status":"accepted"`.
+4. Retain the run id, attempt, artifact id and digest, and `manifestSha256`. Selecting the
+   release in `content/coverage-release-selection.v1.json` and deploying is a separate decision.
 
 No completed production release was invented for the historical checked-in map.
 Strict production adoption depends on an authorized full data refresh and review

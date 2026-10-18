@@ -287,7 +287,7 @@ class CoverageGateTest(unittest.TestCase):
             ('federal_register', {'_additionalNativeProcessing': True}, 1500),
             ('fr_docket_links', {'_additionalNativeProcessing': True}, 1500),
             ('documents', {}, 900),
-            ('comments', {}, 3600),
+            ('comments', {}, 7200),
             ('fec_receipts', {}, 3600),
         )
         for id, policy, expected in cases:

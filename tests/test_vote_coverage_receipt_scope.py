@@ -213,7 +213,7 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
         for dataset, native, locked, seconds in (("documents", True, True, 1500), ("federal_register", True, True, 1500),
                 ("fr_docket_links", True, True, 1500), ("comment_periods", True, True, 900), ("rule_targets", True, True, 900),
                 ("proceedings", True, False, 900), ("roll_call_votes", True, False, 900), ("comment_periods", False, False, 900),
-                ("comments", False, False, 3600), ("fec_receipts", False, False, 3600)):
+                ("comments", False, False, 7200), ("fec_receipts", False, False, 3600)):
             with self.subTest(dataset=dataset, native=native), patch.object(driver, "cached", return_value=False), \
                     patch.object(driver.subprocess, "run", return_value=result) as run, patch.object(driver, "HEAVY_NATIVE_SCAN_LOCK") as lock, \
                     redirect_stderr(io.StringIO()) as diagnostics:

@@ -9,8 +9,9 @@ records the values it ran with.
 # One table's scan subprocess (build-coverage-maps.py timed_scan).
 SCAN = 900
 # Full saved-text reads across the comments release exceed the ordinary table
-# budget; the larger allowance is limited to these measured cases.
-SCAN_BY_TABLE = {'comments': 3600, 'fec_receipts': 3600}
+# budget; the larger allowance is limited to these measured cases. The comments
+# probe took 47 minutes on a loaded laptop, so it gets two hours.
+SCAN_BY_TABLE = {'comments': 7200, 'fec_receipts': 3600}
 # Native restoration only: each allowance covers the table's bridge request
 # (BRIDGE_BY_RESTORE) plus preparation and coverage checks.
 SCAN_BY_NATIVE_TABLE = {'court_opinions': 2700, 'documents': 1500, 'federal_register': 1500,
