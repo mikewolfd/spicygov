@@ -7265,7 +7265,7 @@
         ],
         [
           "activity_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "general_issue_code",
@@ -7284,8 +7284,8 @@
           "VARCHAR"
         ],
         [
-          "government_entities_json",
-          "VARCHAR"
+          "government_entities",
+          "STRUCT(id VARCHAR, \"name\" VARCHAR)[]"
         ]
       ],
       "dimensions": [
@@ -7379,7 +7379,8 @@
         "parents": {},
         "limits": [
           "Projected stored row values validate observed presence, not source-wide completeness.",
-          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods."
+          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods.",
+          "Native schema prepared from reviewed producer policies; the publication and probes above describe the legacy generation. Re-probe the native publication before release."
         ],
         "additionalProbes": {
           "lobbying_activities_parent": [
@@ -8142,11 +8143,11 @@
         ],
         [
           "activity_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "lobbyist_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "lobbyist_id",
@@ -8182,7 +8183,7 @@
         ],
         [
           "new",
-          "VARCHAR"
+          "BOOLEAN"
         ]
       ],
       "dimensions": [
@@ -8276,7 +8277,8 @@
         "parents": {},
         "limits": [
           "Projected stored row values validate observed presence, not source-wide completeness.",
-          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods."
+          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods.",
+          "Native schema prepared from reviewed producer policies; the publication and probes above describe the legacy generation. Re-probe the native publication before release."
         ],
         "additionalProbes": {
           "lobbying_activity_lobbyists_parent": [
@@ -9043,7 +9045,7 @@
         ],
         [
           "filing_year",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "filing_period",
@@ -9051,7 +9053,7 @@
         ],
         [
           "dt_posted",
-          "VARCHAR"
+          "TIMESTAMP WITH TIME ZONE"
         ],
         [
           "registrant_name",
@@ -9071,23 +9073,19 @@
         ],
         [
           "income",
-          "VARCHAR"
+          "DECIMAL(38,6)"
         ],
         [
           "expenses",
-          "VARCHAR"
+          "DECIMAL(38,6)"
         ],
         [
-          "lobbying_activities_json",
-          "VARCHAR"
+          "lobbying_activities",
+          "STRUCT(general_issue_code VARCHAR, general_issue_code_display VARCHAR, description VARCHAR)[]"
         ],
         [
-          "government_entities_json",
-          "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
+          "government_entities",
+          "STRUCT(id VARCHAR, \"name\" VARCHAR)[]"
         ]
       ],
       "dimensions": [
@@ -9161,7 +9159,8 @@
         "parents": {},
         "limits": [
           "Projected stored row values validate observed presence, not source-wide completeness.",
-          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods."
+          "Producer/dictionary acquisition descriptions are traced policy; only retained receipts can establish checked-empty periods.",
+          "Native schema prepared from reviewed producer policies; the publication and probes above describe the legacy generation. Re-probe the native publication before release."
         ],
         "additionalProbes": {
           "lobbying_periods": [

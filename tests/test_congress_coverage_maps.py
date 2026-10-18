@@ -119,6 +119,45 @@ class CongressCoverageTests(unittest.TestCase):
         d=coverage.scan_special(self.conn,'document_citation_read_outcomes',self.table(str(read_path),1,'print-citations'),dim,Pinned(None))
         self.assertEqual((d['placedRows'],d['unplacedRows']),(0,1));self.assertEqual(d['unresolvedRetainedOccurrences'],{'bill section without printing_id':1})
 
+    def test_native_lobbying_citations_use_exact_activity_and_reporting_period(self):
+        text_sha='sha256:'+hashlib.sha256(b'source body').hexdigest()
+        generation='sha256:'+'b'*64; input_sha='sha256:'+'c'*64
+        activities=self.file('native_activities', """SELECT * FROM (VALUES
+            ('quarter',2::BIGINT,'source body'),('half',0::BIGINT,'source body'),
+            ('orphan',0::BIGINT,'source body')) t(filing_uuid,activity_index,description)""")
+        filings=self.file('native_filings', """SELECT * FROM (VALUES
+            ('quarter',2024::BIGINT,'second_quarter'),('half',2023::BIGINT,'mid_year'))
+            t(filing_uuid,filing_year,filing_period)""")
+        sources={name:self.parent(path,rows,name) for name,path,rows in [
+            ('lobbying_activities',activities,3),('lobbying_filings',filings,2)]}
+        for source in sources.values():
+            source.update(family='lobbying-filings',artifactDigest=generation,members=[{'sha256':input_sha}])
+        self.conn.execute("CREATE TABLE reads(document_kind VARCHAR,document_key VARCHAR,text_sha256 VARCHAR,input_family VARCHAR,input_generation VARCHAR,input_sha256 VARCHAR)")
+        for key in [['quarter','2'],['half','0'],['quarter','9'],['orphan','0']]:
+            self.conn.execute('INSERT INTO reads VALUES (?,?,?,?,?,?)',
+                              ['lobbying_activity',json.dumps(key),text_sha,'lobbying-filings',generation,input_sha])
+        reads=self.file('lobbying_reads','SELECT * FROM reads')
+        class Retained(Inputs):
+            def table(inner,family,pin,name):
+                self.assertEqual((family,pin),('lobbying-filings',generation))
+                return sources[name]
+        table=self.table(reads,4,'print-citations')
+        for method,expected,placed,coarse in [
+                ('cited-read-source-year',{'2023':1,'2024':1},2,0),
+                ('cited-read-source-month',{'2024-04':1,'2024-05':1,'2024-06':1},1,1)]:
+            with self.subTest(method=method):
+                measured=coverage.scan_special(self.conn,'document_citation_read_outcomes',table,
+                                               self.dim(method,'year' if method.endswith('year') else 'date',['document_key']),Retained(None))
+                self.assertEqual(measured['buckets'],expected)
+                self.assertEqual((measured['placedRows'],measured['unplacedRows'],measured['coarseRows']),(placed,4-placed,coarse))
+                self.assertEqual(measured['unresolvedRetainedOccurrences'],{'source occurrence missing or ambiguous':2})
+        # An exact activity key alone cannot justify a different text version.
+        sources['lobbying_activities']['urls']=[self.file('changed_activity',
+            "SELECT 'quarter' filing_uuid,2::BIGINT activity_index,'changed body' description")]
+        with self.assertRaisesRegex(ValueError,'extraction digest'):
+            coverage.scan_special(self.conn,'document_citation_read_outcomes',table,
+                                  self.dim('cited-read-source-year','year',['document_key']),Retained(None))
+
     def test_hearing_journal_manifest_and_blob_hash_are_required(self):
         digest='sha256:'+'f'*64;blob=b'<mods><heldDate>2020-01-02</heldDate></mods>';blob_sha='sha256:'+hashlib.sha256(blob).hexdigest()
         event={'event':'capture','requested_url':'https://api.govinfo.gov/packages/CHRG-119hhrg1/mods','status_code':200,'body_retained':True,'response_complete':True,'sha256':blob_sha}
