@@ -105,7 +105,19 @@ class CongressCoverageTests(unittest.TestCase):
             def table(inner,*_):raise AssertionError('the restored processing view must not be used')
         dim=self.dim('cited-read-source-year','year',['document_key']);table=self.table(str(read_path),2,'print-citations')
         d=coverage.scan_special(self.conn,'document_citation_read_outcomes',table,dim,Native(None))
-        self.assertEqual(d['buckets'],{'2002':1});self.assertEqual((d['placedRows'],d['unplacedRows'],d['unresolvedRetainedOccurrences']),(1,1,1))
+        self.assertEqual(d['buckets'],{'2002':1});self.assertEqual((d['placedRows'],d['unplacedRows'],d['unresolvedRetainedOccurrences']),(1,1,{'source occurrence missing or ambiguous':1}))
+
+    def test_bill_section_pin_without_printing_id_is_counted_by_reason(self):
+        text='source body';text_sha='sha256:'+hashlib.sha256(text.encode()).hexdigest();generation='sha256:'+'b'*64;input_sha='sha256:'+'c'*64
+        legacy=self.file('legacy_sections',"SELECT 'b' bill_id,'introduced-in-house' version_code,'govinfo' AS source,'5' seq,'2002-03-04' version_date,'source body' body")
+        read_path=self.root/'reads.parquet';self.conn.execute("CREATE TABLE reads(document_kind VARCHAR,document_key VARCHAR,text_sha256 VARCHAR,input_family VARCHAR,input_generation VARCHAR,input_sha256 VARCHAR)")
+        self.conn.execute('INSERT INTO reads VALUES (?,?,?,?,?,?)',['bill_section',json.dumps(['b','introduced-in-house','printing:abc','5'],separators=(',',':')),text_sha,'bill-family',generation,input_sha]);self.conn.execute("COPY reads TO '"+str(read_path)+"' (FORMAT PARQUET)")
+        old=self.parent(legacy,1,'bill_sections');old.update(family='bill-family',artifactDigest=generation,members=[{'sha256':input_sha}],artifact={'spec':{}})
+        class Pinned(Inputs):
+            def table(inner,*_):return old
+        dim=self.dim('cited-read-source-year','year',['document_key'])
+        d=coverage.scan_special(self.conn,'document_citation_read_outcomes',self.table(str(read_path),1,'print-citations'),dim,Pinned(None))
+        self.assertEqual((d['placedRows'],d['unplacedRows']),(0,1));self.assertEqual(d['unresolvedRetainedOccurrences'],{'bill section without printing_id':1})
 
     def test_hearing_journal_manifest_and_blob_hash_are_required(self):
         digest='sha256:'+'f'*64;blob=b'<mods><heldDate>2020-01-02</heldDate></mods>';blob_sha='sha256:'+hashlib.sha256(blob).hexdigest()

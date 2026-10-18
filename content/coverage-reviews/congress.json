@@ -10236,20 +10236,20 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/artifact.json",
-        "artifactDigest": "sha256:fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae",
-        "sha256": "sha256:ab1a1d0d04eae6bb3c75588e9dcfe0dcebb90dc5c740d44af01269a425261919",
-        "publishedAt": "2026-10-17T03:46:54Z",
+        "artifactUrl": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/artifact.json",
+        "artifactDigest": "sha256:0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f",
+        "sha256": "sha256:b6502220ca75c5db866504392c30525e8fb00a78e065824be8194fbffa6b19f8",
+        "publishedAt": "2026-10-18T03:51:16Z",
         "members": [
           {
-            "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/committee_report_read_outcomes.parquet",
-            "rows": 672,
-            "sha256": "sha256:ab1a1d0d04eae6bb3c75588e9dcfe0dcebb90dc5c740d44af01269a425261919",
-            "byteSize": 8728
+            "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/committee_report_read_outcomes.parquet",
+            "rows": 674,
+            "sha256": "sha256:b6502220ca75c5db866504392c30525e8fb00a78e065824be8194fbffa6b19f8",
+            "byteSize": 8736
           }
         ],
-        "rows": 672,
-        "byteSize": 8728,
+        "rows": 674,
+        "byteSize": 8736,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -10264,8 +10264,8 @@
       ],
       "parentLinks": [],
       "probe": {
-        "fullRowCount": 672,
-        "expectedRows": 672,
+        "fullRowCount": 674,
+        "expectedRows": 674,
         "reconciled": true,
         "probedAt": "2026-10-17",
         "columns": {
@@ -10275,7 +10275,7 @@
             "counts": [
               [
                 "complete",
-                669
+                671
               ],
               [
                 "refused_final",
@@ -10290,7 +10290,7 @@
             "max": "refused_final"
           },
           "package_id": {
-            "distinct": 672,
+            "distinct": 674,
             "blankRows": 0,
             "counts": [
               [
@@ -10379,22 +10379,22 @@
           "exists": true
         },
         {
-          "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/artifact.json",
+          "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/artifact.json",
           "role": "immutable producing generation of the probed members",
           "members": [
             {
-              "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/committee_report_read_outcomes.parquet",
-              "expectedRows": 672,
-              "sha256": "sha256:ab1a1d0d04eae6bb3c75588e9dcfe0dcebb90dc5c740d44af01269a425261919"
+              "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/committee_report_read_outcomes.parquet",
+              "expectedRows": 674,
+              "sha256": "sha256:b6502220ca75c5db866504392c30525e8fb00a78e065824be8194fbffa6b19f8"
             }
           ],
-          "expectedRows": 672
+          "expectedRows": 674
         }
       ],
       "limits": [
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
         "Attempt checkpoints do not independently state report issue dates; complete indicates bounded read success, not complete collection.",
-        "670 of 672 read results carry a same-release package issue date; the 2 without one (1 detail_refused, 2 refused_final) remain explicitly unplaced."
+        "670 of 674 read results carry a same-release package issue date; the 2 without one (1 detail_refused, 2 refused_final) remain explicitly unplaced."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.committee_report_read_outcomes",
@@ -11045,15 +11045,15 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/artifact.json",
-        "artifactDigest": "sha256:fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae",
-        "sha256": "sha256:38de56c6103d7c0ab6d1ac4ec63ac4f64a00b8367f4028346eec35595956ec46",
-        "publishedAt": "2026-10-17T03:46:54Z",
+        "artifactUrl": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/artifact.json",
+        "artifactDigest": "sha256:0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f",
+        "sha256": "sha256:6c272f10aefc7b4c1650f667b798b92f1299741334688080698341da90ba46e7",
+        "publishedAt": "2026-10-18T03:51:16Z",
         "members": [
           {
-            "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/committee_reports_document_file_outcomes.parquet",
+            "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/committee_reports_document_file_outcomes.parquet",
             "rows": 5,
-            "sha256": "sha256:38de56c6103d7c0ab6d1ac4ec63ac4f64a00b8367f4028346eec35595956ec46",
+            "sha256": "sha256:6c272f10aefc7b4c1650f667b798b92f1299741334688080698341da90ba46e7",
             "byteSize": 8268
           }
         ],
@@ -11192,13 +11192,13 @@
           "exists": true
         },
         {
-          "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/artifact.json",
+          "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/artifact.json",
           "role": "immutable producing generation of the probed members",
           "members": [
             {
-              "url": "https://data.spicygov.ai/generations/committee-reports/fabf7011e6501614149a4528f26bb9d7cea1b7fc6765880404a9ba76af5b5bae/committee_reports_document_file_outcomes.parquet",
+              "url": "https://data.spicygov.ai/generations/committee-reports/0117134702b5e227c428a9340ac31fe8e7f91ec59364eb87ec76a0edd956751f/committee_reports_document_file_outcomes.parquet",
               "expectedRows": 5,
-              "sha256": "sha256:38de56c6103d7c0ab6d1ac4ec63ac4f64a00b8367f4028346eec35595956ec46"
+              "sha256": "sha256:6c272f10aefc7b4c1650f667b798b92f1299741334688080698341da90ba46e7"
             }
           ],
           "expectedRows": 5
@@ -25640,8 +25640,8 @@
           "result": "OK",
           "scan": {
             "status": "measured",
-            "measuredAt": "2026-10-18T03:05:28.343755+00:00",
-            "measurementRevision": "sha256:b90bae226998b22de59b7586032116cb9497f8f0bca36795a5ac3ea7c76171c6",
+            "measuredAt": "2026-10-18T04:02:13.045773+00:00",
+            "measurementRevision": "sha256:2b7e8eedaa394e118907512362ba9989ef93aaecb9fb52a80602f9808888e3ac",
             "dimensions": [
               {
                 "id": "read-document-kinds",
@@ -25719,8 +25719,8 @@
       "limits": [
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
         "13 selected text-version reads carry exact historical input pins; read_at must not become document history.",
-        "Exact source-year and source-month attribution reconciles every currently published row. Explicit first-quarter lobbying scope spans January–March; saved original court filing context is labeled as contextual attribution rather than acquisition lineage.",
-        "5 of 13 rows stay unplaced because their retained source occurrence cannot be resolved (court PDF extractions lack the stored body id in the published member, or no input receipt is retained); bill sections are read from the pinned published member, which carries the printing id. The count is reported as unresolvedRetainedOccurrences."
+        "Source-year and source-month periods place 8 of 13 rows (probed 2026-10-18); 5 stay unplaced: 2 bill section without printing_id, 3 court PDF extraction without body id.",
+        "Cause: the pinned bill_sections input (bill-family 72899ab3…, footer checked) has no printing_id column, while the citation document_key uses a printing identity; court PDF extraction members lack the stored body id; document_citations rows beyond the 13 read-outcome receipts have no retained input receipt. Re-probe after the bill-family/print-citations refresh."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.document_citation_read_outcomes",
@@ -27199,8 +27199,8 @@
       "limits": [
         "Observed rows establish presence only; no absent-period acquisition completeness is inferred.",
         "Kinds include 35790 GovInfo report occurrences,17033 budget occurrences and72 selected held-field occurrences. Zero citations do not show an absent document. Historical text digests coexist.",
-        "Exact source-year and source-month attribution reconciles every currently published row. Explicit first-quarter lobbying scope spans January–March; saved original court filing context is labeled as contextual attribution rather than acquisition lineage.",
-        "27 of 52895 rows stay unplaced because their retained source occurrence cannot be resolved (court PDF extractions lack the stored body id in the published member, or no input receipt is retained); bill sections are read from the pinned published member, which carries the printing id. The count is reported as unresolvedRetainedOccurrences."
+        "Source-year and source-month periods place 52868 of 52895 rows (probed 2026-10-18); 27 stay unplaced: 27 no retained input receipt.",
+        "Cause: the pinned bill_sections input (bill-family 72899ab3…, footer checked) has no printing_id column, while the citation document_key uses a printing identity; court PDF extraction members lack the stored body id; document_citations rows beyond the 13 read-outcome receipts have no retained input receipt. Re-probe after the bill-family/print-citations refresh."
       ],
       "unresolved": [],
       "executableDefinition": "content/coverage-definitions/congress.json#tables.document_citations",

@@ -288,7 +288,10 @@ def _bill_introduction_events(conn, table, dim, inputs):
 
 
 class _Unresolved(ValueError):
-    """A retained source occurrence cannot be found; the rows stay unplaced."""
+    """A retained source occurrence cannot be found; the rows stay unplaced. args[0] names the reason."""
+
+
+_ABSENT_KEY_REASON = {'court_opinion_derived_pdf': 'court PDF extraction without body id'}
 
 
 def _citation_scope(conn, table_id, table, dim, inputs):
@@ -324,15 +327,16 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         if key not in scoped_views:
             alias='coverage_context_'+str(len(scoped_views));conn.read_parquet(source['urls'], hive_partitioning=False).create_view(alias,replace=True);scoped_views[key]=alias
         return quote(scoped_views[key])
+    current={}
     def one(source,keys,values,fields):
         schema={r[0] for r in conn.execute('DESCRIBE '+view(source)).fetchall()}
-        if any(f not in schema for f in keys+fields):raise _Unresolved('Historical coverage key or period is absent from its source schema')
+        if any(f not in schema for f in keys+fields):raise _Unresolved(_ABSENT_KEY_REASON.get(current.get('kind'),'source key absent from the pinned member'))
         pred=' AND '.join('cast('+quote(f)+' AS VARCHAR) IS NOT DISTINCT FROM ?' for f in keys)
         rows=conn.execute('SELECT '+','.join(quote(f) for f in fields)+' FROM '+view(source)+' WHERE '+pred+' LIMIT 2',values).fetchall()
-        if len(rows)!=1:raise _Unresolved('Historical source occurrence is missing or ambiguous')
+        if len(rows)!=1:raise _Unresolved('source occurrence missing or ambiguous')
         return rows[0]
     def context(kind,key,text_sha):
-        cache_key=(kind,key,text_sha)
+        cache_key=(kind,key,text_sha);current['kind']=kind
         if cache_key in context_cache:return context_cache[cache_key]
         if kind in ('govinfo_package','budget_volume'):
             name='house_activity_reports' if kind=='govinfo_package' else 'budget_volumes'
@@ -341,7 +345,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             result={'date':date,'source':source['recordUrl'],'attribution':'retained print issue date'}
         else:
             state=state_by_key.get(cache_key)
-            if not state:raise _Unresolved('Citation text-version has no retained input receipt')
+            if not state:raise _Unresolved('no retained input receipt')
             _,_,_,family,generation,input_sha=state
             if not re.fullmatch(r'sha256:[a-f0-9]{64}',generation or ''):raise ValueError('Citation source generation is unpinned')
             names_by_kind={'bill_section':'bill_sections','report_section':'report_sections','lobbying_activity':'lobbying_activities','communication_authority':'house_communications','communication_report_nature':'house_communications','communication_record_entry':'house_communications','court_opinion_derived_pdf':'court_opinion_pdf_extractions'}
@@ -357,6 +361,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             elif kind=='lobbying_activity':keys=['filing_uuid','activity_index'];body='description'
             elif kind.startswith('communication_'):keys=['congress','communication_type','number'];body={'communication_authority':'legal_authority','communication_report_nature':'report_nature','communication_record_entry':'record_entry_text'}[kind]
             else:keys=['opinion_id','source_sha256'] if len(values)==2 else ['opinion_body_id'];body='text_content'
+            if kind=='bill_section' and len(values)==4 and str(values[2]).startswith('printing:') and 'printing_id' not in columns:raise _Unresolved('bill section without printing_id')
             if len(keys)!=len(values):raise ValueError('Citation key does not match its retained source schema')
             text,=one(source,keys,values,[body])
             if not isinstance(text,str) or 'sha256:'+hashlib.sha256(text.encode()).hexdigest()!=text_sha:
@@ -377,12 +382,12 @@ def _citation_scope(conn, table_id, table, dim, inputs):
                 if (len(clusters['members'])!=1 or clusters['members'][0]['sha256']!=descriptor['sha256'] or clusters['rows']!=descriptor['rows']):raise ValueError('Court context table differs from its saved snapshot')
                 date,approximate=one(clusters,['cluster_id'],[cluster],['date_filed','date_filed_is_approximate']);result.update(date=date,approximate=str(approximate).lower() not in ('false','f','0'),attribution='contextual filing date from original saved read snapshot; not a declared acquisition parent',context=clusters['recordUrl'])
         context_cache[cache_key]=result;return result
-    buckets,years,placed,coarse,unresolved=defaultdict(int),defaultdict(int),0,0,0
+    buckets,years,placed,coarse,unresolved=defaultdict(int),defaultdict(int),0,0,defaultdict(int)
     overlapping=False
     yearly=dim['method'].endswith('year')
     for kind,key,text_sha,n in groups:
         try:scope=context(kind,key,text_sha)
-        except _Unresolved:unresolved+=n;continue
+        except _Unresolved as error:unresolved[error.args[0]]+=n;continue
         keys=[]
         if scope.get('year') and re.fullmatch(r'[0-9]{4}',scope['year']) and scope['year']!='0000':
             if yearly:keys=[scope['year']]
@@ -401,7 +406,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         for key in set(keys):buckets[key]+=n
         for year in {key[:4] for key in keys}:years[year]+=n
     return _result(table,dim,'year' if yearly else 'month',buckets,placed,
-                   coarseRows=coarse,unresolvedRetainedOccurrences=unresolved,overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
+                   coarseRows=coarse,unresolvedRetainedOccurrences=dict(sorted(unresolved.items())),overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
                    notes=['Source periods come from exact retained text versions. Court filing dates use explicitly labeled saved context; annual lobbying scope remains annual; explicitly named quarters cover their source-stated three-month span.'])
 
 
