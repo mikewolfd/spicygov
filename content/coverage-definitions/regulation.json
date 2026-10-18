@@ -2386,6 +2386,14 @@
           "VARCHAR"
         ],
         [
+          "listing_page",
+          "VARCHAR"
+        ],
+        [
+          "source",
+          "VARCHAR"
+        ],
+        [
           "released_date",
           "DATE"
         ],
@@ -2474,6 +2482,14 @@
           "VARCHAR[]"
         ],
         [
+          "url",
+          "VARCHAR"
+        ],
+        [
+          "source",
+          "VARCHAR"
+        ],
+        [
           "product_type",
           "VARCHAR"
         ],
@@ -2520,6 +2536,10 @@
         [
           "major_rule_fr_citations",
           "VARCHAR[]"
+        ],
+        [
+          "citation_product_id",
+          "VARCHAR"
         ]
       ],
       "classification": "record-dates",
@@ -3418,23 +3438,23 @@
         ],
         [
           "source_bytes",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "occurrence_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "read_status",
           "VARCHAR"
         ],
         [
-          "selected_shapes_json",
-          "VARCHAR"
+          "selected_shapes",
+          "VARCHAR[]"
         ],
         [
-          "unsupported_shapes_json",
-          "VARCHAR"
+          "unsupported_shapes",
+          "VARCHAR[]"
         ],
         [
           "manifest_sha256",
@@ -3442,6 +3462,10 @@
         ],
         [
           "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "body_version_id",
           "VARCHAR"
         ]
       ],
@@ -4966,8 +4990,8 @@
           "VARCHAR"
         ],
         [
-          "attachments_json",
-          "VARCHAR"
+          "attachments",
+          "STRUCT(title VARCHAR, formats STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[], attachment_id VARCHAR, restrict_reason VARCHAR, restrict_reason_type VARCHAR)[]"
         ],
         [
           "text_content",
@@ -5077,6 +5101,1533 @@
           ],
           "syntax": "year-month",
           "special": "comments-index-groups"
+        }
+      ]
+    },
+    "laws_document_file_outcomes": {
+      "family": "laws",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_dataset",
+          "VARCHAR"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
+          "VARCHAR"
+        ],
+        [
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "original_byte_sha256",
+          "VARCHAR"
+        ],
+        [
+          "state_witness_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
+        ],
+        [
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The file conversion results saved in this release. This is a release, not a range of record dates.",
+          "fields": []
+        },
+        {
+          "id": "source-tables",
+          "kind": "category",
+          "label": "Source tables",
+          "meaning": "Original source tables whose saved files have a recorded conversion result. A table listed here does not show that all of its rows or files were converted.",
+          "fields": [
+            "source_dataset"
+          ]
+        },
+        {
+          "id": "file-outcomes",
+          "kind": "category",
+          "label": "File conversion results",
+          "meaning": "The recorded result for each original source file, by source table: a converted file, a retained processing file or an empty partition. These count files, not the records inside them.",
+          "fields": [
+            "source_dataset",
+            "state"
+          ]
+        }
+      ]
+    },
+    "native_legal_references_document_file_outcomes": {
+      "family": "native-legal-references",
+      "schema": [
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_dataset",
+          "VARCHAR"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "relative_path",
+          "VARCHAR"
+        ],
+        [
+          "partitioned",
+          "BOOLEAN"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "original_byte_sha256",
+          "VARCHAR"
+        ],
+        [
+          "state_witness_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_schema",
+          "STRUCT(\"name\" VARCHAR, \"type\" VARCHAR, nullable BOOLEAN)[]"
+        ],
+        [
+          "source_metadata",
+          "STRUCT(key_base64 VARCHAR, value_base64 VARCHAR)[]"
+        ],
+        [
+          "native_members",
+          "STRUCT(relative_path VARCHAR, sha256 VARCHAR, byte_size BIGINT, row_count BIGINT)[]"
+        ]
+      ],
+      "classification": "reference-or-processing-scope",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The file conversion results saved in this release. This is a release, not a range of record dates.",
+          "fields": []
+        },
+        {
+          "id": "source-tables",
+          "kind": "category",
+          "label": "Source tables",
+          "meaning": "Original source tables whose saved files have a recorded conversion result. A table listed here does not show that all of its rows or files were converted.",
+          "fields": [
+            "source_dataset"
+          ]
+        },
+        {
+          "id": "file-outcomes",
+          "kind": "category",
+          "label": "File conversion results",
+          "meaning": "The recorded result for each original source file, by source table: a converted file, a retained processing file or an empty partition. These count files, not the records inside them.",
+          "fields": [
+            "source_dataset",
+            "state"
+          ]
+        }
+      ]
+    },
+    "cftc_rule_observations": {
+      "family": "retained-cftc-comments",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "scope",
+          "VARCHAR"
+        ],
+        [
+          "native_listings_json",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "rule_id",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected CFTC rule listings saved in this release. This is a release, not a range of rule or comment dates, and it does not show every CFTC rule.",
+          "fields": []
+        },
+        {
+          "id": "listing-scopes",
+          "kind": "category",
+          "label": "Selected listing scope",
+          "meaning": "Whether each saved rule was selected for its listing only, or for details and files as well. A listing-only rule says nothing about whether it has comments.",
+          "fields": [
+            "scope"
+          ]
+        }
+      ]
+    },
+    "cftc_comments": {
+      "family": "retained-cftc-comments",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "rule_observation_id",
+          "VARCHAR"
+        ],
+        [
+          "native_listing_row_json",
+          "VARCHAR"
+        ],
+        [
+          "native_detail_json",
+          "VARCHAR"
+        ],
+        [
+          "detail_state",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "comment_id",
+          "BIGINT"
+        ],
+        [
+          "rule_id",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected CFTC comment listings saved in this release. This is a release, not a range of comment dates, and it does not show every CFTC comment.",
+          "fields": []
+        },
+        {
+          "id": "detail-states",
+          "kind": "category",
+          "label": "Comment detail state",
+          "meaning": "Whether detail was selected for each saved comment listing. Not selected means the detail was not read, not that none exists.",
+          "fields": [
+            "detail_state"
+          ]
+        },
+        {
+          "id": "comment-rules",
+          "kind": "category",
+          "label": "CFTC rules",
+          "meaning": "CFTC rule identifiers stated by the saved comment listings. A rule listed here does not show that all of its comments are saved.",
+          "fields": [
+            "rule_id"
+          ],
+          "syntax": "positive-integer"
+        }
+      ]
+    },
+    "cftc_comment_files": {
+      "family": "retained-cftc-comments",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "rule_observation_id",
+          "VARCHAR"
+        ],
+        [
+          "filename",
+          "VARCHAR"
+        ],
+        [
+          "file_url",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "pdf_version",
+          "VARCHAR"
+        ],
+        [
+          "provider_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "comment_id",
+          "BIGINT"
+        ],
+        [
+          "rule_id",
+          "BIGINT"
+        ],
+        [
+          "file_id",
+          "BIGINT"
+        ],
+        [
+          "bytes",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected CFTC comment files saved in this release. This is a release, not a range of comment dates, and it does not show every comment file.",
+          "fields": []
+        },
+        {
+          "id": "comment-file-rules",
+          "kind": "category",
+          "label": "CFTC rules",
+          "meaning": "CFTC rule identifiers stated by the saved comment files. A rule listed here does not show that all of its comment files are saved.",
+          "fields": [
+            "rule_id"
+          ],
+          "syntax": "positive-integer"
+        }
+      ]
+    },
+    "edis_documents": {
+      "family": "retained-edis-filings",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "native_document_json",
+          "VARCHAR"
+        ],
+        [
+          "source_xml_base64",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "document_id",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected USITC investigation documents saved in this release. This is a release, not a range of filing dates, and it does not show every investigation document.",
+          "fields": []
+        }
+      ]
+    },
+    "edis_attachments": {
+      "family": "retained-edis-filings",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "document_observation_id",
+          "VARCHAR"
+        ],
+        [
+          "native_attachment_json",
+          "VARCHAR"
+        ],
+        [
+          "source_xml_base64",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "document_id",
+          "BIGINT"
+        ],
+        [
+          "attachment_id",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected USITC investigation attachments saved in this release. This is a release, not a range of filing dates, and it does not show every attachment.",
+          "fields": []
+        }
+      ]
+    },
+    "edis_attachment_files": {
+      "family": "retained-edis-filings",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "document_observation_id",
+          "VARCHAR"
+        ],
+        [
+          "source_artifact_id",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "observation_time_state",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "pdf_version",
+          "VARCHAR"
+        ],
+        [
+          "native_index_row_json",
+          "VARCHAR"
+        ],
+        [
+          "source_archive_index_base64",
+          "VARCHAR"
+        ],
+        [
+          "member_inventory_json",
+          "VARCHAR"
+        ],
+        [
+          "document_id",
+          "BIGINT"
+        ],
+        [
+          "attachment_id",
+          "BIGINT"
+        ],
+        [
+          "member_ordinal",
+          "BIGINT"
+        ],
+        [
+          "bytes",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected bulk-archive files of USITC investigation attachments saved in this release. This is a release, not a range of filing dates, and it does not show that every attachment has a saved file.",
+          "fields": []
+        },
+        {
+          "id": "observation-clock-states",
+          "kind": "category",
+          "label": "Observation time state",
+          "meaning": "Whether the saved transfer evidence records when each item was observed. Unrecorded times stay unknown; the publication time does not replace them.",
+          "fields": [
+            "observation_time_state"
+          ]
+        }
+      ]
+    },
+    "ferc_search_documents": {
+      "family": "retained-ferc-originals",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "docket",
+          "VARCHAR"
+        ],
+        [
+          "reference",
+          "VARCHAR"
+        ],
+        [
+          "accession",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "source_page_json",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "record_index",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected FERC search records saved in this release. This is a release, not a range of filing dates, and it does not show every FERC filing.",
+          "fields": []
+        },
+        {
+          "id": "search-dockets",
+          "kind": "category",
+          "label": "FERC dockets",
+          "meaning": "FERC dockets stated by the saved search records. A docket listed here does not show that all of its filings are saved.",
+          "fields": [
+            "docket"
+          ]
+        }
+      ]
+    },
+    "ferc_accession_files": {
+      "family": "retained-ferc-originals",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "accession",
+          "VARCHAR"
+        ],
+        [
+          "file_guid",
+          "VARCHAR"
+        ],
+        [
+          "source_page_json",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "record_index",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected FERC accession file records saved in this release. This is a release, not a range of filing dates, and it does not show every file of an accession.",
+          "fields": []
+        }
+      ]
+    },
+    "ferc_original_files": {
+      "family": "retained-ferc-originals",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "accession",
+          "VARCHAR"
+        ],
+        [
+          "file_guid",
+          "VARCHAR"
+        ],
+        [
+          "filename",
+          "VARCHAR"
+        ],
+        [
+          "media_type",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "bytes",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected original FERC files saved in this release. This is a release, not a range of filing dates, and it does not show every file of an accession.",
+          "fields": []
+        },
+        {
+          "id": "original-file-media-types",
+          "kind": "category",
+          "label": "File media types",
+          "meaning": "Media types recorded for the saved original files. A recorded type does not show that the file content was read or is complete.",
+          "fields": [
+            "media_type"
+          ]
+        }
+      ]
+    },
+    "inspectors_general_report_metadata": {
+      "family": "retained-inspectors-general",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "archive_commit",
+          "VARCHAR"
+        ],
+        [
+          "archive_member_path",
+          "VARCHAR"
+        ],
+        [
+          "archive_inspector",
+          "VARCHAR"
+        ],
+        [
+          "archive_path_year",
+          "VARCHAR"
+        ],
+        [
+          "git_blob_sha1",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "published_on",
+          "VARCHAR"
+        ],
+        [
+          "native_record_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_base64",
+          "VARCHAR"
+        ],
+        [
+          "declared_assets_json",
+          "VARCHAR"
+        ],
+        [
+          "declared_links_json",
+          "VARCHAR"
+        ],
+        [
+          "selected_scope",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "BIGINT"
+        ]
+      ],
+      "classification": "record-dates",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "report-publication-dates",
+          "kind": "date",
+          "label": "Report publication dates",
+          "meaning": "Publication dates stated in the saved inspector-general report records. These are selected reports, so an empty month does not show that no report was published.",
+          "fields": [
+            "published_on"
+          ],
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "report-years",
+          "kind": "year",
+          "label": "Report years",
+          "meaning": "Report years recorded in the saved metadata. This year is separate from the publication date text and from the year in the archive path.",
+          "fields": [
+            "report_year"
+          ]
+        },
+        {
+          "id": "archive-inspectors",
+          "kind": "category",
+          "label": "Archive inspector labels",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
+          "fields": [
+            "archive_inspector"
+          ]
+        },
+        {
+          "id": "selection-scopes",
+          "kind": "category",
+          "label": "Selection scope",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
+          "fields": [
+            "selected_scope"
+          ]
+        }
+      ]
+    },
+    "sec_rulemakings": {
+      "family": "retained-sec-comments",
+      "schema": [
+        [
+          "rulemaking_id",
+          "VARCHAR"
+        ],
+        [
+          "file_number",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "rule_url",
+          "VARCHAR"
+        ],
+        [
+          "discovery_method",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_record_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected SEC rulemakings saved in this release. This is a release, not a range of rule dates, and it does not show every SEC rulemaking.",
+          "fields": []
+        },
+        {
+          "id": "comment-discovery-methods",
+          "kind": "category",
+          "label": "Comment list discovery",
+          "meaning": "How the comment list of each saved rulemaking was found: stated by the SEC or derived from an older listing. Neither basis shows that every comment is listed.",
+          "fields": [
+            "discovery_method"
+          ]
+        }
+      ]
+    },
+    "sec_comment_files": {
+      "family": "retained-sec-comments",
+      "schema": [
+        [
+          "file_id",
+          "VARCHAR"
+        ],
+        [
+          "rulemaking_id",
+          "VARCHAR"
+        ],
+        [
+          "file_url",
+          "VARCHAR"
+        ],
+        [
+          "format",
+          "VARCHAR"
+        ],
+        [
+          "pdf_version",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "occurrences_json",
+          "VARCHAR"
+        ],
+        [
+          "bytes",
+          "BIGINT"
+        ],
+        [
+          "linearized_length",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected SEC comment files saved in this release. This is a release, not a range of comment dates, and it does not show every comment.",
+          "fields": []
+        },
+        {
+          "id": "comment-file-formats",
+          "kind": "category",
+          "label": "File formats",
+          "meaning": "Formats recorded for the saved comment files. A format shows how the file was classified, not that its text was extracted.",
+          "fields": [
+            "format"
+          ]
+        },
+        {
+          "id": "comment-rulemakings",
+          "kind": "category",
+          "label": "Selected rulemakings",
+          "meaning": "Saved rulemaking identities that the comment files belong to. An identity listed here does not show that all comments of that rulemaking are saved.",
+          "fields": [
+            "rulemaking_id"
+          ]
+        }
+      ]
+    },
+    "supreme_court_index_observations": {
+      "family": "retained-supreme-court",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "observation_key",
+          "VARCHAR"
+        ],
+        [
+          "index_url",
+          "VARCHAR"
+        ],
+        [
+          "stated_term",
+          "VARCHAR"
+        ],
+        [
+          "native_index_json",
+          "VARCHAR"
+        ],
+        [
+          "safe_response_headers_json",
+          "VARCHAR"
+        ],
+        [
+          "response_status_line",
+          "VARCHAR"
+        ],
+        [
+          "locator_binding",
+          "VARCHAR"
+        ],
+        [
+          "recorded_request_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "pdf_scope",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "observation_time_state",
+          "VARCHAR"
+        ],
+        [
+          "term_year",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "index-terms",
+          "kind": "year",
+          "label": "Court terms",
+          "meaning": "Court terms of the saved term-index renders. Repeated renders of one term are counted separately, and a term listed here does not show that all of its opinions are saved.",
+          "fields": [
+            "term_year"
+          ]
+        },
+        {
+          "id": "pdf-probe-scopes",
+          "kind": "category",
+          "label": "PDF probe scope",
+          "meaning": "The retained-probe scope recorded for each saved index render. It does not show that every linked PDF was retrieved.",
+          "fields": [
+            "pdf_scope"
+          ]
+        },
+        {
+          "id": "observation-clock-states",
+          "kind": "category",
+          "label": "Observation time state",
+          "meaning": "Whether the saved transfer evidence records when each item was observed. Unrecorded times stay unknown; the publication time does not replace them.",
+          "fields": [
+            "observation_time_state"
+          ]
+        }
+      ]
+    },
+    "supreme_court_opinion_observations": {
+      "family": "retained-supreme-court",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "index_observation_id",
+          "VARCHAR"
+        ],
+        [
+          "release_number",
+          "VARCHAR"
+        ],
+        [
+          "date_decided",
+          "VARCHAR"
+        ],
+        [
+          "docket_number",
+          "VARCHAR"
+        ],
+        [
+          "case_name",
+          "VARCHAR"
+        ],
+        [
+          "holding",
+          "VARCHAR"
+        ],
+        [
+          "author_code",
+          "VARCHAR"
+        ],
+        [
+          "citation",
+          "VARCHAR"
+        ],
+        [
+          "pdf_url",
+          "VARCHAR"
+        ],
+        [
+          "pdf_kind",
+          "VARCHAR"
+        ],
+        [
+          "page_start",
+          "VARCHAR"
+        ],
+        [
+          "revisions_json",
+          "VARCHAR"
+        ],
+        [
+          "native_opinion_json",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "observation_time_state",
+          "VARCHAR"
+        ],
+        [
+          "term_year",
+          "BIGINT"
+        ],
+        [
+          "opinion_index",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "opinion-terms",
+          "kind": "year",
+          "label": "Court terms",
+          "meaning": "Court terms of the saved opinion rows. An opinion appears once for each saved render of its term, so these are row counts, not distinct opinions.",
+          "fields": [
+            "term_year"
+          ]
+        },
+        {
+          "id": "opinion-pdf-kinds",
+          "kind": "category",
+          "label": "Linked PDF forms",
+          "meaning": "How the PDF linked from each saved opinion row was classified, such as a slip opinion or a preliminary print. Rows without a link have no form.",
+          "fields": [
+            "pdf_kind"
+          ]
+        }
+      ]
+    },
+    "supreme_court_pdf_observations": {
+      "family": "retained-supreme-court",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "document_url",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "pdf_version",
+          "VARCHAR"
+        ],
+        [
+          "declaring_occurrences_json",
+          "VARCHAR"
+        ],
+        [
+          "safe_response_headers_json",
+          "VARCHAR"
+        ],
+        [
+          "response_status_line",
+          "VARCHAR"
+        ],
+        [
+          "locator_binding",
+          "VARCHAR"
+        ],
+        [
+          "recorded_request_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "observation_time_state",
+          "VARCHAR"
+        ],
+        [
+          "bytes",
+          "BIGINT"
+        ],
+        [
+          "linearized_length",
+          "BIGINT"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "The selected Supreme Court PDF probes saved in this release. This is a release, not a range of decision dates, and it does not show every opinion PDF.",
+          "fields": []
+        },
+        {
+          "id": "observation-clock-states",
+          "kind": "category",
+          "label": "Observation time state",
+          "meaning": "Whether the saved transfer evidence records when each item was observed. Unrecorded times stay unknown; the publication time does not replace them.",
+          "fields": [
+            "observation_time_state"
+          ]
+        }
+      ]
+    },
+    "uscode_editions": {
+      "family": "uscode-editions",
+      "schema": [
+        [
+          "edition_id",
+          "VARCHAR"
+        ],
+        [
+          "source_kind",
+          "VARCHAR"
+        ],
+        [
+          "requested_year",
+          "VARCHAR"
+        ],
+        [
+          "release_point",
+          "VARCHAR"
+        ],
+        [
+          "archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_bytes",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "native_publication_year",
+          "VARCHAR"
+        ],
+        [
+          "carried_forward",
+          "VARCHAR"
+        ],
+        [
+          "member_role",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "edition",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "requested-years",
+          "kind": "year",
+          "label": "Requested edition years",
+          "meaning": "Annual edition years requested for the saved archive members. A requested year is separate from the year a member states it was published and does not date the law text.",
+          "fields": [
+            "requested_year"
+          ]
+        },
+        {
+          "id": "release-points",
+          "kind": "category",
+          "label": "Release points",
+          "meaning": "Release-point labels of the saved archive members. They name a published version of the Code, not a calendar year.",
+          "fields": [
+            "release_point"
+          ]
+        },
+        {
+          "id": "source-kinds",
+          "kind": "category",
+          "label": "Source kinds",
+          "meaning": "Whether each saved member comes from an annual edition or a release-point corpus. This does not show that every title of every edition is saved.",
+          "fields": [
+            "source_kind"
+          ]
+        },
+        {
+          "id": "native-publication-years",
+          "kind": "year",
+          "label": "Stated publication years",
+          "meaning": "Publication years stated inside the saved members. They are separate from the requested year and do not date the law text.",
+          "fields": [
+            "native_publication_year"
+          ]
+        },
+        {
+          "id": "carried-forward-members",
+          "kind": "category",
+          "label": "Carried-forward members",
+          "meaning": "Whether each saved member is recorded as carried forward. This state is separate from the requested and stated years.",
+          "fields": [
+            "carried_forward"
+          ]
+        }
+      ]
+    },
+    "uscode_edition_structure": {
+      "family": "uscode-editions",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "edition_id",
+          "VARCHAR"
+        ],
+        [
+          "observation_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_position",
+          "VARCHAR"
+        ],
+        [
+          "native_identifier",
+          "VARCHAR"
+        ],
+        [
+          "native_label",
+          "VARCHAR"
+        ],
+        [
+          "native_status",
+          "VARCHAR"
+        ],
+        [
+          "source_observation_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "edition",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "structure-kinds",
+          "kind": "category",
+          "label": "Structure kinds",
+          "meaning": "Kinds of structure found in the saved members, such as sections and chapters. These count structural entries, not provisions of law or complete section text.",
+          "fields": [
+            "observation_kind"
+          ]
+        },
+        {
+          "id": "structure-statuses",
+          "kind": "category",
+          "label": "Stated statuses",
+          "meaning": "Statuses stated by the source for the saved structure entries, such as repealed or omitted. An entry with no stated status stays unplaced; that does not show the provision is in force.",
+          "fields": [
+            "native_status"
+          ]
+        },
+        {
+          "id": "requested-edition-years",
+          "kind": "inherited",
+          "fields": [
+            "edition_id"
+          ],
+          "label": "Edition years",
+          "meaning": "Requested U.S. Code edition years of the saved editions. An edition year does not date the law text.",
+          "parent": {
+            "table": "uscode_editions",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "edition_id",
+                "edition_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "requested_year",
+            "kind": "year",
+            "fields": [
+              "requested_year"
+            ],
+            "label": "Edition years",
+            "meaning": "Requested edition year as recorded."
+          }
+        }
+      ]
+    },
+    "uscode_edition_sections": {
+      "family": "uscode-editions",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "edition_id",
+          "VARCHAR"
+        ],
+        [
+          "source_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_position",
+          "VARCHAR"
+        ],
+        [
+          "native_identifier",
+          "VARCHAR"
+        ],
+        [
+          "source_context",
+          "VARCHAR"
+        ],
+        [
+          "body_text",
+          "VARCHAR"
+        ],
+        [
+          "source_observation_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "edition",
+      "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
+      "dimensions": [
+        {
+          "id": "section-source-kinds",
+          "kind": "category",
+          "label": "Source kinds",
+          "meaning": "Whether each saved content row comes from an annual edition or a release-point corpus. These rows are not complete section text for every edition.",
+          "fields": [
+            "source_kind"
+          ]
+        },
+        {
+          "id": "requested-edition-years",
+          "kind": "inherited",
+          "fields": [
+            "edition_id"
+          ],
+          "label": "Edition years",
+          "meaning": "Requested U.S. Code edition years of the saved editions. An edition year does not date the law text.",
+          "parent": {
+            "table": "uscode_editions",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "edition_id",
+                "edition_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "requested_year",
+            "kind": "year",
+            "fields": [
+              "requested_year"
+            ],
+            "label": "Edition years",
+            "meaning": "Requested edition year as recorded."
+          }
         }
       ]
     }

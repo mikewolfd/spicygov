@@ -23,7 +23,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from publication_census import BASE
-from gao_receipt_policy import is_gao_report_v2, validate_gao_report_v2_schema
+from gao_receipt_policy import reviewed_gao_schema, validate_gao_schema
 
 POLICIES = {'usaspending_recipients': ('government-sources/1', ['recipient_id']),
             'gao_reports': ('government-sources/1', ['report_id']),
@@ -88,8 +88,9 @@ def policy_schema(descriptor):
     if not isinstance(descriptor, dict) or set(descriptor) != required:
         raise ValueError('Unsupported native receipt policy descriptor')
     expected = POLICIES.get(descriptor['dataset'])
-    gao_v2 = is_gao_report_v2(descriptor)
-    if (not expected or (not gao_v2 and (descriptor['policy_version'], descriptor['identity_fields']) != expected)
+    reviewed = reviewed_gao_schema(descriptor)
+    if (not expected or descriptor['identity_fields'] != expected[1]
+            or (reviewed is None and descriptor['policy_version'] != expected[0])
             or descriptor['receipt_fields'] != ['raw_record'] or descriptor['receipt_only'] is not False
             or descriptor['nullable_identity_fields'] != []):
         raise ValueError('Unsupported government receipt policy')
@@ -97,7 +98,7 @@ def policy_schema(descriptor):
     except (ValueError, TypeError, pa.ArrowException) as exc: raise ValueError('Invalid native subject schema') from exc
     if not set(expected[1]) <= set(schema.names) or len(schema.names) != len(set(schema.names)):
         raise ValueError('Native subject schema has invalid identity fields')
-    if gao_v2: validate_gao_report_v2_schema(schema)
+    if reviewed is not None: validate_gao_schema(schema, reviewed)
     return schema
 
 

@@ -16,7 +16,7 @@ import pyarrow.parquet as pq
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from native_receipt_coverage import RECEIPT_SCHEMA, content_hash, decode, exact, policy_schema, qualified_records, subject_keys
-from gao_receipt_policy import GAO_REPORT_V2_SCHEMA
+from gao_receipt_policy import GAO_DECISION_V3_SCHEMA, GAO_REPORT_V2_SCHEMA, GAO_REPORT_V4_SCHEMA
 from regulation_coverage import scan_special, source_instant
 from publication_census import BASE
 
@@ -25,7 +25,7 @@ class NativeReceiptTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.root = pathlib.Path(self.temp.name)
     def tearDown(self): self.temp.cleanup()
-    def fixture(self, dataset='usaspending_recipients', report_v2=False):
+    def fixture(self, dataset='usaspending_recipients', report_v2=False, reviewed=None):
         if dataset == 'usaspending_recipients':
             schema = pa.schema([('recipient_id',pa.string()),('amount',pa.decimal128(38,6))])
             subjects = [{'recipient_id':'r1','amount':Decimal('1.000000')},
@@ -53,6 +53,10 @@ class NativeReceiptTests(unittest.TestCase):
                     'readings':[None,{'literal':'1904-AF12','spans':[1,3]}],
                     '_rulespec':{'source':None,'diagnostic':'kept verbatim'}})
                     for row,old in zip(subjects,raw)]
+            if reviewed:
+                schema,version=reviewed
+                subjects=[{name:row.get(name) for name in schema.names} for row in subjects]
+                raw=[dict(row,source=old['source']) for row,old in zip(subjects,raw)]
         descriptor={'dataset':dataset,'policy_version':version,
                     'subject_schema':base64.b64encode(schema.serialize()).decode(),
                     'identity_fields':identity,'receipt_fields':['raw_record'],
@@ -208,6 +212,29 @@ class NativeReceiptTests(unittest.TestCase):
                         r['processing_json']=exact(body)
                     self.resign(r)
                 with self.assertRaises(ValueError):self.read(f)
+    CURRENT_GAO = {'gao_reports': (GAO_REPORT_V4_SCHEMA, 'government-sources/4'),
+                   'gao_decisions': (GAO_DECISION_V3_SCHEMA, 'government-sources/3')}
+    def test_published_gao_policies_admit_their_exact_schemas_and_still_read_origins_from_raw_rows(self):
+        for dataset,reviewed in self.CURRENT_GAO.items():
+            with self.subTest(dataset=dataset):
+                f=self.fixture(dataset,reviewed=reviewed);table,inputs,*_=self.inputs(f)
+                self.assertEqual(policy_schema(f['descriptor']).names,reviewed[0].names)
+                self.assertEqual(len(self.read(f)),2)
+                result=scan_special(None,dataset,table,self.dimension(dataset),inputs)
+                self.assertEqual(result['buckets'],{'["gao_rss"]':1,'["gao_listing"]':1})
+                self.assertEqual((result['placedRows'],result['unplacedRows']),(2,0))
+    def test_published_gao_policies_refuse_other_schemas_versions_and_keys(self):
+        for dataset,(reviewed,version) in self.CURRENT_GAO.items():
+            for mutation in ['missing-column','wrong-type','wrong-order','wrong-version','wrong-key']:
+                with self.subTest(dataset=dataset,mutation=mutation):
+                    d=self.fixture(dataset,reviewed=(reviewed,version))['descriptor'];schema=reviewed
+                    if mutation=='missing-column':schema=schema.remove(schema.get_field_index('url'))
+                    if mutation=='wrong-type':schema=schema.set(schema.get_field_index('url'),pa.field('url',pa.int64()))
+                    if mutation=='wrong-order':schema=pa.schema(list(schema)[::-1])
+                    if mutation=='wrong-version':d['policy_version']='government-sources/9'
+                    if mutation=='wrong-key':d['identity_fields']=['title']
+                    d['subject_schema']=base64.b64encode(schema.serialize()).decode()
+                    with self.assertRaises(ValueError):policy_schema(d)
     def test_shared_current_gao_receipts_admit_both_datasets_without_rebinding(self):
         report=self.fixture('gao_reports',report_v2=True);decision=self.fixture('gao_decisions')
         descriptors={f['dataset']:f['descriptor'] for f in [report,decision]}
