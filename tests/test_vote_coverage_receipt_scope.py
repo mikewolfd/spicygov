@@ -18,6 +18,7 @@ import pyarrow.parquet as pq
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import restore_source_navigation_coverage as reader
 import additional_native_coverage as adapter
+import native_legislative_coverage as legislative
 from spicy_regs.congress_receipts import policy, write_congress_dataset
 from spicy_regs.congress_subjects import INPUT_COLUMNS
 from spicy_regs.etl_receipts import RECEIPT_SCHEMA, ReceiptContext, _digest, decode_exact_json, exact_json, failure_receipt
@@ -185,8 +186,10 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
 
     def test_diagnostic_forwarding_accepts_timeout_bytes_and_excludes_other_stderr(self):
         with redirect_stderr(io.StringIO()) as captured:
-            adapter.forward_restore_diagnostics(b'unrelated\ncoverage-restore {"stage":"selected-receipts"}\n')
-        self.assertEqual(captured.getvalue(), 'coverage-restore {"stage":"selected-receipts"}\n')
+            legislative.forward_restore_diagnostics(b'unrelated\ncoverage-restore {"stage":"selected-receipts"}\n'
+                                                b'x | WARNING | regulatory restore route=row dataset=documents reason=y\n')
+        self.assertEqual(captured.getvalue(), 'coverage-restore {"stage":"selected-receipts"}\n'
+                         'x | WARNING | regulatory restore route=row dataset=documents reason=y\n')
 
     def test_bridge_preserves_diagnostics_on_success_failure_and_timeout(self):
         line = 'coverage-restore {"stage":"batch-to-row-fallback","reason":"exact refusal"}\n'
@@ -194,10 +197,10 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
         failures = (subprocess.CalledProcessError(1, [], stderr=line),
                     subprocess.TimeoutExpired([], 300, stderr=line.encode()))
         with redirect_stderr(io.StringIO()) as output:
-            with patch.object(adapter.subprocess, "run", return_value=completed):
+            with patch.object(subprocess, "run", return_value=completed):
                 self.assertEqual(adapter.bridge(request={"dataset":"roll_call_votes"}), {"ok":True})
             for failure in failures:
-                with patch.object(adapter.subprocess, "run", side_effect=failure), self.assertRaises(type(failure)):
+                with patch.object(subprocess, "run", side_effect=failure), self.assertRaises(type(failure)):
                     adapter.bridge(request={"dataset":"roll_call_votes"})
         self.assertEqual(output.getvalue(), line * 3)
 
@@ -207,16 +210,16 @@ class VoteCoverageReceiptScopeTests(unittest.TestCase):
         spec.loader.exec_module(driver)
         line = 'coverage-restore {"stage":"selected-reader"}\n'
         result = subprocess.CompletedProcess([], 0, '{}\n', line)
-        for dataset, native, locked in (("documents", True, True), ("federal_register", True, True),
-                ("fr_docket_links", True, True), ("comment_periods", True, True), ("rule_targets", True, True),
-                ("proceedings", True, False), ("roll_call_votes", True, False), ("comment_periods", False, False),
-                ("comments", False, False), ("fec_receipts", False, False)):
+        for dataset, native, locked, seconds in (("documents", True, True, 1500), ("federal_register", True, True, 1500),
+                ("fr_docket_links", True, True, 1500), ("comment_periods", True, True, 900), ("rule_targets", True, True, 900),
+                ("proceedings", True, False, 900), ("roll_call_votes", True, False, 900), ("comment_periods", False, False, 900),
+                ("comments", False, False, 7200), ("fec_receipts", False, False, 3600)):
             with self.subTest(dataset=dataset, native=native), patch.object(driver, "cached", return_value=False), \
                     patch.object(driver.subprocess, "run", return_value=result) as run, patch.object(driver, "HEAVY_NATIVE_SCAN_LOCK") as lock, \
                     redirect_stderr(io.StringIO()) as diagnostics:
                 self.assertEqual(driver.timed_scan((dataset, {}, {"_additionalNativeProcessing":native}, None)), (dataset, {}))
                 self.assertEqual(lock.__enter__.call_count, int(locked))
-                self.assertEqual(run.call_args.kwargs["timeout"], 3600 if dataset in ("comments", "fec_receipts") else 900)
+                self.assertEqual(run.call_args.kwargs["timeout"], seconds)
                 self.assertEqual(diagnostics.getvalue(), line)
 
 

@@ -16,6 +16,7 @@ import pyarrow.parquet as pq
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import additional_native_coverage as adapter  # noqa: E402
+import coverage_scan  # noqa: E402
 import publication_census as census  # noqa: E402
 import restore_source_navigation_coverage as reader  # noqa: E402
 from coverage_inputs import CoverageInputs  # noqa: E402
@@ -84,8 +85,8 @@ class RulemakingNativeCoverageTests(unittest.TestCase):
         self.patch = patch.object(adapter, "bridge", side_effect=bridge)
         self.patch.start()
         self.addCleanup(self.patch.stop)
-        adapter.native_schema.cache_clear()
-        self.addCleanup(adapter.native_schema.cache_clear)
+        adapter.SCHEMAS.clear()
+        self.addCleanup(adapter.SCHEMAS.clear)
         self.env = patch.dict("os.environ", {"SPICYGOV_NATIVE_COVERAGE_CACHE":str(self.root / "cache")})
         self.env.start()
         self.addCleanup(self.env.stop)
@@ -95,14 +96,14 @@ class RulemakingNativeCoverageTests(unittest.TestCase):
         table = census.rulemaking_tables(pointer, manifest)[dataset]
         policies = build.definitions()
         build.validate_plan({dataset:table}, policies)
-        measured = adapter.scan_table(dataset, table, policies[dataset], validate_members=build.validate_members,
+        measured = adapter.scan_table(dataset, table, policies[dataset], validate_members=coverage_scan.validate_members,
                                      validate_counts=build.validate_counts, inputs=inputs, download=download)
         self.assertEqual(inputs.reads, [pointer["manifest_key"]])
         self.assertEqual(measured["processingEvidence"]["generationId"], "selected-run")
         self.assertEqual(measured["processingEvidence"]["receipts"]["sha256"],
                          "sha256:" + manifest["artifacts"]["etl_receipts.parquet"]["sha256"])
         self.assertEqual(measured["schema"], json.loads(json.dumps(reader.description(dataset)["nativeSchema"])))
-        with patch.object(build, "header_matches", side_effect=AssertionError("Immutable snapshots need no ETag HEAD")):
+        with patch.object(coverage_scan, "header_matches", side_effect=AssertionError("Immutable snapshots need no ETag HEAD")):
             self.assertTrue(build.cached(table, policies[dataset], measured))
         return measured, raw
 

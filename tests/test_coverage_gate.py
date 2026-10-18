@@ -1,6 +1,8 @@
 import copy
 import concurrent.futures
+import contextlib
 import importlib.util
+import io
 import json
 import pathlib
 import sys
@@ -12,6 +14,7 @@ from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
+import coverage_scan
 spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 
@@ -19,7 +22,7 @@ builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder
 def fixture():
     table = {'family':'test','kind':'generation','columns':[['day','DATE']], 'rows':2,
              'members':[{'url':'file','rows':2,'byteSize':10}]}
-    policy = {'family':'test','classification':'temporal','schema':[['day','DATE']], 'dimensions':[
+    policy = {'family':'test','classification':'temporal','schema':[['day','DATE']], '_scanner':'regulation', 'dimensions':[
         {'id':'day','kind':'date','fields':['day'],'label':'Event day','meaning':'Source event date.'}]}
     measured = {'status':'measured','rows':2,'placedRows':1,'unplacedRows':1,'granularity':'month','buckets':{'2024-01':1}}
     return table, policy, measured
@@ -175,7 +178,7 @@ class CoverageGateTest(unittest.TestCase):
         table['coverageInputs'] = [{'id':'comments_index','url':'index','rows':1,'byteSize':10,'sha256':'a'*64,'etag':'first'}]
         original = {**builder.binding(table,policy), 'status':'measured','measurementRevision':'fixed',
                     'dimensions':[{**measured,'id':'day','definitionDigest':builder.definition_digest(policy['dimensions'][0])}]}
-        with mock.patch.object(builder, 'measurement_revision', return_value='fixed'), mock.patch.object(builder, 'header_matches'):
+        with mock.patch.object(builder, 'measurement_revision', return_value='fixed'), mock.patch.object(coverage_scan, 'header_matches'):
             self.assertTrue(builder.cached(table, policy, original))
             moved = {**table, 'publishedAt':'2026-02-28T00:00:00Z'}
             self.assertFalse(builder.cached(moved, policy, original))
@@ -193,7 +196,7 @@ class CoverageGateTest(unittest.TestCase):
             observed = [[r[0],r[1]] for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?)',[[a,b]]).fetchall()]
             self.assertEqual(observed, expected)
             with self.assertRaisesRegex(ValueError, 'member schema'):
-                builder.validate_members(conn,'records',{'members':[{'url':a,'rows':1},{'url':b,'rows':1}]},expected)
+                coverage_scan.validate_members(conn,'records',{'members':[{'url':a,'rows':1},{'url':b,'rows':1}]},expected)
             conn.close()
 
     def test_individual_member_counts_must_match_even_when_total_rows_match(self):
@@ -205,7 +208,7 @@ class CoverageGateTest(unittest.TestCase):
             conn.execute('COPY empty TO ? (FORMAT PARQUET)',[a]); conn.execute('COPY populated TO ? (FORMAT PARQUET)',[b])
             self.assertEqual(conn.execute('SELECT count(*) FROM read_parquet(?)',[[a,b]]).fetchone()[0],2)
             with self.assertRaisesRegex(ValueError, 'member row count'):
-                builder.validate_members(conn,'records',{'members':[{'url':a,'rows':1},{'url':b,'rows':1}]},[['day','DATE']])
+                coverage_scan.validate_members(conn,'records',{'members':[{'url':a,'rows':1},{'url':b,'rows':1}]},[['day','DATE']])
             conn.close()
 
     def test_review_evidence_and_executable_definitions_account_for_identical_table_sets(self):
@@ -251,7 +254,7 @@ class CoverageGateTest(unittest.TestCase):
                 started, release, second_started = (threading.Event() for _ in range(3))
                 def reader(command, **options):
                     id = json.loads(options['input'])['id']
-                    self.assertEqual(options['timeout'], 2700 if id == 'court_opinions' else 900)
+                    self.assertEqual(options['timeout'], {'court_opinions': 2700, 'federal_register': 1500, 'fr_docket_links': 1500}.get(id, 900))
                     if id == 'federal_register':
                         started.set()
                         self.assertTrue(release.wait(timeout=5))
@@ -280,8 +283,11 @@ class CoverageGateTest(unittest.TestCase):
             ('court_opinions', {'_additionalNativeProcessing': True}, 2700),
             ('court_opinions', {}, 900),
             ('court_dockets', {'_additionalNativeProcessing': True}, 900),
-            ('fr_docket_links', {'_additionalNativeProcessing': True}, 900),
-            ('comments', {}, 3600),
+            ('documents', {'_additionalNativeProcessing': True}, 1500),
+            ('federal_register', {'_additionalNativeProcessing': True}, 1500),
+            ('fr_docket_links', {'_additionalNativeProcessing': True}, 1500),
+            ('documents', {}, 900),
+            ('comments', {}, 7200),
             ('fec_receipts', {}, 3600),
         )
         for id, policy, expected in cases:
@@ -301,6 +307,27 @@ class CoverageGateTest(unittest.TestCase):
         with mock.patch.object(builder, 'measurement_revision', return_value='fixed'):
             self.assertTrue(builder.cached(table, policy, original))
             self.assertFalse(builder.cached({**table, '_coverageAsOfMonth': '2026-11'}, policy, original))
+
+    def test_scan_children_reuse_the_descriptions_the_build_made_once(self):
+        legislative, additional = {'bill_versions': {'implementationSha256': 'a'}}, {'documents': {'implementationSha256': 'b'}}
+        with mock.patch.dict(builder.native.SCHEMAS, legislative, clear=True), \
+             mock.patch.dict(builder.additional.SCHEMAS, additional, clear=True), \
+             mock.patch.object(builder, 'cached', return_value=False), \
+             mock.patch.object(builder.subprocess, 'run', return_value=mock.Mock(stdout='{}', stderr='')) as run:
+            builder.timed_scan(('records', {}, {}, None))
+        sent = json.loads(run.call_args.kwargs['input'])
+        self.assertEqual(sent['descriptions'], {'legislative': legislative, 'additional': additional})
+        # The child seeds both caches before it scans, and a direct probe may omit them.
+        seen = {}
+        def scan(id, table, policy):
+            seen.update(legislative=dict(builder.native.SCHEMAS), additional=dict(builder.additional.SCHEMAS))
+            return {'id': id}
+        for request, expected in ((sent, (legislative, additional)), ({k: v for k, v in sent.items() if k != 'descriptions'}, ({}, {}))):
+            with mock.patch.dict(builder.native.SCHEMAS, clear=True), mock.patch.dict(builder.additional.SCHEMAS, clear=True), \
+                 mock.patch.object(sys, 'argv', ['builder', '--scan']), mock.patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
+                 mock.patch.object(builder, 'scan_table', side_effect=scan), contextlib.redirect_stdout(io.StringIO()):
+                builder.main()
+            self.assertEqual((seen['legislative'], seen['additional']), expected)
 
     def test_timed_out_reader_cleans_up_its_private_spill_directory(self):
         directories = []

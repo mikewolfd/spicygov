@@ -53,12 +53,65 @@ tables are measured directly by the published-table scanner; native tables must
 be the reviewed native subject and use receipts under the current or a declared
 earlier policy version.
 
-The checked-in `public/coverage-maps.v1.json`, the existing (pre-amendment)
-`.cache/coverage-maps` checkpoints and the archived fixture releases are retained
-evidence. The current code does not reuse or admit them, so the first coverage data
-release rescans every table, possibly across several workflow runs: completed
-tables are checkpointed even when another scan fails, and checkpoints that the
-current code writes are reused as usual.
+The checked-in `public/coverage-maps.v1.json`, the pre-2026-10-17 `.cache/coverage-maps`
+checkpoints and the archived fixture releases are retained evidence. They carry measurement
+revisions the current code does not issue, so the first coverage data release measures every
+published table again.
+
+That includes the 73 tables whose generations have not changed since 2026-10-05: the owner
+chose a rescan over a one-time compatibility re-bind.
+
+The release may take several workflow runs. Each run checkpoints every table it completes.
+A later run reuses a checkpoint only while all of its bindings still match: generation bytes,
+schema, policy and dimension digests, the activity month, and the measurement revision. A table
+republished between runs is measured again.
+
+Measurement revisions are per scanner:
+
+- Orchestration, release and allowance edits (`build-coverage-maps.py`,
+  `coverage_release.py`, `coverage_allowances.py`) keep checkpoints.
+- An edit to `coverage_scan.py` or a shared helper re-measures every table.
+- An edit to one scanner module re-measures only that scanner's tables.
+- A new spicy-regs reader identity re-measures the native tables.
+
+Keep `backend_revision` fixed until the release completes.
+
+To resume an interrupted release, dispatch the workflow again with the **same**
+`backend_revision`; a different reader identity re-measures all native tables. The scan
+step stops at 300 minutes, inside the 330-minute job, so the checkpoints it completed are
+still saved. Each run reuses the checkpoints whose bindings still hold.
+
+- **Deterministic failure.** Fix it, push, re-dispatch. Allowance or orchestration edits keep
+  checkpoints. An edit to one scanner module re-measures only that scanner's tables.
+- **Memory failure** (exit 137 or "Killed" on documents, Register or court_opinions). Ask the
+  owner about a larger runner.
+- **Setup time.** Record the first run's time before the scan step starts. If it exceeds about
+  20 minutes, raise the job `timeout-minutes` to 345 so the cache save still has room.
+- **After the bill-subjects refresh.** `bill_subjects` becomes a native table: add it to
+  `native_legislative_coverage.DATASETS` and `bill-subjects` to its `FAMILIES`, update its
+  definition if the restored schema differs, probe it, then start the release. Do not add it
+  earlier; the current reader does not describe it.
+
+**Completion run.** The final check refuses if any of the 4 captured publication documents
+changes during the run (`build-coverage-maps.py`), and every spicy-regs family rollup rewrites
+`publication.v2.json`. Start the last, short run between about 07:30 and 12:30 UTC, when no
+rollup is scheduled, and only after
+`gh run list -R mikewolfd/spicy-regs --status in_progress` and `--status queued` show no rollup.
+
+**Readback that proves completion:**
+
+1. `gh run view <run> -R mikewolfd/spicygov --json conclusion -q .conclusion` returns `success`,
+   and the log has `All <N> requested coverage maps verified` and the
+   `{"directory": ".cache/completed-coverage-release", "manifestSha256": "sha256:..."}` line.
+   N is the census table count.
+2. `gh api repos/mikewolfd/spicygov/actions/runs/<run>/artifacts` shows
+   `completed-coverage-release-<run>-<attempt>`; record its id and digest.
+3. With the owner's approval to download it, `gh run download` it into a new empty directory,
+   check `shasum -a 256 <dir>/manifest.json` equals the logged `manifestSha256`, then run
+   `node scripts/consume-coverage-release.mjs --release <dir> --sha256 sha256:<hex>` in a
+   checkout at the dispatched commit. It is offline and prints `"status":"accepted"`.
+4. Retain the run id, attempt, artifact id and digest, and `manifestSha256`. Selecting the
+   release in `content/coverage-release-selection.v1.json` and deploying is a separate decision.
 
 No completed production release was invented for the historical checked-in map.
 Strict production adoption depends on an authorized full data refresh and review

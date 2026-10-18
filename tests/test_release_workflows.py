@@ -61,6 +61,19 @@ class Conditions(unittest.TestCase):
             workflow=(ROOT/'.github/workflows'/name).read_text()
             self.assertNotIn('mikewolfd/spicy-regs',workflow);self.assertNotIn('SPICYGOV_',workflow)
 
+    def test_a_long_release_saves_its_checkpoints_even_when_the_scan_step_times_out(self):
+        refresh=(ROOT/'.github/workflows/coverage-data-release.yml').read_text()
+        job=int(re.search(r'^    timeout-minutes: (\d+)$',refresh,re.M).group(1))
+        scan=refresh.split('        id: coverage-scan\n',1)[1].split('      - name: Save validated coverage checkpoints',1)[0]
+        step=int(re.search(r'^        timeout-minutes: (\d+)$',scan,re.M).group(1))
+        # The step ends first, leaving the job time to save the cache and retain the release;
+        # a job-level timeout would cancel the scan step and lose its checkpoints.
+        self.assertEqual((step,job),(300,330))
+        self.assertLessEqual(step+15,job);self.assertLessEqual(job,360)
+        save=refresh.split('      - name: Save validated coverage checkpoints\n',1)[1].split('      - name: Retain completed',1)[0]
+        self.assertIn("if: ${{ always() && steps.coverage-cache.outcome == 'success' && steps.coverage-scan.outcome != 'skipped' && hashFiles('.cache/coverage-maps/*.json') != '' }}",save)
+        self.assertIn('actions/cache/save@v5',save)
+
     def test_every_workflow_test_path_exists(self):
         for workflow in sorted((ROOT/'.github/workflows').glob('*.yml')):
             for path in set(re.findall(r'\btests/\w+\.(?:py|mjs)',workflow.read_text())):
