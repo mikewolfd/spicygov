@@ -606,6 +606,61 @@
           "meaning": "The candidate’s election year reported by the source, when stated."
         },
         {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        },
+        {
           "id": "snapshot",
           "kind": "snapshot",
           "fields": [],

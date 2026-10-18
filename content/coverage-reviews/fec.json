@@ -4425,6 +4425,54 @@
             "bucketCount": 96,
             "firstBucket": "1972",
             "lastBucket": "2999"
+          },
+          "retained_source_cycles": {
+            "granularity": "year",
+            "placedRows": 841313,
+            "unplacedRows": 110061,
+            "partialRows": 0,
+            "bucketCount": 24,
+            "firstBucket": "1980",
+            "lastBucket": "2026",
+            "matchedRows": 951374,
+            "unmatchedRows": 0,
+            "buckets": {
+              "1980": 19725,
+              "1982": 20532,
+              "1984": 21556,
+              "1986": 20407,
+              "1988": 22169,
+              "1990": 22037,
+              "1992": 26897,
+              "1994": 27018,
+              "1996": 28135,
+              "1998": 24547,
+              "2000": 23683,
+              "2002": 22150,
+              "2004": 22458,
+              "2006": 22268,
+              "2008": 24106,
+              "2010": 27402,
+              "2012": 34538,
+              "2014": 35346,
+              "2016": 42698,
+              "2018": 45415,
+              "2020": 44330,
+              "2022": 48165,
+              "2024": 108975,
+              "2026": 106756
+            }
+          },
+          "selected_source_scopes": {
+            "granularity": "category",
+            "placedRows": 951374,
+            "unplacedRows": 0,
+            "partialRows": 0,
+            "bucketCount": 75,
+            "firstBucket": "[\"fec_candidate_links\",\"no-record-rejections\",\"cycle 2024; https://cg-519a459a-0ea3-42c2-b7bc-fa1143481f74.s3-us-gov-west-1.amazonaws.com/bulk-downloads/2024/ccl24.zip; bulk-downloads/2024/ccl24.zip; member ccl.txt\"]",
+            "lastBucket": "[\"fec_reports\",\"no-record-rejections\",\"https://docquery.fec.gov/dcdev/posted/1884305.fec\"]",
+            "matchedRows": 951374,
+            "unmatchedRows": 0
           }
         }
       }
