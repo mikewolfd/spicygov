@@ -405,9 +405,13 @@ def _citation_scope(conn, table_id, table, dim, inputs):
         if keys:placed+=n
         for key in set(keys):buckets[key]+=n
         for year in {key[:4] for key in keys}:years[year]+=n
+    notes=['Source periods come from exact retained text versions. Court filing dates use explicitly labeled saved context; annual lobbying scope remains annual; explicitly named quarters cover their source-stated three-month span.']
+    if unresolved:
+        notes.append('Rows remain unplaced because source attribution is unresolved: '+
+                     '; '.join(f'{reason} ({count})' for reason,count in sorted(unresolved.items()))+'.')
     return _result(table,dim,'year' if yearly else 'month',buckets,placed,
                    coarseRows=coarse,unresolvedRetainedOccurrences=dict(sorted(unresolved.items())),overlapping=overlapping,yearBuckets=dict(sorted(years.items())),evidence=list(context_cache.values()),
-                   notes=['Source periods come from exact retained text versions. Court filing dates use explicitly labeled saved context; annual lobbying scope remains annual; explicitly named quarters cover their source-stated three-month span.'])
+                   notes=notes)
 
 
 def _funding_years(conn,table,dim):

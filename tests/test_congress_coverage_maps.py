@@ -80,6 +80,7 @@ class CongressCoverageTests(unittest.TestCase):
         dim=self.dim('cited-read-source-year','year',['document_key']);table=self.table(str(read_path),1,'print-citations')
         d=coverage.scan_special(self.conn,'document_citation_read_outcomes',table,dim,Historical(None))
         self.assertEqual(d['buckets'],{'2002':1});self.assertEqual(d['placedRows'],1)
+        self.assertFalse(any('source attribution is unresolved' in note for note in d['notes']))
         old['members'][0]['sha256']='sha256:'+'d'*64
         with self.assertRaisesRegex(ValueError,'original input hash'):
             coverage.scan_special(self.conn,'document_citation_read_outcomes',table,dim,Historical(None))
@@ -118,6 +119,7 @@ class CongressCoverageTests(unittest.TestCase):
         dim=self.dim('cited-read-source-year','year',['document_key'])
         d=coverage.scan_special(self.conn,'document_citation_read_outcomes',self.table(str(read_path),1,'print-citations'),dim,Pinned(None))
         self.assertEqual((d['placedRows'],d['unplacedRows']),(0,1));self.assertEqual(d['unresolvedRetainedOccurrences'],{'bill section without printing_id':1})
+        self.assertIn('Rows remain unplaced because source attribution is unresolved: bill section without printing_id (1).',d['notes'])
 
     def test_native_lobbying_citations_use_exact_activity_and_reporting_period(self):
         text_sha='sha256:'+hashlib.sha256(b'source body').hexdigest()
@@ -151,6 +153,7 @@ class CongressCoverageTests(unittest.TestCase):
                 self.assertEqual(measured['buckets'],expected)
                 self.assertEqual((measured['placedRows'],measured['unplacedRows'],measured['coarseRows']),(placed,4-placed,coarse))
                 self.assertEqual(measured['unresolvedRetainedOccurrences'],{'source occurrence missing or ambiguous':2})
+                self.assertIn('Rows remain unplaced because source attribution is unresolved: source occurrence missing or ambiguous (2).',measured['notes'])
         # An exact activity key alone cannot justify a different text version.
         sources['lobbying_activities']['urls']=[self.file('changed_activity',
             "SELECT 'quarter' filing_uuid,2::BIGINT activity_index,'changed body' description")]
