@@ -89,6 +89,9 @@ class BridgeTests(unittest.TestCase):
                                        "date_filed": "2026-09-30", "date_filed_is_approximate": "f",
                                        "court_is_federal": "t", "citation_count": "003",
                                        "source": "publisher literal", "ingest_source": "search"},
+            "court_opinions": {"opinion_id": "10", "cluster_id": "42", "page_count": "003",
+                               "author_str": 'José "Exact"\\literal', "per_curiam": "f",
+                               "dump_date": "2026-09-30"},
         }
         policies = json.loads((Path(__file__).resolve().parents[1] /
                                "content/coverage-definitions/regulation.json").read_text())["tables"]
@@ -97,13 +100,14 @@ class BridgeTests(unittest.TestCase):
             raw = dict.fromkeys(reader.LEGACY_COLUMNS[dataset])
             raw.update(values)
             prepared[dataset] = fixture(self.root / dataset, dataset, raw)
+        citation_datasets = {"court_citation_map", "court_citations", "court_parentheticals"}
         citation_receipts = combine_receipts(
             [Path(request["receipts"]["path"]) for dataset, (_, request) in prepared.items()
-             if dataset != "court_opinion_clusters"], self.root / "combined-citations.parquet")
+             if dataset in citation_datasets], self.root / "combined-citations.parquet")
         for dataset in cases:
             with self.subTest(dataset=dataset):
                 raw, request = prepared[dataset]
-                if dataset != "court_opinion_clusters":
+                if dataset in citation_datasets:
                     request["receipts"] = member(citation_receipts)
                 policy = policies[dataset]
                 native = plain(reader.description(dataset))["nativeSchema"]
@@ -117,6 +121,7 @@ class BridgeTests(unittest.TestCase):
                       patch.object(reader, "select_receipts", side_effect=AssertionError("unused receipt copy"))):
                     result = reader.restore(request)
                 self.assertEqual(result["rows"], 1)
+                self.assertEqual(result["acceptedWitnessGroups"], [])
                 self.assertEqual(result["selection"], {key: request[key] for key in ("subjects", "receipts")})
                 self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [raw])
                 table = {"members": [{"url": result["urls"][0]}], "rows": 1,
@@ -140,6 +145,9 @@ class BridgeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "SHA-256 changed"):
                     reader.restore(altered)
                 self.assertFalse(Path(altered["destination"]).exists())
+        with self.assertRaisesRegex(ValueError, "Expected the complete court citation family"):
+            reader.restore_court_family(
+                [prepared[dataset][1] for dataset in (*citation_datasets, "court_opinions")])
 
     def test_bulk_only_change_invalidates_description_and_restoration_identity(self):
         raw, request = fixture(self.root)

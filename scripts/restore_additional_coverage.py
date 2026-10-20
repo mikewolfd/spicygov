@@ -80,13 +80,13 @@ def restore(request):
         schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
     )
     # Restoration above performs complete subject/receipt admission. The bulk
-    # tables' coverage reads their restored edition/origin fields; it does not
+    # tables and opinions read their restored edition/origin fields; coverage does not
     # follow inherited parents and needs no additional witness enumeration.
     witnesses = {}
     rows = pq.read_metadata(output).num_rows
     if rows != pq.read_metadata(subject).num_rows:
         raise ValueError("Accepted court receipt count differs from restored subjects")
-    if dataset not in BULK_COURT_DATASETS:
+    if dataset not in BULK_COURT_DATASETS and dataset != "court_opinions":
         selected = select_receipts(receipts, destination / "selected-receipts.parquet", dataset=dataset)
         accepted = 0
         for receipt in read_attempts([selected], policy, generation_id=generation, outcomes=frozenset(("accepted",))):
