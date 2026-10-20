@@ -94,6 +94,34 @@ test('lobbyist role and source positions remain literal with missing, empty and 
   assert.match(html,/without assuming uniqueness/);
 });
 
+test('short summaries keep role and identity limits visible while existing details retain explanations',()=>{
+  const role={filing_uuid:'original',activity_index:0n,lobbyist_index:3n,lobbyist_id:'7',first_name:'Same',last_name:'Name',covered_position:'  Reported role\nliteral text  '};
+  for(const [id,row] of [
+    ['lobbying_filings',filing],['lobbying_activities',{...filing,activity_index:0n}],
+    ['lobbying_activity_lobbyists',role],
+  ]) {
+    const html=render(id,row),[main,details]=html.split('<details>');
+    assert.match(main,/Searches are bounded and may require Next; an incomplete search is not evidence of absence/);
+    assert.match(details,/Publication scope and evidence/);
+    assert.match(details,/not live coverage/);
+    assert.match(details,/without assuming uniqueness/);
+    assert.match(details,/Selected publication evidence/);
+    assert.doesNotMatch(main,/Selected generation:|original document URL/);
+    if(id==='lobbying_filings') {
+      assert.match(main,/Client IDs belong to this registrant/);
+      assert.match(main,/keeps separate filings and amendments/);
+      assert.match(details,/Client record ID: 200 · Registrant ID: 100/);
+      assert.match(details,/does not select a current relationship or combine financial amounts/);
+    } else if(id==='lobbying_activity_lobbyists') {
+      assert.ok(main.includes(role.covered_position));
+      assert.match(main,/Missing text does not mean no former role/);
+      assert.match(main,/registrant-local records, not person identities/);
+      assert.match(details,/Lobbyist record ID: 7/);
+      assert.match(details,/does not establish employment dates, current employment/);
+    }
+  }
+});
+
 test('body occurrences retain duplicates and nulls; saved URL and click share one literal membership recipe',()=>{
   const bodies=[{id:'24',name:'Commerce'},null,{id:'24',name:'Commerce'},{id:null,name:'Unresolved'}];
   const row={filing_uuid:'original',activity_index:0n,general_issue_code:'SCI',government_entities:bodies};

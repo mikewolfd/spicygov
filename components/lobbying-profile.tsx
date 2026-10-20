@@ -52,14 +52,14 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
               {!object(value) && <small>Unresolved source occurrence: {stated(value)}</small>}
             </li>;
           })}</ol>}
-      <p className="lobbying-profile-note">Repeated source entries remain visible. Each lookup returns matching activity rows once, not one row per body or lobbyist. A listed body does not identify an individual contacted official.</p>
+      <p className="lobbying-profile-note">Lookups return matching activity rows once; source entries stay separate.</p>
     </section>;
   }
   return <section className="lobbying-profile" aria-label="Lobbying disclosure">
     <h2>{filing ? 'Client and filing disclosure' : activity ? 'Lobbying activity disclosure' : 'Lobbyist occurrence and reported public role'}</h2>
     {filing ? <>
-      <p><strong>Client: {stated(row.client_name)}</strong> · Client record ID: {stated(row.client_id)}</p>
-      <p>Registrant / firm: {stated(row.registrant_name)} · Registrant ID: {stated(row.registrant_id)}</p>
+      <p><strong>Client: {stated(row.client_name)}</strong></p>
+      <p>Registrant / firm: {stated(row.registrant_name)}</p>
       <p>Reported period: {typeof row.filing_period === 'string' && row.filing_period ? pretty(row.filing_period) : stated(row.filing_period)} {stated(row.filing_year)} · Filing type: {stated(row.filing_type)}</p>
       <p>Posted: {stated(row.dt_posted)}</p>
       <nav aria-label="Filing relationships">
@@ -68,7 +68,7 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
         {link('lobbying_activities', { filing_uuid: row.filing_uuid }, 'Activity records for this filing')}
         {link('lobbying_activity_lobbyists', { filing_uuid: row.filing_uuid }, 'Lobbyist occurrences for this filing')}
       </nav>
-      <p className="lobbying-profile-note">Client IDs belong to the reporting registrant. Matching names across firms do not establish the same client. History keeps separate filings and amendments; it does not select a current relationship or combine financial amounts.</p>
+      <p className="lobbying-profile-note">Client IDs belong to this registrant. History keeps separate filings and amendments.</p>
       <h3>Reported activities</h3>
       {!Array.isArray(row.lobbying_activities) ? <p>Activity list unavailable; see the activity records and raw fields.</p>
         : !row.lobbying_activities.length ? <p>The source lists no activities.</p>
@@ -94,22 +94,31 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
         </nav>
         {bodies()}
       </> : <>
-        <p><strong>{['prefix', 'first_name', 'nickname', 'middle_name', 'last_name', 'suffix'].map(k => scalar(row[k])).filter(Boolean).join(' ') || 'Name not stated'}</strong> · Lobbyist record ID: {stated(row.lobbyist_id)}</p>
+        <p><strong>{['prefix', 'first_name', 'nickname', 'middle_name', 'last_name', 'suffix'].map(k => scalar(row[k])).filter(Boolean).join(' ') || 'Name not stated'}</strong></p>
         <h3>Reported former public role</h3>
         <p className="source-passage">{stated(row.covered_position)}</p>
-        <p className="lobbying-profile-note">Role text is shown as reported in this activity. Missing text does not mean no former role. It does not establish employment dates, current employment, improper influence or a conflict of interest.</p>
+        <p className="lobbying-profile-note">As reported in this activity. Missing text does not mean no former role.</p>
         {link('lobbying_activity_lobbyists', { filing_uuid: row.filing_uuid, lobbyist_id: row.lobbyist_id }, 'Occurrences of this lobbyist record within this filing')}
-        <p className="lobbying-profile-note">Lobbyist IDs are registrant-local records, not person identities. This link stays within the filing; repeated names or IDs are not merged across firms.</p>
+        <p className="lobbying-profile-note">Lobbyist IDs are registrant-local records, not person identities. This link stays within the filing.</p>
       </>}
     </>}
+    <p className="lobbying-profile-note">Searches are bounded and may require Next; an incomplete search is not evidence of absence.</p>
     <details><summary>Publication scope and evidence</summary>
       <p>Filing: {stated(row.filing_uuid)}{!filing && <> · Activity position: {stated(row.activity_index)}</>}{!filing && !activity && <> · Lobbyist position: {stated(row.lobbyist_index)}</>}</p>
+      {filing ? <>
+        <p>Client record ID: {stated(row.client_id)} · Registrant ID: {stated(row.registrant_id)}</p>
+        <p>Matching names across firms do not establish the same client. Filing history does not select a current relationship or combine financial amounts.</p>
+      </> : !activity && <>
+        <p>Lobbyist record ID: {stated(row.lobbyist_id)}</p>
+        <p>Reported role text does not establish employment dates, current employment, improper influence or a conflict of interest. Repeated names or IDs are not merged across firms.</p>
+      </>}
+      {(filing || activity) && <p>Repeated source entries remain visible. A listed body does not identify an individual contacted official.</p>}
       <p>{table.coverage || 'Coverage dates are not established for this publication.'}</p>
       <p className="lobbying-profile-note">This is a selected, dated publication, not live coverage. Source posting dates remain as reported, including possible anomalies.</p>
       <p>Selected generation: {stated(table.artifactDigest)}</p>
       {table.published && <p>Publication time: {table.published}. This is not the filing’s reporting period.</p>}
       {table.publication?.recordUrl && <a href={table.publication.recordUrl} target="_blank" rel="noreferrer">Selected publication evidence</a>}
-      <p className="lobbying-profile-note">The supporting filing is the published native record; an original document URL is not supplied here. Links show matching records without assuming uniqueness. Open a row to inspect it. Searches are bounded and may require Next; an incomplete search is not evidence of absence.</p>
+      <p className="lobbying-profile-note">The supporting filing is the published native record; an original document URL is not supplied here. Links show matching records without assuming uniqueness. Open a row to inspect it.</p>
     </details>
   </section>;
 }
