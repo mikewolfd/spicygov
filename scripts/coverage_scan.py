@@ -47,7 +47,9 @@ def file_digest(identity, names):
 def measurement_revision(policy):
     scanner = SCANNER[policy['_scanner']]
     if policy.get('_additionalNativeProcessing'):
-        return file_digest(policy['restorationImplementationSha256'], SHARED + scanner + NATIVE + ADDITIONAL)
+        from additional_native_coverage import uses_witnessed_parent
+        parents = ('court_coverage_parents.py',) if uses_witnessed_parent(policy) else ()
+        return file_digest(policy['restorationImplementationSha256'], SHARED + scanner + NATIVE + ADDITIONAL + parents)
     if policy.get('_nativeProcessing'):
         return file_digest(policy['restorationImplementationSha256'], SHARED + scanner + NATIVE)
     return file_digest('', SHARED + scanner)

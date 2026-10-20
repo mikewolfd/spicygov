@@ -6,6 +6,8 @@ scanner module sets are checked against what the modules actually import, so a
 new import cannot silently escape a revision.
 """
 import ast
+import copy
+import json
 from pathlib import Path
 import shutil
 import sys
@@ -16,6 +18,7 @@ from unittest.mock import patch
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
 import coverage_scan
+import additional_native_coverage  # noqa: E402 - repository-local script import
 
 SHARED = {'coverage_scan.py', 'coverage_dimensions.py', 'coverage_inputs.py', 'collection_coverage.py',
           'publication_census.py'}
@@ -24,23 +27,33 @@ SCANNER = {'congress': {'congress_coverage.py'},
            'fec': {'fec_coverage.py'}}
 NATIVE = {'native_legislative_coverage.py'}
 ADDITIONAL = {'additional_native_coverage.py', 'restore_additional_coverage.py', 'restore_source_navigation_coverage.py'}
+PARENTS = {'court_coverage_parents.py'}
 # Read by hashed modules, but tuning one changes how long a step may run, never what it measures.
 UNHASHED = {'coverage_allowances.py'}
-MODES = ('flat', 'native', 'additional')
+MODES = ('flat', 'native', 'additional', 'witnessed')
 IDENTITY = 'sha256:' + 'a' * 64
 
 
 def policy(mode, scanner, identity=IDENTITY):
-    return {'_scanner': scanner, **({'_nativeProcessing': True, 'restorationImplementationSha256': identity} if mode == 'native' else {}),
-            **({'_additionalNativeProcessing': True, 'restorationImplementationSha256': identity} if mode == 'additional' else {})}
+    result = {'_scanner': scanner, **({'_nativeProcessing': True, 'restorationImplementationSha256': identity} if mode == 'native' else {}),
+              **({'_additionalNativeProcessing': True, 'restorationImplementationSha256': identity} if mode in ('additional', 'witnessed') else {})}
+    if mode == 'witnessed':
+        result.update(family='court-opinion-pdf-extractions',
+                      _additionalNativeDataset='court_opinion_pdf_extractions',
+                      dimensions=[{'kind': 'inherited', 'parent': {
+                          'mode': 'recorded-parent', 'table': 'court_opinions',
+                          'keys': [['opinion_id', 'opinion_id'], ['cluster_id', 'cluster_id']]}}])
+    return result
 
 
 def hashed(mode, scanner):
-    return SHARED | SCANNER[scanner] | (NATIVE if mode != 'flat' else set()) | (ADDITIONAL if mode == 'additional' else set())
+    return (SHARED | SCANNER[scanner] | (NATIVE if mode != 'flat' else set())
+            | (ADDITIONAL if mode in ('additional', 'witnessed') else set())
+            | (PARENTS if mode == 'witnessed' else set()))
 
 
-def local_imports(name, *, inside_functions):
-    local = {path.name for path in SCRIPTS.glob('*.py')}
+def local_imports(name, *, inside_functions, root=SCRIPTS):
+    local = {path.name for path in root.glob('*.py')}
     found = set()
 
     def walk(node):
@@ -51,11 +64,11 @@ def local_imports(name, *, inside_functions):
                 found.add(child.module.split('.')[0] + '.py')
             elif inside_functions or not isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 walk(child)
-    walk(ast.parse((SCRIPTS / name).read_text()))
+    walk(ast.parse((root / name).read_text()))
     return found & local
 
 
-def closure(entries):
+def closure(entries, *, witnessed=False, root=SCRIPTS):
     """Local modules reachable from entries. coverage_scan's own function-level imports are the
     native and additional gates, so a route names its gate module as an entry instead."""
     seen, pending = set(), list(entries)
@@ -63,7 +76,12 @@ def closure(entries):
         name = pending.pop()
         if name not in seen:
             seen.add(name)
-            pending.extend(local_imports(name, inside_functions=name != 'coverage_scan.py'))
+            imports = local_imports(name, inside_functions=name != 'coverage_scan.py', root=root)
+            # Only this exact lazy edge is route-specific; the structural test
+            # below pins its guarded location. All helper imports are followed.
+            if name == 'additional_native_coverage.py' and not witnessed:
+                imports -= PARENTS
+            pending.extend(imports)
     return seen
 
 
@@ -108,6 +126,64 @@ class ScannerIdentityTests(unittest.TestCase):
         # Shared code re-measures everything.
         self.assertEqual(len(self.dependents('coverage_scan.py')), len(MODES) * len(SCANNER))
 
+    def test_witnessed_parent_helper_changes_only_its_declared_routes(self):
+        definitions = json.loads((SCRIPTS.parent / 'content/coverage-definitions/regulation.json').read_text())['tables']
+        expected = {'court_docket_groups', 'court_opinion_pdf_extractions'}
+        policies = {dataset: {**definition, '_scanner': 'regulation',
+                              '_additionalNativeProcessing': True,
+                              '_additionalNativeDataset': dataset,
+                              'restorationImplementationSha256': IDENTITY}
+                    for dataset, definition in definitions.items()}
+        self.assertEqual({dataset for dataset, value in policies.items()
+                          if additional_native_coverage.uses_witnessed_parent(value)}, expected)
+        path = self.copy / 'court_coverage_parents.py'
+        original = path.read_bytes()
+        with patch.object(coverage_scan, 'SCRIPTS', self.copy):
+            before = {dataset: coverage_scan.measurement_revision(value) for dataset, value in policies.items()}
+            try:
+                path.write_bytes(original + b'\n# parent proof changed\n')
+                after = {dataset: coverage_scan.measurement_revision(value) for dataset, value in policies.items()}
+            finally:
+                path.write_bytes(original)
+        self.assertEqual({dataset for dataset in before if before[dataset] != after[dataset]}, expected)
+        value = policy('witnessed', 'regulation')
+        for field, replacement in (('_additionalNativeDataset', 'court_opinions'),
+                                   ('family', 'court-opinions'), ('dimensions', [])):
+            with self.subTest(field=field):
+                self.assertFalse(additional_native_coverage.uses_witnessed_parent({**value, field: replacement}))
+        for changes in ({'mode': 'same-generation'}, {'table': 'court_dockets'},
+                        {'keys': [['opinion_id', 'opinion_id']]}):
+            with self.subTest(relation=changes):
+                altered = copy.deepcopy(value)
+                altered['dimensions'][0]['parent'].update(changes)
+                self.assertFalse(additional_native_coverage.uses_witnessed_parent(altered))
+
+    def test_parent_lazy_import_is_guarded_and_its_helper_imports_cannot_escape(self):
+        tree = ast.parse((SCRIPTS / 'additional_native_coverage.py').read_text())
+        parent = next(method for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'AdditionalInputs'
+                      for method in node.body if isinstance(method, ast.FunctionDef) and method.name == 'parent')
+        lazy = [node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                and node.module == 'court_coverage_parents']
+        self.assertEqual(len(lazy), 1)
+        index = parent.body.index(lazy[0])
+        guard = parent.body[index - 1]
+        self.assertIsInstance(guard, ast.If)
+        self.assertEqual(ast.unparse(guard.test), 'not witnessed_parent_relation(child_id, relation)')
+        self.assertIsInstance(guard.body[0], ast.Raise)
+        path = self.copy / 'court_coverage_parents.py'
+        original = path.read_bytes()
+        new_helper = self.copy / 'unregistered_parent_helper.py'
+        try:
+            new_helper.write_text('VALUE = 1\n')
+            path.write_bytes(original + b'\nimport unregistered_parent_helper\n')
+            actual = closure({'court_coverage_parents.py'}, witnessed=True, root=self.copy) - UNHASHED
+            self.assertIn('unregistered_parent_helper.py', actual)
+            with self.assertRaises(AssertionError):
+                self.assertLessEqual(actual, hashed('witnessed', 'regulation'))
+        finally:
+            path.write_bytes(original)
+            new_helper.unlink()
+
     def test_native_revisions_bind_the_reader_identity_and_flat_ones_do_not_carry_one(self):
         first, second = self.revisions(), self.revisions('sha256:' + 'b' * 64)
         for (mode, scanner), revision in first.items():
@@ -126,8 +202,8 @@ class ScannerIdentityTests(unittest.TestCase):
                 with self.subTest(mode=mode, scanner=scanner):
                     entries = {'coverage_scan.py', scanner + '_coverage.py'} | (
                         {'native_legislative_coverage.py'} if mode != 'flat' else set()) | (
-                        {'additional_native_coverage.py'} if mode == 'additional' else set())
-                    self.assertLessEqual(closure(entries) - UNHASHED, hashed(mode, scanner))
+                        {'additional_native_coverage.py'} if mode in ('additional', 'witnessed') else set())
+                    self.assertLessEqual(closure(entries, witnessed=mode == 'witnessed') - UNHASHED, hashed(mode, scanner))
 
 
 if __name__ == '__main__': unittest.main()

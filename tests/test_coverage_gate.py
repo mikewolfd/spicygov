@@ -33,6 +33,67 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_parent_proof_revision_preserves_unrelated_cache_and_exact_bindings(self):
+        import restore_additional_coverage as reader
+        from regulation_coverage import activity_boundary
+
+        definitions = builder.definitions()
+        selected = {}
+        for dataset in ('court_opinion_pdf_extractions', 'court_opinion_clusters'):
+            description = json.loads(json.dumps(reader.description(dataset)))
+            table = {'kind': 'generation', 'family': definitions[dataset]['family'],
+                     'columns': description['nativeSchema'], 'rows': 0,
+                     'publishedAt': '2026-10-20T00:00:00Z',
+                     'artifactDigest': 'sha256:' + 'a' * 64,
+                     'members': [{'key': dataset + '.parquet', 'url': 'unused',
+                                  'sha256': 'sha256:' + 'b' * 64, 'rows': 0, 'byteSize': 10}]}
+            with mock.patch.dict(builder.additional.SCHEMAS, {dataset: description}):
+                policy = builder.additional.variant(dataset, table, definitions[dataset])
+            self.assertEqual(policy['_additionalNativeDataset'], dataset)
+            old = {**builder.binding(table, policy), 'status': 'measured',
+                   'measurementRevision': builder.measurement_revision(policy),
+                   'dimensions': [
+                       {'id': dim['id'], 'definitionDigest': builder.definition_digest(dim),
+                        'status': 'measured', 'rows': 0, 'placedRows': 0, 'unplacedRows': 0,
+                        'granularity': 'category', 'buckets': {},
+                        **({'activityBoundary': activity_boundary(table)}
+                           if dim.get('special') == 'literal-date-anomalies' else {})}
+                       for dim in policy['dimensions']]}
+            self.assertTrue(builder.cached(table, policy, old))
+            selected[dataset] = table, policy, old
+            for binding in (None, 'court_dockets'):
+                bad = {**policy}
+                if binding is None:
+                    bad.pop('_additionalNativeDataset')
+                else:
+                    bad['_additionalNativeDataset'] = binding
+                with (self.subTest(dataset=dataset, binding=binding),
+                      mock.patch.object(builder.additional, 'AdditionalInputs',
+                                        side_effect=AssertionError('restoration started')),
+                      self.assertRaisesRegex(ValueError, 'different dataset')):
+                    builder.additional.scan_table(dataset, table, bad,
+                        validate_members=mock.Mock(), validate_counts=mock.Mock())
+            changed = copy.deepcopy(policy)
+            changed['dimensions'][0]['meaning'] += ' Changed.'
+            for altered_table, altered_policy in (
+                ({**table, 'artifactDigest': 'sha256:' + 'c' * 64}, policy),
+                ({**table, 'members': [{**table['members'][0], 'sha256': 'sha256:' + 'd' * 64}]}, policy),
+                (table, {**policy, 'schema': [['changed', 'VARCHAR']]}),
+                (table, changed),
+                (table, {**policy, 'restorationImplementationSha256': 'sha256:' + 'e' * 64}),
+            ):
+                self.assertFalse(builder.cached(altered_table, altered_policy, old))
+        helper = coverage_scan.SCRIPTS / 'court_coverage_parents.py'
+        read_bytes = pathlib.Path.read_bytes
+
+        def changed_bytes(path):
+            data = read_bytes(path)
+            return data + b'\n# changed parent proof\n' if path == helper else data
+
+        with mock.patch.object(pathlib.Path, 'read_bytes', changed_bytes):
+            self.assertFalse(builder.cached(*selected['court_opinion_pdf_extractions']))
+            self.assertTrue(builder.cached(*selected['court_opinion_clusters']))
+
     def test_full_builder_owns_release_completion_and_refuses_failure_or_changed_capture(self):
         import coverage_release
         table,policy,measured=fixture()
