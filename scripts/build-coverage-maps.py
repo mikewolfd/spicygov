@@ -9,7 +9,9 @@ import argparse
 import concurrent.futures
 import datetime
 import json
+import os
 import pathlib
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,7 +24,7 @@ from coverage_dimensions import binding, definition_digest, validate_definition
 import native_legislative_coverage as native
 from native_legislative_coverage import forward_restore_diagnostics, validate_native_implementations, variant
 import additional_native_coverage as additional
-from coverage_scan import check_mutable, measurement_revision, scan_table, validate_counts
+from coverage_scan import check_mutable, measurement_revision, scan_table, validate_counts, validate_members
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -79,34 +81,79 @@ def cached(table, policy, old):
     return True
 
 
+def _scan_process(*, input, cwd, timeout):
+    command = [sys.executable, __file__, '--scan']
+    # Nested restoration/admission uses this same private temporary root and
+    # process group. A hard timeout must stop it before the owner removes files.
+    with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE, text=True, cwd=cwd,
+                          env={**os.environ, 'TMPDIR': cwd}, start_new_session=True) as process:
+        try:
+            stdout, stderr = process.communicate(input, timeout=timeout)
+            if process.returncode:
+                raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
+        except BaseException as error:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            stdout, stderr = process.communicate()
+            if isinstance(error, subprocess.TimeoutExpired):
+                error.output, error.stderr = stdout, stderr
+            raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def _run_scan(request, *, timeout_seconds, serial, label):
+    try:
+        # The owner bounds all private outputs, including a grouped court bridge.
+        with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
+            process = _scan_process(input=json.dumps(request), timeout=timeout_seconds, cwd=workdir)
+        forward_restore_diagnostics(process.stderr)
+        return json.loads(process.stdout.splitlines()[-1])
+    except subprocess.CalledProcessError as error:
+        forward_restore_diagnostics(error.stderr)
+        raise ValueError(label + ': ' + error.stderr[-1500:]) from error
+    except subprocess.TimeoutExpired as error:
+        forward_restore_diagnostics(error.stderr)
+        raise ValueError(f'{label}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
+
+
 def timed_scan(item):
     id, table, policy, old = item
     if cached(table, policy, old): return id, old
-    timeout_seconds = allowances.scan_seconds(id, policy.get('_additionalNativeProcessing'))
-    # Every native dataset was described once by main(); the child reuses those descriptions.
     request = {'id': id, 'table': table, 'policy': policy,
                'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
-    try:
-        # DuckDB's default spill directory is relative to the working directory.
-        # Keep concurrent readers separate and clean up even after a timeout.
-        # Full selected receipt admission can use several GiB beyond DuckDB's
-        # memory limit. Queue the measured large receipt readers before starting their timer;
-        # other scans keep the existing parallelism and cached maps return above.
-        serial = id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
-                        'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
-                        'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
-        with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
-            process = subprocess.run([sys.executable, __file__, '--scan'],
-                input=json.dumps(request), text=True,
-                capture_output=True, timeout=timeout_seconds, check=True, cwd=workdir)
-        forward_restore_diagnostics(process.stderr)
-        return id, json.loads(process.stdout.splitlines()[-1])
-    except subprocess.CalledProcessError as error:
-        forward_restore_diagnostics(error.stderr)
-        raise ValueError(id + ': ' + error.stderr[-1500:]) from error
-    except subprocess.TimeoutExpired as error:
-        forward_restore_diagnostics(error.stderr)
-        raise ValueError(f'{id}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
+    # Queue heavy readers before starting their timer; cached maps return above.
+    serial = id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
+                    'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
+                    'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
+    return id, _run_scan(request, timeout_seconds=allowances.scan_seconds(id, policy.get('_additionalNativeProcessing')),
+                         serial=serial, label=id)
+
+
+def scan_jobs(items):
+    """Batch only a complete, uncached citation family; never reread cached peers."""
+    items = list(items)
+    court = [item for item in items if item[0] in additional.COURT_CITATION_DATASETS]
+    if (len(court) == len(additional.COURT_CITATION_DATASETS)
+            and all(item[1].get('family') == 'court-citations' and item[2].get('_additionalNativeProcessing')
+                    and not cached(item[1], item[2], item[3]) for item in court)
+            and len({item[1].get('artifactDigest') for item in court}) == 1):
+        return [court, *[[item] for item in items if item[0] not in additional.COURT_CITATION_DATASETS]]
+    return [[item] for item in items]
+
+
+def timed_job(items):
+    if len(items) == 1:
+        return dict([timed_scan(items[0])])
+    request = {'tables': [item[:3] for item in items],
+               'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
+    result = _run_scan(request, serial=True, label='court-citations family',
+                       timeout_seconds=sum(allowances.scan_seconds(id, True) for id, *_ in items))
+    if not isinstance(result, dict) or set(result) != {item[0] for item in items}:
+        raise ValueError('Court coverage scan omitted a selected table')
+    return result
 
 
 def main():
@@ -124,7 +171,10 @@ def main():
         descriptions = request.get('descriptions', {})
         native.seed(descriptions.get('legislative', {}))
         additional.seed(descriptions.get('additional', {}))
-        print(json.dumps(scan_table(request['id'], request['table'], request['policy'])))
+        result = (additional.scan_court_family(request['tables'], validate_members=validate_members,
+                                              validate_counts=validate_counts) if 'tables' in request else
+                  scan_table(request['id'], request['table'], request['policy']))
+        print(json.dumps(result))
         return
     if args.only and args.output.resolve() == OUTPUT.resolve():
         raise ValueError('Partial scans require a separate output file')
@@ -157,15 +207,17 @@ def main():
     if args.only and set(args.only) != set(selected): raise ValueError('Requested table is not currently published')
     results, failures = {}, []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        futures = {pool.submit(timed_scan, (id, table, policies[id], previous.get(id))): id for id, table in selected.items()}
+        jobs = scan_jobs((id, table, policies[id], previous.get(id)) for id, table in selected.items())
+        futures = {pool.submit(timed_job, job): ', '.join(item[0] for item in job) for job in jobs}
         for future in concurrent.futures.as_completed(futures):
             id = futures[future]
             try:
-                _, result = future.result()
-                results[id] = result
-                checkpoint = CACHE / (id + '.json')
-                temp = checkpoint.with_suffix('.tmp'); temp.write_text(json.dumps(result)); temp.replace(checkpoint)
-                print(f'{id}: {len(result["dimensions"])} dimensions reconciled', flush=True)
+                measured = future.result()
+                for id, result in measured.items():
+                    results[id] = result
+                    checkpoint = CACHE / (id + '.json')
+                    temp = checkpoint.with_suffix('.tmp'); temp.write_text(json.dumps(result)); temp.replace(checkpoint)
+                    print(f'{id}: {len(result["dimensions"])} dimensions reconciled', flush=True)
             except Exception as error:
                 failures.append(str(error)); print(str(error), file=sys.stderr, flush=True)
     if failures: raise ValueError('Coverage build failed; published maps kept unchanged:\n' + '\n'.join(failures))

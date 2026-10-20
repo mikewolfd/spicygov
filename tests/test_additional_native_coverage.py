@@ -316,6 +316,197 @@ class BridgeTests(unittest.TestCase):
                 adapter.variant("court_docket_groups", table, {"schema": [["edition", "VARCHAR"]]})
 
 
+class CourtFamilyTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        values = {
+            "court_citation_map": {"citing_opinion_id": "10", "cited_opinion_id": "20", "depth": "003"},
+            "court_citations": {"citation_id": "1", "cluster_id": "42", "reporter": "U.S."},
+            "court_parentheticals": {"parenthetical_id": "1", "described_opinion_id": "10",
+                                     "describing_opinion_id": "20", "score": "0.5000"},
+        }
+        self.raw, self.requests = {}, []
+        for dataset, extra in values.items():
+            raw = {**dict.fromkeys(reader.LEGACY_COLUMNS[dataset]), **extra, "dump_date": "2026-09-30"}
+            self.raw[dataset], request = fixture(self.root / dataset, dataset, raw)
+            self.requests.append(request)
+        self.receipt = combine_receipts([Path(r["receipts"]["path"]) for r in self.requests],
+                                        self.root / "family-receipts.parquet")
+        for request in self.requests:
+            request["receipts"] = member(self.receipt)
+
+    def test_carried_tables_from_distinct_producers_keep_ordinary_restoration(self):
+        from types import SimpleNamespace
+
+        owners = {dataset: {"family": "court-citations", "artifactDigest": dataset} for dataset in self.raw}
+        inputs = SimpleNamespace(producing=lambda dataset, table: owners[dataset])
+        held = adapter.AdditionalInputs(inputs, self.root / "adapter")
+        with patch.object(adapter, "bridge", side_effect=AssertionError("must not group distinct producers")):
+            held.restore_court_family(dict.fromkeys(self.raw, {}))
+        self.assertEqual(held.cache, {})
+        # The unchanged restore entry cannot use a group result for these owners.
+        with patch.object(held, "_request", side_effect=ValueError("ordinary selected request")) as ordinary:
+            for dataset, owner in owners.items():
+                with self.assertRaisesRegex(ValueError, "ordinary selected request"):
+                    held.restore(dataset, owner)
+        self.assertEqual(ordinary.call_count, 3)
+
+    def test_complete_family_keeps_one_admission_and_exact_source_values(self):
+        from spicy_regs import conversion_reads
+        with (patch.object(reader.MAINTAINED, "checked_member", wraps=reader.MAINTAINED.checked_member) as hashed,
+              patch.object(conversion_reads.etl_bulk, "_check_receipts",
+                           wraps=conversion_reads.etl_bulk._check_receipts) as admitted):
+            results = reader.restore_court_family(self.requests)
+        self.assertEqual(admitted.call_count, 1)
+        self.assertEqual(set(admitted.call_args.args[3]), set(self.raw))
+        self.assertEqual([c.args[0]["path"] for c in hashed.call_args_list].count(self.requests[0]["receipts"]["path"]), 1)
+        for request, result in zip(self.requests, results):
+            expected = reader.restore({**request, "destination": request["destination"] + "-standalone"})
+            self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [self.raw[request["dataset"]]])
+            self.assertEqual(pq.read_table(result["urls"][0]), pq.read_table(expected["urls"][0]))
+            self.assertEqual(result["selection"], expected["selection"])
+            self.assertEqual(result["policy"], expected["policy"])
+            self.assertEqual(result["acceptedWitnessGroups"], [])
+
+    def test_row_fallback_preserves_bulk_requirement_and_visible_warning(self):
+        from spicy_regs import court_restore
+        from loguru import logger
+
+        for required in ("true", "invalid", "false"):
+            with (self.subTest(required=required),
+                  patch.dict(os.environ, SPICY_REGS_REQUIRE_BULK=required),
+                  patch.object(court_restore, "materialize",
+                               side_effect=reader.court_receipts.etl_bulk.NotBulkEligible("fixture")),
+                  patch.object(logger, "warning") as warning):
+                if required != "false":
+                    with self.assertRaisesRegex(ValueError, "reference fallback disabled"):
+                        reader.restore_court_family(self.requests)
+                    self.assertFalse(any(Path(r["destination"]).exists() for r in self.requests))
+                    warning.assert_not_called()
+                else:
+                    results = reader.restore_court_family(self.requests)
+                    self.assertEqual(warning.call_count, len(self.requests))
+                    for request, result, call in zip(self.requests, results, warning.call_args_list):
+                        dataset = request["dataset"]
+                        self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [self.raw[dataset]])
+                        self.assertEqual(call.args[1:4], ("court restore", dataset, " rows=1"))
+
+    def test_invalid_family_selection_refuses_before_creating_outputs(self):
+        for change in ("missing", "duplicate", "generation", "receipt", "subject", "destination"):
+            with self.subTest(change=change):
+                requests = copy.deepcopy(self.requests)
+                if change == "missing":
+                    requests.pop()
+                elif change == "duplicate":
+                    requests[-1] = requests[0]
+                elif change == "generation":
+                    requests[-1]["generationId"] = "other"
+                elif change == "receipt":
+                    for request in requests:
+                        request["receipts"]["sha256"] = "sha256:" + "0" * 64
+                elif change == "subject":
+                    requests[-1]["subjects"][0]["sha256"] = "sha256:" + "0" * 64
+                else:
+                    requests[-1]["destination"] = requests[0]["destination"]
+                with self.assertRaises(ValueError):
+                    reader.restore_court_family(requests)
+                self.assertFalse(any(Path(r["destination"]).exists() for r in self.requests))
+
+    def test_full_family_refuses_missing_duplicate_and_unsupported_receipt(self):
+        original = pq.read_table(self.receipt)
+        for change in ("missing", "duplicate", "policy", "generation"):
+            with self.subTest(change=change):
+                rows = original.to_pylist()
+                if change == "missing":
+                    rows.pop()
+                elif change == "duplicate":
+                    rows.append(rows[-1])
+                else:
+                    rows[-1]["policy_version" if change == "policy" else "generation_id"] = "unknown" if change == "policy" else ""
+                pq.write_table(pa.Table.from_pylist(rows, schema=original.schema), self.receipt)
+                requests = [{**r, "receipts": member(self.receipt)} for r in self.requests]
+                with self.assertRaises(ValueError):
+                    reader.restore_court_family(requests)
+                self.assertFalse(any(Path(r["destination"]).exists() for r in self.requests))
+
+    def test_late_mutation_and_failed_table_remove_all_partial_outputs(self):
+        from spicy_regs import court_restore
+        materialize = court_restore.materialize
+        subject = Path(self.requests[-1]["subjects"][0]["path"])
+        saved = subject.read_bytes()
+        for failure in ("mutation", "table"):
+            calls = []
+
+            def change(reader_, dataset, schema, destination):
+                calls.append(dataset)
+                if failure == "table" and len(calls) == 2:
+                    raise ValueError("failed table")
+                value = materialize(reader_, dataset, schema, destination)
+                if failure == "mutation" and len(calls) == 1:
+                    subject.write_bytes(saved + b"changed")
+                return value
+
+            with self.subTest(failure=failure), patch.object(court_restore, "materialize", side_effect=change):
+                with self.assertRaisesRegex(ValueError, "changed during restoration|failed table"):
+                    reader.restore_court_family(self.requests)
+            self.assertFalse(any(Path(r["destination"]).exists() for r in self.requests))
+            subject.write_bytes(saved)
+
+    def test_actual_bridge_and_coverage_use_one_shared_receipt_stage(self):
+        import shutil
+        from coverage_inputs import CoverageInputs
+        from coverage_scan import validate_counts, validate_members
+        from spicy_regs.court_receipts import build_court_generation
+
+        directory = self.root / "generation"
+        artifact = build_court_generation(directory, family="court-citations",
+                                         files=[Path(r["subjects"][0]["path"]) for r in self.requests])
+        root = plain(artifact.root)
+        prefix = "generations/court-citations/" + root["artifactDigest"][7:] + "/"
+
+        class LocalInputs(CoverageInputs):
+            def fetch(self, key):
+                if not key.startswith(prefix):
+                    raise AssertionError("unexpected nonlocal input: " + key)
+                return (directory / key[len(prefix):]).read_bytes()
+
+        inputs = LocalInputs()
+        definitions = json.loads((Path(__file__).resolve().parents[1] /
+                                  "content/coverage-definitions/regulation.json").read_text())["tables"]
+        items = []
+        for dataset in self.raw:
+            owner = inputs.table("court-citations", root["artifactDigest"], dataset)
+            table = {**owner, "kind": "generation", "columns": plain(reader.description(dataset))["nativeSchema"]}
+            policy = adapter.variant(dataset, table, {**definitions[dataset], "_scanner": "regulation"})
+            items.append((dataset, table, policy))
+
+        def download(key, destination):
+            if not key.startswith(prefix):
+                raise AssertionError("unexpected nonlocal download: " + key)
+            shutil.copyfile(directory / key[len(prefix):], destination)
+
+        with (patch.dict(os.environ, {"SPICYGOV_NATIVE_COVERAGE_CACHE": str(self.root / "cache"),
+                                      "SPICYGOV_COVERAGE_PYTHON": sys.executable}),
+              patch.object(native, "verify_file", wraps=native.verify_file) as hashed):
+            result = adapter.scan_court_family(items, inputs=inputs, download=download,
+                                              validate_members=validate_members, validate_counts=validate_counts)
+        receipt_hash = member(directory / "etl_receipts.parquet")["sha256"]
+        # Initial acquisition validates once, then staging validates once. No
+        # second/third table staging rehash; the bridge owns its separate check.
+        self.assertEqual(sum(c.args[0]["sha256"] == receipt_hash for c in hashed.call_args_list), 2)
+        self.assertEqual(set(result), set(self.raw))
+        for dataset, value in result.items():
+            self.assertEqual(value["processingEvidence"]["rows"], 1)
+            for dim in value["dimensions"]:
+                self.assertEqual(dim["rows"], 1)
+                self.assertEqual(dim["placedRows"], 1)
+                self.assertEqual(dim["granularity"], "category")
+                self.assertEqual(dim["buckets"], {'["2026-09-30"]': 1})
+        self.assertFalse(list(Path.cwd().glob("spicygov-court-family-*")))
+
+
 class ParentTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

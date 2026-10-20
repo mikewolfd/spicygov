@@ -6,6 +6,7 @@ import hashlib
 import inspect
 import json
 from pathlib import Path
+import shutil
 import sys
 
 import pyarrow as pa
@@ -94,17 +95,93 @@ def restore(request):
             witnesses[key] = witnesses.get(key, 0) + 1
         if accepted != rows:
             raise ValueError("Accepted court receipt count differs from restored subjects")
+    return restored_result(request, output, witnesses)
+
+
+def restored_result(request, output, witnesses):
+    dataset = request["dataset"]
     return {
         "format": "spicygov-private-coverage-input", "version": 1,
-        "dataset": dataset, "generationId": generation,
+        "dataset": dataset, "generationId": request["generationId"],
         **description(dataset),
         "selection": {"subjects": request["subjects"], "receipts": request["receipts"]},
-        "rows": rows, "urls": [str(output)],
+        "rows": pq.read_metadata(output).num_rows, "urls": [str(output)],
         "processingMembers": [{"path": str(output), "sha256": MAINTAINED.file_hash(output),
                                "byteSize": output.stat().st_size}],
         "acceptedWitnessGroups": [{"rows": count, "witnesses": json.loads(key)}
                                   for key, count in sorted(witnesses.items())],
     }
+
+
+def restore_court_family(requests):
+    """Keep one complete citation-family admission alive for its three restores."""
+    from spicy_regs import court_restore
+    from spicy_regs.conversion_reads import _open_family_reader
+    from spicy_regs.etl_receipts import selected_subject_policy
+    from spicy_regs.local_data import file_signature
+    from spicy_regs.transforms.parquet_rows import write_rows
+
+    datasets = BULK_COURT_DATASETS - {"court_opinion_clusters"}
+    if (not isinstance(requests, list) or len(requests) != len(datasets)
+            or any(not isinstance(r, dict) or set(r) != MAINTAINED.REQUEST_FIELDS for r in requests)
+            or {r["dataset"] for r in requests} != datasets):
+        raise ValueError("Expected the complete court citation family")
+    first = requests[0]
+    generation = first["generationId"]
+    if not isinstance(generation, str) or not generation:
+        raise ValueError("Missing coverage receipt generation")
+    subjects, destinations, policies = {}, [], []
+    for request in requests:
+        if request["generationId"] != generation or request["receipts"] != first["receipts"]:
+            raise ValueError("Court coverage family has mixed receipt selections")
+        destination = Path(request["destination"])
+        if not destination.is_absolute() or destination.exists():
+            raise ValueError("Coverage destination must be a new absolute directory")
+        if any(destination == old or destination in old.parents or old in destination.parents for old in destinations):
+            raise ValueError("Court coverage destinations overlap")
+        destinations.append(destination)
+        if not isinstance(request["subjects"], list) or len(request["subjects"]) != 1:
+            raise ValueError("Court coverage subjects must be explicit")
+        subject = MAINTAINED.checked_member(request["subjects"][0])
+        dataset = request["dataset"]
+        subjects[dataset] = [subject]
+        policies.append(selected_subject_policy(policy_for(dataset), [subject]))
+    receipts = MAINTAINED.checked_member(first["receipts"])
+    paths = [receipts, *(paths[0] for paths in subjects.values())]
+    before = [file_signature(path) for path in paths]
+
+    def guard():
+        if [file_signature(path) for path in paths] != before:
+            raise ValueError("Selected court input changed during restoration")
+
+    # Complete admission owns policy/generation checks for every receipt and
+    # every subject. No single-dataset pre-scan or saved validation flag is used.
+    created = []
+    try:
+        with _open_family_reader(subjects, [receipts], policies, generation_id=generation, guard=guard) as reader:
+            results = []
+            for request, destination in zip(requests, destinations):
+                destination.mkdir(parents=True)
+                created.append(destination)
+                dataset = request["dataset"]
+                output = destination / (dataset + ".parquet")
+                schema = processing_schema(dataset)
+                try:
+                    court_restore.materialize(reader, dataset, schema, output)
+                except court_receipts.etl_bulk.NotBulkEligible as error:
+                    court_receipts.etl_bulk.log_row_fallback(
+                        "court restore", error, dataset=dataset,
+                        rows=pq.read_metadata(subjects[dataset][0]).num_rows)
+                    write_rows(court_receipts.processing_rows(
+                        reader.read_subjects(dataset), dataset=dataset, schema=schema), output, schema)
+                if pq.read_metadata(output).num_rows != pq.read_metadata(subjects[dataset][0]).num_rows:
+                    raise ValueError("Accepted court receipt count differs from restored subjects")
+                results.append(restored_result(request, output, {}))
+        return results
+    except BaseException:
+        for destination in created:
+            shutil.rmtree(destination, ignore_errors=True)
+        raise
 
 
 def verify_artifacts(roots):
@@ -124,8 +201,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--schema", choices=sorted(DATASETS))
     parser.add_argument("--verify-artifacts", action="store_true")
+    parser.add_argument("--court-family", action="store_true")
     args = parser.parse_args()
-    if args.verify_artifacts:
+    if args.court_family:
+        result = restore_court_family(json.load(sys.stdin))
+    elif args.verify_artifacts:
         result = verify_artifacts(json.load(sys.stdin))
     else:
         result = description(args.schema) if args.schema else restore(json.load(sys.stdin))
