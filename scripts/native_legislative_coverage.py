@@ -87,6 +87,12 @@ def run_bridge(command, request, timeout):
         )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         forward_restore_diagnostics(error.stderr)
+        if isinstance(error, subprocess.CalledProcessError) and error.stderr:
+            stderr = error.stderr
+            if isinstance(stderr, bytes):
+                stderr = stderr.decode("utf-8", errors="replace")
+            # Exception notes remain at the end of the outer scan's traceback tail.
+            error.add_note("Reader stderr (last 1200 characters):\n" + stderr[-1200:])
         raise
     forward_restore_diagnostics(result.stderr)
     return json.loads(result.stdout.splitlines()[-1])

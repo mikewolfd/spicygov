@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import traceback
 import unittest
 from unittest.mock import patch
 
@@ -75,15 +76,31 @@ class NativeCoverageTests(unittest.TestCase):
     def test_bridge_has_a_finite_allowance_and_shows_diagnostics_on_success_and_failure(self):
         line = "2026-10-17 | WARNING | regulatory restore route=row dataset=documents reason=x\n"
         done = subprocess.CompletedProcess([], 0, "{}\n", "unrelated\n" + line)
-        failure = subprocess.CalledProcessError(1, [], stderr=line + "other\n")
+        cause = "ValueError: Native coverage subjects differ from the selected generation"
+        stderr = line + "earlier reader output\n" * 200 + cause + "\n"
+        failure = subprocess.CalledProcessError(1, [], stderr=stderr)
+        timeout = subprocess.TimeoutExpired([], 900, stderr=line)
         with redirect_stderr(io.StringIO()) as shown:
             with patch.object(native.subprocess, "run", return_value=done) as run:
                 native.bridge(["--schema", "bill_versions"])
                 self.assertEqual(run.call_args.kwargs["timeout"], 900)
             with patch.object(native.subprocess, "run", side_effect=failure):
-                with self.assertRaises(subprocess.CalledProcessError):
+                with self.assertRaises(subprocess.CalledProcessError) as caught:
                     native.bridge(["--schema", "bill_versions"])
-        self.assertEqual(shown.getvalue(), line * 2)
+            with patch.object(native.subprocess, "run", side_effect=timeout):
+                with self.assertRaises(subprocess.TimeoutExpired) as timed_out:
+                    native.bridge(["--schema", "bill_versions"])
+        self.assertEqual(shown.getvalue(), line * 3)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(failure.stderr, stderr)
+        notes = getattr(failure, "__notes__", [])
+        self.assertEqual(len(notes), 1)
+        self.assertLessEqual(len(notes[0]), 1250)
+        self.assertTrue(notes[0].endswith(stderr[-1200:]))
+        # The outer coverage scan reports only the final 1,500 traceback characters.
+        self.assertIn(cause, "".join(traceback.format_exception(failure))[-1500:])
+        self.assertIs(timed_out.exception, timeout)
+        self.assertFalse(getattr(timeout, "__notes__", []))
 
     def test_each_dataset_is_described_once_then_served_from_the_build_cache(self):
         calls = []
