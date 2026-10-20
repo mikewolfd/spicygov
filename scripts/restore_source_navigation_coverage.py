@@ -36,6 +36,7 @@ DATASETS = {"committee_meetings":"congress", "nominations":"congress", "house_co
     "laws":"regulation", "law_code_sections":"regulation", "law_sections":"regulation", "table3_records":"regulation",
     "native_legal_references":"regulation", "press_releases":"congress",
     "record_issues":"congress", "senate_expenditures":"congress", "treaties":"congress", "documents":"regulation",
+    "docket_attributes":"regulation", "document_attributes":"regulation",
     "roll_call_votes":"congress", "member_vote_terms":"congress",
     "cfr_sections":"regulation", "unified_agenda":"regulation",
     "federal_register":"regulation", "fr_docket_links":"regulation",

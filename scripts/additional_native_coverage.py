@@ -34,6 +34,7 @@ SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nomina
     "laws":"laws", "law_code_sections":"laws", "law_sections":"laws", "table3_records":"laws",
     "native_legal_references":"native-legal-references", "press_releases":"press-releases",
     "record_issues":"record-issues", "senate_expenditures":"senate-expenditures", "treaties":"treaties", "documents":"documents",
+    "docket_attributes":"docket-attributes", "document_attributes":"document-attributes",
     "roll_call_votes":"roll-call-votes", "member_vote_terms":"member-vote-terms",
     "cfr_sections":"cfr-sections", "unified_agenda":"unified-agenda",
     "federal_register":"federal-register", "fr_docket_links":"fr-docket-links"}
