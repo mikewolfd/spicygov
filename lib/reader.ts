@@ -2,7 +2,7 @@ import {fecReadColumns, enrichFecRows} from './fec-compatibility';
 import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
 import { matchesFilters, parquetFilter, validFilter } from './filter-values';
 import { exactParsers } from './exact-parquet';
-import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, rowIndex } from "hyparquet";
+import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, parquetScan, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
 import { compareEntries, retainEntry, sortValue, type RecordSort, type SortEntry } from "./record-sort";
@@ -13,6 +13,7 @@ export type ReadRequest = {
   filters: Filter[];
   cursor: number;
   limit?: number;
+  /** Candidate rows for supported scalar filters; physical rows otherwise, not decoded bytes. */
   maxScanRows?: number;
   sort?: RecordSort;
   connection?: Connection;
@@ -234,11 +235,13 @@ export async function readPage(
   }
   let offset = 0,
     position = cursor;
-  const scanEnd = Math.min(table.rows, maxScanRows === undefined ? table.rows : cursor + maxScanRows);
+  let remaining = maxScanRows ?? Infinity;
   const results: Row[] = [],
     positions: number[] = [];
   const filter = connection || table.fecCompatibility ? undefined : parquetFilter(filters,table.columns);
-  for (const member of table.members) {
+  const readColumns = fecReadColumns(table,[...new Set([...columns, ...filters.map(f=>f.column), ...connectionColumns])]);
+  const planCandidates = filter && maxScanRows !== undefined;
+  scan: for (const member of table.members) {
     if(!member.rows){const file=await remoteFile(member);const metadata=await parquetMetadataAsync(file,{parsers:exactParsers});if(Number(metadata.num_rows)!==0)throw new Error('The Parquet footer differs from the published row count.');continue;}
     if (offset + member.rows <= position) {
       offset += member.rows;
@@ -246,45 +249,60 @@ export async function readPage(
     }
     const file = await remoteFile(member);
     const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
-    let local = Math.max(0, position - offset);
     if(Number(metadata.num_rows)!==member.rows)throw new Error('The Parquet footer differs from the published row count.');
-    while (local < member.rows && position < scanEnd && results.length < limit) {
-      const end = Math.min(
-        member.rows,
-        scanEnd - offset,
-        local + (filters.length || connection ? 50000 : limit - results.length),
-      );
-      const rows = await parquetReadObjects({parsers:exactParsers,
-        file,
-        metadata,
-        compressors,
-        columns: fecReadColumns(table,[...new Set([...columns, ...filters.map((f) => f.column), ...connectionColumns])]),
-        rowStart: local,
-        rowEnd: end,
-        filter,
-        includeRowIndex: true,
-        useOffsetIndex: true,
-        usePageIndex: true,
-      });
-      let last = end;
-      for (const row of enrichFecRows(table,rows)) {
-        if (
-          matchesFilters(row, filters, table.columns) && (!connection || matchesConnection(row, navigation!, connection))
-        ) {
-          results.push(row);
-          positions.push(offset + row[rowIndex]!);
-          if (results.length === limit) {
-            last = row[rowIndex]! + 1;
-            break;
+    const start = Math.max(0, position - offset);
+    // Footer-only planning uses the reader's existing conservative pruning.
+    // Missing statistics remain candidates; no index fetch or value decode is needed.
+    const ranges = planCandidates
+      ? (await parquetScan({file, metadata, parsers:exactParsers, columns:readColumns,
+          pruningFilter:filter, rowStart:start, usePageIndex:false, useBloomFilters:false})).ranges
+      : [{rowStart:start, rowEnd:member.rows}];
+    for (const range of ranges) {
+      let local = range.rowStart;
+      position = offset + local;
+      while (local < range.rowEnd) {
+        if (remaining === 0) break scan;
+        const end = Math.min(
+          range.rowEnd,
+          local + remaining,
+          local + (filters.length || connection ? 50000 : limit - results.length),
+        );
+        const rows = await parquetReadObjects({parsers:exactParsers,
+          file,
+          metadata,
+          compressors,
+          columns: readColumns,
+          rowStart: local,
+          rowEnd: end,
+          filter,
+          includeRowIndex: true,
+          useOffsetIndex: true,
+          usePageIndex: true,
+        });
+        let last = end;
+        for (const row of enrichFecRows(table,rows)) {
+          if (
+            matchesFilters(row, filters, table.columns) && (!connection || matchesConnection(row, navigation!, connection))
+          ) {
+            results.push(row);
+            positions.push(offset + row[rowIndex]!);
+            if (results.length === limit) {
+              last = row[rowIndex]! + 1;
+              break;
+            }
           }
         }
+        remaining -= last - local;
+        local = last;
+        position = offset + local;
+        onProgress(position);
+        if (results.length === limit && position < table.rows) break scan;
+        if (!planCandidates && remaining === 0 && position < table.rows) break scan;
       }
-      local = last;
-      position = offset + local;
-      onProgress(position);
     }
-    if (results.length === limit || position >= scanEnd) break;
     offset += member.rows;
+    position = offset;
+    onProgress(position);
   }
   return {
     rows: results,

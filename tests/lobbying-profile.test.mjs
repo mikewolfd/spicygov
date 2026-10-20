@@ -134,7 +134,7 @@ test('metadata/schema drift removes the recipe; current selected metadata recons
   assert.doesNotMatch(render('lobbying_filings',filing),/href="[^"]+\\.pdf/);
 });
 
-test('real nested Parquet membership and sparse scalar searches honor the same bound and continuation without multiplied rows',async()=>{
+test('nested membership stays physically bounded while scalar searches skip proven nonmatches without multiplied rows',async()=>{
   const file=readFileSync(new URL('./fixtures/navigation/lobbying-activities.parquet',import.meta.url));
   const server=createServer((req,res)=>{
     const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');
@@ -153,7 +153,7 @@ test('real nested Parquet membership and sparse scalar searches honor the same b
     assert.deepEqual(third.positions,[5]);assert.equal(third.done,true);
     assert.deepEqual([...first.rows,...second.rows,...third.rows].map(r=>r.filing_uuid),['original','amendment','later']);
     const sparse=await readPage({...request,connection:undefined,navigation:undefined,filters:[{column:'general_issue_code',value:'MAN'}]});
-    assert.equal(sparse.rows.length,0);assert.equal(sparse.done,false);assert.equal(sparse.cursor,2);
+    assert.deepEqual(sparse.positions,[5]);assert.equal(sparse.done,true);assert.equal(sparse.cursor,6);
     const last=await readPage({...request,cursor:4,connection:undefined,navigation:undefined,filters:[{column:'general_issue_code',value:'MAN'}]});
     assert.deepEqual(last.positions,[5]);assert.equal(last.done,true);
     await assert.rejects(readPage({...request,navigation:undefined}),/connection is unavailable/);
