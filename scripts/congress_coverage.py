@@ -5,8 +5,10 @@ current data or use acquisition timestamps as record dates.
 """
 import hashlib
 import json
+import os
 import re
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
@@ -62,10 +64,41 @@ def _journal(pin):
     return root, journal
 
 
+def _hearing_prior_artifact(inputs, family, pin, history):
+    """Read only the pinned generation metadata needed to follow hearing evidence."""
+    digest, logical = pin.get('artifactDigest'), pin.get('logicalId')
+    if (family != 'committee-reports' or pin.get('role') != 'prior-generation'
+            or not isinstance(digest, str) or not re.fullmatch(r'sha256:[a-f0-9]{64}', digest)
+            or not isinstance(logical, str) or not logical):
+        raise ValueError('Invalid prior hearing generation identity')
+    if digest not in history:
+        raw = inputs.fetch(f'generations/{family}/{digest[7:]}/artifact.json')
+        artifact = json.loads(raw)
+        if (artifact.get('artifactDigest') != digest or artifact.get('logicalId') != logical
+                or artifact.get('spec', {}).get('family') != family):
+            raise ValueError('Prior hearing generation differs from its recorded identity')
+        # Reuse the artifact library's canonical identity rules in the pinned
+        # reader runtime. Historical table manifests are not inputs to this lookup.
+        check = subprocess.run([
+            os.environ.get('SPICYGOV_COVERAGE_PYTHON', sys.executable), '-c',
+            'import json,sys; from rulespec_artifacts import parse_canonical_json, '
+            'expected_artifact_digest,expected_logical_id; '
+            'root=parse_canonical_json(sys.stdin.buffer.read()); '
+            'print(json.dumps([expected_artifact_digest(root),expected_logical_id(root)]))'],
+            input=raw, capture_output=True, timeout=30, check=True)
+        if json.loads(check.stdout) != [digest, logical]:
+            raise ValueError('Prior hearing generation differs from its content identity')
+        history[digest] = artifact
+    if history[digest]['logicalId'] != logical:
+        raise ValueError('Prior hearing generation differs from its recorded identity')
+    return history[digest]
+
+
 def hearing_dates(table_id, table, inputs, package_ids):
     """Find every exact MODS capture reachable from the selected producing release."""
     owner = inputs.producing(table_id, table)
     artifact, found, evidence, seen = owner['artifact'], {}, [], set()
+    history = {}
     for _ in range(32):
         sources = [p for p in artifact.get('inputs', []) if p.get('role') == 'source-evidence']
         if sources:
@@ -94,7 +127,7 @@ def hearing_dates(table_id, table, inputs, package_ids):
         prior = next((p for p in artifact.get('inputs', []) if p.get('role') == 'prior-generation'), None)
         if not prior:
             break
-        _, artifact, _ = inputs.artifact(owner['family'], prior['artifactDigest'])
+        artifact = _hearing_prior_artifact(inputs, owner['family'], prior, history)
     missing = sorted(package_ids - set(found))
     raise ValueError('Native hearing-date evidence is unavailable for: ' + ', '.join(missing[:10]))
 
