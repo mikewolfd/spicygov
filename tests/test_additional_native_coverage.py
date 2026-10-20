@@ -1,5 +1,6 @@
 """Small maintained-writer fixtures for the additional Sources coverage reader."""
 import copy
+from contextlib import nullcontext
 import hashlib
 import json
 from pathlib import Path
@@ -184,11 +185,12 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(restored_before, restored_after)
 
     def test_exact_maintained_identity_is_still_a_dependency(self):
-        before = reader.description("court_docket_groups")
-        with patch.object(reader.MAINTAINED, "implementation_identity", return_value="sha256:" + "a" * 64):
-            after = reader.description("court_docket_groups")
-        self.assertNotEqual(before.pop("implementationSha256"), after.pop("implementationSha256"))
-        self.assertEqual(before, after)
+        with patch.object(reader, "court_restoration_limits", side_effect=AssertionError("metadata used court resources")):
+            before = reader.description("court_docket_groups")
+            with patch.object(reader.MAINTAINED, "implementation_identity", return_value="sha256:" + "a" * 64):
+                after = reader.description("court_docket_groups")
+            self.assertNotEqual(before.pop("implementationSha256"), after.pop("implementationSha256"))
+            self.assertEqual(before, after)
 
     def test_native_bridge_runs_the_packaged_reader_end_to_end(self):
         from spicy_regs.legislative_documents import field_registry
@@ -262,9 +264,10 @@ class BridgeTests(unittest.TestCase):
         source = self.root / "source.parquet"
         pq.write_table(pa.Table.from_pylist([raw], schema=reader.processing_schema("amendments")), source)
         subject, receipts = write_congress_dataset(source, self.root / "native", dataset="amendments", generation_id="selected")
-        result = reader.restore({"dataset": "amendments", "generationId": "selected",
-                                 "subjects": [member(subject)], "receipts": member(receipts),
-                                 "destination": str(self.root / "restored")})
+        with patch.object(reader, "court_restoration_limits", side_effect=AssertionError("amendments used court resources")):
+            result = reader.restore({"dataset": "amendments", "generationId": "selected",
+                                     "subjects": [member(subject)], "receipts": member(receipts),
+                                     "destination": str(self.root / "restored")})
         self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [raw])
         self.assertNotIn("url", dict(result["nativeSchema"]))
 
@@ -302,7 +305,8 @@ class BridgeTests(unittest.TestCase):
         artifact = build_court_generation(self.root / "generation", family="court-docket-groups",
                                          files=[Path(request["subjects"][0]["path"])])
         root = plain(artifact.root)
-        self.assertEqual(reader.verify_artifacts([root])[0]["artifactDigest"], root["artifactDigest"])
+        with patch.object(reader, "court_restoration_limits", side_effect=AssertionError("verification used court resources")):
+            self.assertEqual(reader.verify_artifacts([root])[0]["artifactDigest"], root["artifactDigest"])
         for change in ("parent", "logical"):
             altered = copy.deepcopy(root)
             if change == "parent":
@@ -349,6 +353,76 @@ class CourtFamilyTests(unittest.TestCase):
                                         self.root / "family-receipts.parquet")
         for request in self.requests:
             request["receipts"] = member(self.receipt)
+
+    def test_court_resources_configure_real_admission_and_preserve_outer_scope(self):
+        bulk = reader.etl_bulk
+        connect = bulk.duckdb.connect
+        self.assertIsNone(bulk._limits.get())
+        for grouped in (False, True):
+            for explicit in (False, True):
+                connections = []
+
+                def observed_connection(*args, **kwargs):
+                    connections.append((bulk._limits.get(), kwargs["config"]))
+                    return connect(*args, **kwargs)
+
+                requests = [{**r, "destination": r["destination"] + f"-{grouped}-{explicit}"} for r in self.requests]
+                scope = bulk.bulk_limits(threads=2, memory_limit="512MB", require_bulk=True) if explicit else nullcontext()
+                with self.subTest(grouped=grouped, explicit=explicit), scope:
+                    previous = bulk._limits.get()
+                    with (patch.object(bulk.duckdb, "connect", side_effect=observed_connection),
+                          patch.object(bulk, "_scan", wraps=bulk._scan) as scans):
+                        results = reader.restore_court_family(requests) if grouped else [reader.restore(requests[0])]
+                    self.assertIs(bulk._limits.get(), previous)
+                    self.assertEqual(len(connections), 1)
+                    limits, config = connections[0]
+                    if explicit:
+                        self.assertIs(limits, previous)
+                    else:
+                        self.assertEqual(limits, bulk.BulkLimits(1, "4GB", False))
+                    self.assertEqual(config["threads"], 2 if explicit else 1)
+                    self.assertEqual(config["memory_limit"], "512MB" if explicit else "4GB")
+                    self.assertEqual(config["max_temp_directory_size"], "32GB")
+                    self.assertTrue(scans.call_count)
+                    self.assertTrue(all(call.kwargs["bounded_insert"] for call in scans.call_args_list))
+                    for request, result in zip(requests, results):
+                        self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [self.raw[request["dataset"]]])
+                self.assertIsNone(bulk._limits.get())
+
+    def test_court_resource_failure_restores_scope_without_weakening_require_bulk(self):
+        from spicy_regs import court_restore
+
+        bulk = reader.etl_bulk
+        self.assertIsNone(bulk._limits.get())
+        for grouped in (False, True):
+            for explicit in (False, True):
+                requests = [{**r, "destination": r["destination"] + f"-failure-{grouped}-{explicit}"} for r in self.requests]
+                scope = bulk.bulk_limits(threads=2, memory_limit="512MB", require_bulk=True) if explicit else nullcontext()
+                failure = bulk.NotBulkEligible("forced fallback") if explicit else ValueError("forced restore failure")
+                observed = []
+
+                def refused(*args):
+                    observed.append(bulk._limits.get())
+                    raise failure
+
+                with self.subTest(grouped=grouped, explicit=explicit), scope:
+                    previous = bulk._limits.get()
+                    with patch.object(court_restore, "materialize", side_effect=refused):
+                        with self.assertRaisesRegex(ValueError, "reference fallback disabled" if explicit else "forced restore failure"):
+                            if grouped:
+                                reader.restore_court_family(requests)
+                            else:
+                                reader.restore(requests[0])
+                    self.assertIs(bulk._limits.get(), previous)
+                    self.assertEqual(len(observed), 1)
+                    if explicit:
+                        self.assertIs(observed[0], previous)
+                    else:
+                        self.assertEqual(observed[0], bulk.BulkLimits(1, "4GB", False))
+                    self.assertFalse(any(list(Path(r["destination"]).glob("*.parquet")) for r in requests))
+                    if grouped:
+                        self.assertFalse(any(Path(r["destination"]).exists() for r in requests))
+                self.assertIsNone(bulk._limits.get())
 
     def test_carried_tables_from_distinct_producers_keep_ordinary_restoration(self):
         from types import SimpleNamespace

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import inspect
 import json
@@ -12,7 +13,7 @@ import sys
 import pyarrow as pa
 import pyarrow.parquet as pq
 from spicy_regs import coverage_reader as MAINTAINED
-from spicy_regs import court_receipts
+from spicy_regs import court_receipts, etl_bulk
 from spicy_regs.court_subjects import LEGACY_COLUMNS
 from spicy_regs.etl_receipts import read_attempts, select_receipts
 from spicy_regs.native_types import described_schema
@@ -66,6 +67,14 @@ def description(dataset):
     }
 
 
+def court_restoration_limits():
+    """Apply coverage defaults without replacing explicit caller budgets or require_bulk."""
+    if etl_bulk._limits.get() is not None:
+        return nullcontext()
+    # The maintained scope also enables bounded inserts. 4GB is not an RSS cap.
+    return etl_bulk.bulk_limits(threads=1, memory_limit="4GB")
+
+
 def restore(request):
     dataset = request.get("dataset") if isinstance(request, dict) else None
     if dataset == "amendments":
@@ -75,10 +84,11 @@ def restore(request):
     policy, (subject,), receipts, destination = MAINTAINED.checked_request(request, policy_for, one_subject=True)
     generation = request["generationId"]
     destination.mkdir(parents=True)
-    output = court_receipts.restore_processing_input(
-        subject, destination / (dataset + ".parquet"), dataset=dataset,
-        schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
-    )
+    with court_restoration_limits():
+        output = court_receipts.restore_processing_input(
+            subject, destination / (dataset + ".parquet"), dataset=dataset,
+            schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
+        )
     # Restoration above performs complete subject/receipt admission. The bulk
     # tables and opinions read their restored edition/origin fields; coverage does not
     # follow inherited parents and needs no additional witness enumeration.
@@ -158,7 +168,8 @@ def restore_court_family(requests):
     # every subject. No single-dataset pre-scan or saved validation flag is used.
     created = []
     try:
-        with _open_family_reader(subjects, [receipts], policies, generation_id=generation, guard=guard) as reader:
+        with (court_restoration_limits(),
+              _open_family_reader(subjects, [receipts], policies, generation_id=generation, guard=guard) as reader):
             results = []
             for request, destination in zip(requests, destinations):
                 destination.mkdir(parents=True)
