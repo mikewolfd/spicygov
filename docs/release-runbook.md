@@ -30,13 +30,27 @@ documents. Browser runtime checks remain independent: a newer live publication
 marks retained coverage as previous or unavailable. A successful offline build
 proves agreement with the retained selection, not currentness of live sources.
 
-Create new coverage data through the explicit **Prepare coverage data release**
-workflow. Its required `backend_revision` is a reviewed 40-hex spicy-regs commit
-containing `spicy_regs/coverage_reader.py`; the workflow checks out that one
-revision and installs its frozen `source-readers` group. The local equivalent is
-`SPICYGOV_COVERAGE_PYTHON=<spicy-regs>/.venv/bin/python python scripts/build-coverage-maps.py --release-output <new-directory>`,
-run with a `python` that has the builder dependencies pinned in
-`.github/workflows/coverage-data-release.yml` (duckdb, pyarrow, fsspec, aiohttp).
+Create coverage data locally from a reviewed SpicyGov checkout. Record its exact
+revision and the reviewed 40-hex spicy-regs revision containing
+`spicy_regs/coverage_reader.py`. Select an existing backend environment that imports
+that exact reader through `SPICYGOV_COVERAGE_PYTHON`; an interpreter path alone
+does not establish its source revision. Keep the environment and source unchanged
+through completion.
+
+Use an existing builder environment with the dependencies pinned in
+`.github/workflows/coverage-data-release.yml` (duckdb, pyarrow, fsspec, aiohttp),
+plus the repository's locked Node dependencies for the offline consumer. From
+the selected SpicyGov checkout, run:
+
+```sh
+SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
+  /path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
+  --output /owned/run/coverage-maps.v1.json \
+  --release-output /owned/run/completed-coverage-release
+```
+
+Choose a release directory that does not already exist. Keep the command, source
+and environment identities, exit status and log with the local run evidence.
 Only the successful complete-build path emits the release. It retains the exact
 publication bytes used, effective policies, reader identities through policy and
 measurement revisions, map bytes, and implementation hashes. Partial scans remain
@@ -62,7 +76,8 @@ published table again.
 That includes the 73 tables whose generations have not changed since 2026-10-05: the owner
 chose a rescan over a one-time compatibility re-bind.
 
-The release may take several workflow runs. Each run checkpoints every table it completes.
+The release may take several attempts. Each run checkpoints every table it completes
+under the selected checkout's `.cache/coverage-maps` directory.
 A later run reuses a checkpoint only while all of its bindings still match: generation bytes,
 schema, policy and dimension digests, the activity month, and the measurement revision. A table
 republished between runs is measured again.
@@ -75,44 +90,40 @@ Measurement revisions are per scanner:
 - An edit to one scanner module re-measures only that scanner's tables.
 - A new spicy-regs reader identity re-measures the native tables.
 
-Keep `backend_revision` fixed until the release completes.
+Keep the reviewed backend revision fixed until the release completes. Resume an
+interrupted release with the same local command, checkout and checkpoint directory;
+a changed reader identity re-measures native tables. The builder rechecks every
+checkpoint's bindings before reuse. Retain failed attempts and diagnose their
+specific failure before retrying; do not discard compatible checkpoints or repeat
+the producer merely to read back a completed release.
 
-To resume an interrupted release, dispatch the workflow again with the **same**
-`backend_revision`; a different reader identity re-measures all native tables. The scan
-step stops at 300 minutes, inside the 330-minute job, so the checkpoints it completed are
-still saved. Each run reuses the checkpoints whose bindings still hold.
+`bill_subjects` and its `bill-subjects` family are already registered in
+`scripts/native_legislative_coverage.py`. The existing definition/schema gate
+checks their selected source; no registration step remains.
 
-- **Deterministic failure.** Fix it, push, re-dispatch. Allowance or orchestration edits keep
-  checkpoints. An edit to one scanner module re-measures only that scanner's tables.
-- **Memory failure** (exit 137 or "Killed" on documents, Register or court_opinions). Ask the
-  owner about a larger runner.
-- **Setup time.** Record the first run's time before the scan step starts. If it exceeds about
-  20 minutes, raise the job `timeout-minutes` to 345 so the cache save still has room.
-- **After the bill-subjects refresh.** `bill_subjects` becomes a native table: add it to
-  `native_legislative_coverage.DATASETS` and `bill-subjects` to its `FAMILIES`, update its
-  definition if the restored schema differs, probe it, then start the release. Do not add it
-  earlier; the current reader does not describe it.
-
-**Completion run.** The final check refuses if any of the 4 captured publication documents
-changes during the run (`build-coverage-maps.py`), and every spicy-regs family rollup rewrites
-`publication.v2.json`. Start the last, short run between about 07:30 and 12:30 UTC, when no
-rollup is scheduled, and only after
-`gh run list -R mikewolfd/spicy-regs --status in_progress` and `--status queued` show no rollup.
+**Completion run.** The final check refuses if any captured publication document
+changes during the run (`build-coverage-maps.py`). Coordinate with active source
+writers, including local jobs, before starting the completion attempt. A scheduled
+quiet period or an empty GitHub queue does not establish that no writer is active;
+the final byte-binding check remains authoritative.
 
 **Readback that proves completion:**
 
-1. `gh run view <run> -R mikewolfd/spicygov --json conclusion -q .conclusion` returns `success`,
-   and the log has `All <N> requested coverage maps verified` and the
-   `{"directory": ".cache/completed-coverage-release", "manifestSha256": "sha256:..."}` line.
-   N is the census table count.
-2. `gh api repos/mikewolfd/spicygov/actions/runs/<run>/artifacts` shows
-   `completed-coverage-release-<run>-<attempt>`; record its id and digest.
-3. With the owner's approval to download it, `gh run download` it into a new empty directory,
-   check `shasum -a 256 <dir>/manifest.json` equals the logged `manifestSha256`, then run
-   `node scripts/consume-coverage-release.mjs --release <dir> --sha256 sha256:<hex>` in a
-   checkout at the dispatched commit. It is offline and prints `"status":"accepted"`.
-4. Retain the run id, attempt, artifact id and digest, and `manifestSha256`. Selecting the
-   release in `content/coverage-release-selection.v1.json` and deploying is a separate decision.
+1. The local process exits zero, and its log has
+   `All <N> requested coverage maps verified` plus the completed directory and
+   `manifestSha256` JSON result. N is the selected census table count; a partial
+   `--only` scan cannot produce a completed release.
+2. Check `shasum -a 256 <dir>/manifest.json` against the logged `manifestSha256`.
+   Reuse the completed local directory; no artifact download or producer rerun
+   is needed.
+3. The producer runs the offline consumer before declaring completion. For
+   independent review, use the same maintained command from the selected source
+   revision: `node scripts/consume-coverage-release.mjs --release <dir> --sha256 sha256:<hex>`.
+   It checks the retained complete membership and Sources parsing, prints
+   `"status":"accepted"`, and performs no source restorations or network requests.
+4. Retain the source/backend and environment identities, command, log, exit status,
+   completed directory, `manifestSha256` and consumer result. Selecting the release
+   in `content/coverage-release-selection.v1.json` and deploying is a separate decision.
 
 No completed production release was invented for the historical checked-in map.
 Strict production adoption depends on an authorized full data refresh and review
