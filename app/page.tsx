@@ -1,5 +1,6 @@
 "use client";
 import { SourceConnections } from '../components/source-connections';
+import { FinancialProfile } from '../components/financial-profile';
 import { connectionCountStatus } from '../lib/connection-counts';
 import { useEffect, useRef, useState } from "react";
 import {
@@ -1041,6 +1042,7 @@ export default function Explorer() {
                   </div>
                 </details>
               )}
+            {table && record && !recordBusy && !recordError && <FinancialProfile table={table} row={record} />}
             {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} joins={joins} navigation={navigation} onOpen={browse}/> }
             {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
             <dl className="record-fields">

@@ -283,6 +283,7 @@ export function isIncomingJoin(join: Join, id: string): boolean {
 }
 export function defaultColumns(table: Dataset): string[] {
   const preferred: Record<string, string[]> = {
+    fec_financial_profiles: ["entity_kind", "entity_id", "entity_name", "source_cycle", "selection_status", "coverage_status"],
     congress_bills: [
       "bill_id",
       "title",
