@@ -54,7 +54,7 @@ class BridgeTests(unittest.TestCase):
         # One interpreter runs every bridge; the removed per-reader variables are ignored.
         env = {'SPICYGOV_COVERAGE_PYTHON': sys.executable,
                'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': '/nonexistent'}
-        navigation = ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
+        navigation = ('documents', 'document_attributes', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
         additional = ('court_opinions', 'court_dockets', 'amendments')
         for dataset in navigation + additional:
             script = 'restore_source_navigation_coverage.py' if dataset in navigation else 'restore_additional_coverage.py'
@@ -64,8 +64,13 @@ class BridgeTests(unittest.TestCase):
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
                     self.assertEqual(run.call_args.args[0][0], sys.executable)
                     self.assertEqual(Path(run.call_args.args[0][1]).name, script)
-                    expected = {'documents': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
+                    expected = {'documents': 900, 'document_attributes': 900, 'comment_periods': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', True), 1500)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', False), 900)
+        self.assertEqual(adapter.allowances.scan_seconds('comment_periods', True), 1500)
+        self.assertEqual(adapter.allowances.scan_seconds('comment_periods', False), 900)
+
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
         raw, request = fixture(self.root)

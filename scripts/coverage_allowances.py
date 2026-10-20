@@ -15,6 +15,7 @@ SCAN_BY_TABLE = {'comments': 7200, 'fec_receipts': 3600}
 # Native restoration only: each allowance covers the table's bridge request
 # (BRIDGE_BY_RESTORE) plus preparation and coverage checks.
 SCAN_BY_NATIVE_TABLE = {'court_opinions': 2700, 'documents': 1500, 'document_attributes': 1500,
+                        'comment_periods': 1500,
                         'federal_register': 1500,
                         'fr_docket_links': 1500,
                         'court_citation_map': 9000, 'court_citations': 9000,
@@ -30,6 +31,7 @@ BRIDGE = 300
 # These serialized bulk restores allow twice that observed admission, plus
 # outer preparation in SCAN_BY_NATIVE_TABLE. A ceiling is not a runtime estimate.
 BRIDGE_BY_RESTORE = {'court_opinions': 1800, 'documents': 900, 'document_attributes': 900,
+                     'comment_periods': 900,
                      'federal_register': 900,
                      'fr_docket_links': 900,
                      'court_citation_map': 7200, 'court_citations': 7200,
