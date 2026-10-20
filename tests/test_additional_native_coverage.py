@@ -54,7 +54,7 @@ class BridgeTests(unittest.TestCase):
         # One interpreter runs every bridge; the removed per-reader variables are ignored.
         env = {'SPICYGOV_COVERAGE_PYTHON': sys.executable,
                'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': '/nonexistent'}
-        navigation = ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
+        navigation = ('documents', 'document_attributes', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
         additional = ('court_opinions', 'court_dockets', 'amendments')
         for dataset in navigation + additional:
             script = 'restore_source_navigation_coverage.py' if dataset in navigation else 'restore_additional_coverage.py'
@@ -64,8 +64,10 @@ class BridgeTests(unittest.TestCase):
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
                     self.assertEqual(run.call_args.args[0][0], sys.executable)
                     self.assertEqual(Path(run.call_args.args[0][1]).name, script)
-                    expected = {'documents': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
+                    expected = {'documents': 900, 'document_attributes': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', True), 1500)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', False), 900)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
         raw, request = fixture(self.root)
@@ -89,6 +91,9 @@ class BridgeTests(unittest.TestCase):
                                        "date_filed": "2026-09-30", "date_filed_is_approximate": "f",
                                        "court_is_federal": "t", "citation_count": "003",
                                        "source": "publisher literal", "ingest_source": "search"},
+            "court_opinions": {"opinion_id": "10", "cluster_id": "42", "page_count": "003",
+                               "author_str": 'José "Exact"\\literal', "per_curiam": "f",
+                               "dump_date": "2026-09-30"},
         }
         policies = json.loads((Path(__file__).resolve().parents[1] /
                                "content/coverage-definitions/regulation.json").read_text())["tables"]
@@ -97,13 +102,14 @@ class BridgeTests(unittest.TestCase):
             raw = dict.fromkeys(reader.LEGACY_COLUMNS[dataset])
             raw.update(values)
             prepared[dataset] = fixture(self.root / dataset, dataset, raw)
+        citation_datasets = {"court_citation_map", "court_citations", "court_parentheticals"}
         citation_receipts = combine_receipts(
             [Path(request["receipts"]["path"]) for dataset, (_, request) in prepared.items()
-             if dataset != "court_opinion_clusters"], self.root / "combined-citations.parquet")
+             if dataset in citation_datasets], self.root / "combined-citations.parquet")
         for dataset in cases:
             with self.subTest(dataset=dataset):
                 raw, request = prepared[dataset]
-                if dataset != "court_opinion_clusters":
+                if dataset in citation_datasets:
                     request["receipts"] = member(citation_receipts)
                 policy = policies[dataset]
                 native = plain(reader.description(dataset))["nativeSchema"]
@@ -117,6 +123,7 @@ class BridgeTests(unittest.TestCase):
                       patch.object(reader, "select_receipts", side_effect=AssertionError("unused receipt copy"))):
                     result = reader.restore(request)
                 self.assertEqual(result["rows"], 1)
+                self.assertEqual(result["acceptedWitnessGroups"], [])
                 self.assertEqual(result["selection"], {key: request[key] for key in ("subjects", "receipts")})
                 self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [raw])
                 table = {"members": [{"url": result["urls"][0]}], "rows": 1,
