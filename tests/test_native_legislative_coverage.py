@@ -1,6 +1,6 @@
 """Native coverage keeps physical publication and private input authorities separate."""
 
-from contextlib import redirect_stderr
+from contextlib import contextmanager, redirect_stderr
 import importlib.util
 import io
 import json
@@ -17,6 +17,161 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
 import additional_native_coverage as adapter
 import coverage_scan
 import native_legislative_coverage as native
+
+
+class RestoreCleanupTests(unittest.TestCase):
+    @contextmanager
+    def fixture(self):
+        import hashlib
+        from types import SimpleNamespace
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        from spicy_regs import coverage_reader
+        from spicy_regs.legislative_documents import field_registry
+        from spicy_regs.legislative_receipts import write_legislative_outputs
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dataset = "bill_sections"
+            raw = {field["name"]: None for field in field_registry()[dataset]["fields"]}
+            raw.update(bill_id="119-hr-1", version_code="ih", source="govinfo", seq="0", body="Exact source text")
+            source = root / (dataset + ".parquet")
+            pq.write_table(pa.Table.from_pylist([raw], schema=pa.schema([(name, pa.string()) for name in raw])), source)
+            original = root / "original"
+            declaration = write_legislative_outputs([source], original, generation_id="cleanup-test")
+            self.assertFalse(any(declaration["refused_rows"].values()))
+            keys = [*declaration["subjects"][dataset], "etl_receipts.parquet"]
+            members = [{
+                "role": "table", "objectKey": key,
+                "sha256": "sha256:" + hashlib.sha256((original / key).read_bytes()).hexdigest(),
+                "byteSize": (original / key).stat().st_size,
+                "recordCount": pq.read_metadata(original / key).num_rows,
+            } for key in keys]
+            policy = coverage_reader.dataset_policy(dataset).descriptor()
+            artifact = {"spec": {"etlReceipts": {
+                "policies": [policy], "generationId": "cleanup-test", "key": "etl_receipts.parquet",
+                "rows": members[-1]["recordCount"],
+            }}}
+            owner = {"family": "bill-family", "artifactDigest": "sha256:" + "a" * 64,
+                     "artifact": artifact, "rows": 1}
+            inputs = SimpleNamespace(artifact=lambda *_: ("original", artifact, members))
+            description = {"policy": policy, "implementationSha256": coverage_reader.implementation_identity()}
+
+            def download(key, target):
+                target.write_bytes((root / key).read_bytes())
+
+            with (
+                patch.dict(os.environ, {"SPICYGOV_NATIVE_COVERAGE_CACHE": str(root / "cache")}),
+                patch.object(native, "native_schema", return_value=description),
+            ):
+                yield SimpleNamespace(
+                    root=root, original=original, members=members, raw=raw, owner=owner, inputs=inputs,
+                    download=download,
+                    backend=lambda request: json.loads(json.dumps(coverage_reader.restore(request))),
+                    create=lambda: native.ProcessingInputs(inputs, root / "work", download),
+                )
+
+    def test_completed_restore_retires_only_copies_and_reuses_committed_cache(self):
+        import pyarrow.parquet as pq
+        with self.fixture() as fixture:
+            removed = []
+            retained_controls = []
+            retire = native.retire_restore_intermediates
+
+            def cleanup(request, result):
+                destination = Path(request["destination"])
+                saved = destination.parent / "manifest.json"
+                self.assertEqual(json.loads(saved.read_text()), result)
+                selected = destination / "selected/bill_sections"
+                copies = [selected / "scoped.parquet", selected / "file-receipts.parquet",
+                          *sorted((selected / "legislative").glob("*.parquet"))]
+                self.assertTrue(all(path.is_file() for path in copies))
+                removed.extend((path, path.stat().st_size, path.stat().st_blocks * 512) for path in copies)
+                diagnostic = selected / "diagnostic.txt"
+                diagnostic.write_text("retained diagnostic")
+                retained_controls.extend([saved, diagnostic, destination / ".native-state/selection.json",
+                                          selected / "legislative/legislative-bundle.json"])
+                retire(request, result)
+                self.assertTrue(all(not path.exists() for path, _, _ in removed))
+
+            with (
+                patch.object(native, "bridge", side_effect=lambda *, request: fixture.backend(request)) as backend,
+                patch.object(native, "retire_restore_intermediates", side_effect=cleanup),
+            ):
+                first = fixture.create().restore("bill_sections", fixture.owner)
+                self.assertEqual(backend.call_count, 1)
+            self.assertTrue(all(path.is_file() for path in retained_controls))
+            with patch.object(native, "bridge", side_effect=AssertionError("cache must reuse final files")):
+                second = fixture.create().restore("bill_sections", fixture.owner)
+            self.assertEqual(first, second)
+            self.assertEqual(pq.read_table(first["urls"][0]).to_pylist(), [fixture.raw])
+            for member in fixture.members:
+                native.verify_file({**member, "path": str(fixture.original / member["objectKey"])})
+            for member in first["_coverageProcessing"]["processingMembers"]:
+                native.verify_file(member)
+            measure = {"removed_files": len(removed), "removed_bytes": sum(row[1] for row in removed),
+                       "removed_allocated_bytes": sum(row[2] for row in removed)}
+            self.assertGreater(measure["removed_allocated_bytes"], 0)
+            print("cleanup-measurement=" + json.dumps(measure, sort_keys=True))
+
+    def test_failed_or_interrupted_restore_and_manifest_commit_keep_recovery_files(self):
+        for failure in ("bridge", "interrupted", "binding", "manifest"):
+            with self.subTest(failure=failure), self.fixture() as fixture:
+                destinations = []
+                completed = []
+                replace = Path.replace
+
+                def backend(*, request):
+                    destinations.append(Path(request["destination"]))
+                    result = fixture.backend(request)
+                    completed.append(result)
+                    if failure == "bridge":
+                        raise ValueError("restore failed")
+                    if failure == "interrupted":
+                        raise KeyboardInterrupt()
+                    if failure == "binding":
+                        result["generationId"] = "wrong-generation"
+                    return result
+
+                def commit(path, target):
+                    if failure == "manifest" and target.name == "manifest.json":
+                        raise OSError("manifest commit failed")
+                    return replace(path, target)
+
+                expected = KeyboardInterrupt if failure == "interrupted" else OSError if failure == "manifest" else ValueError
+                with (
+                    patch.object(native, "bridge", side_effect=backend),
+                    patch.object(Path, "replace", commit),
+                    patch.object(native, "retire_restore_intermediates", side_effect=AssertionError("premature cleanup")),
+                    self.assertRaises(expected),
+                ):
+                    fixture.create().restore("bill_sections", fixture.owner)
+                self.assertEqual(len(completed), 1)
+                [destination] = destinations
+                selected = destination / "selected/bill_sections"
+                self.assertTrue((selected / "scoped.parquet").is_file())
+                self.assertTrue((selected / "legislative/etl_receipts.parquet").is_file())
+                self.assertTrue((selected / "legislative/subject-0.parquet").is_file())
+                self.assertTrue((destination / ".native-state/selection.json").is_file())
+                self.assertFalse((destination.parent / "manifest.json").exists())
+
+    def test_cleanup_refuses_an_original_or_final_output_in_its_copy_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary)
+            selected = destination / "selected/bill_sections"
+            selected.mkdir(parents=True)
+            original = selected / "scoped.parquet"
+            final = selected / "file-receipts.parquet"
+            original.write_bytes(b"original")
+            final.write_bytes(b"final")
+            request = {"destination": str(destination), "dataset": "bill_sections",
+                       "subjects": [{"path": str(original)}], "receipts": {"path": str(destination / "receipts")}}
+            result = {"processingMembers": [{"path": str(final)}]}
+            for subjects in (request["subjects"], []):
+                with self.subTest(subjects=subjects), self.assertRaisesRegex(ValueError, "not a disposable"):
+                    native.retire_restore_intermediates(request | {"subjects": subjects}, result)
+                self.assertEqual(original.read_bytes(), b"original")
+                self.assertEqual(final.read_bytes(), b"final")
 
 
 class NativeCoverageTests(unittest.TestCase):

@@ -65,6 +65,35 @@ def verify_file(member):
     return actual
 
 
+def retire_restore_intermediates(request, result):
+    """Retire only the reader's known copies after its cache manifest is committed."""
+    destination = Path(request["destination"]).resolve()
+    selected = destination / "selected" / request["dataset"]
+    # SelectedPriors owns this private layout. Keep its selection and diagnostic
+    # manifests, native originals and final processing files; never sweep a tree.
+    candidates = [
+        selected / "scoped.parquet",
+        selected / "file-receipts.parquet",
+        selected / "legislative" / "etl_receipts.parquet",
+        *(selected / "legislative" / f"subject-{i}.parquet"
+          for i in range(len(request["subjects"]))),
+    ]
+    retained = {
+        Path(member["path"]).resolve()
+        for member in (*request["subjects"], request["receipts"], *result["processingMembers"])
+    }
+    for path in candidates:
+        if (
+            not path.resolve().is_relative_to(destination)
+            or path.resolve() in retained
+            or path.is_symlink()
+            or (path.exists() and not path.is_file())
+        ):
+            raise ValueError("Restoration intermediate is not a disposable private file")
+    for path in candidates:
+        path.unlink(missing_ok=True)
+
+
 def forward_restore_diagnostics(stderr):
     """Show the reader's restore progress and any row-route fallback in the build log."""
     if isinstance(stderr, bytes):
@@ -336,34 +365,38 @@ class ProcessingInputs:
         with (folder / "restore.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             saved = folder / "manifest.json"
-            if saved.exists():
+            fresh = not saved.exists()
+            if not fresh:
                 result = json.loads(saved.read_text())
-                if not result.get("processingMembers") or result.get("urls") != [
-                    member["path"] for member in result["processingMembers"]
-                ]:
-                    raise ValueError(
-                        "Cached restoration has no exact processing file identities"
-                    )
-                for member in result.get("processingMembers", []):
-                    verify_file(member)
             else:
                 request["destination"] = str(folder / uuid4().hex)
                 result = bridge(request=request)
+            if not result.get("processingMembers") or result.get("urls") != [
+                member["path"] for member in result["processingMembers"]
+            ]:
+                raise ValueError(
+                    "Cached restoration has no exact processing file identities"
+                )
+            if not fresh:
+                for member in result["processingMembers"]:
+                    verify_file(member)
+            if (
+                result.get("selection")
+                != {"subjects": request["subjects"], "receipts": request["receipts"]}
+                or result.get("generationId") != request["generationId"]
+                or result.get("dataset") != dataset
+                or result.get("implementationSha256")
+                != native_schema(dataset)["implementationSha256"]
+                or result.get("policy") != policies[0]
+            ):
+                raise ValueError("Restoration result differs from selected coverage inputs")
+            if owner.get("rows") is not None and result["rows"] != owner["rows"]:
+                raise ValueError("Restored source rows differ from native subject count")
+            if fresh:
                 temporary = folder / (uuid4().hex + ".json")
                 temporary.write_text(json.dumps(result))
                 temporary.replace(saved)
-        if (
-            result.get("selection")
-            != {"subjects": request["subjects"], "receipts": request["receipts"]}
-            or result.get("generationId") != request["generationId"]
-            or result.get("dataset") != dataset
-            or result.get("implementationSha256")
-            != native_schema(dataset)["implementationSha256"]
-            or result.get("policy") != policies[0]
-        ):
-            raise ValueError("Restoration result differs from selected coverage inputs")
-        if owner.get("rows") is not None and result["rows"] != owner["rows"]:
-            raise ValueError("Restored source rows differ from native subject count")
+                retire_restore_intermediates(request, result)
         value = {
             **owner,
             "urls": result["urls"],
