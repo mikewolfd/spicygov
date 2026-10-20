@@ -174,6 +174,7 @@ class MemberVoteCoverageTests(unittest.TestCase):
         if special is not None:
             definition["dimensions"][-1]["special"] = special
         policy = {**definition, "_scanner": "congress", "_additionalNativeProcessing": True,
+                  "_additionalNativeDataset": dataset,
                   "schema": result["nativeSchema"], "processingSchema": result["processingSchema"],
                   "restorationImplementationSha256": result["implementationSha256"]}
         class Inputs:
