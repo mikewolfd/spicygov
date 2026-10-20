@@ -119,26 +119,31 @@ def _run_scan(request, *, timeout_seconds, serial, label):
         raise ValueError(f'{label}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
 
 
+def heavy_job(items):
+    return any(id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
+                      'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
+                      'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
+               for id, _table, policy, _old in items)
+
+
 def timed_scan(item):
     id, table, policy, old = item
-    if cached(table, policy, old): return id, old
+    if old is not None and cached(table, policy, old):
+        return id, old
     request = {'id': id, 'table': table, 'policy': policy,
                'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
-    # Queue heavy readers before starting their timer; cached maps return above.
-    serial = id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
-                    'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
-                    'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
     return id, _run_scan(request, timeout_seconds=allowances.scan_seconds(id, policy.get('_additionalNativeProcessing')),
-                         serial=serial, label=id)
+                         serial=heavy_job([item]), label=id)
 
 
-def scan_jobs(items):
+def scan_jobs(items, *, checkpoint=None):
     """Batch only a complete, uncached citation family; never reread cached peers."""
     items = list(items)
+    checkpoint = checkpoint or (lambda item: cached(item[1], item[2], item[3]))
     court = [item for item in items if item[0] in additional.COURT_CITATION_DATASETS]
     if (len(court) == len(additional.COURT_CITATION_DATASETS)
             and all(item[1].get('family') == 'court-citations' and item[2].get('_additionalNativeProcessing')
-                    and not cached(item[1], item[2], item[3]) for item in court)
+                    and not checkpoint(item) for item in court)
             and len({item[1].get('artifactDigest') for item in court}) == 1):
         return [court, *[[item] for item in items if item[0] not in additional.COURT_CITATION_DATASETS]]
     return [[item] for item in items]
@@ -149,11 +154,57 @@ def timed_job(items):
         return dict([timed_scan(items[0])])
     request = {'tables': [item[:3] for item in items],
                'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
-    result = _run_scan(request, serial=True, label='court-citations family',
+    result = _run_scan(request, serial=heavy_job(items), label='court-citations family',
                        timeout_seconds=sum(allowances.scan_seconds(id, True) for id, *_ in items))
     if not isinstance(result, dict) or set(result) != {item[0] for item in items}:
         raise ValueError('Court coverage scan omitted a selected table')
     return result
+
+
+def completed_jobs(items):
+    """Keep two workers useful without admitting a second heavy scan."""
+    checked = {}
+
+    def checkpoint(item):
+        id, table, policy, old = item
+        if id not in checked:
+            checked[id] = old is not None and cached(table, policy, old)
+        return checked[id]
+
+    pending = scan_jobs(items, checkpoint=checkpoint)
+    running = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        while pending or running:
+            for job in pending[:]:
+                if len(running) == 2:
+                    break
+                label = ', '.join(item[0] for item in job)
+                heavy = heavy_job(job)
+                ready = concurrent.futures.Future()
+                try:
+                    hit = heavy and len(job) == 1 and checkpoint(job[0])
+                except Exception as error:
+                    ready.set_exception(error)
+                    hit = True
+                if hit:
+                    pending.remove(job)
+                    if not ready.done():
+                        ready.set_result({job[0][0]: job[0][3]})
+                    yield label, ready
+                    continue
+                if heavy and any(active_heavy for _, active_heavy in running.values()):
+                    continue
+                pending.remove(job)
+                # Only heavy jobs need an early checkpoint check. Ordinary
+                # guards stay in workers; heavy guards must not run twice.
+                admitted = ([(id, table, policy, None) for id, table, policy, _old in job]
+                            if heavy else job)
+                running[pool.submit(timed_job, admitted)] = (label, heavy)
+            if running:
+                done, _ = concurrent.futures.wait(running, return_when=concurrent.futures.FIRST_COMPLETED)
+                for future in done:
+                    label, _ = running.pop(future)
+                    yield label, future
 
 
 def main():
@@ -206,20 +257,17 @@ def main():
     revisions = {id: measurement_revision(policies[id]) for id in selected}
     if args.only and set(args.only) != set(selected): raise ValueError('Requested table is not currently published')
     results, failures = {}, []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        jobs = scan_jobs((id, table, policies[id], previous.get(id)) for id, table in selected.items())
-        futures = {pool.submit(timed_job, job): ', '.join(item[0] for item in job) for job in jobs}
-        for future in concurrent.futures.as_completed(futures):
-            id = futures[future]
-            try:
-                measured = future.result()
-                for id, result in measured.items():
-                    results[id] = result
-                    checkpoint = CACHE / (id + '.json')
-                    temp = checkpoint.with_suffix('.tmp'); temp.write_text(json.dumps(result)); temp.replace(checkpoint)
-                    print(f'{id}: {len(result["dimensions"])} dimensions reconciled', flush=True)
-            except Exception as error:
-                failures.append(str(error)); print(str(error), file=sys.stderr, flush=True)
+    items = ((id, table, policies[id], previous.get(id)) for id, table in selected.items())
+    for id, future in completed_jobs(items):
+        try:
+            measured = future.result()
+            for id, result in measured.items():
+                results[id] = result
+                checkpoint = CACHE / (id + '.json')
+                temp = checkpoint.with_suffix('.tmp'); temp.write_text(json.dumps(result)); temp.replace(checkpoint)
+                print(f'{id}: {len(result["dimensions"])} dimensions reconciled', flush=True)
+        except Exception as error:
+            failures.append(str(error)); print(str(error), file=sys.stderr, flush=True)
     if failures: raise ValueError('Coverage build failed; published maps kept unchanged:\n' + '\n'.join(failures))
     if definitions() != reviewed_policies:
         raise ValueError('Coverage definitions changed during the build; rerun the reviewed policies')

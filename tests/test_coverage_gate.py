@@ -343,6 +343,114 @@ class CoverageGateTest(unittest.TestCase):
                     self.assertEqual(second.result()[0], second_id)
                     self.assertTrue(second_started.is_set())
 
+    def test_build_skips_heavy_waiters_for_ordinary_and_guarded_cached_work(self):
+        import coverage_release
+
+        ids = ('federal_register', 'court_opinion_clusters', 'records', 'documents')
+        table, policy, dimension = fixture()
+        policies = {id: {**policy, '_additionalNativeProcessing': id != 'records'} for id in ids}
+        results = {
+            id: {**builder.binding(table, policies[id]), 'status': 'measured', 'measurementRevision': 'fixed',
+                 'dimensions': [{**dimension, 'id': 'day',
+                                 'definitionDigest': builder.definition_digest(policy['dimensions'][0])}]}
+            for id in ids
+        }
+        for fail_second in (False, True):
+            with self.subTest(fail_second=fail_second), tempfile.TemporaryDirectory() as folder:
+                root = pathlib.Path(folder)
+                output, cache = root / 'map.json', root / 'cache'
+                original = '{"tables":{}}\n'
+                output.write_text(original)
+                cache.mkdir()
+                stale = {**results['court_opinion_clusters'], 'measurementRevision': 'stale'}
+                (cache / 'court_opinion_clusters.json').write_text(json.dumps(stale))
+                (cache / 'documents.json').write_text(json.dumps(results['documents']))
+                started, release, second_started, ordinary_done, cached_done = (
+                    threading.Event() for _ in range(5))
+                lock = threading.Lock()
+                active, peak, heavy_active, heavy_peak = 0, 0, 0, 0
+                checked = []
+                real_cached = builder.cached
+
+                def guarded_cache(table, policy, old):
+                    if old is not None:
+                        checked.append(old)
+                    return real_cached(table, policy, old)
+
+                def reader(**options):
+                    nonlocal active, peak, heavy_active, heavy_peak
+                    id = json.loads(options['input'])['id']
+                    self.assertNotEqual(id, 'documents', 'A guarded checkpoint must not be scanned')
+                    heavy = id != 'records'
+                    with lock:
+                        active += 1
+                        heavy_active += heavy
+                        peak, heavy_peak = max(peak, active), max(heavy_peak, heavy_active)
+                    try:
+                        if id == 'federal_register':
+                            started.set()
+                            self.assertTrue(release.wait(timeout=5))
+                        elif id == 'court_opinion_clusters':
+                            second_started.set()
+                            self.assertTrue(release.is_set(), 'The second heavy scan started early')
+                            if fail_second:
+                                raise builder.subprocess.CalledProcessError(1, ['scan'], stderr='second heavy refused')
+                        else:
+                            self.assertTrue(started.wait(timeout=5))
+                        return mock.Mock(stdout=json.dumps(results[id]), stderr='')
+                    finally:
+                        with lock:
+                            active -= 1
+                            heavy_active -= heavy
+
+                def progress(message, **_options):
+                    if message.startswith('records:'):
+                        ordinary_done.set()
+                    elif message.startswith('documents:'):
+                        cached_done.set()
+
+                with (mock.patch.object(sys, 'argv', ['builder', '--output', str(output),
+                                                     '--release-output', str(root / 'release')]),
+                      mock.patch.object(builder, 'CACHE', cache),
+                      mock.patch.object(builder.duckdb, 'connect'),
+                      mock.patch.object(builder, 'definitions', return_value=policies),
+                      mock.patch.object(builder, 'measurement_revision', return_value='fixed'),
+                      mock.patch.object(builder.native, 'describe_all'),
+                      mock.patch.object(builder.additional, 'describe_all'),
+                      mock.patch.object(builder.additional, 'variant', side_effect=lambda id, table, policy: policy),
+                      mock.patch.object(builder, 'cached', side_effect=guarded_cache),
+                      mock.patch.object(builder, '_scan_process', side_effect=reader),
+                      mock.patch.object(builder, 'print', side_effect=progress, create=True),
+                      mock.patch.object(builder, 'validate_native_implementations'),
+                      mock.patch.object(builder.additional, 'validate_native_implementations'),
+                      mock.patch.object(builder.subprocess, 'run'),
+                      mock.patch.object(coverage_release, 'capture_load',
+                                        return_value=({id: table for id in ids},
+                                                      {'publication.v2.json': b'unchanged'})),
+                      mock.patch.object(coverage_release, 'complete', return_value={}) as complete,
+                      concurrent.futures.ThreadPoolExecutor(max_workers=1) as caller):
+                    future = caller.submit(builder.main)
+                    try:
+                        self.assertTrue(started.wait(timeout=2))
+                        self.assertTrue(ordinary_done.wait(timeout=2), 'Ordinary work waited behind a heavy waiter')
+                        self.assertTrue(cached_done.wait(timeout=2), 'Cached heavy work waited for the heavy slot')
+                        self.assertFalse(second_started.is_set())
+                        self.assertEqual((peak, heavy_peak), (2, 1))
+                    finally:
+                        release.set()
+                    if fail_second:
+                        with self.assertRaisesRegex(ValueError, 'second heavy refused'):
+                            future.result(timeout=5)
+                        complete.assert_not_called()
+                        self.assertEqual(output.read_text(), original)
+                    else:
+                        future.result(timeout=5)
+                        complete.assert_called_once()
+                        self.assertEqual(set(json.loads(output.read_text())['tables']), set(ids))
+                self.assertTrue(second_started.is_set())
+                self.assertEqual((peak, heavy_peak, active), (2, 1, 0))
+                self.assertEqual(checked, [stale, results['documents']])
+
     def test_court_outer_allowance_is_limited_to_native_restoration(self):
         cases = (
             ('court_opinions', {'_additionalNativeProcessing': True}, 2700),
