@@ -319,6 +319,53 @@ class AdditionalInputs:
         return parent
 
 
+def member_vote_source_observations(conn, restored, table, dim):
+    """Keep receipt-only observations visible without changing the native denominator."""
+    if (dim.get("kind") != "snapshot" or dim.get("fields", []) != []
+            or set(dim) - {"id", "kind", "label", "meaning", "special", "fields"}):
+        raise ValueError("Unsupported member vote source-observation dimension")
+    facts = restored["_coverageProcessing"]
+    summary = facts.get("sourceObservations")
+    if (not isinstance(summary, dict)
+            or set(summary) != {"totalRows", "nativeRows", "receiptOnlyRows", "groups"}
+            or any(not isinstance(summary[k], int) or isinstance(summary[k], bool) or summary[k] < 0
+                   for k in ("totalRows", "nativeRows", "receiptOnlyRows"))
+            or summary["nativeRows"] != table["rows"] or summary["nativeRows"] != facts["rows"]
+            or summary["totalRows"] != summary["nativeRows"] + summary["receiptOnlyRows"]
+            or not isinstance(summary["groups"], list)):
+        raise ValueError("Member vote source-observation counts do not reconcile")
+    seen, receipt_rows = set(), 0
+    for group in summary["groups"]:
+        if (not isinstance(group, dict) or set(group) != {"voteDay", "termMatch", "rows"}
+                or any(group[k] is not None and not isinstance(group[k], str) for k in ("voteDay", "termMatch"))
+                or not isinstance(group["rows"], int) or isinstance(group["rows"], bool) or group["rows"] <= 0):
+            raise ValueError("Invalid member vote source-observation group")
+        key = (group["voteDay"], group["termMatch"])
+        if key in seen:
+            raise ValueError("Duplicate member vote source-observation group")
+        seen.add(key)
+        receipt_rows += group["rows"]
+    if receipt_rows != summary["receiptOnlyRows"]:
+        raise ValueError("Member vote source-observation groups do not reconcile")
+    measured = scan_dimension(conn, restored["urls"], table["rows"], dim, snapshot={
+        "publishedAt": table.get("publishedAt"), "artifactDigest": table.get("artifactDigest"),
+        "recordUrl": table.get("recordUrl"), "publicationSha256": table.get("checksum")})
+    measured["snapshot"]["facts"] = [
+        {"label": "Restored source observations", "value": str(summary["totalRows"])},
+        {"label": "Published assignments", "value": str(summary["nativeRows"])},
+        {"label": "Receipt-only observations", "value": str(summary["receiptOnlyRows"])},
+        *[{"label": f'Receipt-only vote day {json.dumps(g["voteDay"])}; term match {json.dumps(g["termMatch"])}',
+           "value": str(g["rows"])} for g in summary["groups"]],
+    ]
+    measured["evidence"] = {
+        "dataset": facts["dataset"], "generationId": facts["generationId"],
+        "implementationSha256": facts["implementationSha256"], "policy": facts["policy"],
+        "receipts": {k: v for k, v in facts["selection"]["receipts"].items() if k != "path"},
+        "qualification": "All restored source observations reconcile to published assignments and receipt-only date/status groups. Conversion-refused rows are not restored observations.",
+    }
+    return measured
+
+
 def scan_table(dataset, table, policy, *, validate_members, validate_counts,
                inputs=None, download=None):
     revision = measurement_revision(policy)
@@ -345,7 +392,9 @@ def scan_table(dataset, table, policy, *, validate_members, validate_counts,
                    "members": [{**m, "url": url} for m, url in zip(table["members"], restored["urls"])]}
         dimensions = []
         for dim in policy["dimensions"]:
-            if dim.get("special") or dim.get("method"):
+            if dataset == "member_vote_terms" and dim.get("special") == "member-vote-source-observations":
+                measured = member_vote_source_observations(conn, restored, table, dim)
+            elif dim.get("special") or dim.get("method"):
                 helper = importlib.import_module(policy["_scanner"] + "_coverage")
                 measured = helper.scan_special(conn, dataset, private, dim, adapter)
                 if measured is None:
