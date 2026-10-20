@@ -26,7 +26,9 @@ RULEMAKING_DATASETS = frozenset(("proceedings", "rule_targets", "comment_periods
 FAMILIES = {"amendments": "amendments", "court_dockets": "courtlistener",
             "court_docket_groups": "court-docket-groups",
             "court_opinion_pdf_extractions": "court-opinion-pdf-extractions",
-            "court_opinions": "court-opinions"}
+            "court_opinions": "court-opinions",
+            "court_citation_map": "court-citations", "court_citations": "court-citations",
+            "court_parentheticals": "court-citations", "court_opinion_clusters": "court-opinion-clusters"}
 SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "member_terms":"members", "member_party_affiliations":"members", "fcc_filings":"fcc-filings",
     "committee_reports":"committee-reports", "report_sections":"committee-reports",
     "hearing_transcripts":"committee-reports", "hearing_bill_links":"committee-reports",

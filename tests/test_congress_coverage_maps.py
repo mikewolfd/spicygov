@@ -213,6 +213,90 @@ class CongressCoverageTests(unittest.TestCase):
         for table in review['tables']:
             definition=definitions[table['tableId']];self.assertEqual(definition['schema'],table['schema']);self.assertEqual(definition['family'],table['family']);validate_definition(definition,definition['schema'])
 
+    def test_action_comparison_definition_preserves_dispositions_and_recorded_scope(self):
+        from coverage_inputs import CoverageInputs
+        from coverage_scan import _measure, validate_members
+
+        root = pathlib.Path(__file__).resolve().parents[1]
+        definition = json.loads(
+            (root / 'content/coverage-definitions/congress.json').read_text()
+        )['tables']['scorecard_action_comparisons']
+        validate_definition(definition, definition['schema'])
+        columns = ','.join(f'"{name}" {kind}' for name, kind in definition['schema'])
+        self.conn.execute('CREATE TABLE comparisons (' + columns + ')')
+        self.conn.executemany(
+            'INSERT INTO comparisons (scorecard_id, comparison_status) VALUES (?, ?)',
+            [('edition-a', 'same'), ('edition-a', 'different'),
+             ('edition-b', 'unresolved'), ('missing-edition', 'unresolved'),
+             (None, 'unresolved')],
+        )
+        child = self.file('comparisons', 'SELECT * FROM comparisons')
+        table = self.table(child, 5, 'scorecard-analysis')
+        table['members'][0]['rows'] = 5
+        validate_members(self.conn, 'scorecard_action_comparisons', table, definition['schema'])
+        parent = self.file(
+            'comparison_editions',
+            "SELECT * FROM (VALUES ('edition-a','publisher-a','2022','117th','2021–2022'),"
+            "('edition-b','publisher-b','2024–2025','118th–119th','lifetime')) "
+            't(scorecard_id,publisher_id,year_text,congress_text,timespan_text)',
+        )
+        retained = self.parent(parent, 2, 'scorecards')
+        retained['family'] = 'scorecards'
+        retained['members'] = [{'sha256': 'sha256:' + 'c' * 64, 'byteSize': 123}]
+        pin = {key: retained[key] for key in ('family', 'artifactDigest')}
+        pin.update(retained['members'][0])
+        owner = {'artifact': {'spec': {'parents': {'scorecards.parquet': pin}}}}
+        lookups = []
+
+        class RecordedInputs(CoverageInputs):
+            def producing(inner, child_id, selected):
+                self.assertEqual(child_id, 'scorecard_action_comparisons')
+                self.assertEqual(selected, table)
+                return owner
+
+            def table(inner, family, generation, table_id, expected=None):
+                lookups.append((family, generation, table_id))
+                return retained
+
+        measured = {
+            dim['id']: dim for dim in _measure(
+                self.conn, 'scorecard_action_comparisons', table,
+                [child], definition, RecordedInputs(),
+            )
+        }
+        self.assertEqual(measured['comparison-status']['buckets'],
+                         {'["same"]': 1, '["different"]': 1, '["unresolved"]': 3})
+        self.assertEqual(measured['saved-editions']['buckets'],
+                         {'["edition-a"]': 2, '["edition-b"]': 1, '["missing-edition"]': 1})
+        self.assertEqual(measured['saved-editions']['unplacedRows'], 1)
+        self.assertEqual(measured['inherited-year-text']['buckets'], {'2022': 2})
+        self.assertEqual(measured['inherited-year-text']['unplacedRows'], 3)
+        self.assertEqual(measured['inherited-congress-text']['buckets'],
+                         {'["117th"]': 2, '["118th–119th"]': 1})
+        self.assertEqual(measured['inherited-timespan-text']['buckets'],
+                         {'["2021–2022"]': 2, '["lifetime"]': 1})
+        self.assertEqual(lookups, [('scorecards', retained['artifactDigest'], 'scorecards')] * 4)
+        for dim in measured.values():
+            self.assertEqual(dim['rows'], 5)
+            self.assertEqual(dim['placedRows'] + dim['unplacedRows'], 5)
+            if 'parent' in dim:
+                self.assertEqual((dim['matchedRows'], dim['unmatchedRows']), (3, 2))
+                self.assertEqual(dim['parent']['artifactDigest'], retained['artifactDigest'])
+        duplicate = self.file(
+            'duplicate_comparison_editions',
+            "SELECT * FROM (VALUES ('edition-a','publisher-a','2022','117th','2021–2022'),"
+            "('edition-a','publisher-b','2024','118th','lifetime')) "
+            't(scorecard_id,publisher_id,year_text,congress_text,timespan_text)',
+        )
+        retained['urls'] = [duplicate]
+        with self.assertRaisesRegex(ValueError, 'not unique'):
+            _measure(self.conn, 'scorecard_action_comparisons', table,
+                     [child], definition, RecordedInputs())
+        owner['artifact']['spec']['parents'] = {}
+        with self.assertRaisesRegex(ValueError, 'does not pin'):
+            _measure(self.conn, 'scorecard_action_comparisons', table,
+                     [child], definition, RecordedInputs())
+
     def test_printing_body_views_keep_listed_full_text_apart_from_acquired_uncertain_text(self):
         from coverage_dimensions import scan_dimension
         definitions=json.loads((pathlib.Path(__file__).resolve().parents[1]/'content/coverage-definitions/congress.json').read_text())['tables']

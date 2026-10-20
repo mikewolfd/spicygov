@@ -92,7 +92,9 @@ def timed_scan(item):
         # Full selected receipt admission can use several GiB beyond DuckDB's
         # memory limit. Queue the measured large receipt readers before starting their timer;
         # other scans keep the existing parallelism and cached maps return above.
-        serial = id in ('court_opinions', 'documents', 'federal_register', 'fr_docket_links', 'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
+        serial = id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
+                        'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
+                        'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
         with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = subprocess.run([sys.executable, __file__, '--scan'],
                 input=json.dumps(request), text=True,
