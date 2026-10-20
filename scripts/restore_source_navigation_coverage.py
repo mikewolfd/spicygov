@@ -5,6 +5,7 @@ retained processing inputs; FCC date/text facts come from the validated native
 subject. Extra navigation fields remain in the public subject and receipts.
 """
 import argparse
+from collections import Counter
 import hashlib
 import inspect
 import json
@@ -17,6 +18,7 @@ import time
 from contextlib import contextmanager
 
 import duckdb
+import pyarrow.compute as pc
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from spicy_regs import congress_bulk, earlier_receipt_policies, etl_bulk, etl_receipts, regulations_bulk, votes_batch_receipts
@@ -173,6 +175,52 @@ def restore_votes(request, facts):
         partial.unlink(missing_ok=True)
 
 
+MEMBER_VOTE_BATCH_ROWS = 65_536
+
+
+def restore_member_vote_assignments(request, facts, restored):
+    """Partition fully admitted source observations using the maintained subject rule."""
+    output = Path(request["destination"]) / "coverage-facts.parquet"
+    partial = output.with_name("provisional-coverage-facts.parquet")
+    schema = arrow_schema(request["dataset"])
+    groups = Counter()
+    total = native_rows = 0
+    try:
+        with duckdb.connect() as conn, pq.ParquetWriter(partial, schema) as writer, pq.ParquetFile(restored["urls"][0]) as source:
+            conn.execute("SET memory_limit='256MB'")
+            conn.execute("SET threads=1")
+            # File-order batches, one fully consumed projection per batch. Only
+            # receipt-only pairs cross into Python; native values stay in Arrow.
+            for batch in source.iter_batches(columns=schema.names, batch_size=MEMBER_VOTE_BATCH_ROWS, use_threads=False):
+                conn.register("source_batch", batch.cast(schema, safe=True))
+                selected = conn.execute(
+                    f"SELECT *, coalesce(({congress_bulk.NO_SUBJECT[request['dataset']]}), false) "
+                    "AS receipt_only FROM source_batch"
+                ).to_arrow_table()
+                mask = selected.column("receipt_only")
+                values = selected.select(schema.names)
+                native = values.filter(pc.invert(mask))
+                writer.write_table(native)
+                total += values.num_rows
+                native_rows += native.num_rows
+                groups.update((row["vote_day"], row["term_match"])
+                              for row in values.select(["vote_day", "term_match"]).filter(mask).to_pylist())
+            if total != restored["rows"] or total != native_rows + sum(groups.values()):
+                raise ValueError("Member vote source observations do not reconcile")
+        result = restored_facts(request, facts, request["subjects"][0]["path"], partial)
+        result["sourceObservations"] = {
+            "totalRows": total, "nativeRows": native_rows, "receiptOnlyRows": sum(groups.values()),
+            "groups": [{"voteDay": day, "termMatch": status, "rows": rows}
+                       for (day, status), rows in groups.items()],
+        }
+        partial.replace(output)
+        result["urls"] = [str(output)]
+        result["processingMembers"][0]["path"] = str(output)
+        return result
+    finally:
+        partial.unlink(missing_ok=True)
+
+
 def restore(request):
     dataset = request.get("dataset") if isinstance(request, dict) else None
     facts = description(dataset)
@@ -196,6 +244,8 @@ def restore(request):
         raise ValueError("Source-navigation coverage differs from the reviewed policy")
     if len(restored["urls"]) != 1 or len(request["subjects"]) != 1:
         raise ValueError("Source-navigation coverage requires one selected subject member")
+    if dataset == "member_vote_terms":
+        return restore_member_vote_assignments(request, facts, restored)
     source = restored["urls"][0]
     schema = arrow_schema(dataset)
     output = Path(request["destination"]) / "coverage-facts.parquet"

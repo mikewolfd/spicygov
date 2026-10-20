@@ -4777,8 +4777,8 @@
         {
           "id": "member-vote-dates",
           "kind": "date",
-          "label": "Member vote dates",
-          "meaning": "Printed vote day in Eastern time, including rows whose member or service term is unresolved.",
+          "label": "Published assignment vote dates",
+          "meaning": "Printed vote day in Eastern time for published assignments. Receipt-only unresolved observations appear in the source-observation snapshot.",
           "fields": [
             "vote_day"
           ],
@@ -4787,11 +4787,18 @@
         {
           "id": "service-term-matching",
           "kind": "category",
-          "label": "Service-term matching",
-          "meaning": "Whether each vote matched a recorded service term. Unresolved members receive no inferred service period.",
+          "label": "Published assignment service-term matching",
+          "meaning": "Source-stated matching status for published assignments. Unresolved members receive no inferred service period; receipt-only observations appear in the source-observation snapshot.",
           "fields": [
             "term_match"
           ]
+        },
+        {
+          "id": "member-vote-source-observations",
+          "kind": "snapshot",
+          "special": "member-vote-source-observations",
+          "label": "Member vote source observations",
+          "meaning": "All restored source observations, with every receipt-only vote-day and matching-status group preserved. Published assignments alone form the chart counts. Conversion-refused rows are not restored observations."
         }
       ]
     },
