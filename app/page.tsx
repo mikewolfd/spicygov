@@ -1,6 +1,8 @@
 "use client";
 import { SourceConnections } from '../components/source-connections';
 import { FinancialProfile } from '../components/financial-profile';
+import { LobbyingProfile } from '../components/lobbying-profile';
+import { LOBBYING_TABLES, LOBBYING_BODY_NAVIGATION_ID } from '../lib/lobbying-navigation';
 import { connectionCountStatus } from '../lib/connection-counts';
 import { useEffect, useRef, useState } from "react";
 import {
@@ -223,6 +225,7 @@ export default function Explorer() {
       sort: location.sort,
       connection: location.connection,
       navigation: navigation.find(s=>s.id===location.connection?.id),
+      maxScanRows: location.filters.length && LOBBYING_TABLES.includes(table.id) ? 250000 : undefined,
     });
     return () => {
       active = false;
@@ -751,12 +754,12 @@ export default function Explorer() {
                     <h2>
                       {table?.rows === 0
                         ? "No records published yet"
-                        : location.connection && !done ? "No match in the checked records" : "No matching records"}
+                        : !done ? "No match in the checked records" : "No matching records"}
                     </h2>
                     <p>
                       {table?.rows === 0
                         ? "This dataset is published with an empty table."
-                        : location.connection && !done ? "The search is incomplete. Choose Next to check more source references." : "The selected values did not match any records in this publication."}
+                        : !done ? "The search is incomplete. Choose Next to check more records." : "The selected values did not match any records in this publication."}
                     </p>
                     {!!(location.filters.length || location.connection) && (
                       <Button
@@ -781,7 +784,7 @@ export default function Explorer() {
                 <span aria-live="polite">
                   {busy
                     ? "Reading…"
-                    : `${count(rows.length)} ${location.filters.length || location.connection ? "matching " : ""}records${done && !error ? " · End of results" : ""}`}
+                    : `${count(rows.length)} ${location.filters.length || location.connection ? "matching " : ""}records${done && !error ? " · End of results" : !done && !error && rows.length < 40 ? " · Search incomplete; choose Next" : ""}`}
                 </span>
                 <div className="pagination">
                   <Button
@@ -862,8 +865,9 @@ export default function Explorer() {
                 {sourceConnections.map(s=>{
                   const direction = s.source === table?.id ? 'forward' : 'reverse';
                   const targets = direction === 'forward' ? s.targets : s.targets.filter(t=>t.table === table?.id);
-                  return <div className="connection-row" key={s.id}><Network size={20}/><div><strong>{direction === 'forward' ? targets.map(t=>t.table==='@url'?'Offered documents':catalog.find(d=>d.id===t.table)?.label??pretty(t.table)).join(' · ') : catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}</strong><p>{s.meaning}</p>
+                  return <div className="connection-row" key={s.id}><Network size={20}/><div><strong>{direction === 'forward' ? targets.map(t=>t.table==='@url'?'Offered documents':t.table==='@value'?'Source-listed values':catalog.find(d=>d.id===t.table)?.label??pretty(t.table)).join(' · ') : catalog.find(d=>d.id===s.source)?.label??pretty(s.source)}</strong><p>{s.meaning}</p>
                     {targets.flatMap((target,i)=>{
+                      if(target.table==='@value')return <p key={i}><small>Literal membership search · not a resolved entity connection. Open a record to search its listed values.</small></p>;
                       const directions: readonly ('forward' | 'reverse')[] = s.source === table?.id && target.table === table?.id ? ['forward', 'reverse'] : [direction];
                       return directions.map(selected=>{
                         const countStatus = connectionCountStatus({direction: selected, capability: target.directions?.[selected],
@@ -1043,6 +1047,7 @@ export default function Explorer() {
                 </details>
               )}
             {table && record && !recordBusy && !recordError && <FinancialProfile table={table} row={record} />}
+            {table && record && !recordBusy && !recordError && <LobbyingProfile table={table} row={record} catalog={catalog} bodyNavigation={navigation.find(s=>s.id===LOBBYING_BODY_NAVIGATION_ID)} onOpen={browse}/>}
             {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} joins={joins} navigation={navigation} onOpen={browse}/> }
             {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
             <dl className="record-fields">

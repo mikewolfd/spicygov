@@ -1,5 +1,6 @@
 import {bindFecCompatibility, fecNavigation, loadFecCompatibility, type FecCompatibility} from './fec-compatibility';
 import { usableNavigation, type Navigation } from './navigation';
+import { lobbyingNavigation } from './lobbying-navigation';
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
 import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
 import { bindExtraTables, extraMetadataMatches } from './separate-publications';
@@ -219,7 +220,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle, compati
     }
   }
   if (status.missingTables || status.staleTables || status.undocumentedTables || status.rejectedJoins) status.state = "partial";
-  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, navigation: usableNavigation(fecNavigation(bundle.navigation ?? [], enriched, compatibility), enriched), metadata: status };
+  return { tables: enriched.sort((a, b) => a.label.localeCompare(b.label)), joins, navigation: usableNavigation([...fecNavigation(bundle.navigation ?? [], enriched, compatibility), ...lobbyingNavigation(enriched)], enriched), metadata: status };
 }
 export async function loadCollection(signal?: AbortSignal, onCatalog?: (collection: Collection) => void): Promise<Collection> {
   // Begin both requests together. Records can load as soon as the catalog arrives.
@@ -283,6 +284,9 @@ export function isIncomingJoin(join: Join, id: string): boolean {
 }
 export function defaultColumns(table: Dataset): string[] {
   const preferred: Record<string, string[]> = {
+    lobbying_filings: ["client_name", "registrant_name", "filing_year", "filing_period", "filing_type", "dt_posted"],
+    lobbying_activities: ["filing_uuid", "activity_index", "general_issue_code", "general_issue_code_display", "description"],
+    lobbying_activity_lobbyists: ["filing_uuid", "activity_index", "lobbyist_index", "first_name", "last_name", "covered_position"],
     fec_financial_profiles: ["entity_kind", "entity_id", "entity_name", "source_cycle", "selection_status", "coverage_status"],
     congress_bills: [
       "bill_id",

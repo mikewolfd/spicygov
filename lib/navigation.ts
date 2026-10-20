@@ -179,7 +179,7 @@ export function usableNavigation(specs: Navigation[], tables: Dataset[]): Naviga
       targets: s.targets.map(t => {
         const mainReady=(t.requiredMainFields??[]).every(f=>f.status!=='missing'&&source.columns.some(c=>c.name===f.path.split('.')[0]))&&navigationColumns({...s,field,targets:[t]}).every(c=>source.columns.some(x=>x.name===c));
         const nestedReady=(t.requiredElementFields??[]).every(f=>f.status!=='missing');
-        const targetReady=t.table==='@url'||!t.table.startsWith('@')&&t.columns.every(c=>lookup.get(t.table)?.columns.some(x=>x.name===c))&&!['missing','incompatible','unavailable'].includes(lookup.get(t.table)?.metadataState??'missing');
+        const targetReady=t.table==='@url'||t.table==='@value'||!t.table.startsWith('@')&&t.columns.every(c=>lookup.get(t.table)?.columns.some(x=>x.name===c))&&!['missing','incompatible','unavailable'].includes(lookup.get(t.table)?.metadataState??'missing');
         const available=sourceReady&&mainReady&&nestedReady&&t.available!==false&&t.sourceAvailable!==false&&targetReady;
         return {...t,available,directions:t.directions?{forward:{...t.directions.forward,available:available&&t.directions.forward.available},reverse:{...t.directions.reverse,available:available&&t.directions.reverse.available}}:undefined};
       })};
