@@ -2,13 +2,12 @@ import type { ReactNode } from 'react';
 import type { Dataset, Filter, Row } from '../lib/catalog';
 import { display, pretty } from '../lib/catalog';
 import { makeHref } from '../lib/explorer-location';
-import { completeIdentity } from '../lib/record-lookup';
 import { targetKeys, type Connection, type Navigation } from '../lib/navigation';
 import { LOBBYING_TABLES } from '../lib/lobbying-navigation';
 
 type Props = {
   table: Dataset; row: Row; catalog: Dataset[]; bodyNavigation?: Navigation;
-  onOpen: (id: string, filters: Filter[], connection?: Connection, detail?: boolean) => void;
+  onOpen: (id: string, filters: Filter[], connection?: Connection) => void;
 };
 const scalar = (value: unknown): string | undefined =>
   typeof value === 'string' && value.length > 0 || typeof value === 'bigint' ||
@@ -23,7 +22,7 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
     <h2>Lobbying disclosure</h2><p role="status">The disclosure definition is unavailable for this publication. See the raw fields below.</p>
   </section>;
   const filing = table.id === 'lobbying_filings', activity = table.id === 'lobbying_activities';
-  function link(id: string, values: Row, label: string, detail = false): ReactNode {
+  function link(id: string, values: Row, label: string): ReactNode {
     const target = catalog.find(t => t.id === id);
     const filters = Object.entries(values).map(([column, value]) => ({ column, value: scalar(value) }));
     if (!target || target.metadataState !== 'current' || target.recordsAvailable === false ||
@@ -31,9 +30,8 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
       return <span>{label}: unavailable; a source key or published field is missing.</span>;
     }
     const checked = filters as Filter[];
-    const exact = detail && completeIdentity(target, checked);
-    return <a href={makeHref({ id, filters: checked, cursor: 0, view: 'records', detail: exact })}
-      onClick={e => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) { e.preventDefault(); onOpen(id, checked, undefined, exact); } }}>{label}</a>;
+    return <a href={makeHref({ id, filters: checked, cursor: 0, view: 'records' })}
+      onClick={e => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) { e.preventDefault(); onOpen(id, checked); } }}>{label}</a>;
   }
   function bodies() {
     const values = row.government_entities;
@@ -78,14 +76,14 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
             {object(value) ? <>
               <p>Source position {index}: {stated(value.general_issue_code_display)} · {stated(value.general_issue_code)}</p>
               <p className="source-passage">{stated(value.description)}</p>
-              {link('lobbying_activities', { filing_uuid: row.filing_uuid, activity_index: index }, `Open activity ${index}`, true)}
+              {link('lobbying_activities', { filing_uuid: row.filing_uuid, activity_index: index }, `Activity record ${index}`)}
             </> : <p>Unresolved source occurrence at position {index}: {stated(value)}</p>}
           </li>)}</ol>}
       {bodies()}
     </> : <>
       <nav aria-label="Filing context">
-        {link('lobbying_filings', { filing_uuid: row.filing_uuid }, 'Supporting filing and registrant', true)}
-        {!activity && link('lobbying_activities', { filing_uuid: row.filing_uuid, activity_index: row.activity_index }, 'Supporting activity and contacted bodies', true)}
+        {link('lobbying_filings', { filing_uuid: row.filing_uuid }, 'Supporting filing and registrant')}
+        {!activity && link('lobbying_activities', { filing_uuid: row.filing_uuid, activity_index: row.activity_index }, 'Supporting activity and contacted bodies')}
       </nav>
       {activity ? <>
         <p>Issue: {stated(row.general_issue_code_display)} · {stated(row.general_issue_code)}</p>
@@ -111,7 +109,7 @@ export function LobbyingProfile({ table, row, catalog, bodyNavigation, onOpen }:
       <p>Selected generation: {stated(table.artifactDigest)}</p>
       {table.published && <p>Publication time: {table.published}. This is not the filing’s reporting period.</p>}
       {table.publication?.recordUrl && <a href={table.publication.recordUrl} target="_blank" rel="noreferrer">Selected publication evidence</a>}
-      <p className="lobbying-profile-note">The supporting filing is the published native record; an original document URL is not supplied here. Exact-record lookup reports missing or ambiguous matches. History and body searches are bounded and may require Next; an incomplete search is not evidence of absence.</p>
+      <p className="lobbying-profile-note">The supporting filing is the published native record; an original document URL is not supplied here. Links show matching records without assuming uniqueness. Open a row to inspect it. Searches are bounded and may require Next; an incomplete search is not evidence of absence.</p>
     </details>
   </section>;
 }

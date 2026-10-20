@@ -47,7 +47,7 @@ function anchors(node) {
 const route=(node)=>readLocation(new URL(node.props.href,'https://spicygov.ai').search);
 const findLink=(id,row,label)=>anchors(LobbyingProfile(props(id,row))).find(node=>node.props.children===label);
 
-test('client history is registrant-scoped, amendments stay separate and links use normal identity navigation',()=>{
+test('client history is registrant-scoped, amendments stay separate and complete keys use bounded lists',()=>{
   const label='Client filing history within this registrant';
   const first=route(findLink('lobbying_filings',filing,label));
   const different=route(findLink('lobbying_filings',{...filing,registrant_id:'101',client_id:'201'},label));
@@ -63,8 +63,13 @@ test('client history is registrant-scoped, amendments stay separate and links us
     assert.equal(findLink('lobbying_filings',{...filing,[key]:null},label),undefined);
     assert.match(render('lobbying_filings',{...filing,[key]:null}),/source key or published field is missing/);
   }
-  assert.deepEqual(route(findLink('lobbying_filings',filing,'Open activity 0')).filters,[{column:'filing_uuid',value:'original'},{column:'activity_index',value:'0'}]);
-  assert.equal(route(findLink('lobbying_filings',filing,'Open activity 0')).detail,true);
+  assert.deepEqual(route(findLink('lobbying_filings',filing,'Activity record 0')).filters,[{column:'filing_uuid',value:'original'},{column:'activity_index',value:'0'}]);
+  assert.equal(route(findLink('lobbying_filings',filing,'Activity record 0')).detail,undefined);
+  let opened;
+  const tree=LobbyingProfile(props('lobbying_filings',filing,{onOpen:(...args)=>{opened=args;}}));
+  const activityLink=anchors(tree).find(node=>node.props.children==='Activity record 0');
+  activityLink.props.onClick({preventDefault(){}});
+  assert.deepEqual(opened,['lobbying_activities',[{column:'filing_uuid',value:'original'},{column:'activity_index',value:'0'}]]);
   assert.ok(defaultColumns(catalog[0]).includes('filing_type'));
 });
 
@@ -83,7 +88,10 @@ test('lobbyist role and source positions remain literal with missing, empty and 
   assert.equal(findLink('lobbying_activity_lobbyists',{...row,lobbyist_id:null},label),undefined);
   const roleOccurrence=route(findLink('lobbying_activity_lobbyists',row,'Supporting activity and contacted bodies'));
   assert.deepEqual(roleOccurrence.filters,[{column:'filing_uuid',value:'original'},{column:'activity_index',value:'0'}]);
-  assert.equal(roleOccurrence.detail,true);
+  assert.equal(roleOccurrence.detail,undefined);
+  const parent=route(findLink('lobbying_activity_lobbyists',row,'Supporting filing and registrant'));
+  assert.deepEqual(parent.filters,[{column:'filing_uuid',value:'original'}]);assert.equal(parent.detail,undefined);
+  assert.match(html,/without assuming uniqueness/);
 });
 
 test('body occurrences retain duplicates and nulls; saved URL and click share one literal membership recipe',()=>{
