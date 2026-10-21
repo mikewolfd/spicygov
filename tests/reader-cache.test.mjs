@@ -15,6 +15,7 @@ export async function asyncBufferFromUrl(options) {
   }};
 }
 export async function parquetMetadataAsync(file) { return {num_rows:globalThis.__readerProbe.bySize.get(file.byteLength).rows}; }
+export async function parquetScan({metadata,rowStart=0}) { return {ranges:[{rowStart:Math.max(0,Math.min(rowStart,metadata.num_rows)),rowEnd:metadata.num_rows}]}; }
 export async function parquetReadObjects({file,columns,rowStart,rowEnd,includeRowIndex}) {
   const s=globalThis.__readerProbe, member=s.bySize.get(file.byteLength);
   s.reads.push({url:member.url,columns,start:rowStart,end:rowEnd});
