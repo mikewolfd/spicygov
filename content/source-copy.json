@@ -310,7 +310,7 @@
     "court_citation_map": {
       "label": "Which opinions cite which",
       "summary": "Links citing and cited opinions using CourtListener\u2019s automated citation matching. The depth value counts mentions.",
-      "scope": "Includes the complete June 30, 2026 citation-map export, not every citation in published court opinions.",
+      "scope": "Includes the complete selected citation-map export, not every citation in published court opinions.",
       "gaps": [
         "Unresolved citations are absent, some opinion links are unmatched, and links to recent decisions can arrive late.",
         "Mentions do not show whether a court followed, distinguished or overruled a decision.",
@@ -320,7 +320,7 @@
     "court_citations": {
       "label": "Court reporter citations",
       "summary": "Lists the reporter references CourtListener attaches to each decision, preserving its reporter abbreviations.",
-      "scope": "Includes the complete June 30, 2026 citations export.",
+      "scope": "Includes the complete selected citations export.",
       "gaps": [
         "Missing references may still appear in printed opinions; this export has no Supreme Court Reporter citations in volumes 143 or 144.",
         "Some references lack a matching decision record because export times differ or CourtListener merged records."
@@ -376,7 +376,7 @@
     "court_parentheticals": {
       "label": "How courts describe cited opinions",
       "summary": "Preserves a citing court\u2019s own words about another opinion, automatically extracted by CourtListener. These passages can describe a holding, a fact or a procedural point.",
-      "scope": "Includes the complete June 30, 2026 parentheticals export.",
+      "scope": "Includes the complete selected parentheticals export.",
       "gaps": [
         "The score is a model estimate, not a human review of the passage or holding.",
         "Several passages can repeat the same point; some links to opinions are unmatched."

@@ -29528,6 +29528,146 @@
       ]
     },
     {
+      "tableId": "scorecard_action_comparisons",
+      "family": "scorecard-analysis",
+      "schema": [
+        [
+          "scorecard_id",
+          "VARCHAR"
+        ],
+        [
+          "result_id",
+          "VARCHAR"
+        ],
+        [
+          "source_snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "item_id",
+          "VARCHAR"
+        ],
+        [
+          "publisher_member_key",
+          "VARCHAR"
+        ],
+        [
+          "metric_id",
+          "VARCHAR"
+        ],
+        [
+          "reference_id",
+          "VARCHAR"
+        ],
+        [
+          "vote_id",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "official_member_key",
+          "VARCHAR"
+        ],
+        [
+          "publisher_target_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_action_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_credit_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_eligibility_text",
+          "VARCHAR"
+        ],
+        [
+          "official_position_text",
+          "VARCHAR"
+        ],
+        [
+          "official_position_normalized",
+          "VARCHAR"
+        ],
+        [
+          "comparison_status",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "input_pins_json",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:2346340ea085360ca9095994843f36e2df72bbce65079db88f67a559cd2ee847",
+        "publishedAt": "2026-10-19T19:42:29Z",
+        "recordUrl": "https://data.spicygov.ai/generations/scorecard-analysis/2346340ea085360ca9095994843f36e2df72bbce65079db88f67a559cd2ee847/artifact.json",
+        "rows": 17678,
+        "byteSize": 321937,
+        "sha256": "sha256:dedbed8ac9cd669ef46c972eac4939e8ae8288a82772a10fa3c5f2e0837f898a"
+      },
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.scorecard_action_comparisons",
+      "executableDimensions": [
+        "comparison-status",
+        "saved-editions",
+        "inherited-publisher-id",
+        "inherited-year-text",
+        "inherited-congress-text",
+        "inherited-timespan-text"
+      ],
+      "parentLinks": [
+        {
+          "table": "scorecards",
+          "mode": "recorded-parent",
+          "keys": [
+            [
+              "scorecard_id",
+              "scorecard_id"
+            ]
+          ]
+        }
+      ],
+      "probe": {
+        "status": "not-run",
+        "scope": "Captured publication metadata and a local fixture; full published-row coverage scan remains pending."
+      },
+      "evidence": [
+        "coverage-release-local-20261019/preflight-capture.json; census sha256:3308a79ad42553602a066e7c0fdc4963644c2a49e031261c5b3dc7f5f5356c8a",
+        "tests/test_congress_coverage_maps.py: test_action_comparison_definition_preserves_dispositions_and_recorded_scope"
+      ],
+      "limits": [
+        "Edition periods describe the recorded publisher edition, not each comparison action or metric period.",
+        "Unresolved comparisons remain in the population; no complete roll-call or publisher-acquisition claim."
+      ],
+      "completionEvidenceNote": "This added definition has no full-scan result. Earlier aggregate review and completion claims describe their historical table sets."
+    },
+    {
       "tableId": "scorecard_item_links",
       "family": "scorecard-analysis",
       "schema": [

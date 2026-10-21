@@ -155,6 +155,57 @@ class CourtExtractionParentTests(CourtExtractionFixture, unittest.TestCase):
         self.assertEqual(result["artifactDigest"], "exact-original-parent")
         self.assertEqual(result["_additionalParentEvidence"]["matchedSourceRows"], 1)
 
+    def test_original_witness_survives_an_intermediate_native_conversion(self):
+        snapshot = self.owner["artifact"]["spec"]["readSnapshot"]["families"]["court-opinion-pdf-extractions"]
+        snapshot.update(artifactDigest="sha256:" + "c" * 64, prefix="generations/intermediate")
+        snapshot["tables"]["court_opinion_pdf_extractions.parquet"] = {
+            "sha256": "sha256:" + "d" * 64, "byteSize": 20, "rows": 1,
+            "columns": [["opinion_body_id", "VARCHAR"], ["text_content", "VARCHAR"]],
+        }
+        result = self.run_parent()
+        self.assertEqual(result["artifactDigest"], "exact-original-parent")
+        self.assertEqual(result["_additionalParentEvidence"]["witnessSourceId"],
+                         self.key + "/court_opinion_pdf_extractions.parquet")
+
+    def test_direct_declared_parent_still_uses_the_ordinary_path(self):
+        self.owner["artifact"]["spec"]["parents"] = {"court_opinions.parquet": {"sha256": "declared"}}
+        with (patch.object(self.adapter, "restore", side_effect=AssertionError("unexpected restore")),
+              patch.object(self.adapter.inputs, "parent", return_value=self.parent_result) as parent):
+            self.assertIs(self.run_parent(), self.parent_result)
+        parent.assert_called_once_with("court_opinion_pdf_extractions", self.owner, self.relation)
+
+    def test_refuses_ambiguous_or_noncommon_source_witnesses(self):
+        first = copy.deepcopy(self.restored["acceptedWitnessGroups"][0])
+        other = copy.deepcopy(first)
+        other["witnesses"][0]["source_id"] = (
+            "generations/court-opinion-pdf-extractions/" + "c" * 64 +
+            "/court_opinion_pdf_extractions.parquet")
+        for groups, rows, message in (
+            ([{"rows": 1, "witnesses": first["witnesses"] + other["witnesses"]}], 1, "ambiguous"),
+            ([first, other], 2, "receipts do not all witness"),
+        ):
+            with self.subTest(message=message):
+                self.owner["rows"] = rows
+                self.restored["acceptedWitnessGroups"] = groups
+                with (patch.object(self.adapter.inputs, "table", side_effect=AssertionError("unproven source")),
+                      self.assertRaisesRegex(ValueError, message)):
+                    self.run_parent()
+
+    def test_refuses_source_outside_fixed_family_table_or_with_changed_hash(self):
+        group = self.restored["acceptedWitnessGroups"][0]
+        witness = group["witnesses"][0]
+        original = witness["source_id"]
+        for changed in (original.replace("court-opinion-pdf-extractions", "court-opinions"),
+                        original.replace(".parquet", "/../other.parquet")):
+            with self.subTest(source=changed):
+                witness["source_id"] = changed
+                with self.assertRaisesRegex(ValueError, "receipts do not all witness"):
+                    self.run_parent()
+        witness["source_id"] = original
+        witness["sha256"] = "sha256:" + "e" * 64
+        with self.assertRaisesRegex(ValueError, "bytes/rows differ"):
+            self.run_parent()
+
     def test_refuses_incomplete_keys_or_missing_prior_parent(self):
         self.relation["keys"] = [["opinion_id", "opinion_id"]]
         with self.assertRaisesRegex(ValueError, "does not pin"):

@@ -3125,7 +3125,7 @@
         ],
         [
           "activity_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "general_issue_code",
@@ -3144,8 +3144,8 @@
           "VARCHAR"
         ],
         [
-          "government_entities_json",
-          "VARCHAR"
+          "government_entities",
+          "STRUCT(id VARCHAR, \"name\" VARCHAR)[]"
         ]
       ],
       "classification": "inherited",
@@ -3219,11 +3219,11 @@
         ],
         [
           "activity_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "lobbyist_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "lobbyist_id",
@@ -3259,7 +3259,7 @@
         ],
         [
           "new",
-          "VARCHAR"
+          "BOOLEAN"
         ]
       ],
       "classification": "inherited",
@@ -3337,7 +3337,7 @@
         ],
         [
           "filing_year",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "filing_period",
@@ -3345,7 +3345,7 @@
         ],
         [
           "dt_posted",
-          "VARCHAR"
+          "TIMESTAMP WITH TIME ZONE"
         ],
         [
           "registrant_name",
@@ -3365,23 +3365,19 @@
         ],
         [
           "income",
-          "VARCHAR"
+          "DECIMAL(38,6)"
         ],
         [
           "expenses",
-          "VARCHAR"
+          "DECIMAL(38,6)"
         ],
         [
-          "lobbying_activities_json",
-          "VARCHAR"
+          "lobbying_activities",
+          "STRUCT(general_issue_code VARCHAR, general_issue_code_display VARCHAR, description VARCHAR)[]"
         ],
         [
-          "government_entities_json",
-          "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
+          "government_entities",
+          "STRUCT(id VARCHAR, \"name\" VARCHAR)[]"
         ]
       ],
       "classification": "record-dates",

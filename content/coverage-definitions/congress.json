@@ -4777,8 +4777,8 @@
         {
           "id": "member-vote-dates",
           "kind": "date",
-          "label": "Member vote dates",
-          "meaning": "Printed vote day in Eastern time, including rows whose member or service term is unresolved.",
+          "label": "Published assignment vote dates",
+          "meaning": "Printed vote day in Eastern time for published assignments. Receipt-only unresolved observations appear in the source-observation snapshot.",
           "fields": [
             "vote_day"
           ],
@@ -4787,11 +4787,18 @@
         {
           "id": "service-term-matching",
           "kind": "category",
-          "label": "Service-term matching",
-          "meaning": "Whether each vote matched a recorded service term. Unresolved members receive no inferred service period.",
+          "label": "Published assignment service-term matching",
+          "meaning": "Source-stated matching status for published assignments. Unresolved members receive no inferred service period; receipt-only observations appear in the source-observation snapshot.",
           "fields": [
             "term_match"
           ]
+        },
+        {
+          "id": "member-vote-source-observations",
+          "kind": "snapshot",
+          "special": "member-vote-source-observations",
+          "label": "Member vote source observations",
+          "meaning": "All restored source observations, with every receipt-only vote-day and matching-status group preserved. Published assignments alone form the chart counts. Conversion-refused rows are not restored observations."
         }
       ]
     },
@@ -6742,6 +6749,237 @@
           ],
           "label": "Congress, chamber and session",
           "meaning": "Congress, chamber and session recorded together. Rows missing any of these values stay unplaced."
+        }
+      ]
+    },
+    "scorecard_action_comparisons": {
+      "family": "scorecard-analysis",
+      "schema": [
+        [
+          "scorecard_id",
+          "VARCHAR"
+        ],
+        [
+          "result_id",
+          "VARCHAR"
+        ],
+        [
+          "source_snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "item_id",
+          "VARCHAR"
+        ],
+        [
+          "publisher_member_key",
+          "VARCHAR"
+        ],
+        [
+          "metric_id",
+          "VARCHAR"
+        ],
+        [
+          "reference_id",
+          "VARCHAR"
+        ],
+        [
+          "vote_id",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "official_member_key",
+          "VARCHAR"
+        ],
+        [
+          "publisher_target_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_action_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_credit_text",
+          "VARCHAR"
+        ],
+        [
+          "publisher_eligibility_text",
+          "VARCHAR"
+        ],
+        [
+          "official_position_text",
+          "VARCHAR"
+        ],
+        [
+          "official_position_normalized",
+          "VARCHAR"
+        ],
+        [
+          "comparison_status",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "input_pins_json",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Retained comparison dispositions, including unresolved and not-applicable rows. Edition scope does not establish complete roll-call coverage, a metric period, or publisher acquisition completeness.",
+      "dimensions": [
+        {
+          "id": "comparison-status",
+          "kind": "category",
+          "label": "Comparison dispositions",
+          "meaning": "Recorded comparison outcomes, including unresolved and not-applicable rows. These are analysis dispositions, not publisher ratings.",
+          "fields": [
+            "comparison_status"
+          ]
+        },
+        {
+          "id": "saved-editions",
+          "kind": "category",
+          "label": "Saved editions",
+          "meaning": "Edition identities present in the retained comparisons, including unresolved comparisons. Missing identities remain unplaced.",
+          "fields": [
+            "scorecard_id"
+          ]
+        },
+        {
+          "id": "inherited-publisher-id",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id"
+          ],
+          "label": "Edition publishers",
+          "meaning": "Publishers of the saved editions.",
+          "parent": {
+            "table": "scorecards",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "publisher_id",
+            "kind": "category",
+            "fields": [
+              "publisher_id"
+            ],
+            "label": "Edition publishers",
+            "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
+        },
+        {
+          "id": "inherited-year-text",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id"
+          ],
+          "label": "Edition years",
+          "meaning": "Four-digit year labels from the linked edition. Metric periods may differ.",
+          "parent": {
+            "table": "scorecards",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "year_text",
+            "kind": "year",
+            "fields": [
+              "year_text"
+            ],
+            "label": "Literal edition years",
+            "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
+        },
+        {
+          "id": "inherited-congress-text",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id"
+          ],
+          "label": "Edition Congress labels",
+          "meaning": "Congress wording from the linked edition, including spans. Metric periods may differ.",
+          "parent": {
+            "table": "scorecards",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "congress_text",
+            "kind": "category",
+            "fields": [
+              "congress_text"
+            ],
+            "label": "Literal edition Congress labels",
+            "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
+        },
+        {
+          "id": "inherited-timespan-text",
+          "kind": "inherited",
+          "fields": [
+            "scorecard_id"
+          ],
+          "label": "Edition periods",
+          "meaning": "Period stated for the linked edition; a metric’s period may differ.",
+          "parent": {
+            "table": "scorecards",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "scorecard_id",
+                "scorecard_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "timespan_text",
+            "kind": "category",
+            "fields": [
+              "timespan_text"
+            ],
+            "label": "Edition timespans",
+            "meaning": "Edition membership describes the retained edition; it does not override a metric’s lifetime or relative period."
+          }
         }
       ]
     },

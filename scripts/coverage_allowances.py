@@ -14,16 +14,28 @@ SCAN = 900
 SCAN_BY_TABLE = {'comments': 7200, 'fec_receipts': 3600}
 # Native restoration only: each allowance covers the table's bridge request
 # (BRIDGE_BY_RESTORE) plus preparation and coverage checks.
-SCAN_BY_NATIVE_TABLE = {'court_opinions': 2700, 'documents': 1500, 'federal_register': 1500,
-                        'fr_docket_links': 1500}
+SCAN_BY_NATIVE_TABLE = {'court_opinions': 2700, 'documents': 1500, 'document_attributes': 1500,
+                        'comment_periods': 1500,
+                        'federal_register': 1500,
+                        'fr_docket_links': 1500,
+                        'court_citation_map': 9000, 'court_citations': 9000,
+                        'court_parentheticals': 9000, 'court_opinion_clusters': 9000}
 
 # One restoration request to a spicygov adapter (additional_native_coverage.bridge).
 # Schema and verification requests always use BRIDGE. Full current documents and
 # Register restores exceeded five minutes on hosted runners; a Federal Register
 # restore took 206-240 seconds on a loaded laptop.
 BRIDGE = 300
-BRIDGE_BY_RESTORE = {'court_opinions': 1800, 'documents': 900, 'federal_register': 900,
-                     'fr_docket_links': 900}
+# The retained court-citations family admission took 3,611.7 seconds:
+# recovery-20261018/court-citations-september-local-20261019.log:8-9.
+# These serialized bulk restores allow twice that observed admission, plus
+# outer preparation in SCAN_BY_NATIVE_TABLE. A ceiling is not a runtime estimate.
+BRIDGE_BY_RESTORE = {'court_opinions': 1800, 'documents': 900, 'document_attributes': 900,
+                     'comment_periods': 900,
+                     'federal_register': 900,
+                     'fr_docket_links': 900,
+                     'court_citation_map': 7200, 'court_citations': 7200,
+                     'court_parentheticals': 7200, 'court_opinion_clusters': 7200}
 
 # One request to the packaged reader (native_legislative_coverage.bridge).
 LEGISLATIVE_BRIDGE = 900

@@ -17,14 +17,17 @@ from spicy_regs.etl_receipts import read_attempts, select_receipts
 from spicy_regs.native_types import described_schema
 from spicy_regs.pipelines.rollups.subject_receipts import dataset_policy
 
+BULK_COURT_DATASETS = frozenset(("court_citation_map", "court_citations",
+                               "court_parentheticals", "court_opinion_clusters"))
 DATASETS = frozenset(("amendments", "court_dockets", "court_docket_groups",
-                      "court_opinion_pdf_extractions", "court_opinions"))
+                      "court_opinion_pdf_extractions", "court_opinions")) | BULK_COURT_DATASETS
 PACKAGE = Path(inspect.getfile(court_receipts)).resolve().parent
 
 
 def implementation_identity():
     files = [Path(__file__), *(PACKAGE / name for name in (
         "court_receipts.py", "court_subjects.py", "etl_receipts.py", "etl_bulk.py",
+        "court_bulk.py", "court_restore.py", "conversion_reads.py",
         "native_types.py", "parquet_rows.py", "transforms/parquet_rows.py",
     ))]
     value = hashlib.sha256(MAINTAINED.implementation_identity().encode())
@@ -75,18 +78,22 @@ def restore(request):
         subject, destination / (dataset + ".parquet"), dataset=dataset,
         schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
     )
-    # Restoration above performs complete subject/receipt admission. Read the
-    # accepted witnesses through the same maintained receipt decoder afterward.
-    selected = select_receipts(receipts, destination / "selected-receipts.parquet", dataset=dataset)
+    # Restoration above performs complete subject/receipt admission. The bulk
+    # tables and opinions read their restored edition/origin fields; coverage does not
+    # follow inherited parents and needs no additional witness enumeration.
     witnesses = {}
-    accepted = 0
-    for receipt in read_attempts([selected], policy, generation_id=generation, outcomes=frozenset(("accepted",))):
-        accepted += 1
-        key = json.dumps(receipt["witnesses"], sort_keys=True, separators=(",", ":"))
-        witnesses[key] = witnesses.get(key, 0) + 1
     rows = pq.read_metadata(output).num_rows
-    if accepted != rows or rows != pq.read_metadata(subject).num_rows:
+    if rows != pq.read_metadata(subject).num_rows:
         raise ValueError("Accepted court receipt count differs from restored subjects")
+    if dataset not in BULK_COURT_DATASETS and dataset != "court_opinions":
+        selected = select_receipts(receipts, destination / "selected-receipts.parquet", dataset=dataset)
+        accepted = 0
+        for receipt in read_attempts([selected], policy, generation_id=generation, outcomes=frozenset(("accepted",))):
+            accepted += 1
+            key = json.dumps(receipt["witnesses"], sort_keys=True, separators=(",", ":"))
+            witnesses[key] = witnesses.get(key, 0) + 1
+        if accepted != rows:
+            raise ValueError("Accepted court receipt count differs from restored subjects")
     return {
         "format": "spicygov-private-coverage-input", "version": 1,
         "dataset": dataset, "generationId": generation,

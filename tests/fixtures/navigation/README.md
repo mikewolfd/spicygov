@@ -10,3 +10,8 @@ sentinel fields verify that the evidence display exposes only useful facts.
 checked it. Its `raw_record` contains one offered URL and a five-field successful
 extraction diagnostic, with synthetic source digests. It proves exact filing and
 generation lookup; it is not evidence of a captured public document.
+
+`lobbying-activities.parquet` contains six synthetic native-shaped activity rows
+in two-row groups. Repeated, null, empty and same-name/different-ID contacted-body
+entries exercise literal membership and bounded continuation. Original and
+amendment filing IDs stay separate; no fixture row establishes person identity.

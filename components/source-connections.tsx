@@ -52,7 +52,7 @@ export function SourceConnections({table,catalog,row,joins,navigation,onOpen}: P
         return <div className="source-reference" key={s.id}>
           <p>{s.meaning}</p>
           {state==='ambiguous targets'&&<small>Ambiguous reference: each link is a separate candidate.</small>}
-          {links.map((link,i)=>link.target.table==='@url'?<div key={i}>
+          {links.filter(link=>link.target.table!=='@value').map((link,i)=>link.target.table==='@url'?<div key={i}>
             {s.id==='fcc_filing_documents'&&s.source==='fcc_filings'?<FccDocumentReference link={link} row={row} fieldAvailable={table.columns.some(c=>c.name==='extraction_results')}/>:<><a href={link.values[0]} target="_blank" rel="noreferrer">Open offered document</a><small>Capture and text extraction are not established by this link.</small></>}
           </div>:<button key={i} disabled={!link.target.available||link.target.directions?.forward.available===false} onClick={()=>onOpen(link.target.table,link.filters,undefined,link.target.completeKey===true)}>
             <span>{link.target.table==='@receipt:congress_acquisition'?'Detail read attempts':catalog.find(t=>t.id===link.target.table)?.label??pretty(link.target.table.replace('@receipt:',''))}<small>{link.target.columns.map((c,i)=>`${c}: ${link.values[i]}`).join(' · ')}</small></span>

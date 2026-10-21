@@ -280,6 +280,38 @@ class RegulationCoverageTests(unittest.TestCase):
         parent['urls']=[duplicate]; parent['rows']=2
         with self.assertRaisesRegex(ValueError,'unique'):inherit_unique(self.conn,[child],3,parent,relation,dim)
 
+    def test_native_lobbying_periods_keep_posting_dates_separate_and_orphans_unplaced(self):
+        from coverage_scan import _measure
+
+        definitions=json.loads((ROOT/'content/coverage-definitions/regulation.json').read_text())['tables']
+        self.conn.execute("SET TimeZone='UTC'")
+        filings=self.parquet('filings.parquet', """SELECT * FROM (VALUES
+            ('quarter', 2024::BIGINT, 'first_quarter', TIMESTAMPTZ '2024-04-01 00:30:00+00'),
+            ('half', 2023::BIGINT, 'mid_year', TIMESTAMPTZ '2024-01-02 00:00:00+00'))
+            t(filing_uuid,filing_year,filing_period,dt_posted)""")
+        parent={'urls':[filings], 'family':'lobbying-filings','artifactDigest':'sha256:'+'a'*64,
+                'tableId':'lobbying_filings','recordUrl':'fixture-original-generation','members':[],'rows':2}
+        class SameGeneration:
+            def parent(inner, table_id, table, relation):
+                self.assertEqual(relation, {'table':'lobbying_filings','mode':'same-generation',
+                                            'keys':[['filing_uuid','filing_uuid']]})
+                return parent
+        direct=_measure(self.conn,'lobbying_filings',{'rows':2,'members':[{'url':filings}],'publishedAt':'2026-10-18T00:00:00Z'},
+                        [filings],{**definitions['lobbying_filings'],'_scanner':'regulation'},SameGeneration())
+        self.assertEqual(direct[0]['buckets'], {'["2023","mid_year"]':1,'["2024","first_quarter"]':1})
+        self.assertEqual(direct[1]['buckets'], {'2024-01':1,'2024-04':1})
+        for name in ('lobbying_activities','lobbying_activity_lobbyists'):
+            with self.subTest(table=name):
+                child=self.parquet(name+'.parquet', """SELECT *,0::BIGINT lobbyist_index FROM (VALUES
+                    ('quarter',0::BIGINT),('quarter',1::BIGINT),('half',0::BIGINT),('missing',0::BIGINT))
+                    t(filing_uuid,activity_index)""")
+                measured=_measure(self.conn,name,{'rows':4},[child],definitions[name],SameGeneration())
+                self.assertEqual(measured[0]['buckets'], {'["2023","mid_year"]':1,'["2024","first_quarter"]':2})
+                self.assertEqual(measured[1]['buckets'], {'2024-01':1,'2024-04':2})
+                for axis in measured:
+                    self.assertEqual((axis['placedRows'],axis['unplacedRows'],axis['matchedRows'],axis['unmatchedRows']),
+                                     (3,1,3,1))
+
     def discovery_inputs(self):
         key='generations/discovery-signals/'+'a'*64
         metadata={'spicy_regs.discovery_signals.as_of':'2000-03-31 23:45:10.123456+00',

@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import restore_source_navigation_coverage as reader
 import additional_native_coverage as adapter
 from coverage_inputs import CoverageInputs
+from coverage_scan import validate_counts, validate_members
 from congress_coverage import _member_service
 import duckdb
 from spicy_regs.congress_receipts import write_congress_dataset
@@ -136,6 +137,166 @@ class SourceCoverageTests(unittest.TestCase):
                 changed["subjects"][0]["sha256"] = "sha256:" + "0" * 64
                 with self.assertRaises(ValueError):
                     reader.restore(changed)
+
+
+class MemberVoteCoverageTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name).resolve()
+        self.dataset = "member_vote_terms"
+        self.definition = json.loads((reader.ROOT / "content/coverage-definitions/congress.json").read_text())["tables"][self.dataset]
+
+    def row(self, key, day="2025-01-03", status="half_open", index="00"):
+        row = dict.fromkeys(INPUT_COLUMNS[self.dataset])
+        row.update(vote_id="119-house-1-1", member_key=key, chamber="house",
+                   vote_day=day, term_match=status, term_index=index)
+        return row
+
+    def request(self, rows, name="fixture"):
+        root = self.root / name
+        root.mkdir()
+        source = root / "source.parquet"
+        pq.write_table(pa.Table.from_pylist(rows, schema=reader.arrow_schema(self.dataset)), source)
+        subject, receipts = write_congress_dataset(source, root / "native", dataset=self.dataset, generation_id="selected")
+        return {"dataset": self.dataset, "generationId": "selected", "subjects": [member(subject)],
+                "receipts": member(receipts), "destination": str(root / "restored")}
+
+    def scan(self, result, *, dataset="member_vote_terms", special=None):
+        # Match the private bridge's JSON boundary (schema pairs become lists).
+        result = json.loads(json.dumps(result))
+        rows = result["rows"]
+        native = result["selection"]["subjects"][0]
+        table = {"family": "member-vote-terms", "kind": "generation", "rows": rows,
+                 "artifactDigest": "sha256:" + "a" * 64, "columns": result["nativeSchema"],
+                 "members": [{"url": native["path"], "rows": rows, "sha256": native["sha256"], "byteSize": native["byteSize"]}]}
+        definition = copy.deepcopy(self.definition)
+        if special is not None:
+            definition["dimensions"][-1]["special"] = special
+        policy = {**definition, "_scanner": "congress", "_additionalNativeProcessing": True,
+                  "schema": result["nativeSchema"], "processingSchema": result["processingSchema"],
+                  "restorationImplementationSha256": result["implementationSha256"]}
+        class Inputs:
+            def producing(self, dataset, selected):
+                return selected
+        # Admission is real in restore(); this local seam supplies that retained
+        # result without publishing a synthetic generation or repeating admission.
+        with patch.object(adapter.AdditionalInputs, "restore", return_value={**table, "urls": result["urls"], "_coverageProcessing": result}), \
+             patch.object(adapter, "describe", side_effect=lambda dataset: json.loads(json.dumps(reader.description(dataset)))):
+            return adapter.scan_table(dataset, table, policy, validate_members=validate_members,
+                                      validate_counts=validate_counts, inputs=Inputs())
+
+    def test_member_vote_populations_keep_exact_literals_order_and_visible_groups(self):
+        native = self.row("native")
+        both_null = self.row("both-null", day=None, status=None, index=None)
+        unmatched = self.row("unmatched", status="unmatched", index=None)
+        unresolved = self.row("unresolved", day=None, status="unresolved_member", index=None)
+        empty = self.row("empty", day="", status="", index=None)
+        cases = {
+            "mixed": ([unmatched, native, unresolved, both_null, self.row("unmatched-2", status="unmatched", index=None), empty],
+                      [native, both_null], [("2025-01-03", "unmatched", 2), (None, "unresolved_member", 1), ("", "", 1)]),
+            "native-only": ([native, both_null], [native, both_null], []),
+            "all-unresolved": ([unmatched, unresolved, empty], [], [("2025-01-03", "unmatched", 1), (None, "unresolved_member", 1), ("", "", 1)]),
+        }
+        for name, (rows, expected, groups) in cases.items():
+            with self.subTest(name=name):
+                request = self.request(rows, name)
+                with patch.object(reader, "MEMBER_VOTE_BATCH_ROWS", 2), \
+                     patch.object(reader.MAINTAINED, "restore", wraps=reader.MAINTAINED.restore) as admission:
+                    result = reader.restore(request)
+                admission.assert_called_once_with(request)
+                self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), expected)
+                self.assertEqual(result["selection"], {k: request[k] for k in ("subjects", "receipts")})
+                self.assertEqual(result["sourceObservations"], {
+                    "totalRows": len(rows), "nativeRows": len(expected), "receiptOnlyRows": len(rows) - len(expected),
+                    "groups": [{"voteDay": day, "termMatch": status, "rows": count} for day, status, count in groups]})
+                self.assertEqual(result["rows"], pq.read_metadata(request["subjects"][0]["path"]).num_rows)
+                self.assertEqual(result["processingMembers"], [member(Path(result["urls"][0]))])
+                measured = self.scan(result)
+                snapshot = measured["dimensions"][-1]
+                self.assertEqual(snapshot["rows"], len(expected))
+                self.assertEqual(snapshot["snapshot"]["facts"], [
+                    {"label": "Restored source observations", "value": str(len(rows))},
+                    {"label": "Published assignments", "value": str(len(expected))},
+                    {"label": "Receipt-only observations", "value": str(len(rows) - len(expected))},
+                    *[{"label": f"Receipt-only vote day {json.dumps(day)}; term match {json.dumps(status)}", "value": str(count)}
+                      for day, status, count in groups]])
+                self.assertEqual(snapshot["evidence"]["generationId"], "selected")
+                self.assertEqual(snapshot["evidence"]["receipts"]["sha256"], request["receipts"]["sha256"])
+                self.assertEqual(snapshot["evidence"]["implementationSha256"], result["implementationSha256"])
+                self.assertEqual(measured["dimensions"][0]["buckets"], {"2025-01": 1} if expected else {})
+                self.assertEqual(measured["dimensions"][1]["unplacedRows"], 1 if expected else 0)
+
+    def test_member_vote_selected_input_refusals_remain(self):
+        request = self.request([self.row("native"), self.row("unmatched", index=None)])
+        for name in ("generation", "subject-hash", "receipt-hash", "receipt-size"):
+            with self.subTest(name=name):
+                bad = copy.deepcopy(request)
+                bad["destination"] += "-" + name
+                if name == "generation":
+                    bad["generationId"] = ""
+                elif name == "subject-hash":
+                    bad["subjects"][0]["sha256"] = "sha256:" + "0" * 64
+                elif name == "receipt-hash":
+                    bad["receipts"]["sha256"] = "sha256:" + "0" * 64
+                else:
+                    bad["receipts"]["byteSize"] += 1
+                with self.assertRaises(ValueError):
+                    reader.restore(bad)
+                self.assertFalse((Path(bad["destination"]) / "coverage-facts.parquet").exists())
+
+    def test_member_vote_partition_refuses_count_drift_and_removes_provisional_output(self):
+        request = self.request([self.row("native"), self.row("unmatched", index=None)])
+        restored = reader.MAINTAINED.restore(request)
+        facts = reader.description(self.dataset)
+        for name in ("restored-total", "native-footer"):
+            with self.subTest(name=name):
+                bad = copy.deepcopy(restored)
+                if name == "restored-total":
+                    bad["rows"] += 1
+                else:
+                    # A truncated private stream still reconciles internally but
+                    # must not replace a selected nonempty native subject.
+                    source = self.root / "truncated.parquet"
+                    pq.write_table(pa.Table.from_pylist([self.row("unmatched", index=None)], schema=reader.arrow_schema(self.dataset)), source)
+                    bad.update(rows=1, urls=[str(source)])
+                with self.assertRaises(ValueError):
+                    reader.restore_member_vote_assignments(request, facts, bad)
+                self.assertFalse((Path(request["destination"]) / "coverage-facts.parquet").exists())
+                self.assertFalse((Path(request["destination"]) / "provisional-coverage-facts.parquet").exists())
+
+    def test_member_vote_snapshot_refuses_missing_malformed_or_unreconciled_summary(self):
+        result = reader.restore(self.request([self.row("native"), self.row("unmatched", index=None)]))
+        for name in ("missing", "total", "native", "boolean", "group-boolean", "groups-total", "duplicate", "raw-type"):
+            with self.subTest(name=name):
+                bad = copy.deepcopy(result)
+                summary = bad["sourceObservations"]
+                if name == "missing":
+                    del bad["sourceObservations"]
+                elif name == "total":
+                    summary["totalRows"] += 1
+                elif name == "native":
+                    summary.update(nativeRows=0, totalRows=1)
+                elif name == "boolean":
+                    summary["nativeRows"] = True
+                elif name == "group-boolean":
+                    summary["groups"][0]["rows"] = True
+                elif name == "groups-total":
+                    summary["groups"][0]["rows"] += 1
+                elif name == "duplicate":
+                    summary["groups"].append(copy.deepcopy(summary["groups"][0]))
+                else:
+                    summary["groups"][0]["voteDay"] = 20250103
+                with duckdb.connect() as conn, self.assertRaises(ValueError):
+                    adapter.member_vote_source_observations(conn, {"urls": bad["urls"], "_coverageProcessing": bad},
+                                                           {"rows": result["rows"]}, self.definition["dimensions"][-1])
+        for dataset, special in (("members", None), ("member_vote_terms", "unknown-observations")):
+            with self.subTest(dataset=dataset, special=special), self.assertRaisesRegex(ValueError, "Unsupported"):
+                self.scan(result, dataset=dataset, special=special)
+        for option in ({"kind": "category"}, {"fields": ["vote_day"]}, {"method": "new-method"}):
+            with self.subTest(option=option), duckdb.connect() as conn, self.assertRaisesRegex(ValueError, "Unsupported"):
+                adapter.member_vote_source_observations(conn, {"urls": result["urls"], "_coverageProcessing": result},
+                                                       {"rows": result["rows"]}, {**self.definition["dimensions"][-1], **option})
 
 
 if __name__ == "__main__":

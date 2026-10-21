@@ -1,5 +1,6 @@
 """Selected regulatory receipts preserve source values and reviewed coverage meanings."""
 import copy
+import datetime as dt
 import hashlib
 import json
 from pathlib import Path
@@ -12,10 +13,12 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import additional_native_coverage as adapter
 import restore_source_navigation_coverage as reader
 from coverage_dimensions import scan_dimension, validate_definition
 from regulation_coverage import scan_special
-from spicy_regs.transforms.regulations_receipts import write_held_dataset
+from spicy_regs.native_types import described_schema
+from spicy_regs.transforms.regulations_receipts import processing_schema, write_held_dataset
 from spicy_regs.transforms.regulations_shape import SOURCE_COLUMNS
 
 
@@ -25,19 +28,28 @@ def member(path):
 
 
 class RegulatoryNativeCoverageTests(unittest.TestCase):
-    def check_restoration(self, dataset, values):
+    def check_restoration(self, dataset, values, *, family=None):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             raw = dict.fromkeys(name for name, _ in SOURCE_COLUMNS[dataset])
             raw.update(values)
-            schema = pa.schema([(name, pa.int64() if dtype == "BIGINT" else pa.string())
-                                for name, dtype in SOURCE_COLUMNS[dataset]])
+            schema = processing_schema(dataset)
             source = root / "source.parquet"
             pq.write_table(pa.Table.from_pylist([raw], schema=schema), source)
             subject, receipts = write_held_dataset(dataset, source, root / "native", generation_id="selected")
             request = {"dataset": dataset, "generationId": "selected", "subjects": [member(subject)],
                        "receipts": member(receipts), "destination": str(root / "restored")}
-            result = reader.restore(request)
+            policy = json.loads((reader.ROOT / "content/coverage-definitions/regulation.json").read_text())["tables"][dataset]
+            if family is not None:
+                columns = json.loads(json.dumps(described_schema(pq.read_schema(subject))))
+                selected = {"kind": "generation", "family": family, "columns": columns}
+                effective = adapter.variant(dataset, selected, policy)
+                self.assertTrue(effective.get("_additionalNativeProcessing"))
+                self.assertEqual(effective["schema"], columns)
+                self.assertEqual(effective["processingSchema"], policy["schema"])
+                result = adapter.bridge(request=request)
+            else:
+                result = reader.restore(request)
             self.assertEqual(result["rows"], 1)
             self.assertEqual(result["selection"], {key: request[key] for key in ("subjects", "receipts")})
             self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(),
@@ -48,13 +60,13 @@ class RegulatoryNativeCoverageTests(unittest.TestCase):
             restored = reader.restore(carried)
             self.assertEqual(pq.read_table(restored["urls"][0]).to_pylist(),
                              pq.read_table(result["urls"][0]).to_pylist())
-            policy = json.loads((reader.ROOT / "content/coverage-definitions/regulation.json").read_text())["tables"][dataset]
             self.assertEqual(result["processingSchema"], policy["schema"])
             validate_definition(policy, result["processingSchema"])
             table = {"members": [{"url": result["urls"][0]}], "rows": 1,
                      "publishedAt": "2026-10-06T00:00:00Z"}
             measured = {}
             with duckdb.connect() as conn:
+                conn.execute("SET TimeZone='UTC'")
                 conn.execute("SET memory_limit='256MB'")
                 conn.execute("SET threads=2")
                 for dim in policy["dimensions"]:
@@ -75,6 +87,37 @@ class RegulatoryNativeCoverageTests(unittest.TestCase):
                 with self.subTest(dataset=dataset, change=change), self.assertRaises(ValueError):
                     reader.restore(altered)
             return pq.read_table(subject).to_pylist()[0], measured
+
+    def test_native_docket_attributes_restore_typed_dates_lists_and_source_json(self):
+        native, measured = self.check_restoration("docket_attributes", {
+            "docket_id": "EPA-2026-0001",
+            "effective_date": dt.datetime(2020, 2, 29, 12, 30, 0, 5, tzinfo=dt.timezone.utc),
+            "keywords": ["water", None, "water"],
+            "display_properties_json": '[ {"name":"notice","label":"Notice","tooltip":null},'
+                                       ' {"name":"notice","label":"Notice","tooltip":null} ]',
+        }, family="docket-attributes")
+        self.assertEqual(native["keywords"], ["water", None, "water"])
+        self.assertEqual(len(native["display_properties"]), 2)
+        self.assertNotIn("display_properties_json", native)
+        self.assertEqual(measured["stated-effective-dates"]["buckets"], {"2020-02": 1})
+
+    def test_native_document_attributes_keep_typed_values_and_unplaced_dates(self):
+        native, measured = self.check_restoration("document_attributes", {
+            "document_id": "EPA-2026-0001-0002",
+            "allow_late_comments": False,
+            "authors": ["Agency", None, "Agency"],
+            "page_count": 7,
+            "author_date": dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc),
+            "effective_date": dt.datetime(2028, 1, 1, tzinfo=dt.timezone.utc),
+            "display_properties_json": " [] ",
+        }, family="document-attributes")
+        self.assertIs(native["allow_late_comments"], False)
+        self.assertEqual(native["page_count"], 7)
+        self.assertEqual(native["authors"], ["Agency", None, "Agency"])
+        self.assertEqual(native["display_properties"], [])
+        self.assertEqual(measured["stated-author-dates"]["buckets"], {"2020-01": 1})
+        self.assertEqual(measured["effective-date"]["buckets"], {"2028-01": 1})
+        self.assertEqual(measured["postmark-date"]["unplacedRows"], 1)
 
     def test_cfr_annual_edition_uses_original_title_and_receipt_url(self):
         native, measured = self.check_restoration("cfr_sections", {

@@ -1028,6 +1028,31 @@ h1 {
   display: inline;
   margin-left: 6px;
 }
+.financial-profile { margin: 24px 0; }
+.lobbying-profile { margin: 24px 0; line-height: 1.5; }
+.lobbying-profile h2 { font-size: 1.25rem; font-weight: 600; }
+.lobbying-profile h3 { margin-top: 1rem; font-weight: 600; }
+.lobbying-profile p { margin: .6rem 0; overflow-wrap: anywhere; }
+.lobbying-profile nav { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0; }
+.lobbying-profile a { color: #3f7333; text-decoration: underline; text-underline-offset: .2em; }
+.lobbying-profile ol { list-style: decimal; padding-left: 1.5rem; }
+.lobbying-profile li { margin: .75rem 0; }
+.lobbying-profile li > a, .lobbying-profile li > small { display: block; }
+.lobbying-profile-note { font-size: .85rem; color: #63715c; }
+.financial-profile h2 { font-size: 1.25rem; font-weight: 600; }
+.financial-profile p { margin: .6rem 0; line-height: 1.5; }
+.financial-profile-note { font-size: .85rem; color: #63715c; }
+.financial-profile-status { border-left: 3px solid #78896b; padding-left: 1rem; }
+.financial-profile-status ul { list-style: disc; padding-left: 1.2rem; }
+.financial-profile-measures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.financial-profile-measures > div { border: 1px solid var(--border); border-radius: .5rem; padding: .75rem; }
+.financial-profile-measures dt { font-size: .85rem; }
+.financial-profile-measures dd { font-size: 1.15rem; font-weight: 600; margin: .5rem 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.financial-profile-measures small { display: block; overflow-wrap: anywhere; }
+.financial-profile details > a { display: block; margin: .75rem 0; color: #3f7333; }
+@media (max-width: 480px) {
+  .financial-profile-measures { grid-template-columns: 1fr; }
+}
 .record-loading {
   padding: 20px 0;
   color: #7d8b72;

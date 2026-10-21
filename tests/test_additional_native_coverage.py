@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import duckdb
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -16,8 +17,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import additional_native_coverage as adapter
 import native_legislative_coverage as native
 import restore_additional_coverage as reader
+from coverage_dimensions import scan_dimension
+from regulation_coverage import scan_special
 from spicy_regs.court_receipts import local_receipt_selection, write_court_rows
 from spicy_regs.congress_receipts import write_congress_dataset
+from spicy_regs.etl_receipts import combine_receipts
 
 
 def plain(value):
@@ -50,7 +54,7 @@ class BridgeTests(unittest.TestCase):
         # One interpreter runs every bridge; the removed per-reader variables are ignored.
         env = {'SPICYGOV_COVERAGE_PYTHON': sys.executable,
                'SPICYGOV_SOURCE_NAVIGATION_COVERAGE_BRIDGE': '/nonexistent'}
-        navigation = ('documents', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
+        navigation = ('documents', 'document_attributes', 'federal_register', 'fr_docket_links', 'nominations', 'roll_call_votes', 'comment_periods', 'rule_targets')
         additional = ('court_opinions', 'court_dockets', 'amendments')
         for dataset in navigation + additional:
             script = 'restore_source_navigation_coverage.py' if dataset in navigation else 'restore_additional_coverage.py'
@@ -60,8 +64,12 @@ class BridgeTests(unittest.TestCase):
                     self.assertEqual(adapter.bridge(args, {'dataset':dataset} if not args else None), {})
                     self.assertEqual(run.call_args.args[0][0], sys.executable)
                     self.assertEqual(Path(run.call_args.args[0][1]).name, script)
-                    expected = {'documents': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
+                    expected = {'documents': 900, 'document_attributes': 900, 'comment_periods': 900, 'federal_register': 900, 'fr_docket_links': 900, 'court_opinions': 1800}
                     self.assertEqual(run.call_args.kwargs['timeout'], expected.get(dataset, 300) if not args else 300)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', True), 1500)
+        self.assertEqual(adapter.allowances.scan_seconds('document_attributes', False), 900)
+        self.assertEqual(adapter.allowances.scan_seconds('comment_periods', True), 1500)
+        self.assertEqual(adapter.allowances.scan_seconds('comment_periods', False), 900)
 
     def test_group_receipt_fields_restore_with_exact_witness(self):
         raw, request = fixture(self.root)
@@ -71,6 +79,76 @@ class BridgeTests(unittest.TestCase):
         self.assertIn("edition", dict(result["processingSchema"]))
         self.assertEqual(result["acceptedWitnessGroups"][0]["rows"], 1)
         self.assertEqual(result["generationId"], "selected")
+
+    def test_bulk_court_coverage_restores_editions_origins_and_exact_literals(self):
+        cases = {
+            "court_citation_map": {"citing_opinion_id": "10", "cited_opinion_id": "20",
+                                   "depth": "003", "dump_date": "2026-09-30"},
+            "court_citations": {"citation_id": "1", "cluster_id": "42", "reporter": "U.S.",
+                                "date_created": "2026-09-01 00:00:00+00", "dump_date": "2026-09-30"},
+            "court_parentheticals": {"parenthetical_id": "1", "described_opinion_id": "10",
+                                     "describing_opinion_id": "20", "score": "0.5000",
+                                     "dump_date": "2026-09-30"},
+            "court_opinion_clusters": {"cluster_id": "42", "cl_docket_id": "40",
+                                       "date_filed": "2026-09-30", "date_filed_is_approximate": "f",
+                                       "court_is_federal": "t", "citation_count": "003",
+                                       "source": "publisher literal", "ingest_source": "search"},
+            "court_opinions": {"opinion_id": "10", "cluster_id": "42", "page_count": "003",
+                               "author_str": 'José "Exact"\\literal', "per_curiam": "f",
+                               "dump_date": "2026-09-30"},
+        }
+        policies = json.loads((Path(__file__).resolve().parents[1] /
+                               "content/coverage-definitions/regulation.json").read_text())["tables"]
+        prepared = {}
+        for dataset, values in cases.items():
+            raw = dict.fromkeys(reader.LEGACY_COLUMNS[dataset])
+            raw.update(values)
+            prepared[dataset] = fixture(self.root / dataset, dataset, raw)
+        citation_datasets = {"court_citation_map", "court_citations", "court_parentheticals"}
+        citation_receipts = combine_receipts(
+            [Path(request["receipts"]["path"]) for dataset, (_, request) in prepared.items()
+             if dataset in citation_datasets], self.root / "combined-citations.parquet")
+        for dataset in cases:
+            with self.subTest(dataset=dataset):
+                raw, request = prepared[dataset]
+                if dataset in citation_datasets:
+                    request["receipts"] = member(citation_receipts)
+                policy = policies[dataset]
+                native = plain(reader.description(dataset))["nativeSchema"]
+                selected = {"kind": "generation", "family": policy["family"], "columns": native}
+                effective = adapter.variant(dataset, selected, policy)
+                self.assertTrue(effective["_additionalNativeProcessing"])
+                self.assertEqual(effective["processingSchema"], policy["schema"])
+                # These coverage axes use restored source fields; only the
+                # separate inherited-parent route needs witness enumeration.
+                with (patch.object(reader, "read_attempts", side_effect=AssertionError("unused witness scan")),
+                      patch.object(reader, "select_receipts", side_effect=AssertionError("unused receipt copy"))):
+                    result = reader.restore(request)
+                self.assertEqual(result["rows"], 1)
+                self.assertEqual(result["acceptedWitnessGroups"], [])
+                self.assertEqual(result["selection"], {key: request[key] for key in ("subjects", "receipts")})
+                self.assertEqual(pq.read_table(result["urls"][0]).to_pylist(), [raw])
+                table = {"members": [{"url": result["urls"][0]}], "rows": 1,
+                         "publishedAt": "2026-10-19T00:00:00Z"}
+                measured = {}
+                with duckdb.connect() as conn:
+                    conn.execute("SET TimeZone='UTC'")
+                    for dim in policy["dimensions"]:
+                        value = (scan_special(conn, dataset, table, dim, None) if dim.get("special") else
+                                 scan_dimension(conn, result["urls"], 1, dim))
+                        self.assertEqual(value["placedRows"] + value["unplacedRows"], 1)
+                        measured[dim["id"]] = value
+                if dataset == "court_opinion_clusters":
+                    self.assertEqual(measured["decision-filing-dates"]["buckets"], {"2026-09": 1})
+                    self.assertEqual(measured["retained-origins"]["buckets"], {'["search"]': 1})
+                else:
+                    self.assertEqual(measured["courtlistener-bulk-editions"]["buckets"], {'["2026-09-30"]': 1})
+                altered = copy.deepcopy(request)
+                altered["destination"] += "-bad"
+                altered["receipts"]["sha256"] = "sha256:" + "0" * 64
+                with self.assertRaisesRegex(ValueError, "SHA-256 changed"):
+                    reader.restore(altered)
+                self.assertFalse(Path(altered["destination"]).exists())
 
     def test_bulk_only_change_invalidates_description_and_restoration_identity(self):
         raw, request = fixture(self.root)

@@ -26,7 +26,9 @@ RULEMAKING_DATASETS = frozenset(("proceedings", "rule_targets", "comment_periods
 FAMILIES = {"amendments": "amendments", "court_dockets": "courtlistener",
             "court_docket_groups": "court-docket-groups",
             "court_opinion_pdf_extractions": "court-opinion-pdf-extractions",
-            "court_opinions": "court-opinions"}
+            "court_opinions": "court-opinions",
+            "court_citation_map": "court-citations", "court_citations": "court-citations",
+            "court_parentheticals": "court-citations", "court_opinion_clusters": "court-opinion-clusters"}
 SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nominations":"nominations", "house_communications":"house-communications", "members":"members", "member_terms":"members", "member_party_affiliations":"members", "fcc_filings":"fcc-filings",
     "committee_reports":"committee-reports", "report_sections":"committee-reports",
     "hearing_transcripts":"committee-reports", "hearing_bill_links":"committee-reports",
@@ -34,6 +36,7 @@ SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nomina
     "laws":"laws", "law_code_sections":"laws", "law_sections":"laws", "table3_records":"laws",
     "native_legal_references":"native-legal-references", "press_releases":"press-releases",
     "record_issues":"record-issues", "senate_expenditures":"senate-expenditures", "treaties":"treaties", "documents":"documents",
+    "docket_attributes":"docket-attributes", "document_attributes":"document-attributes",
     "roll_call_votes":"roll-call-votes", "member_vote_terms":"member-vote-terms",
     "cfr_sections":"cfr-sections", "unified_agenda":"unified-agenda",
     "federal_register":"federal-register", "fr_docket_links":"fr-docket-links"}
@@ -255,27 +258,43 @@ class AdditionalInputs:
         if identity in self.parent_cache:
             return self.parent_cache[identity]
         restored = self.restore(child_id, owner)
-        snapshot = owner["artifact"]["spec"].get("readSnapshot", {}).get("families", {}).get(owner["family"])
-        if not isinstance(snapshot, dict) or snapshot.get("artifactDigest") == owner["artifactDigest"]:
-            raise ValueError("Native group has no exact prior group snapshot")
-        descriptor = snapshot.get("tables", {}).get(child_id + ".parquet")
-        if not isinstance(descriptor, dict) or descriptor.get("members"):
-            raise ValueError("Native group source descriptor is absent or unsupported")
-        prior = self.inputs.table(owner["family"], snapshot["artifactDigest"], child_id)
-        expected = [{"key": child_id + ".parquet", "sha256": descriptor.get("sha256"),
-                     "rows": descriptor.get("rows"), "byteSize": descriptor.get("byteSize")}]
-        key, artifact, members = self.inputs.artifact(prior["family"], prior["artifactDigest"])
-        if (prior["members"] != expected or snapshot.get("prefix") != key
-                or prior["rows"] != owner["rows"]
-                or descriptor.get("columns") != restored["_coverageProcessing"]["processingSchema"]):
-            raise ValueError("Prior group bytes/schema differ from recorded source snapshot")
-        source_key = key + "/" + child_id + ".parquet"
         groups = restored["_coverageProcessing"].get("acceptedWitnessGroups", [])
-        if (not groups or any(not isinstance(g.get("rows"), int) or isinstance(g["rows"], bool) or g["rows"] <= 0 for g in groups)
-                or sum(g["rows"] for g in groups) != owner["rows"]
-                or any(not any(w.get("source_id") == source_key and w.get("sha256") == descriptor["sha256"]
-                               for w in g["witnesses"]) for g in groups)):
-            raise ValueError("Accepted group receipts do not all witness the exact prior group member")
+        if (not groups or any(type(g.get("rows")) is not int or g["rows"] <= 0 for g in groups)
+                or sum(g["rows"] for g in groups) != owner["rows"]):
+            raise ValueError("Accepted group receipts do not all witness the exact source member")
+        pattern = rf"generations/{re.escape(owner['family'])}/[a-f0-9]{{64}}/{re.escape(child_id)}\.parquet"
+        candidates = None
+        for group in groups:
+            witnessed = {(w["source_id"], w["sha256"]) for w in group["witnesses"]
+                         if isinstance(w.get("source_id"), str) and re.fullmatch(pattern, w["source_id"])
+                         and isinstance(w.get("sha256"), str) and re.fullmatch(r"sha256:[a-f0-9]{64}", w["sha256"])}
+            candidates = witnessed if candidates is None else candidates & witnessed
+        if not candidates:
+            raise ValueError("Accepted group receipts do not all witness the exact source member")
+        if len(candidates) != 1:
+            raise ValueError("Accepted group receipts witness ambiguous source members")
+        (source_key, source_hash), = candidates
+        source_generation = "sha256:" + source_key.split("/")[2]
+        if source_generation == owner["artifactDigest"]:
+            raise ValueError("Native group source cannot be its own generation")
+        prior = self.inputs.table(owner["family"], source_generation, child_id)
+        key, artifact, members = self.inputs.artifact(prior["family"], prior["artifactDigest"])
+        if (source_key != key + "/" + child_id + ".parquet" or len(prior["members"]) != 1
+                or prior["members"][0]["key"] != child_id + ".parquet"
+                or prior["members"][0]["sha256"] != source_hash or prior["rows"] != owner["rows"]):
+            raise ValueError("Prior group bytes/rows differ from the witnessed source member")
+        # An immediate source snapshot adds a check; later native conversions
+        # retain the original source witness even when that snapshot names an intermediate.
+        snapshot = owner["artifact"]["spec"].get("readSnapshot", {}).get("families", {}).get(owner["family"])
+        if isinstance(snapshot, dict) and snapshot.get("artifactDigest") == source_generation:
+            descriptor = snapshot.get("tables", {}).get(child_id + ".parquet")
+            if not isinstance(descriptor, dict) or descriptor.get("members"):
+                raise ValueError("Native group source descriptor is absent or unsupported")
+            expected = [{"key": child_id + ".parquet", "sha256": descriptor.get("sha256"),
+                         "rows": descriptor.get("rows"), "byteSize": descriptor.get("byteSize")}]
+            if (prior["members"] != expected or snapshot.get("prefix") != key
+                    or descriptor.get("columns") != restored["_coverageProcessing"]["processingSchema"]):
+                raise ValueError("Prior group bytes/schema differ from recorded source snapshot")
         source = next(m for m in members if m["objectKey"] == child_id + ".parquet")
         local = self.staging._member(key, source)
         with duckdb.connect() as conn:
@@ -284,8 +303,8 @@ class AdditionalInputs:
             conn.read_parquet(restored["urls"]).create_view("restored_groups")
             conn.read_parquet(local["path"]).create_view("prior_groups")
             actual_schema = [list(row[:2]) for row in conn.execute("DESCRIBE prior_groups").fetchall()]
-            if actual_schema != descriptor["columns"]:
-                raise ValueError("Prior group physical schema differs from its descriptor")
+            if actual_schema != restored["_coverageProcessing"]["processingSchema"]:
+                raise ValueError("Prior group physical schema differs from the restored processing schema")
             changed = conn.execute("SELECT count(*) FROM ((SELECT * FROM restored_groups EXCEPT ALL SELECT * FROM prior_groups) UNION ALL (SELECT * FROM prior_groups EXCEPT ALL SELECT * FROM restored_groups))").fetchone()[0]
             if changed:
                 raise ValueError("Restored group rows differ from the witnessed prior input")
@@ -298,6 +317,53 @@ class AdditionalInputs:
         parent = {**parent, "_additionalParentEvidence": chain}
         self.parent_cache[identity] = parent
         return parent
+
+
+def member_vote_source_observations(conn, restored, table, dim):
+    """Keep receipt-only observations visible without changing the native denominator."""
+    if (dim.get("kind") != "snapshot" or dim.get("fields", []) != []
+            or set(dim) - {"id", "kind", "label", "meaning", "special", "fields"}):
+        raise ValueError("Unsupported member vote source-observation dimension")
+    facts = restored["_coverageProcessing"]
+    summary = facts.get("sourceObservations")
+    if (not isinstance(summary, dict)
+            or set(summary) != {"totalRows", "nativeRows", "receiptOnlyRows", "groups"}
+            or any(not isinstance(summary[k], int) or isinstance(summary[k], bool) or summary[k] < 0
+                   for k in ("totalRows", "nativeRows", "receiptOnlyRows"))
+            or summary["nativeRows"] != table["rows"] or summary["nativeRows"] != facts["rows"]
+            or summary["totalRows"] != summary["nativeRows"] + summary["receiptOnlyRows"]
+            or not isinstance(summary["groups"], list)):
+        raise ValueError("Member vote source-observation counts do not reconcile")
+    seen, receipt_rows = set(), 0
+    for group in summary["groups"]:
+        if (not isinstance(group, dict) or set(group) != {"voteDay", "termMatch", "rows"}
+                or any(group[k] is not None and not isinstance(group[k], str) for k in ("voteDay", "termMatch"))
+                or not isinstance(group["rows"], int) or isinstance(group["rows"], bool) or group["rows"] <= 0):
+            raise ValueError("Invalid member vote source-observation group")
+        key = (group["voteDay"], group["termMatch"])
+        if key in seen:
+            raise ValueError("Duplicate member vote source-observation group")
+        seen.add(key)
+        receipt_rows += group["rows"]
+    if receipt_rows != summary["receiptOnlyRows"]:
+        raise ValueError("Member vote source-observation groups do not reconcile")
+    measured = scan_dimension(conn, restored["urls"], table["rows"], dim, snapshot={
+        "publishedAt": table.get("publishedAt"), "artifactDigest": table.get("artifactDigest"),
+        "recordUrl": table.get("recordUrl"), "publicationSha256": table.get("checksum")})
+    measured["snapshot"]["facts"] = [
+        {"label": "Restored source observations", "value": str(summary["totalRows"])},
+        {"label": "Published assignments", "value": str(summary["nativeRows"])},
+        {"label": "Receipt-only observations", "value": str(summary["receiptOnlyRows"])},
+        *[{"label": f'Receipt-only vote day {json.dumps(g["voteDay"])}; term match {json.dumps(g["termMatch"])}',
+           "value": str(g["rows"])} for g in summary["groups"]],
+    ]
+    measured["evidence"] = {
+        "dataset": facts["dataset"], "generationId": facts["generationId"],
+        "implementationSha256": facts["implementationSha256"], "policy": facts["policy"],
+        "receipts": {k: v for k, v in facts["selection"]["receipts"].items() if k != "path"},
+        "qualification": "All restored source observations reconcile to published assignments and receipt-only date/status groups. Conversion-refused rows are not restored observations.",
+    }
+    return measured
 
 
 def scan_table(dataset, table, policy, *, validate_members, validate_counts,
@@ -326,7 +392,9 @@ def scan_table(dataset, table, policy, *, validate_members, validate_counts,
                    "members": [{**m, "url": url} for m, url in zip(table["members"], restored["urls"])]}
         dimensions = []
         for dim in policy["dimensions"]:
-            if dim.get("special") or dim.get("method"):
+            if dataset == "member_vote_terms" and dim.get("special") == "member-vote-source-observations":
+                measured = member_vote_source_observations(conn, restored, table, dim)
+            elif dim.get("special") or dim.get("method"):
                 helper = importlib.import_module(policy["_scanner"] + "_coverage")
                 measured = helper.scan_special(conn, dataset, private, dim, adapter)
                 if measured is None:
