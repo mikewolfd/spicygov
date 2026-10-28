@@ -41583,6 +41583,219 @@
           }
         }
       }
+    },
+    {
+      "tableId": "fec_financial_profiles",
+      "family": "fec-financial-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "scope_id",
+          "VARCHAR"
+        ],
+        [
+          "entity_kind",
+          "VARCHAR"
+        ],
+        [
+          "entity_id",
+          "VARCHAR"
+        ],
+        [
+          "entity_name",
+          "VARCHAR"
+        ],
+        [
+          "selection_status",
+          "VARCHAR"
+        ],
+        [
+          "selection_reason",
+          "VARCHAR"
+        ],
+        [
+          "coverage_status",
+          "VARCHAR"
+        ],
+        [
+          "coverage_reasons_json",
+          "VARCHAR"
+        ],
+        [
+          "period_start_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_start_status",
+          "VARCHAR"
+        ],
+        [
+          "period_end_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_end_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_table_generation",
+          "VARCHAR"
+        ],
+        [
+          "witnesses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "publisher_profile_url",
+          "VARCHAR"
+        ],
+        [
+          "selection_policy",
+          "VARCHAR"
+        ],
+        [
+          "receipts",
+          "VARCHAR"
+        ],
+        [
+          "receipts_status",
+          "VARCHAR"
+        ],
+        [
+          "receipts_raw",
+          "VARCHAR"
+        ],
+        [
+          "receipts_native_field",
+          "VARCHAR"
+        ],
+        [
+          "disbursements",
+          "VARCHAR"
+        ],
+        [
+          "disbursements_status",
+          "VARCHAR"
+        ],
+        [
+          "disbursements_raw",
+          "VARCHAR"
+        ],
+        [
+          "disbursements_native_field",
+          "VARCHAR"
+        ],
+        [
+          "cash_on_hand",
+          "VARCHAR"
+        ],
+        [
+          "cash_on_hand_status",
+          "VARCHAR"
+        ],
+        [
+          "cash_on_hand_raw",
+          "VARCHAR"
+        ],
+        [
+          "cash_on_hand_native_field",
+          "VARCHAR"
+        ],
+        [
+          "debts_owed",
+          "VARCHAR"
+        ],
+        [
+          "debts_owed_status",
+          "VARCHAR"
+        ],
+        [
+          "debts_owed_raw",
+          "VARCHAR"
+        ],
+        [
+          "debts_owed_native_field",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "witness_count",
+          "INTEGER"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:847f51c252c26208d2d80b672314ce26c5930ef9cd1c05887e5ec4b0ecca55fb",
+        "memberSha256": "sha256:228f7af2a95c8b2ca4070265ace6cffad0c0b48e9c515eef9db01a74236b4de5",
+        "rows": 18521
+      },
+      "dimensions": [
+        {
+          "id": "source-cycle",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "Election cycles recorded for the source filing data.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycle",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "Election cycles recorded for the source filing data.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        }
+      ],
+      "evidence": {
+        "fieldProbe": {
+          "field": "source_cycle",
+          "rows": 18521,
+          "nonnull": 18521,
+          "minimum": "2026",
+          "maximum": "2026"
+        },
+        "qualification": "Published source fields; period presence does not prove completeness."
+      }
     }
   ],
   "completenessFollowup": {

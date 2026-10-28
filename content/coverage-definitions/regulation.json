@@ -733,7 +733,7 @@
             "ingest_source"
           ],
           "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
+          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row’s origin, not a complete collection history."
         }
       ]
     },
@@ -2245,7 +2245,7 @@
             "link_source"
           ],
           "label": "Docket link evidence",
-          "meaning": "Whether a link appears in the Federal Register\u2019s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
+          "meaning": "Whether a link appears in the Federal Register’s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
         }
       ]
     },
@@ -2446,7 +2446,7 @@
           ],
           "special": "government-receipt-origins",
           "label": "Saved decision origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -2563,7 +2563,7 @@
           ],
           "special": "government-receipt-origins",
           "label": "Saved report origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -4184,7 +4184,7 @@
         {
           "id": "agenda-proceeding-link-evidence-dates",
           "kind": "date",
-          "label": "Agenda\u2013proceeding link evidence dates",
+          "label": "Agenda–proceeding link evidence dates",
           "meaning": "Dates of source evidence linking an agenda regulation identifier to a proceeding. Undated evidence remains unplaced; no collection date or agenda edition is substituted.",
           "fields": [
             "evidence_date"
@@ -5917,7 +5917,7 @@
           "id": "archive-inspectors",
           "kind": "category",
           "label": "Archive inspector labels",
-          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office’s reports are saved.",
           "fields": [
             "archive_inspector"
           ]
@@ -5926,7 +5926,7 @@
           "id": "selection-scopes",
           "kind": "category",
           "label": "Selection scope",
-          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report’s links and files are declared, not saved.",
           "fields": [
             "selected_scope"
           ]
@@ -6624,6 +6624,835 @@
             "label": "Edition years",
             "meaning": "Requested edition year as recorded."
           }
+        }
+      ]
+    },
+    "executive_order_observations": {
+      "family": "executive-orders",
+      "schema": [
+        [
+          "publication_year",
+          "INTEGER"
+        ],
+        [
+          "executive_order_number",
+          "VARCHAR"
+        ],
+        [
+          "document_number",
+          "VARCHAR"
+        ],
+        [
+          "publication_date",
+          "DATE"
+        ],
+        [
+          "signing_date",
+          "DATE"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "president_identifier",
+          "VARCHAR"
+        ],
+        [
+          "president_name",
+          "VARCHAR"
+        ],
+        [
+          "president_json",
+          "VARCHAR"
+        ],
+        [
+          "disposition_notes",
+          "VARCHAR"
+        ],
+        [
+          "executive_order_notes",
+          "VARCHAR"
+        ],
+        [
+          "metadata_field_states_json",
+          "VARCHAR"
+        ],
+        [
+          "body_status",
+          "VARCHAR"
+        ],
+        [
+          "body_text",
+          "VARCHAR"
+        ],
+        [
+          "body_sha256",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ],
+        [
+          "body_format",
+          "VARCHAR"
+        ],
+        [
+          "body_url",
+          "VARCHAR"
+        ],
+        [
+          "body_observed_at",
+          "VARCHAR"
+        ],
+        [
+          "text_derivation",
+          "VARCHAR"
+        ],
+        [
+          "text_derivation_version",
+          "VARCHAR"
+        ],
+        [
+          "text_cleanup_json",
+          "VARCHAR"
+        ],
+        [
+          "body_result_json",
+          "VARCHAR"
+        ],
+        [
+          "offered_renditions_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "metadata_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_metadata_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "publication-date",
+          "kind": "date",
+          "label": "Publication dates",
+          "meaning": "Publication dates recorded for the executive orders in this collection.",
+          "fields": [
+            "publication_date"
+          ],
+          "syntax": "iso"
+        }
+      ]
+    },
+    "treasury_statement_periods": {
+      "family": "treasury-fiscal",
+      "schema": [
+        [
+          "report_date",
+          "DATE"
+        ],
+        [
+          "economic_fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "period_kind",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ],
+        [
+          "budget_receipts_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "budget_outlays_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "budget_deficit_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "amount_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "classification_id",
+          "VARCHAR"
+        ],
+        [
+          "parent_id_literal",
+          "VARCHAR"
+        ],
+        [
+          "classification_desc",
+          "VARCHAR"
+        ],
+        [
+          "sequence_number_cd_literal",
+          "VARCHAR"
+        ],
+        [
+          "parent_context_json",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_url",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_page_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "field_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "period-end",
+          "kind": "date",
+          "label": "Statement period ends",
+          "meaning": "End dates of the statement periods recorded in this collection.",
+          "fields": [
+            "period_end"
+          ],
+          "syntax": "iso"
+        }
+      ]
+    },
+    "grants_opportunity_observations": {
+      "family": "grants-opportunities",
+      "schema": [
+        [
+          "snapshot_date",
+          "DATE"
+        ],
+        [
+          "notice_type",
+          "VARCHAR"
+        ],
+        [
+          "opportunity_id",
+          "VARCHAR"
+        ],
+        [
+          "version",
+          "VARCHAR"
+        ],
+        [
+          "opportunity_number",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "agency_code",
+          "VARCHAR"
+        ],
+        [
+          "agency_name",
+          "VARCHAR"
+        ],
+        [
+          "opportunity_category",
+          "VARCHAR"
+        ],
+        [
+          "eligibility_text",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "close_date_explanation",
+          "VARCHAR"
+        ],
+        [
+          "estimated_synopsis_close_date_explanation",
+          "VARCHAR"
+        ],
+        [
+          "cost_sharing_or_matching_requirement",
+          "VARCHAR"
+        ],
+        [
+          "eligibility_codes_json",
+          "VARCHAR"
+        ],
+        [
+          "funding_category_codes_json",
+          "VARCHAR"
+        ],
+        [
+          "funding_instruments_json",
+          "VARCHAR"
+        ],
+        [
+          "assistance_listing_numbers_json",
+          "VARCHAR"
+        ],
+        [
+          "eligibility_labels_json",
+          "VARCHAR"
+        ],
+        [
+          "funding_category_labels_json",
+          "VARCHAR"
+        ],
+        [
+          "post_date",
+          "DATE"
+        ],
+        [
+          "close_date",
+          "DATE"
+        ],
+        [
+          "last_updated_date",
+          "DATE"
+        ],
+        [
+          "archive_date",
+          "DATE"
+        ],
+        [
+          "estimated_synopsis_post_date",
+          "DATE"
+        ],
+        [
+          "estimated_synopsis_close_date",
+          "DATE"
+        ],
+        [
+          "estimated_award_date",
+          "DATE"
+        ],
+        [
+          "estimated_project_start_date",
+          "DATE"
+        ],
+        [
+          "award_ceiling",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "award_floor",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "estimated_total_program_funding",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "amount_unit",
+          "VARCHAR"
+        ],
+        [
+          "value_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "vocabulary_source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "post-date",
+          "kind": "date",
+          "label": "Opportunity posting dates",
+          "meaning": "Posting dates recorded for the saved grant opportunities.",
+          "fields": [
+            "post_date"
+          ],
+          "syntax": "iso"
+        }
+      ]
+    },
+    "cms_medicaid_drug_spending": {
+      "family": "cms-medicaid",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_name",
+          "VARCHAR"
+        ],
+        [
+          "aggregation_level",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_count_raw",
+          "VARCHAR"
+        ],
+        [
+          "total_spending_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "dosage_units",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "claims",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "weighted_spending_per_unit_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_claim_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "outlier_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "value_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Benefit years",
+          "meaning": "Benefit years recorded in this drug spending data.",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        }
+      ]
+    },
+    "cms_part_b_drug_spending": {
+      "family": "cms-part-b",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "hcpcs_code",
+          "VARCHAR"
+        ],
+        [
+          "hcpcs_description",
+          "VARCHAR"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_information_status",
+          "VARCHAR"
+        ],
+        [
+          "total_spending_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "dosage_units",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "claims",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "beneficiaries",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_dosage_unit_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_claim_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_beneficiary_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "average_sales_price_payment_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "outlier_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "value_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_resources_url",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Benefit years",
+          "meaning": "Benefit years recorded in this drug spending data.",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        }
+      ]
+    },
+    "cms_part_d_drug_spending": {
+      "family": "cms-part-d",
+      "schema": [
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_name",
+          "VARCHAR"
+        ],
+        [
+          "aggregation_level",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_count_raw",
+          "VARCHAR"
+        ],
+        [
+          "total_spending_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "dosage_units",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "claims",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "beneficiaries",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "weighted_spending_per_unit_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_claim_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "spending_per_beneficiary_usd",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "outlier_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "value_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Benefit years",
+          "meaning": "Benefit years recorded in this drug spending data.",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        }
+      ]
+    },
+    "treasury_debt_observations": {
+      "family": "treasury-fiscal",
+      "schema": [
+        [
+          "record_date",
+          "DATE"
+        ],
+        [
+          "total_debt_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "public_debt_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "intragovernmental_debt_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "amount_statuses_json",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_page_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "field_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved published records, not complete publisher coverage.",
+      "dimensions": [
+        {
+          "id": "record-date",
+          "kind": "date",
+          "label": "Debt record dates",
+          "meaning": "Dates of the debt observations in this collection.",
+          "fields": [
+            "record_date"
+          ],
+          "syntax": "iso"
         }
       ]
     }

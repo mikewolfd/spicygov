@@ -156,7 +156,8 @@ export function tableCoverageTags(table: Dataset, maps?: CoverageMaps, tables: D
       const subject = dimension.granularity === 'season' ? 'Edition years'
         : editionField?.startsWith('requested') ? 'Requested edition years'
         : /edition/i.test(dimension.label) ? 'Edition years'
-        : /\b(?:dates?|months?|years?)\b/i.test(dimension.label) ? dimension.label.replace(/\b(?:dates?|months?|years?)\b/i, 'years') : `${dimension.label} years`;
+        : /\b(?:dates?|months?|years?|periods)\b/i.test(dimension.label) ? dimension.label.replace(/\b(?:dates?|months?|years?|periods)\b/i, 'years')
+        : /\bends$/i.test(dimension.label) ? `${dimension.label.replace(/ends$/i, 'end')} years` : `${dimension.label} years`;
       label = `${subject} ${range(periodYears)}${new Set(periodYears).size > 1 ? ' · gaps possible' : ''}`;
     }
   } else return [];

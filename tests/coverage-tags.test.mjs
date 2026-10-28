@@ -122,6 +122,13 @@ test('report coverage prefers the Congress covered over the date a report was is
   assert.deepEqual(tableCoverageTags({...dated.table,rows:4}, dated.maps),[]);
 });
 
+test('period end and report period labels read naturally as year ranges', () => {
+  const periods = measured({label:'Printed report periods',fields:['period_start'],granularity:'month',buckets:{'2023-01':1,'2026-01':2}});
+  assert.equal(tableCoverageTags(periods.table,periods.maps)[0].label,'Printed report years 2023–2026 · gaps possible');
+  const ends = measured({label:'Statement period ends',fields:['period_end'],granularity:'month',buckets:{'2024-10':1,'2026-09':2}});
+  assert.equal(tableCoverageTags(ends.table,ends.maps)[0].label,'Statement period end years 2024–2026 · gaps possible');
+});
+
 test('publisher year categories preserve discrete edition years and nonnumeric source labels', () => {
   const mixed = measured({ id: 'publisher-year-labels', label: 'Publisher year labels', fields: ['year_text'], granularity: 'category', buckets: { '["2005"]': 1, '["2005-2006"]': 1, '["2008"]': 1 } });
   const tags = tableCoverageTags(mixed.table, mixed.maps);
