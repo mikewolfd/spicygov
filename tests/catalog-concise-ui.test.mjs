@@ -69,6 +69,14 @@ test("requested dates retain their meaning and administrative metadata stays in 
   assert.match(outsideEvidence(render(CatalogFileList,{files:[{...file,metadataConflicts:["periods"]}]})),/Recorded dates disagree/);
 });
 
+test("saved file rows avoid repeated caveats and bound date previews", () => {
+  const file={id:"saved",name:"saved.json",status:"held",provenance:{availability:"local",basis:"unknown",sourceUrls:[]},
+    periods:Array.from({length:20},(_,i)=>({kind:"publication-date",label:`2025-01-${String(i+1).padStart(2,"0")}`}))};
+  const html=render(CatalogFileList,{files:[file]}),visible=outsideEvidence(html);
+  assert.doesNotMatch(visible,/usable content has not been confirmed|2025-01-20/);
+  assert.match(visible,/\+17 in details/);assert.match(html,/2025-01-20/);
+});
+
 test("original downloads use guarded local archive keys and keep checksums collapsed", () => {
   const file = { id: "safe", name: "Original.json", status: "held", sha256: "sha256:" + "a".repeat(64),
     contentKey: "objects/original.json.gz", provenance: { availability: "local", basis: "unknown", sourceUrls: [] } };

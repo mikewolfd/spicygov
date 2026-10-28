@@ -43,9 +43,9 @@ export function CatalogFileList({ files, routes = [] }: { files: CatalogFile[]; 
       }).filter(Boolean);
       return <li key={file.id}>
         <h3>{file.name}</h3>
-        {periods.length > 0 && <p>{periods.join(" · ")}</p>}
+        {periods.length > 0 && <p>{periods.slice(0,3).join(" · ")}{periods.length > 3 && ` · +${periods.length - 3} in details`}</p>}
         {route && <p>{route.label}</p>}
-        <p>{fileAvailabilitySummary(file)}</p>
+        {!(file.status === "held" && file.provenance?.availability === "local") && <p>{fileAvailabilitySummary(file)}</p>}
         {conflict && <p className="context-note" role="alert">{conflict}</p>}
         {download && <a className="text-button" href={download} target="_blank" rel="noreferrer">Download original{file.contentKey?.endsWith(".gz") ? " (.gz)" : ""} ↗</a>}
         <CatalogFileEvidence file={file} />
