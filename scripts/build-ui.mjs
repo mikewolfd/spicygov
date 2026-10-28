@@ -24,6 +24,6 @@ await writeFile('dist/coverage-maps.v1.json', admitted ? admitted.mapBytes : JSO
   format: 'spicygov-coverage-unavailable', version: 1,
   reason: 'This UI build has no independently selected completed coverage data release.'
 }) + '\n');
-await writeFile('dist/coverage-build-status.json', JSON.stringify({mode,
+await writeFile('dist/coverage-build-status.json', JSON.stringify({mode: admitted?.release.format === 'spicygov-coverage-refresh-release' ? 'refreshed' : mode,
   ...(admitted ? {censusDigest: admitted.release.censusDigest} : {}), sourceRestorations: 0, networkRequests: 0}) + '\n');
 console.log(`UI coverage: ${mode}; source restoration disabled`);

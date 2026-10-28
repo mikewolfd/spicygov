@@ -1,8 +1,8 @@
 """Build a reviewed, receipt-bound coverage map for every Sources table.
 
 Missing definitions, schema drift, failed scans and unreconciled dimensions fail
-the build. The previous published inventory is replaced only after every table
-passes. Presence measures retained rows; it never proves publisher completeness.
+the build. A full release requires every table; an explicit refresh preserves
+unselected measurements unchanged. Presence never proves publisher completeness.
 """
 from contextlib import nullcontext
 import argparse
@@ -115,8 +115,19 @@ def main():
     parser.add_argument('--only', nargs='+')
     parser.add_argument('--output', type=pathlib.Path, default=OUTPUT)
     parser.add_argument('--release-output', type=pathlib.Path)
+    parser.add_argument('--refresh-from', type=pathlib.Path,
+                        help='Retained coverage map to preserve outside --only')
+    parser.add_argument('--base-sha256', help='Reviewed SHA-256 of --refresh-from')
     args = parser.parse_args()
-    if args.release_output and (args.only or args.scan):
+    base_bytes = None
+    if args.refresh_from or args.base_sha256:
+        if not (args.refresh_from and args.base_sha256 and args.only and args.release_output) or args.scan:
+            raise ValueError('A refresh requires --only, --refresh-from, --base-sha256 and --release-output')
+        if args.refresh_from.resolve() == args.output.resolve():
+            raise ValueError('A refresh must preserve its retained base file')
+        from coverage_release import read_base
+        base_bytes = read_base(args.refresh_from, args.base_sha256)
+    if args.release_output and (args.scan or (args.only and base_bytes is None)):
         raise ValueError('Completed releases require a full build')
     if args.scan:
         request = json.load(sys.stdin)
@@ -136,14 +147,17 @@ def main():
     else:
         _, tables = load()
     reviewed_policies = definitions()
-    policies = dict(reviewed_policies)
+    selected_tables = {id: table for id, table in tables.items() if not args.only or id in args.only}
+    if args.only and set(args.only) != set(selected_tables):
+        raise ValueError('Requested table is not currently published')
+    policies = {id: policy for id, policy in reviewed_policies.items() if id in selected_tables}
     # One reader call per native dataset, in parallel; validate_plan and every scan reuse it.
-    native.describe_all(native.DATASETS & tables.keys())
-    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & tables.keys())
-    validate_plan(tables, policies)
+    native.describe_all(native.DATASETS & selected_tables.keys())
+    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & selected_tables.keys())
+    validate_plan(selected_tables, policies)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)
-    for id in tables:
+    for id in selected_tables:
         checkpoint = CACHE / (id + '.json')
         if checkpoint.exists():
             try: previous[id] = json.loads(checkpoint.read_text())
@@ -152,9 +166,8 @@ def main():
     # substitute publication date or part of the source census.
     as_of_month = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m')
     selected = {id: {**table, '_coverageAsOfMonth': as_of_month}
-                for id, table in tables.items() if not args.only or id in args.only}
+                for id, table in selected_tables.items()}
     revisions = {id: measurement_revision(policies[id]) for id in selected}
-    if args.only and set(args.only) != set(selected): raise ValueError('Requested table is not currently published')
     results, failures = {}, []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         futures = {pool.submit(timed_scan, (id, table, policies[id], previous.get(id))): id for id, table in selected.items()}
@@ -184,9 +197,14 @@ def main():
     else:
         _, final_tables = load()
     if census_digest(final_tables) != census_digest(tables): raise ValueError('Publication changed during coverage build; retry against the new release')
-    document = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': bool(args.only),
+    retained = {}
+    if base_bytes is not None:
+        if read_base(args.refresh_from, args.base_sha256) != base_bytes:
+            raise ValueError('Retained coverage changed during refresh')
+        retained = json.loads(base_bytes)['tables']
+    document = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': bool(args.only) and base_bytes is None,
                 'generatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                'censusDigest': census_digest(tables), 'tables': dict(sorted(results.items()))}
+                'censusDigest': census_digest(tables), 'tables': dict(sorted((retained | results).items()))}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     completed_bytes = (json.dumps(document, separators=(',', ':')) + '\n').encode()
     temp = args.output.with_suffix('.tmp'); temp.write_bytes(completed_bytes)
@@ -196,7 +214,7 @@ def main():
     if args.release_output:
         from coverage_release import complete
         print(json.dumps(complete(ROOT, args.release_output, completed_bytes,
-                                  captured, policies, revisions)), flush=True)
+                                  captured, policies, revisions, base_bytes=base_bytes)), flush=True)
     print(f'All {len(results)} requested coverage maps verified', flush=True)
 
 

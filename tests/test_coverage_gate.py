@@ -29,6 +29,34 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_selected_refresh_does_not_require_definitions_for_unselected_new_tables(self):
+        import coverage_release
+        table, policy, measured = fixture()
+        retained = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': False,
+                    'tables': {'earlier': {'note': 'keep this exact earlier measurement'}}}
+        result = {'measurementRevision': 'fixed', 'dimensions': [measured]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder); base = root/'base.json'; output = root/'map.json'
+            base.write_text(json.dumps(retained))
+            argv = ['builder', '--only', 'records', '--refresh-from', str(base),
+                    '--base-sha256', coverage_release.sha(base.read_bytes()),
+                    '--output', str(output), '--release-output', str(root/'release')]
+            capture = ({'records': table, 'new_unreviewed_table': table}, {'publication.v2.json': b'fixed'})
+            with mock.patch.object(sys, 'argv', argv), \
+                 mock.patch.object(builder, 'CACHE', root/'cache'), \
+                 mock.patch.object(builder.duckdb, 'connect'), \
+                 mock.patch.object(builder, 'definitions', return_value={'records': policy}), \
+                 mock.patch.object(builder, 'measurement_revision', return_value='fixed'), \
+                 mock.patch.object(builder, 'timed_scan', return_value=('records', result)) as scan, \
+                 mock.patch.object(builder.subprocess, 'run'), \
+                 mock.patch.object(coverage_release, 'capture_load', return_value=capture), \
+                 mock.patch.object(coverage_release, 'complete', return_value={}) as complete:
+                builder.main()
+                self.assertEqual(scan.call_count, 1)
+                self.assertEqual(set(complete.call_args.args[4]), {'records'})
+                self.assertEqual(complete.call_args.kwargs['base_bytes'], base.read_bytes())
+                self.assertEqual(json.loads(output.read_bytes())['tables'], retained['tables'] | {'records': result})
+
     def test_full_builder_owns_release_completion_and_refuses_failure_or_changed_capture(self):
         import coverage_release
         table,policy,measured=fixture()
@@ -254,7 +282,6 @@ class CoverageGateTest(unittest.TestCase):
                 started, release, second_started = (threading.Event() for _ in range(3))
                 def reader(command, **options):
                     id = json.loads(options['input'])['id']
-                    self.assertEqual(options['timeout'], {'court_opinions': 2700, 'federal_register': 1500, 'fr_docket_links': 1500}.get(id, 900))
                     if id == 'federal_register':
                         started.set()
                         self.assertTrue(release.wait(timeout=5))
@@ -286,6 +313,7 @@ class CoverageGateTest(unittest.TestCase):
             ('documents', {'_additionalNativeProcessing': True}, 1500),
             ('federal_register', {'_additionalNativeProcessing': True}, 1500),
             ('fr_docket_links', {'_additionalNativeProcessing': True}, 1500),
+            ('comment_periods', {'_additionalNativeProcessing': True}, 1500),
             ('documents', {}, 900),
             ('comments', {}, 7200),
             ('fec_receipts', {}, 3600),

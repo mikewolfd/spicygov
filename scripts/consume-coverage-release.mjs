@@ -40,8 +40,9 @@ export async function consumeRelease(directory, expected, {codeRoot = root} = {}
   const raw = await regular(directory, 'manifest.json');
   if (digest(raw) !== expected) throw Error('Selected coverage release changed');
   const release = JSON.parse(raw);
-  if (release.format !== 'spicygov-completed-coverage-release' || release.version !== 1
-      || release.owner !== 'scripts/build-coverage-maps.py:full-completion'
+  const refresh = release.format === 'spicygov-coverage-refresh-release';
+  if ((!refresh && release.format !== 'spicygov-completed-coverage-release') || release.version !== 1
+      || release.owner !== `scripts/build-coverage-maps.py:${refresh ? 'refresh' : 'full'}-completion`
       || !release.members || !release.implementation || !Object.keys(release.implementation).length) throw Error('Unsupported completed coverage release');
   const members = {};
   let bytes = 0;
@@ -67,11 +68,17 @@ export async function consumeRelease(directory, expected, {codeRoot = root} = {}
   const maps = parser.parseCoverageMaps(JSON.parse(members['coverage-maps.v1.json']));
   if (!Object.keys(maps.tables).length || maps.censusDigest !== release.censusDigest || maps.generatedAt !== release.generatedAt) throw Error('Coverage release identity differs');
   const policies = JSON.parse(members['effective-policies.json']);
-  if (canonical(Object.keys(policies).sort()) !== canonical(Object.keys(maps.tables).sort())
-      || canonical(Object.keys(release.measurementRevisions).sort()) !== canonical(Object.keys(policies).sort())) throw Error('Incomplete coverage policies');
-  for (const [id, map] of Object.entries(maps.tables)) {
+  const measured = Object.keys(policies).sort();
+  if (!measured.length || canonical(Object.keys(release.measurementRevisions).sort()) !== canonical(measured)) throw Error('Incomplete coverage policies');
+  if (refresh) {
+    const base = parser.parseCoverageMaps(JSON.parse(members['base-coverage-maps.v1.json']));
+    if (canonical([...new Set([...Object.keys(base.tables), ...measured])].sort()) !== canonical(Object.keys(maps.tables).sort())
+        || Object.entries(base.tables).some(([id, map]) => !Object.hasOwn(policies, id) && canonical(map) !== canonical(maps.tables[id]))) throw Error('Refresh changed an unselected measurement');
+  } else if (canonical(measured) !== canonical(Object.keys(maps.tables).sort())) throw Error('Incomplete coverage policies');
+  for (const id of measured) {
+    const map = maps.tables[id];
     const policy = policies[id];
-    if (map.definitionDigest !== digest(canonical(policy)) || map.measurementRevision !== release.measurementRevisions[id]
+    if (!map || map.definitionDigest !== digest(canonical(policy)) || map.measurementRevision !== release.measurementRevisions[id]
         || !/^sha256:[a-f0-9]{64}$/.test(map.measurementRevision ?? '')
         || canonical(map.schema) !== canonical(policy.schema)
         || policy.dimensions.length !== map.dimensions.length) throw Error('Coverage policy/revision changed: ' + id);
@@ -95,7 +102,8 @@ export async function consumeRelease(directory, expected, {codeRoot = root} = {}
     if (other.warnings.length) throw Error(other.warnings.join('; '));
     tables = parser.sourceEntries(main, other.tables).map(e => e.table);
   } finally { globalThis.fetch = originalFetch; }
-  if (tables.length !== Object.keys(maps.tables).length || tables.some(t => !parser.currentCoverageMap(t, maps))) throw Error('Coverage source selection differs or measurement expired; explicitly refresh data release');
+  const checked = refresh ? tables.filter(t => Object.hasOwn(policies, t.id)) : tables;
+  if (checked.length !== measured.length || checked.some(t => !parser.currentCoverageMap(t, maps))) throw Error('Coverage source selection differs or measurement expired; explicitly refresh data release');
   return {release, maps, tables, mapBytes: members['coverage-maps.v1.json']};
 }
 
@@ -114,5 +122,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     directory = selected.directory; expected = selected.manifestSha256;
   }
   const result = await consumeRelease(directory, expected);
-  console.log(JSON.stringify({status: 'accepted', manifestSha256: expected, tables: result.tables.length, sourceRestorations: 0, networkRequests: 0}));
+  console.log(JSON.stringify({status: 'accepted', manifestSha256: expected, tables: result.tables.length,
+    measuredTables: Object.keys(result.release.measurementRevisions).length,
+    scope: result.release.format === 'spicygov-coverage-refresh-release' ? 'refresh' : 'full',
+    sourceRestorations: 0, networkRequests: 0}));
 }

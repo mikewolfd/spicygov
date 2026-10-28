@@ -51,11 +51,34 @@ SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
 
 Choose a release directory that does not already exist. Keep the command, source
 and environment identities, exit status and log with the local run evidence.
-Only the successful complete-build path emits the release. It retains the exact
+A successful full build emits the release. It retains the exact
 publication bytes used, effective policies, reader identities through policy and
-measurement revisions, map bytes, and implementation hashes. Partial scans remain
-checkpoints and cannot create releases. The artifact is a candidate for separate
+measurement revisions, map bytes, and implementation hashes. Standalone partial
+scans remain checkpoints; selected refreshes use the path below. The artifact is a candidate for separate
 review and selection.
+
+### Refresh selected tables
+
+To correct a specific table without a full inventory rescan, use the same builder
+with an explicitly selected prior map. Supply the retained map's reviewed SHA-256:
+
+```sh
+SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
+  /path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
+  --only cfr_sections --refresh-from /owned/prior/coverage-maps.v1.json \
+  --base-sha256 sha256:<reviewed-hash> \
+  --output /owned/run/coverage-maps.v1.json \
+  --release-output /owned/run/coverage-refresh
+```
+
+This creates a `spicygov-coverage-refresh-release`, not a full coverage release.
+Every selected table receives the normal schema, source, reader and reconciliation
+checks. The release retains the exact prior map and current publication documents.
+The independent consumer refuses any change to an unselected measurement, verifies
+the refreshed tables against their publications, and keeps existing stale or
+unavailable labels for the others. Select its manifest through the same selection
+file and `build:ui` command; the build status reports `refreshed`. A plain `--only`
+scan still cannot create a release, and full releases still require every table.
 
 There is one supported reader route: the packaged
 `spicy_regs.coverage_reader` and the two spicygov adapters that run on it

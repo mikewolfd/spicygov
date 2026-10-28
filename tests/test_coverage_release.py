@@ -1,4 +1,5 @@
 """Constructed full release fixtures; no source scan or production qualification."""
+import copy
 import json
 import os
 from pathlib import Path
@@ -10,7 +11,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'scripts'))
 from coverage_dimensions import binding, definition_digest
-from coverage_release import complete, implementation_files, sha
+from coverage_release import complete, implementation_files, read_base, sha
 from publication_census import census, census_digest
 from test_publication_census import documents
 
@@ -44,6 +45,57 @@ class ReleaseTests(unittest.TestCase):
 
     def create(self):
         return complete(ROOT, self.release, json.dumps(self.document).encode(), self.captured, self.policies, self.revisions)
+
+    def create_refresh(self):
+        current = copy.deepcopy(self.document['tables']['records'])
+        # Unrelated earlier counts remain earlier; they do not block this refresh.
+        for value in self.document['tables'].values():
+            value['fingerprint'] = 'earlier publication'
+        base = json.dumps(self.document).encode()
+        self.document['tables']['records'] = current
+        return complete(ROOT, self.release, json.dumps(self.document).encode(), self.captured,
+                        {'records': self.policies['records']}, {'records': self.revisions['records']}, base_bytes=base)
+
+    def test_refresh_accepts_only_recounted_table_and_preserves_earlier_maps(self):
+        pin = self.create_refresh()['manifestSha256']
+        result = json.loads(self.consume(pin).stdout)
+        self.assertEqual((result['scope'], result['measuredTables']), ('refresh', 1))
+        self.assertEqual((result['networkRequests'], result['sourceRestorations']), (0, 0))
+        base = json.loads((self.release/'base-coverage-maps.v1.json').read_bytes())
+        served = json.loads((self.release/'coverage-maps.v1.json').read_bytes())
+        self.assertNotEqual(served['tables']['records'], base['tables']['records'])
+        for id in set(base['tables']) - {'records'}:
+            self.assertEqual(served['tables'][id], base['tables'][id])
+        # The same incomplete refresh cannot be admitted as a full release.
+        manifest = json.loads((self.release/'manifest.json').read_bytes())
+        manifest.update(format='spicygov-completed-coverage-release', owner='scripts/build-coverage-maps.py:full-completion')
+        raw = json.dumps(manifest).encode(); (self.release/'manifest.json').write_bytes(raw)
+        self.assertNotEqual(self.consume(sha(raw), False).returncode, 0)
+
+    def test_refresh_refuses_changed_earlier_map_or_unbound_current_map(self):
+        self.create_refresh()
+        path = self.release/'coverage-maps.v1.json'
+        original = path.read_bytes()
+        other = next(id for id in self.document['tables'] if id != 'records')
+        for id, field, value, message in (
+            (other, 'note', 'silently revised', 'unselected measurement'),
+            ('records', 'fingerprint', 'wrong publication', 'source selection differs'),
+            ('records', 'measurementRevision', 'sha256:'+'f'*64, 'policy/revision changed'),
+        ):
+            with self.subTest(id=id, field=field):
+                document = json.loads(original); document['tables'][id][field] = value
+                path.write_text(json.dumps(document))
+                result = self.consume(self.reseal('coverage-maps.v1.json'), False)
+                self.assertNotEqual(result.returncode, 0); self.assertIn(message, result.stderr)
+
+    def test_refresh_requires_exact_reviewed_base_bytes(self):
+        path = self.root/'base.json'; raw = json.dumps(self.document).encode(); path.write_bytes(raw)
+        self.assertEqual(read_base(path, sha(raw)), raw)
+        with self.assertRaisesRegex(ValueError, 'SHA-256'):
+            read_base(path, 'sha256:'+'f'*64)
+        path.write_bytes(raw+b'\n')
+        with self.assertRaisesRegex(ValueError, 'SHA-256'):
+            read_base(path, sha(raw))
 
     def consume(self, pin, check=True):
         return subprocess.run(['node',str(ROOT/'scripts/consume-coverage-release.mjs'),
