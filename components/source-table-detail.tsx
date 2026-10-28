@@ -44,6 +44,40 @@ import { tableCoverageTags } from "../lib/coverage-tags";
 import { TableCoverageMap } from "./coverage-map";
 import { BillAvailabilitySummary } from "./bill-availability";
 
+function SavedResponse({ url }: { url: string }) {
+  const [preview, setPreview] = useState<string>();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  async function show() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(url, { headers: { Range: "bytes=0-16383" }, signal: AbortSignal.timeout(10000) });
+      if (!response.ok || !response.body) throw new Error("Response unavailable");
+      const reader = response.body.getReader(), decoder = new TextDecoder("utf-8", { fatal: true });
+      let text = "", bytes = 0, more = response.status === 206;
+      try {
+        while (bytes < 16384) {
+          const part = await reader.read();
+          if (part.done) break;
+          const selected = part.value.subarray(0, 16384 - bytes);
+          bytes += selected.length;
+          text += decoder.decode(selected, { stream: true });
+          if (selected.length < part.value.length || bytes === 16384) more = true;
+        }
+        if (!more) text += decoder.decode();
+      } finally { await reader.cancel(); }
+      if (text.includes("\0")) throw new Error("Response is not text");
+      setPreview(text + (more ? "\n… Preview limited to the first 16 KB." : ""));
+    } catch { setError("Preview unavailable. You can download the saved response."); }
+    finally { setLoading(false); }
+  }
+  return <div><button className="text-button" disabled={loading} onClick={() => void show()}>{loading ? "Loading…" : "View saved response"}</button>
+    {error && <span role="status"> {error} <a href={url}>Download ↗</a></span>}
+    {preview !== undefined && <><pre className="source-response-preview">{preview}</pre><a href={url}>Download full response ↗</a></>}
+  </div>;
+}
+
 function Links({ links }: { links: EvidenceLink[] }) {
   return (
     <ul className="evidence-links">
@@ -220,7 +254,15 @@ function ReleaseEvidence({
                   {item.lastObservedAt && (
                     <p>Last observation: {item.lastObservedAt}</p>
                   )}
-                  {item.examples && <p>{item.examples} examples</p>}
+                  <p>Recorded captures:</p>
+                  <ul>
+                    {item.captures.map((capture, index) => (
+                      <li key={index}>
+                        {capture.observedAt ?? "Date not recorded"}
+                        {capture.responseUrl && <SavedResponse url={capture.responseUrl} />}
+                      </li>
+                    ))}
+                  </ul>
                 </details>
               </li>
             ))}
@@ -335,7 +377,7 @@ export function SourceTableDetail({
           {table.label}
         </h1>
         <p className="detail-caption">{count(table.rows)} {tableCountUnit(table)}</p>
-        {maps && <div className="coverage-tags">{tableCoverageTags(table, maps).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
+        {maps && <div className="coverage-tags">{tableCoverageTags(table, maps, tables).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
         <div className="detail-actions">
           {entry.explorer ? (
             <a

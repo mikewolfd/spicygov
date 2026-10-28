@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const {outputFiles}=await build({entryPoints:['lib/coverage-map.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {billAvailability,parseCoverageMaps}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const tagOutput=await build({entryPoints:['lib/coverage-tags.ts'],bundle:true,platform:'node',format:'esm',write:false});
+const {tableCoverageTags}=await import(`data:text/javascript;base64,${Buffer.from(tagOutput.outputFiles[0].contents).toString('base64')}`);
 const hash='sha256:'+'a'.repeat(64), changed='sha256:'+'b'.repeat(64);
 const source={family:'bill-family',fingerprint:JSON.stringify([[hash,4,100]]),rows:4,inputsFingerprint:'[]',artifactDigest:hash,schema:[['bill_id','VARCHAR']]};
 const bills={id:'congress_bills',family:'bill-family',rows:4,artifactDigest:hash,columns:[{name:'bill_id',type:'VARCHAR'}],members:[{rows:4,byteSize:100,sha256:hash}]};
@@ -17,6 +19,13 @@ test('bill percentages require both the subject and bill inventory releases to m
   assert.equal(billAvailability(subjects,[subjects,{...bills,...change}],maps),undefined);
   assert.equal(billAvailability({...subjects,...change},[subjects,bills],maps),undefined);
  }
+});
+test('Congress tags use populated values and require both current tables',()=>{
+ const maps=parseCoverageMaps(document());
+ assert.equal(tableCoverageTags(subjects,maps,[subjects,bills])[0].label,'Congresses 118');
+ assert.deepEqual(tableCoverageTags(subjects,maps,[subjects]),[]);
+ assert.deepEqual(tableCoverageTags(subjects,maps,[subjects,{...bills,artifactDigest:changed}]),[]);
+ assert.deepEqual(tableCoverageTags({...subjects,artifactDigest:changed},maps,[subjects,bills]),[]);
 });
 test('invalid percentages and Congress breakdowns are rejected instead of shown',()=>{
  for(const mutate of [v=>v.policyAreas=5,v=>v.subjects=-1,v=>v.total=3,v=>v.byCongress[118].policyAreas=1,v=>v.byCongress[119].subjects=3,v=>v.comparison.rows=3]){

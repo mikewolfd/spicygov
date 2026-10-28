@@ -114,6 +114,14 @@ test('dataset Congress and edition matrices use their numeric category values', 
   assert.equal(tableCoverageTags(editions.table, editions.maps)[0].label, 'Edition years 2025–2026');
 });
 
+test('report coverage prefers the Congress covered over the date a report was issued', () => {
+  const dated = measured({label:'Report issue dates',fields:['date_issued']});
+  dated.map.dimensions.push({...dated.map.dimensions[0], id:'covered', label:'Congress covered by the source report',
+    fields:['covered_congress'],granularity:'category',buckets:{'["117"]':1,'["118"]':2}});
+  assert.equal(tableCoverageTags(dated.table, dated.maps)[0].label,'Reports covering Congresses 117–118');
+  assert.deepEqual(tableCoverageTags({...dated.table,rows:4}, dated.maps),[]);
+});
+
 test('publisher year categories preserve discrete edition years and nonnumeric source labels', () => {
   const mixed = measured({ id: 'publisher-year-labels', label: 'Publisher year labels', fields: ['year_text'], granularity: 'category', buckets: { '["2005"]': 1, '["2005-2006"]': 1, '["2008"]': 1 } });
   const tags = tableCoverageTags(mixed.table, mixed.maps);

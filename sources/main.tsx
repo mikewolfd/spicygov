@@ -627,7 +627,7 @@ function SourcesPage() {
                     : sourceCoverageTags(discoveryPeriods?.[result.id] ?? result.collection.periods, result.collection)
                   : coveragePending && !coverageMaps
                     ? []
-                    : tableCoverageTags(result.entry!.table, coverageMaps);
+                    : tableCoverageTags(result.entry!.table, coverageMaps, tables);
                 return (
                   <div
                     className="directory-row"

@@ -1,5 +1,5 @@
 import type { Dataset } from './catalog';
-import { coverageReading, coveragePeriodNoun, preferredCoverageDimension, type CoverageDimension, type CoverageMaps } from './coverage-map';
+import { billAvailability, coverageReading, coveragePeriodNoun, preferredCoverageDimension, type CoverageDimension, type CoverageMaps } from './coverage-map';
 import type { CatalogCollection, CatalogPeriod } from './source-catalog';
 import { sourcePeriodGroups, type SourcePeriodGroup } from './source-periods';
 
@@ -96,7 +96,7 @@ function categoryNumbers(dimension: CoverageDimension, field: string): number[] 
 
 const requestedDimension = (dimension: CoverageDimension) => dimension.fields?.some(field => /requested/i.test(field))
   || /(?:^|[_-])requested(?:[_-]|$)/i.test(dimension.id) || /^requested\b/i.test(dimension.label);
-const actualPeriodFields = new Set(['congress', 'congress_text', 'year_text', 'edition_year', 'agenda_edition', 'cycle', 'reported_cycle', 'cycles', 'cycles_json',
+const actualPeriodFields = new Set(['congress', 'congress_text', 'covered_congress', 'year_text', 'edition_year', 'agenda_edition', 'cycle', 'reported_cycle', 'cycles', 'cycles_json',
   'publication_date', 'published_date', 'date_issued', 'publication_year', 'native_publication_year', 'action_date', 'introduced_date', 'vote_day',
   'date_filed', 'filed_date', 'filing_date', 'posted_date', 'post_date', 'transaction_date', 'expenditure_date', 'disbursement_date',
   'record_date', 'benefit_year', 'fiscal_year', 'economic_fiscal_year', 'report_year', 'period_start', 'period_end']);
@@ -107,7 +107,16 @@ const actualPeriodDimension = (dimension: CoverageDimension) => dimension.placed
   && dimension.fields?.some(field => actualPeriodFields.has(field));
 
 /** Headline dataset tags show known periods measured for the current release only. */
-export function tableCoverageTags(table: Dataset, maps?: CoverageMaps): CoverageTag[] {
+export function tableCoverageTags(table: Dataset, maps?: CoverageMaps, tables: Dataset[] = []): CoverageTag[] {
+  const availability = billAvailability(table, tables, maps);
+  if (availability) {
+    const congresses = Object.entries(availability.byCongress).flatMap(([key, counts]) => {
+      const value = integer(key);
+      return value !== undefined && (counts.policyAreas > 0 || counts.subjects > 0) ? [value] : [];
+    });
+    return congresses.length ? [{label: compact(`Congresses ${periodRuns(congresses)}`),
+      detail: 'Congresses with at least one bill having a policy area or subject. Coverage varies by Congress.'}] : [];
+  }
   const reading = coverageReading(table, maps);
   if (!reading || reading.freshness !== 'current' || collectorDimension(reading.dimension)) return [];
   let dimension = reading.dimension;
@@ -120,7 +129,13 @@ export function tableCoverageTags(table: Dataset, maps?: CoverageMaps): Coverage
     if (!actual.length) return [];
     dimension = preferredCoverageDimension({ ...map, dimensions: actual });
   }
-  const congress = categoryNumbers(dimension, 'congress').concat(categoryNumbers(dimension, 'congress_text'));
+  // Prefer the Congress described by a record over an incidental event date.
+  // Some report tables distinguish the Congress covered from publication time.
+  const congressDimension = maps!.tables[table.id].dimensions.find(dim => actualPeriodDimension(dim)
+    && ['congress', 'congress_text', 'covered_congress'].some(field => categoryNumbers(dim, field).length));
+  if (congressDimension) dimension = congressDimension;
+  const covered = categoryNumbers(dimension, 'covered_congress');
+  const congress = categoryNumbers(dimension, 'congress').concat(categoryNumbers(dimension, 'congress_text'), covered);
   const editionField = dimension.fields?.find(field => ['edition_year', 'requested_year', 'requested_edition_year'].includes(field));
   const editions = editionField ? categoryNumbers(dimension, editionField) : [];
   const publisherYears = categoryValues(dimension, 'year_text');
@@ -132,7 +147,7 @@ export function tableCoverageTags(table: Dataset, maps?: CoverageMaps): Coverage
   });
   const cycles = coveragePeriodNoun(dimension) === 'cycle';
   let label: string;
-  if (congress.length) label = `Congresses ${periodRuns(congress)}`;
+  if (congress.length) label = `${covered.length ? 'Reports covering Congresses' : 'Congresses'} ${periodRuns(congress)}`;
   else if (editions.length) label = `${editionField?.startsWith('requested') ? 'Requested edition years' : 'Edition years'} ${periodRuns(editions)}`;
   else if (literalPublisherYears.length) label = `Edition years ${periodRuns(literalPublisherYears)}`;
   else if (periodYears.length) {

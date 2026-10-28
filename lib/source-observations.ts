@@ -1,6 +1,7 @@
 import { validDate } from './metadata';
 import { DATA_BASE, object } from './publication-evidence';
-export type SourceObservation = { source: string; endpoint: string; selection: string; purpose?: string; examples?: number; lastObservedAt?: string; observedAt?: string; status?: number; saved?: boolean };
+export type SourceCapture = { observedAt?: string; responseUrl?: string };
+export type SourceObservation = { source: string; endpoint: string; selection: string; purpose?: string; examples?: number; captures: SourceCapture[]; lastObservedAt?: string; observedAt?: string; status?: number; saved?: boolean };
 export type ObservationPreview = { observations: SourceObservation[]; inherited: boolean; partial: boolean };
 export function parseObservationPreview(text: string, partial = false): ObservationPreview {
   const observations: SourceObservation[] = [];
@@ -13,7 +14,10 @@ export function parseObservationPreview(text: string, partial = false): Observat
     try {
       const url = new URL(row.resolved_url ?? row.requested_url);
       if (!['https:', 'http:'].includes(url.protocol)) continue;
-      observations.push({ source: url.hostname, endpoint: url.pathname, selection: url.searchParams.toString(), purpose: typeof row.purpose === 'string' ? row.purpose : undefined, observedAt: validDate(row.observed_at),
+      const observedAt = validDate(row.observed_at);
+      const digest = typeof row.sha256 === 'string' && /^sha256:[0-9a-f]{64}$/.test(row.sha256) ? row.sha256.slice(7) : undefined;
+      observations.push({ source: url.hostname, endpoint: url.pathname, selection: url.searchParams.toString(), purpose: typeof row.purpose === 'string' ? row.purpose : undefined, observedAt,
+        captures: [{observedAt, ...(row.body_retained === true && digest ? {responseUrl: `${DATA_BASE}/source-evidence/blobs/sha256/${digest}`} : {})}],
         status: Number.isInteger(row.status_code) ? row.status_code : undefined, saved: typeof row.body_retained === 'boolean' ? row.body_retained : undefined });
     } catch { /* Malformed source URLs are not displayed. */ }
     if (observations.length === 5) { partial = true; break; }
@@ -27,6 +31,7 @@ export function parseObservationPreview(text: string, partial = false): Observat
     if (!previous) groups.set(key, {...observation, examples: 1});
     else {
       previous.examples = (previous.examples ?? 1) + 1;
+      previous.captures.push(...observation.captures);
       if (observation.observedAt) {
         const dates = [previous.observedAt, previous.lastObservedAt, observation.observedAt].filter((date): date is string => !!date).sort((a, b) => Date.parse(a) - Date.parse(b));
         previous.observedAt = dates[0]; previous.lastObservedAt = dates[dates.length - 1];

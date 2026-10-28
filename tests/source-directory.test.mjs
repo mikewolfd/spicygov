@@ -266,7 +266,19 @@ test('source-log preview distinguishes saved responses, missing fields and inher
   const repeated = parseObservationPreview(Array(8).fill(JSON.stringify({event:'capture', requested_url:'https://example.gov'})).join('\n'));
   assert.equal(repeated.observations.length, 1);
   assert.equal(repeated.observations[0].examples, 5);
+  assert.equal(repeated.observations[0].captures.length, 5);
   assert.equal(repeated.partial, true);
+});
+
+test('source-log captures link only to explicitly saved, checksum-addressed responses', async () => {
+  const { parseObservationPreview } = await module('lib/source-observations.ts');
+  const hash = 'a'.repeat(64);
+  const row = {event:'capture',requested_url:'https://example.gov/data',observed_at:'2026-10-28T03:41:17Z',body_retained:true,sha256:'sha256:'+hash};
+  const preview = parseObservationPreview([row,row,{...row,body_retained:false},{...row,sha256:'sha256:../wrong'}].map(JSON.stringify).join('\n'));
+  assert.equal(preview.observations[0].captures.length,3);
+  assert.equal(preview.observations[0].captures[0].responseUrl,'https://data.spicygov.ai/source-evidence/blobs/sha256/'+hash);
+  assert.equal(preview.observations[0].captures[2].responseUrl,undefined);
+  assert.equal(preview.observations[1].captures[0].responseUrl,undefined);
 });
 
 test('time coverage shows measured gaps without turning missing measurements into gaps', async () => {
