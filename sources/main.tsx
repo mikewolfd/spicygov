@@ -36,7 +36,7 @@ import {
 } from "../lib/source-browser";
 import { collectionMatches, loadDiscoveryPeriods } from "../lib/catalog-discovery";
 import { parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
-import { sourceCoverageTags, tableCoverageTags } from "../lib/coverage-tags";
+import { registerSourceCoverageTags, sourceCoverageTags, tableCoverageTags } from "../lib/coverage-tags";
 import { fetchJson } from "../lib/publication-evidence";
 import "../app/globals.css";
 import "./style.css";
@@ -624,7 +624,9 @@ function SourcesPage() {
                 const tags = result.collection
                   ? discovery?.generation === manifest?.generation && discovery?.failures.includes(result.id)
                     ? []
-                    : sourceCoverageTags(discoveryPeriods?.[result.id] ?? result.collection.periods, result.collection)
+                    : result.collection.id === 'family:federal-register'
+                      ? registerSourceCoverageTags(manifest?.generation)
+                      : sourceCoverageTags(discoveryPeriods?.[result.id] ?? result.collection.periods, result.collection)
                   : coveragePending && !coverageMaps
                     ? []
                     : tableCoverageTags(result.entry!.table, coverageMaps, tables);

@@ -32,23 +32,29 @@ import { fetchJson } from "../lib/publication-evidence";
 import { quarterCoverage, unindexedQuarters } from "../lib/quarter-coverage";
 import sourcePeriods from "../content/federal-register-source-periods.json";
 
-export function FederalRegisterQuarterSummary({ table, maps, generation }: { table?: Dataset; maps?: CoverageMaps; generation?: string }) {
+export function FederalRegisterQuarterSummary({ table, maps, generation, loading = false }: { table?: Dataset; maps?: CoverageMaps; generation?: string; loading?: boolean }) {
   const dimension = table && currentCoverageMap(table, maps)?.dimensions.find(item => item.id === "federal-register-publication-dates");
   const quarters = dimension && quarterCoverage(dimension);
   const source = generation === sourcePeriods.generation ? quarterCoverage({
     granularity: 'month', buckets: Object.fromEntries(sourcePeriods.months.map(month => [month, 1])), unplacedRows: 0,
   }) : undefined;
   const unindexed = source && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets)) : [];
-  return <div>
-    {source && <><p>Saved source files with indexed dates: {source.segments.join(', ')}.</p>
-      <p>Latest indexed source date: {publicationDate(sourcePeriods.latestIndexedDate)}.</p>
-      {unindexed.length > 0 && <p>No indexed source dates: {unindexed.join(', ')}.</p>}</>}
-    {quarters ? <><p>Published records: {quarters.segments.join(', ')}.</p>
-      {quarters.missing.length > 0 && <p>No dated published records: {quarters.missing.join(', ')}.</p>}
-      {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}.</p>}</>
-      : <p>Published records by quarter have not been checked for this release.</p>}
-    <p className="detail-caption">A quarter with records may still be incomplete. {source ? 'Unindexed source dates are unverified; files may still exist.' : 'Saved source files have not been checked by quarter.'}{quarters?.undated ? ` ${count(quarters.undated)} records have no usable publication date.` : ''}</p>
-  </div>;
+  return <>
+    <h2>Coverage</h2>
+    <dl className="source-periods">
+      <div><dt>Published records</dt><dd>{quarters ? <>
+        <strong>{quarters.segments.join(', ')}</strong>
+        {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}</p>}
+        {quarters.missing.length > 0 && <p>No dated records: {quarters.missing.join(', ')}</p>}
+      </> : loading ? 'Loading coverage…' : 'Not checked for this release'}</dd></div>
+      <div><dt>Saved source files</dt><dd>{source ? <>
+        <strong>{source.segments.join(', ')}</strong>
+        <p>Latest indexed date: {publicationDate(sourcePeriods.latestIndexedDate)}</p>
+        {unindexed.length > 0 && <p>Source files for {unindexed.join(', ')} have not been verified.</p>}
+      </> : 'Not checked for this catalog'}</dd></div>
+    </dl>
+    <p className="detail-caption">A quarter means at least one dated record is present; it may still be incomplete.{quarters?.undated ? ` ${count(quarters.undated)} published records have no usable date.` : ''}</p>
+  </>;
 }
 
 export function SourceRelationships({
@@ -134,6 +140,7 @@ export function SourceCollectionDetail({
   const [fileLoading, setFileLoading] = useState(false),
     [fileError, setFileError] = useState("");
   const [maps, setMaps] = useState<CoverageMaps>();
+  const [coverageLoading, setCoverageLoading] = useState(collection.id === "family:federal-register");
   const fileRequest = useRef<AbortController | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
@@ -158,9 +165,11 @@ export function SourceCollectionDetail({
   useEffect(() => {
     if (collection.id !== "family:federal-register") return;
     const controller = new AbortController();
+    setCoverageLoading(true);
     void fetchJson("/coverage-maps.v1.json", controller.signal).then(parseCoverageMaps)
       .then(value => { if (!controller.signal.aborted) setMaps(value); })
-      .catch(() => { if (!controller.signal.aborted) setMaps(undefined); });
+      .catch(() => { if (!controller.signal.aborted) setMaps(undefined); })
+      .finally(() => { if (!controller.signal.aborted) setCoverageLoading(false); });
     return () => controller.abort();
   }, [collection.id]);
   async function loadFiles(index: number) {
@@ -203,6 +212,7 @@ export function SourceCollectionDetail({
   ];
   const destinations = detail?.tables ?? [];
   const published = tables.filter((table) => collection.tables.includes(table.id) && table.rows > 0);
+  const register = collection.id === "family:federal-register";
   useEffect(() => {
     document.getElementById("detail-title")?.focus();
   }, []);
@@ -213,9 +223,9 @@ export function SourceCollectionDetail({
         <h1 id="detail-title" tabIndex={-1}>
           {collectionTitle(collection)}
         </h1>
-        <p className="detail-caption">{count(collection.holdings.objects)} saved {collection.holdings.objects === 1 ? "file" : "files"}</p>
+        <p className="detail-caption">{register && published.length === 1 && <>{count(published[0].rows)} records · </>}{count(collection.holdings.objects)} saved {collection.holdings.objects === 1 ? "file" : "files"}</p>
         {collection.statuses.includes("external-by-choice") && <p className="detail-caption">{collection.holdings.objects ? "More source files are stored elsewhere." : "Source files are stored elsewhere."}</p>}
-        {detail && <div className="coverage-tags">{sourceCoverageTags(detail.collection.periods, collection).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
+        {detail && !register && <div className="coverage-tags">{sourceCoverageTags(detail.collection.periods, collection).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
         <div className="detail-actions">
           {published.length === 1 ? (
             <a className="primary-action" href={published[0].recordsAvailable !== false
@@ -241,7 +251,7 @@ export function SourceCollectionDetail({
           Loading source details…
         </p>
       )}
-      {!!published.length && <section className="detail-section">
+      {!!published.length && !register && <section className="detail-section">
         <h2 id="source-datasets">Datasets</h2>
         <ul className="destination-list">{published.map(table => <li key={table.id}>
           <a href={table.recordsAvailable !== false ? `/?table=${encodeURIComponent(table.id)}` : `/sources/?table=${encodeURIComponent(table.id)}`}>{table.label}</a>
@@ -250,7 +260,7 @@ export function SourceCollectionDetail({
       </section>}
       <section className="source-details" aria-label="Details">
         <p>{collectionDescription(collection, description)}</p>
-        <p className="detail-caption">{!collection.publisher && "Publisher not recorded · "}{availability.label} · {collectionHoldingsSummary(collection)}</p>
+        {!register && <p className="detail-caption">{!collection.publisher && "Publisher not recorded · "}{availability.label} · {collectionHoldingsSummary(collection)}</p>}
         {attention && <p className="context-note">{attention}</p>}
         <nav className="detail-tabs" aria-label="Source details">
           {tabs.map((tab) => (
@@ -268,12 +278,12 @@ export function SourceCollectionDetail({
           {section === "overview" && (
             <>
               <section className="detail-section">
-                <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />
-                {collection.id === "family:federal-register" && <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} generation={manifest.generation} />}
+                {register ? <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} generation={manifest.generation} loading={coverageLoading || publicationState === 'pending'} />
+                  : <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />}
                 {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
                 <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>
               </section>
-              <section className="detail-section">
+              {!register && <section className="detail-section">
                 <h2>Published dataset details</h2>
                 {destinations.length ? (
                   <ul className="destination-list">
@@ -311,7 +321,7 @@ export function SourceCollectionDetail({
                     No published dataset is linked to this source entry.
                   </p>
                 )}
-              </section>
+              </section>}
             </>
           )}
           {section === "routes" && (
@@ -346,7 +356,7 @@ export function SourceCollectionDetail({
                         <dl className="source-periods">
                           {uniquePeriods(route.periods).map((period, i) => (
                             <div key={i}>
-                              <dt>{periodLabel(period)}</dt>
+                              <dt>{register && period.kind === "observed-retained-scope" ? "Earlier retained dataset" : periodLabel(period)}</dt>
                               <dd>
                                 <strong>{periodRange(period)}</strong>
                                 <details>

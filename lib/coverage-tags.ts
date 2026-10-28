@@ -2,9 +2,20 @@ import type { Dataset } from './catalog';
 import { billAvailability, coverageReading, coveragePeriodNoun, preferredCoverageDimension, type CoverageDimension, type CoverageMaps } from './coverage-map';
 import type { CatalogCollection, CatalogPeriod } from './source-catalog';
 import { sourcePeriodGroups, type SourcePeriodGroup } from './source-periods';
+import { quarterCoverage } from './quarter-coverage';
+import registerSourcePeriods from '../content/federal-register-source-periods.json';
 
 export type CoverageTag = { label: string; detail: string };
 type CollectionContext = Pick<CatalogCollection, 'id' | 'families'>;
+
+/** The Register's source inventory is bound to one catalog generation. */
+export function registerSourceCoverageTags(generation?: string): CoverageTag[] {
+  if (generation !== registerSourcePeriods.generation) return [];
+  const coverage = quarterCoverage({ granularity: 'month', unplacedRows: 0,
+    buckets: Object.fromEntries(registerSourcePeriods.months.map(month => [month, 1])) });
+  return coverage ? [{ label: `Saved sources ${coverage.segments.join(', ')}`,
+    detail: 'At least one indexed source date in each listed quarter; coverage may be incomplete.' }] : [];
+}
 
 /** Compress only values actually recorded. A run describes labels, not complete records. */
 export function periodRuns(values: number[], step = 1): string {

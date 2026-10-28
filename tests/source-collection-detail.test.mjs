@@ -42,13 +42,16 @@ test('quarter summary is tied to the current published table and names empty qua
     loaded.exports.FederalRegisterQuarterSummary, { table: dataset, maps: { tables: { federal_register: coverage } } },
   ));
   const current = renderSummary(table, map);
-  assert.match(current, /Published records: 2024 Q1, 2024 Q3/);
-  assert.match(current, /No dated published records: 2024 Q2/);
+  assert.match(current, /Published records<\/dt><dd><strong>2024 Q1, 2024 Q3/);
+  assert.match(current, /No dated records: 2024 Q2/);
   assert.match(current, /Latest record: Jul 18, 2024/);
-  assert.match(current, /Saved source files have not been checked by quarter/);
+  assert.match(current, /Saved source files<\/dt><dd>Not checked for this catalog/);
   const stale = renderSummary({ ...table, rows: 3 }, map);
-  assert.match(stale, /have not been checked for this release/);
+  assert.match(stale, /Not checked for this release/);
   assert.doesNotMatch(stale, /2024 Q2/);
+  const loading = renderToStaticMarkup(createElement(loaded.exports.FederalRegisterQuarterSummary, { loading: true }));
+  assert.match(loading, /Loading coverage/);
+  assert.doesNotMatch(loading, /Not checked for this release/);
 });
 
 test('source quarter evidence is shown only for its catalog generation', async () => {
@@ -57,10 +60,26 @@ test('source quarter evidence is shown only for its catalog generation', async (
     loaded.exports.FederalRegisterQuarterSummary, { generation },
   ));
   const current = renderSummary(source.generation);
-  assert.match(current, /Saved source files with indexed dates: 1994 Q1–2026 Q3/);
-  assert.match(current, /Latest indexed source date: Sep 2, 2026/);
-  assert.match(current, /Unindexed source dates are unverified/);
-  assert.doesNotMatch(renderSummary('sha256:' + 'b'.repeat(64)), /Saved source files with indexed dates/);
+  assert.match(current, /Saved source files<\/dt><dd><strong>1994 Q1–2026 Q3/);
+  assert.match(current, /Latest indexed date: Sep 2, 2026/);
+  assert.match(current, /A quarter means at least one dated record/);
+  assert.match(renderSummary('sha256:' + 'b'.repeat(64)), /Not checked for this catalog/);
+});
+
+test('published periods without an indexed source are presented as unverified', async () => {
+  const source = JSON.parse(await readFile('content/federal-register-source-periods.json', 'utf8'));
+  const hash = 'sha256:' + 'a'.repeat(64);
+  const table = { id: 'federal_register', family: 'federal-register', rows: 1, artifactDigest: hash,
+    columns: [{ name: 'publication_date', type: 'VARCHAR' }], members: [{ sha256: hash, rows: 1, byteSize: 100 }] };
+  const map = { family: table.family, rows: 1, artifactDigest: hash,
+    fingerprint: JSON.stringify([[hash, 1, 100]]), inputsFingerprint: '[]',
+    schema: [['publication_date', 'VARCHAR']], dimensions: [{ id: 'federal-register-publication-dates',
+      granularity: 'month', buckets: { '2026-10': 1 }, latestDate: '2026-10-27', unplacedRows: 0 }] };
+  const html = renderToStaticMarkup(createElement(loaded.exports.FederalRegisterQuarterSummary,
+    { generation: source.generation, table, maps: { tables: { federal_register: map } } }));
+  assert.match(html, /Source files for 2026 Q4 have not been verified/);
+  assert.doesNotMatch(html, /source files.*missing/i);
+  assert.match(html, /Latest record: Oct 27, 2026/);
 });
 
 test("collection details distinguish unavailable publication information from confirmed absence", () => {
