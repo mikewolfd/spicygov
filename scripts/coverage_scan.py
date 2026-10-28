@@ -12,6 +12,7 @@ from contextlib import ExitStack
 import datetime
 import hashlib
 import importlib
+import os
 import pathlib
 import re
 import subprocess
@@ -164,6 +165,27 @@ def validate_members(conn, id, table, expected_schema):
             raise ValueError('Retained member row count differs from its publication: ' + id)
 
 
+def cached_published_members(table):
+    """Reuse exact immutable member bytes without changing the publication binding."""
+    if not table.get('artifactDigest'):
+        return table
+    root = pathlib.Path(os.environ.get('SPICYGOV_NATIVE_COVERAGE_CACHE', SCRIPTS.parent / '.cache/native-coverage')).resolve()
+    members = []
+    for member in table['members']:
+        digest, key = member.get('sha256', ''), member.get('key', '')
+        path = root / 'members' / digest.removeprefix('sha256:') / key
+        if (re.fullmatch(r'sha256:[a-f0-9]{64}', digest) and key
+                and not pathlib.Path(key).is_absolute() and '..' not in pathlib.Path(key).parts
+                and path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(root)):
+            with path.open('rb') as stream:
+                actual = 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
+            if actual != digest or path.stat().st_size != member['byteSize']:
+                raise ValueError('Cached published member differs from its publication')
+            member = {**member, 'url': str(path)}
+        members.append(member)
+    return {**table, 'members': members}
+
+
 def _connect():
     conn = duckdb.connect()
     try:
@@ -208,10 +230,11 @@ def _scan_published_table(id, table, policy):
     try:
         check_mutable(table)
         actual_schema = schema(policy['schema'])
-        validate_members(conn, id, table, actual_schema)
+        reading = cached_published_members(table)
+        validate_members(conn, id, reading, actual_schema)
         validate_definition(policy, actual_schema)
         table = {**table, 'columns': actual_schema}
-        result = _measure(conn, id, table, [m['url'] for m in table['members']], policy, CoverageInputs())
+        result = _measure(conn, id, {**reading, 'columns': actual_schema}, [m['url'] for m in reading['members']], policy, CoverageInputs())
         check_mutable(table)
         if measurement_revision(policy) != revision: raise ValueError('Coverage implementation changed during this table scan')
         return {**binding(table, policy), 'status': 'measured', 'classification': policy['classification'],
@@ -228,7 +251,7 @@ def _scan_native_table(id, table, policy):
     try:
         check_mutable(table)
         actual_schema = schema(policy['schema'])
-        validate_members(conn, id, table, actual_schema)
+        validate_members(conn, id, cached_published_members(table), actual_schema)
         validate_definition(policy, schema(policy.get('processingSchema', actual_schema)))
         table = {**table, 'columns': actual_schema}
         physical_table = table

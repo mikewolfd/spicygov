@@ -4264,7 +4264,89 @@
       "executableDimensions": [
         "congress",
         "printing-dates"
-      ]
+      ],
+      "publishedFieldReview": {
+        "artifactDigest": "sha256:8d032968d352e41b90c923b0ce52270cae99755927836f786b5d0c8e31f4291d",
+        "schema": [
+          [
+            "bill_id",
+            "VARCHAR"
+          ],
+          [
+            "version_code",
+            "VARCHAR"
+          ],
+          [
+            "printing_id",
+            "VARCHAR"
+          ],
+          [
+            "match_path",
+            "VARCHAR[]"
+          ],
+          [
+            "display_path",
+            "VARCHAR[]"
+          ],
+          [
+            "element_id",
+            "VARCHAR"
+          ],
+          [
+            "section_number",
+            "VARCHAR"
+          ],
+          [
+            "heading",
+            "VARCHAR"
+          ],
+          [
+            "body",
+            "VARCHAR"
+          ],
+          [
+            "display_text",
+            "VARCHAR"
+          ],
+          [
+            "division_label",
+            "VARCHAR"
+          ],
+          [
+            "division_key",
+            "VARCHAR"
+          ],
+          [
+            "body_index",
+            "BIGINT"
+          ],
+          [
+            "seq",
+            "BIGINT"
+          ],
+          [
+            "body_chars",
+            "BIGINT"
+          ],
+          [
+            "version_date",
+            "VARCHAR"
+          ],
+          [
+            "congress",
+            "BIGINT"
+          ],
+          [
+            "body_version_id",
+            "VARCHAR"
+          ]
+        ],
+        "fields": [
+          "congress",
+          "version_date"
+        ],
+        "basis": "The native legislative field definitions retain version_date as a string and congress as an integer. Both coverage dimensions can be measured directly from the published columns; restoring body text and processing-only fields is unnecessary."
+      }
     },
     {
       "tableId": "bill_summaries",

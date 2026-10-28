@@ -35,8 +35,10 @@ class NativeCoverageTests(unittest.TestCase):
         self.assertIn(["carrier", "VARCHAR"], selected["processingSchema"])
         self.assertNotIn("carrier", dict(selected["schema"]))
         self.assertEqual([(d["id"], d["fields"]) for d in selected["dimensions"]],
-                         [("subject-acquisition-route", ["carrier"])])
-        self.assertIn("does not record a bill-family parent", selected["note"])
+                         [("bill-subject-availability", ["bill_id", "policy_area", "subjects_json"]),
+                          ("subject-acquisition-route", ["carrier"])])
+        self.assertEqual(selected["dimensions"][0]["comparisonTable"], "congress_bills")
+        self.assertIn("not a reconstruction of historical processing inputs", selected["note"])
 
     def test_flat_published_schema_uses_the_published_scanner_without_restoration(self):
         policy = {"schema": [["source", "VARCHAR"]]}
@@ -166,6 +168,22 @@ class NativeCoverageTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(ValueError, "not the reviewed native subject"):
                 native.variant("bill_versions", unknown, policy)
+
+    def test_explicit_public_schema_counts_published_fields_without_restoration(self):
+        columns = [["congress", "BIGINT"], ["version_date", "VARCHAR"]]
+        policy = {"schema": [["congress", "VARCHAR"], ["version_date", "VARCHAR"]],
+                  "publishedSchema": columns, "dimensions": [
+                      {"id": "congress", "kind": "category", "fields": ["congress"],
+                       "label": "Congress", "meaning": "Published Congress values."}]}
+        table = {"family": "bill-family", "columns": columns}
+        with patch.object(native, "native_schema", side_effect=AssertionError("Public fields need no receipt reader")):
+            actual = native.variant("bill_sections", table, policy)
+            self.assertEqual(actual["schema"], columns)
+            self.assertNotIn("_nativeProcessing", actual)
+            self.assertNotIn("processingSchema", actual)
+            self.assertIs(native.variant("bill_sections", {**table, "columns": policy["schema"]}, policy), policy)
+            with self.assertRaisesRegex(ValueError, "schema needs coverage review"):
+                native.variant("bill_sections", {**table, "columns": [["congress", "DOUBLE"]]}, policy)
 
     def test_unrelated_schema_change_does_not_enable_restoration(self):
         policy = {"schema": [["old", "VARCHAR"]]}

@@ -160,6 +160,12 @@ def variant(dataset, table, policy):
     # the published-table scanner: no reader, receipts or restoration.
     if table.get("columns") == policy["schema"]:
         return policy
+    # Some reviewed dimensions use only unchanged public fields. An explicit
+    # public schema lets those scans avoid reconstructing unrelated text.
+    if policy.get("publishedSchema"):
+        if table.get("columns") != policy["publishedSchema"]:
+            raise ValueError("Published schema needs coverage review: " + dataset)
+        return {**policy, "schema": policy["publishedSchema"]}
     if dataset not in DATASETS or table["family"] not in FAMILIES:
         return policy
     description = native_schema(dataset)

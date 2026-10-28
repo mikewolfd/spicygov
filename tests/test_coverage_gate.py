@@ -3,6 +3,7 @@ import concurrent.futures
 import contextlib
 import importlib.util
 import io
+import hashlib
 import json
 import pathlib
 import sys
@@ -29,6 +30,25 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_published_scan_reuses_exact_cached_bytes_without_rebinding_the_map(self):
+        table,policy,_=fixture()
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder); source=root/'source.parquet'; conn=duckdb.connect()
+            conn.execute('COPY (SELECT DATE \'2024-01-01\' AS "day" UNION ALL SELECT NULL) TO ? (FORMAT PARQUET)',[str(source)])
+            raw=source.read_bytes(); digest='sha256:'+hashlib.sha256(raw).hexdigest()
+            cached=root/'members'/digest[7:]/'records.parquet';cached.parent.mkdir(parents=True);cached.write_bytes(raw)
+            table.update(artifactDigest='sha256:'+'a'*64,members=[{'key':'records.parquet','url':'https://invalid.test/records.parquet','sha256':digest,'rows':2,'byteSize':len(raw)}])
+            before=copy.deepcopy(table)
+            with mock.patch.dict('os.environ',{'SPICYGOV_NATIVE_COVERAGE_CACHE':str(root)}), mock.patch.object(coverage_scan,'_connect',return_value=conn):
+                result=coverage_scan._scan_published_table('records',table,policy)
+                self.assertEqual(result['fingerprint'],builder.binding(table,policy)['fingerprint'])
+                self.assertEqual(result['dimensions'][0]['buckets'],{'2024-01':1})
+                self.assertEqual(result['dimensions'][0]['unplacedRows'],1)
+                self.assertEqual(table,before)
+                cached.write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError,'differs from its publication'):
+                    coverage_scan.cached_published_members(table)
+
     def test_current_comparison_is_bound_even_when_denominator_is_not_remeasured(self):
         table, policy, measured=fixture()
         policy['dimensions'][0]['comparisonTable']='congress_bills'
