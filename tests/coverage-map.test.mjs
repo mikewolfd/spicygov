@@ -11,7 +11,7 @@ async function module(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 }
 
-const {parseCoverageMaps, coverageReading, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
+const {preferredCoverageDimension, parseCoverageMaps, coverageReading, currentCoverageMap, coverageMapForDisplay, coverageMapCounts, dimensionPeriodRows, scopeLabel, coverageFieldLabel, textAvailabilityDetails, coverageStatement, coveragePeriodLabel, coverageItemNoun, coverageCategoryDisplay, coverageCategoryMatches} = await module('lib/coverage-map.ts');
 const {parseComments} = await module('lib/source-directory.ts');
 const {coverageInputsFingerprint} = await module('lib/coverage-map.ts');
 const {publisherNames, loadCoveragePublishers, coveragePublisherNames} = await module('lib/coverage-publishers.ts');
@@ -490,4 +490,64 @@ test('computed display columns do not change the physical schema measured by cov
     assert.equal(currentCoverageMap(changed,maps),undefined);
     assert.equal(coverageMapForDisplay(changed,maps).freshness,'previous-release');
   }
+});
+
+
+test('default coverage uses the records’ natural periods before incidental dates', () => {
+  const congress = {...dimension, id:'congress',fields:['congress'],granularity:'category',buckets:{'["118"]':1,'["119"]':1}};
+  const cycle = {...dimension, id:'cycles',fields:['cycles'],granularity:'year',buckets:{'2024':2}};
+  const edition = {...dimension, id:'agenda-edition',fields:['agenda_edition'],granularity:'season',buckets:{'2024-spring':2}};
+  for (const natural of [congress,cycle,edition]) {
+    assert.equal(preferredCoverageDimension({...map,dimensions:[dimension,natural]}).id,natural.id);
+    assert.equal(preferredCoverageDimension({...map,dimensions:[dimension,{...natural,placedRows:0}]}).id,dimension.id);
+  }
+  const requestedEdition = {...edition,fields:['edition_year','title'],granularity:'category',buckets:{'["2023","1"]':1,'["2025","14"]':1}};
+  assert.equal(preferredCoverageDimension({...map,dimensions:[dimension,requestedEdition]}).id,edition.id);
+  assert.equal(preferredCoverageDimension(map).id,'date');
+});
+
+test('Congress defaults show coverage instead of a missing date range and omit calendar controls', async () => {
+  const {TableCoverageMap}=await coverageComponent(); const raw=document();
+  const congress={...dimension,id:'congress',label:'Congress',fields:['congress'],granularity:'category',buckets:{'["118"]':1,'["119"]':1}};
+  raw.tables.records.dimensions.push(congress);
+  const maps=parseCoverageMaps(raw);
+  assert.equal(coverageReading(table,maps).range,'Congress 118–119');
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps}));
+  assert.match(html, /value="congress" selected/);
+  assert.doesNotMatch(html,/aria-label="Coverage year"|aria-label="Coverage view"/);
+  assert.match(html,/value="date"/); // Dates remain selectable.
+});
+
+test('calendar defaults use the latest measured year and cycles omit nonexistent odd-year gaps', async () => {
+  const {TableCoverageMap}=await coverageComponent();
+  const render = raw=>renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw)}));
+  assert.match(render(document()), /aria-label="Coverage year"[^>]*value="2024"/);
+  const raw=document();Object.assign(raw.tables.records.dimensions[0],{id:'source_cycle',label:'Source election cycle',fields:['source_cycle'],granularity:'year',buckets:{'2024':2}});
+  const html=render(raw);
+  assert.match(html,/Cycles ending in/);
+  assert.doesNotMatch(html,/aria-label="Coverage view"|Cycle label 2023/);
+  raw.tables.records.dimensions[0].buckets={'2023':1,'2024':1};
+  assert.match(render(raw),/Cycle label 2023/);
+});
+
+
+test('Congress opens on the newest periods and retains access to every earlier period', async () => {
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  raw.tables.records.rows=8;
+  raw.tables.records.dimensions=[{...dimension,id:'congress',label:'Congress',fields:['congress'],granularity:'category',rows:8,placedRows:8,unplacedRows:0,buckets:Object.fromEntries(Array.from({length:8},(_,i)=>[JSON.stringify([String(112+i)]),1]))}];
+  const shown={...table,rows:8,members:[{...table.members[0],rows:8}]};
+  raw.tables.records.fingerprint=JSON.stringify([[hash,8,100]]);
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:shown,maps:parseCoverageMaps(raw)}));
+  assert.match(html,/aria-label="119: 1 row/);
+  assert.doesNotMatch(html,/aria-label="112: 1 row/);
+  assert.match(html,/Show all 8/);
+});
+
+
+test('a distant future source date stays recorded without taking over the initial calendar view', async () => {
+  const {TableCoverageMap}=await coverageComponent();const raw=document();
+  raw.tables.records.dimensions[0].buckets={'2024-01':1,'3000-04':1};
+  const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps:parseCoverageMaps(raw)}));
+  assert.match(html,/aria-label="Coverage year"[^>]*value="2024"/);
+  assert.match(html,/3000-04/); // Last recorded date remains visible.
 });

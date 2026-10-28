@@ -29,12 +29,12 @@ const render = (publicationState, tables = []) => renderToStaticMarkup(
 );
 
 test("collection details distinguish unavailable publication information from confirmed absence", () => {
-  assert.match(render("pending"), /Checking published datasets/);
-  assert.match(render("unavailable"), /Published dataset availability is unknown/);
+  assert.match(render("pending"), /Loading datasets/);
+  assert.match(render("unavailable"), /Published datasets could not be checked/);
   for (const state of ["pending", "unavailable"]) {
-    assert.doesNotMatch(render(state), /No published dataset linked here/);
+    assert.doesNotMatch(render(state), /No published data/);
   }
-  assert.match(render("ready"), /No published dataset linked here/);
+  assert.match(render("ready"), /No published data/);
   const known = [{ id: "congress_bills", rows: 1 }];
   assert.match(render("pending", known), /Explore data/);
   assert.match(render("ready", known), /Explore data/);
@@ -74,8 +74,8 @@ test("source relationships link exact catalog collections and preserve route lab
   }));
   assert.match(html, /href="\/sources\/\?view=catalog&amp;collection=family%3Acomments-mirror"/);
   assert.match(html, /href="\/sources\/\?view=catalog&amp;collection=publication%3Acomments"/);
-  assert.match(html, /Retained public comments/);
-  assert.match(html, /Comments publication/);
+  assert.match(html, /Public comment source files/);
+  assert.match(html, /Public comment data/);
   assert.match(html, /Selected retained comment files/);
   assert.match(html, /Exact historical table inputs are not established/);
   assert.match(html, /External mirror → unresolved-source/);
@@ -92,6 +92,43 @@ test("known subjects lead with purpose and general processing limits leave the h
   assert.doesNotMatch(html, /Registration years describe registrations, not historical snapshots/);
   assert.doesNotMatch(html, /Saved source files alone have not been shown to reproduce every published record/);
   assert.doesNotMatch(html, /A baseline preserves/);
+});
+
+test("the front view shows files and datasets while one closed Details disclosure retains process notes", () => {
+  const source = { ...collection, id: "family:other-records", publisher: "Example publisher", tables: ["records"],
+    statuses: ["partial-source"], description: "Acquisition metadata describes a partial crawl." };
+  const html = renderToStaticMarkup(createElement(loaded.exports.SourceCollectionDetail, {
+    reader: {}, manifest: {}, collection: source,
+    tables: [{ id: "records", label: "Useful records", rows: 42 }],
+    publicationState: "ready", onTable() {},
+  }));
+  const [front, details] = html.split('<details class="source-details">');
+  assert.match(front, /Example publisher/);
+  assert.match(front, /1 saved file/);
+  assert.match(front, /Explore data/);
+  assert.match(front, /<a href="\/\?table=records">Useful records<\/a>/);
+  assert.match(front, /42 records/);
+  assert.doesNotMatch(front, /Saved source coverage is partial|Acquisition metadata|Has published data|Source details/);
+  assert.match(details, /^<summary>Details<\/summary>/);
+  assert.match(details, /Acquisition metadata describes a partial crawl/);
+  assert.match(details, /Saved source coverage is partial/);
+  assert.match(details, /aria-label="Source details"/);
+  assert.match(details, /Sources &amp; history/);
+  assert.match(details, /Technical evidence/);
+  assert.doesNotMatch(html, /<details class="source-details" open/);
+});
+
+test("external holdings remain visible and unavailable publication checks do not look like absent data", () => {
+  const html = renderToStaticMarkup(createElement(loaded.exports.SourceCollectionDetail, {
+    reader: {}, manifest: {}, collection: { ...collection, statuses: ["external-by-choice"],
+      holdings: { ...collection.holdings, objects: 0 } },
+    tables: [], publicationState: "unavailable", onTable() {},
+  }));
+  const front = html.split('<details class="source-details">')[0];
+  assert.match(front, /0 saved files/);
+  assert.match(front, /Source files are stored elsewhere/);
+  assert.match(front, /Published datasets could not be checked/);
+  assert.doesNotMatch(front, /No published data|Files not confirmed|Publisher not recorded/);
 });
 
 test("period overview shows discrete election cycles while qualifying source scope", () => {
@@ -117,4 +154,91 @@ test("period overview stays bounded without turning discrete cycles into a conti
   const html=renderToStaticMarkup(createElement(loaded.exports.SourcePeriodOverview,{periods}));
   assert.match(html,/1980 · 1982 · 1984 … 24 recorded periods/);
   assert.doesNotMatch(html,/1980[–-]2026|>2026</);
+});
+
+const renderPeriods = (periods, id, families = []) => renderToStaticMarkup(
+  createElement(loaded.exports.SourcePeriodOverview, {
+    periods, collection: id ? { id, families } : undefined,
+  }),
+);
+
+test("legislative sources default to Congress while retaining every alternative period view", () => {
+  const html = renderPeriods([
+    { kind: "issue-date", label: "2026-10-01", basis: "native scope" },
+    { kind: "observed-retained-scope", label: "Saved dates", start: "1994", end: "2026", basis: "census" },
+    { kind: "requested-scope", label: "2024", basis: "requested-scope" },
+    { kind: "documented-publisher-scope", label: "1973 onward", start: "1973", basis: "publisher" },
+    { kind: "congress", label: "119", basis: "Retained per-file mapping; completeness unknown" },
+  ], "family:bill-family", ["bill-family"]);
+  assert.match(html, /<option value="congress:Congress" selected="">Congress<\/option>/);
+  assert.match(html, /<dt>Congress<\/dt><dd>119<\/dd>/);
+  assert.match(html, /Issue date<\/option>/);
+  assert.match(html, /Dates found in saved records<\/option>/);
+  assert.match(html, /Dates we asked for<\/option>/);
+  assert.match(html, /Dates offered by the publisher<\/option>/);
+  assert.match(html, /May be requested or partial/);
+  assert.doesNotMatch(html, /<dd>1994 – 2026|Dates in the saved records<\/h2>/);
+});
+
+test("election sources prefer native cycles over requested cycles and calendar dates", () => {
+  const html = renderPeriods([
+    { kind: "requested-election-cycle", label: "2024", basis: "requested-scope" },
+    { kind: "observed-retained-scope", label: "Saved dates", start: "2025", end: "2026", basis: "census" },
+    { kind: "election-cycle", label: "2026", basis: "native scope" },
+  ], "family:fec-query", ["fec-query"]);
+  assert.match(html, /<option value="election-cycle:Election cycle" selected="">Election cycle<\/option>/);
+  assert.match(html, /<dt>Election cycle<\/dt><dd>2026<\/dd>/);
+  assert.match(html, /Dates we asked for<\/option>/);
+  assert.doesNotMatch(html, /<dd>2024|2024 – 2026/);
+});
+
+test("CFR editions keep their requested qualification instead of claiming observed editions", () => {
+  const html = renderPeriods([
+    { kind: "requested-issue-date", label: "2026-08-18", basis: "native/requested scope; completeness unknown" },
+    { kind: "observed-retained-scope", label: "2025/2026 edition labels", basis: "analysis" },
+    { kind: "requested-edition", label: "2023", basis: "native/requested scope; completeness unknown" },
+    { kind: "documented-publisher-scope", label: "eCFR since 2017", start: "2017", basis: "publisher" },
+  ], "family:cfr-sections", ["cfr-sections"]);
+  assert.match(html, /<option value="requested-edition:Requested edition" selected="">Requested edition<\/option>/);
+  assert.match(html, /<dt>Requested edition<\/dt><dd>2023<\/dd>/);
+  assert.match(html, /Requested issue date<\/option>/);
+  assert.match(html, /May be requested or partial/);
+  assert.doesNotMatch(html, /Dates in the saved records|Saved records ·/);
+});
+
+test("agenda edition defaults use recorded edition values without inventing coverage", () => {
+  const html = renderPeriods([
+    { kind: "documented-publisher-scope", label: "Publisher history", basis: "publisher" },
+    { kind: "declared-period", label: "202410", basis: "native/requested scope; completeness unknown" },
+    { kind: "declared-period", label: "202510", basis: "native/requested scope; completeness unknown" },
+    { kind: "observed-retained-scope", label: "Selected native editions", basis: "replay" },
+  ], "family:unified-agenda", ["unified-agenda"]);
+  assert.match(html, /<dt>Declared agenda edition<\/dt><dd>202410 · 202510<\/dd>/);
+  assert.match(html, /May be requested or partial/);
+  assert.doesNotMatch(html, /202410 – 202510|202410-202510/);
+});
+
+test("date-based sources prefer the measured saved-record range over publisher and request scopes", () => {
+  const html = renderPeriods([
+    { kind: "publication-date", label: "2003-02-03", basis: "native/requested scope; completeness unknown" },
+    { kind: "requested-publication-range", label: "2022-02-03/2022-05-03", basis: "requested-scope" },
+    { kind: "documented-publisher-scope", label: "API documents from 1994 forward", start: "1994-01-01", basis: "publisher" },
+    { kind: "observed-retained-scope", label: "Retained dated records", start: "1994-01-03", end: "2026-10-09", basis: "analysis.json FR census" },
+  ], "family:federal-register", ["federal-register"]);
+  assert.match(html, /<option value="observed-retained-scope:Dates found in saved records" selected="">/);
+  assert.match(html, /Dates in the saved records<\/h2>/);
+  assert.match(html, /Jan 3, 1994 – Oct 9, 2026/);
+  assert.match(html, /Saved records · Gaps may exist; published dates may differ/);
+  assert.match(html, /Publication date<\/option>/);
+  assert.match(html, /Dates we asked for<\/option>/);
+  assert.doesNotMatch(html, /Jan 1, 1994 –|complete coverage/);
+});
+
+test("unknown sources retain usable recorded groups and do not invent periods", () => {
+  const unknown = renderPeriods([{ kind: "unknown", label: "Unknown", basis: "no-period" }], "family:future-source");
+  assert.match(unknown, /haven’t confirmed the dates/);
+  assert.doesNotMatch(unknown, /<select|<dd>/);
+  const known = renderPeriods([{ kind: "native-season", label: "Spring 2026", basis: "publisher" }], "family:future-source");
+  assert.match(known, /<dt>Native season<\/dt><dd>Spring 2026<\/dd>/);
+  assert.doesNotMatch(known, /<select/);
 });

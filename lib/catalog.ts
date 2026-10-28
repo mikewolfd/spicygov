@@ -4,6 +4,7 @@ import { lobbyingNavigation } from './lobbying-navigation';
 import { loadingMetadata, parseMetadata, validDate, type Source, type Join, type MetadataBundle, type MetadataStatus, type TableMetadataState } from "./metadata";
 import { DATA_BASE, generationEvidence, type PublicationEvidence } from './publication-evidence';
 import { bindExtraTables, extraMetadataMatches } from './separate-publications';
+import { tablePurpose, tableTitle } from './catalog-copy';
 export { publicationDate, tableMetadataMessage, metadataMessage } from "./metadata";
 export type { Join, MetadataStatus } from "./metadata";
 export { DATA_BASE } from './publication-evidence';
@@ -139,7 +140,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<Dataset[]> {
       tables.push({
         id,
         family: familyId,
-        label: pretty(id), summary: "", coverage: "", kind: "published",
+        label: tableTitle(id, pretty(id)), summary: "", coverage: "", kind: "published",
         metadataState: "loading", sources: [], inputs: [], modelGenerated: false, connectionNotes: [], artifactDigest: family.artifactDigest, logicalId: family.logicalId,
         publication: generationEvidence(family.prefix, family.etlReceipts, id),
         rows: table.rows,
@@ -182,7 +183,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle, compati
     const undocumented = metadata.metadataStatus === "unknown" || metadata.sourceStatus === "unknown";
     if (undocumented) status.undocumentedTables++;
     return {
-      ...table, label: metadata.label || table.label, summary: metadata.summary ?? "", coverage: metadata.coverage ?? "",
+      ...table, label: tableTitle(table.id, metadata.label || table.label), summary: tablePurpose(table.id) ?? metadata.summary ?? "", coverage: metadata.coverage ?? "",
       kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
       receiptIdentity: metadata.receiptIdentity, recordIdentity: metadata.recordIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,

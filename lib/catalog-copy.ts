@@ -1,3 +1,4 @@
+import titles from '../content/catalog-titles.json';
 /** Editorial descriptions explain use; source evidence and qualifications remain separate. */
 const purposes: Record<string, string> = {
   'administration-policy': 'White House statements explaining its position on bills in Congress.',
@@ -81,30 +82,26 @@ const purposes: Record<string, string> = {
   'usaspending-recipients': 'Federal award recipient information, for identifying organizations in spending records.',
   'uscode-editions': 'U.S. Code editions and section structure, for locating laws in a particular edition.',
 };
-const titles: Record<string, string> = {
-  'sam-entities': 'Federal award registrations (SAM)',
-  'crs-reports': 'Congressional Research Service reports',
-  'gao-reports': 'Government Accountability Office reports',
-  'gao-recommendations': 'Government Accountability Office recommendations',
-  'cms-medicaid': 'Medicaid drug spending',
-  'cms-part-b': 'Medicare Part B drug spending',
-  'cms-part-d': 'Medicare Part D drug spending',
-  'fr-docket-links': 'Federal Register links to dockets',
-  'fcc-filings': 'Communications Commission filings',
-  'fcc-proceedings': 'Communications Commission proceedings',
-  'usaspending-recipients': 'Federal award recipients',
-  'bill-family': 'Bills and legislative activity',
-  'cfr-sections': 'Code of Federal Regulations',
-  'treasury-fiscal': 'Treasury financial records',
-  'executive-orders': 'Executive orders',
-  'inspectors-general-archive': 'Inspector general report listings',
-  'usitc-edis': 'International Trade Commission filings',
-  ferc: 'Energy regulatory filings',
-};
 export function collectionCopyKey(id: string) {
   const key = id.replace(/^[^:]+:/, '').replace(/^retained-/, '').replace(/-originals$/, '');
   const aliases: Record<string, string> = { 'edis-filings': 'usitc-edis', 'inspectors-general': 'inspectors-general-archive' };
   return aliases[key] ?? key;
 }
 export function catalogPurpose(id: string): string | undefined { return purposes[collectionCopyKey(id)]; }
-export function catalogTitle(id: string): string | undefined { return titles[collectionCopyKey(id)]; }
+export function catalogTitle(id: string): string | undefined {
+  const key = collectionCopyKey(id);
+  return Object.hasOwn(titles.collections, key) ? (titles.collections as Record<string, string>)[key] : undefined;
+}
+
+/** Current display names are shared by Explore and Sources; dated review text stays unchanged. */
+export function tableTitle(id: string, fallback: string): string {
+  return Object.hasOwn(titles.tables, id) ? (titles.tables as Record<string, string>)[id] : fallback;
+}
+
+/** Current explanations can correct dated editorial wording without changing its evidence. */
+export function tablePurpose(id: string): string | undefined {
+  const purposes: Record<string, string> = {
+    scorecard_metric_items: 'Links votes and other actions to ratings. Shows whether they count when the publisher specifies it.',
+  };
+  return Object.hasOwn(purposes, id) ? purposes[id] : undefined;
+}

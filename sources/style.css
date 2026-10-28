@@ -523,6 +523,9 @@
   font-size: 14px;
   margin: 0 0 24px !important;
 }
+.detail-heading > .detail-actions + .context-note {
+  margin-top: 16px !important;
+}
 .plain-list {
   list-style: disc;
   padding-left: 20px;
@@ -1124,3 +1127,12 @@
 .catalog-file-browser .context-note {
   color: #6c3616;
 }
+
+/* Compact summaries retain room to wrap on small screens. */
+.coverage-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.coverage-tag { display: inline-block; padding: 4px 9px; border: 1px solid #d8dfd3; border-radius: 4px; background: #f2f5ef; color: #46583d; font-size: 12px; line-height: 1.5; }
+.source-period-choice { display: inline-grid; gap: 6px; margin-bottom: 12px; max-width: min(100%, 360px); }
+
+.source-details { margin-top: 28px; }
+.source-details > summary { cursor: pointer; font-weight: 600; color: #315e43; padding: 10px 0; }
+.source-details[open] > summary { margin-bottom: 16px; }

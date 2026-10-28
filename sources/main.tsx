@@ -21,13 +21,11 @@ import {
   browserSearch,
   readBrowserLocation,
   searchRank,
-  collectionAvailability,
   matchesCollectionAvailability,
   collectionAttention,
   browserDataState,
   collectionTopic,
-  periodSummary,
-  tableAttention,
+  tableDescription,
   tableScope,
   tablePublisher,
   tablePublisherNames,
@@ -36,7 +34,10 @@ import {
   type BrowserLocation,
   type BrowserView,
 } from "../lib/source-browser";
-import { collectionMatches, loadDiscoveryPeriods, periodSummary as recordedPeriodSummary } from "../lib/catalog-discovery";
+import { collectionMatches, loadDiscoveryPeriods } from "../lib/catalog-discovery";
+import { parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
+import { sourceCoverageTags, tableCoverageTags } from "../lib/coverage-tags";
+import { fetchJson } from "../lib/publication-evidence";
 import "../app/globals.css";
 import "./style.css";
 
@@ -54,7 +55,6 @@ type Result = {
   id: string;
   title: string;
   publisher: string;
-  summary: string;
   topic: string;
   rank: number;
   attention?: string;
@@ -79,6 +79,15 @@ const views: { id: BrowserView; label: string; description: string }[] = [
       "Missing files, failed downloads, and issues that affect use.",
   },
 ];
+
+function sourceGap(item: CatalogCollection): string | undefined {
+  const issue = collectionAttention(item);
+  if (!issue || /receipt evidence|source descriptions/i.test(issue)) return undefined;
+  if (/refused|could not be used/i.test(issue)) return "Some source files are unusable";
+  if (/incomplete/i.test(issue)) return "Incomplete data";
+  if (/partial/i.test(issue)) return "Partial data";
+  return issue;
+}
 
 function SourcesPage() {
   const [location, setLocation] = useState(() =>
@@ -118,7 +127,27 @@ function SourcesPage() {
   );
   const [discovery, setDiscovery] = useState<Awaited<ReturnType<typeof loadDiscoveryPeriods>>>();
   const [loadingPeriods, setLoadingPeriods] = useState(false);
-  const needsPeriods = !!(location.query.trim() || location.period.trim());
+  const [periodRetry, setPeriodRetry] = useState(0);
+  const [coverageMaps, setCoverageMaps] = useState<CoverageMaps>();
+  const [coverageError, setCoverageError] = useState("");
+  const [coveragePending, setCoveragePending] = useState(false);
+  const [coverageRetry, setCoverageRetry] = useState(0);
+  const showingList = !location.table && !location.collection;
+  const needsPeriods = showingList && (location.view !== "available" || !!(location.query.trim() || location.period.trim()));
+  const needsCoverageMaps = showingList && location.view !== "catalog";
+  useEffect(() => {
+    if (!needsCoverageMaps) { setCoveragePending(false); return; }
+    if (coverageMaps && !coverageError) return;
+    const controller = new AbortController();
+    setCoveragePending(true);
+    setCoverageError("");
+    void fetchJson("/coverage-maps.v1.json", controller.signal)
+      .then(parseCoverageMaps)
+      .then(value => { if (!controller.signal.aborted) setCoverageMaps(value); })
+      .catch(() => { if (!controller.signal.aborted) setCoverageError("Period counts could not be loaded. Dataset details and downloads remain available."); })
+      .finally(() => { if (!controller.signal.aborted) setCoveragePending(false); });
+    return () => controller.abort();
+  }, [needsCoverageMaps, coverageRetry]);
   useEffect(() => {
     if (!manifest || !needsPeriods) { setLoadingPeriods(false); return; }
     if (discovery?.generation === manifest.generation) return;
@@ -128,7 +157,7 @@ function SourcesPage() {
       if (!controller.signal.aborted) { setDiscovery(value); setLoadingPeriods(false); }
     });
     return () => controller.abort();
-  }, [reader, manifest, needsPeriods]);
+  }, [reader, manifest, needsPeriods, periodRetry]);
   const discoveryPeriods = discovery?.generation === manifest?.generation ? discovery?.periods : undefined;
   const listFocus = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -205,7 +234,6 @@ function SourcesPage() {
         id: item.id,
         title: collectionTitle(item),
         publisher: item.publisher || "Publisher not recorded",
-        summary: discoveryPeriods?.[item.id] ? recordedPeriodSummary(discoveryPeriods[item.id], location.period) : periodSummary(item),
         topic: collectionTopic(item, tables),
         rank: Math.max(collectionMatches(item, tables, discoveryPeriods?.[item.id] ?? item.periods, location.query, "", "", true) ? 10 : 0, searchRank(
           location.query,
@@ -213,10 +241,10 @@ function SourcesPage() {
           item.publisher,
           `${collectionDescription(item)} ${item.description || ""} ${item.families.join(" ")} ${item.tables.join(" ")} ${item.id}`,
         )),
-        attention: collectionAttention(item),
+        attention: sourceGap(item),
         collection: item,
       })),
-    [manifest, tables, location.query, location.period, discoveryPeriods],
+    [manifest, tables, location.query, discoveryPeriods],
   );
   const tableResults = useMemo<Result[]>(
     () =>
@@ -224,27 +252,26 @@ function SourcesPage() {
         id: entry.table.id,
         title: entry.table.label,
         publisher: tablePublisher(entry),
-        summary: entry.review?.copy?.summary || entry.table.summary,
         topic: entry.table.group,
         rank: searchRank(
           location.query,
           entry.table.label,
           tablePublisherNames(entry).join(" "),
-          `${entry.table.id} ${entry.table.family} ${tableScope(entry) || ""} ${entry.review?.copy?.summary || entry.table.summary}`,
+          `${entry.table.id} ${entry.table.family} ${tableScope(entry) || ""} ${tableDescription(entry)}`,
         ),
-        attention: tableAttention(entry),
+        attention: entry.table.rows === 0 ? "No records published" : undefined,
         entry,
       })),
     [entries, location.query],
   );
   const counts = {
     available:
-      !entries.length && !error
+      !entries.length && (publicationsPending || error)
         ? undefined
         : records.filter((entry) => entry.table.rows > 0).length,
     catalog: manifest?.collections.length,
     attention:
-      !manifest || publicationsPending
+      !manifest || publicationsPending || error
         ? undefined
         : tableResults.filter(
             (item) => !supportingSection(item.entry!.table) && item.attention,
@@ -309,7 +336,7 @@ function SourcesPage() {
   const warnings = [...publicationWarnings, ...reviewWarnings];
   const resultState = browserDataState(location.view,
     manifest ? "ready" : catalogError ? "unavailable" : "pending",
-    error ? "unavailable" : publicationsPending || reviewPending ? "pending" : "ready");
+    error ? "unavailable" : publicationsPending ? "pending" : "ready");
   const busy = resultState === "pending";
   const detailPending = location.table
     ? publicationsPending || (!entries.length && !error)
@@ -535,25 +562,26 @@ function SourcesPage() {
                 )}
               </div>
             </div>
-            {location.view === "catalog" && <p className="detail-caption">Dates describe recorded source scope and may be partial.</p>}
-            {loadingPeriods && <p role="status" className="detail-caption">Loading recorded data periods… Search results may change.</p>}
-            {!!discovery?.failures.length && <p role="alert" className="detail-caption">Data periods could not be loaded for {discovery.failures.length} sources. Those sources remain visible when narrowing by period.</p>}
             <div className="results-summary">
               <p aria-live="polite">
                 {busy
                   ? "Loading…"
-                  : `${count(results.length)} ${location.view === "available" ? "datasets" : location.view === "catalog" ? "sources" : "items"}`}
+                  : resultState === "unavailable" && !results.length
+                    ? "Results unavailable"
+                    : `${count(results.length)} ${location.view === "available" ? "datasets" : location.view === "catalog" ? "sources" : "items"}`}
                 {location.query && <> matching “{location.query}”</>}
               </p>
-              <span>
-                {location.view === "catalog" && manifest
-                  ? `Catalog input snapshot: ${publicationDate(manifest.generatedAt)}`
-                  : publicationsPending || reviewPending
-                    ? "Checking publications…"
-                    : "Current publications"}
-              </span>
+              <details>
+                <summary>Details</summary>
+                {manifest && <p>Catalog updated {publicationDate(manifest.generatedAt)}.</p>}
+                {(publicationsPending || reviewPending) && <p>Checking dataset information…</p>}
+                {loadingPeriods && <p role="status">Loading source periods…</p>}
+                {coveragePending && <p role="status">Loading dataset periods…</p>}
+                {warnings.map(warning => <p key={warning}>{warning}</p>)}
+                {warnings.length > 0 && <button onClick={() => setRetry(retry + 1)}>Retry dataset information</button>}
+              </details>
             </div>
-            {(error || catalogError || warnings.length > 0) && (
+            {(error || catalogError) && (
               <div className="directory-notices">
                 {error && (
                   <p role="alert">
@@ -571,19 +599,10 @@ function SourcesPage() {
                     </button>
                   </p>
                 )}
-                {warnings.length > 0 && (
-                  <details>
-                    <summary>Some descriptions are unavailable</summary>
-                    {warnings.map((warning) => (
-                      <p key={warning}>{warning}</p>
-                    ))}
-                    <button onClick={() => setRetry(retry + 1)}>
-                      Retry descriptions
-                    </button>
-                  </details>
-                )}
               </div>
             )}
+            {coverageError && needsCoverageMaps && <p role="status" className="directory-notices">{coverageError} <button onClick={() => setCoverageRetry(value => value + 1)}>Retry period counts</button></p>}
+            {!!discovery?.failures.length && needsPeriods && <p role="alert">Periods could not be loaded for {discovery.failures.length} sources. <button onClick={() => { setDiscovery(undefined); setPeriodRetry(value => value + 1); }}>Retry source periods</button></p>}
             <div
               className="directory-list"
               aria-label="Search results"
@@ -595,20 +614,20 @@ function SourcesPage() {
                     ? "Dataset & publisher"
                     : "Source & publisher"}
                 </span>
-                <span>
-                  {location.view === "available"
-                    ? "What it covers"
-                    : "Availability"}
-                </span>
+                <span>Data periods</span>
                 <span>
                   {location.view === "available" ? "Records" : "Files saved"}
                 </span>
                 <span />
               </div>
               {visible.map((result) => {
-                const availability = result.collection
-                  ? collectionAvailability(result.collection, tableIds)
-                  : undefined;
+                const tags = result.collection
+                  ? discovery?.generation === manifest?.generation && discovery?.failures.includes(result.id)
+                    ? []
+                    : sourceCoverageTags(discoveryPeriods?.[result.id] ?? result.collection.periods, result.collection)
+                  : coveragePending && !coverageMaps
+                    ? []
+                    : tableCoverageTags(result.entry!.table, coverageMaps);
                 return (
                   <div
                     className="directory-row"
@@ -633,70 +652,35 @@ function SourcesPage() {
                     >
                       <span className="result-name">
                         <strong>{result.title}</strong>
-                        <span className="result-publisher">
-                          {result.publisher}
-                        </span>
-                        {result.collection && <span className="result-publisher">{readableCopy(collectionDescription(result.collection))}</span>}
-                        {result.collection?.tables.includes("sam_entities") && <span className="result-match">SAM registration years describe registrations, not historical database snapshots.</span>}
-                        {location.query && result.rank === 10 && (
-                          <span className="result-match">
-                            Matches recorded source information
-                          </span>
-                        )}
+                        {result.publisher !== "Publisher not recorded" && <span className="result-publisher">
+                          {result.publisher.includes(";") ? "Multiple publishers" : result.publisher}
+                        </span>}
                       </span>
                       <span className="result-state">
-                        {result.entry ? (
-                          <>
-                            <span className="scope-preview">
-                              {readableCopy(
-                                tableScope(result.entry) ||
-                                  "Dates and coverage are not yet described.",
-                              )}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span
-                              className={`availability-dot ${availability!.id === "linked" ? "is-available" : ""}`}
-                            />
-                            {availability!.label}
-                            <small>{result.summary}</small>
-                          </>
-                        )}
-                        {result.attention && <span className="result-attention">{readableCopy(result.attention)}</span>}
+                        {tags.length > 0 && <span className="coverage-tags" aria-label="Recorded period coverage">{tags.map(tag => <span key={tag.label} className="coverage-tag" title={tag.detail} aria-label={`${tag.label}. ${tag.detail}`}>{tag.label}</span>)}</span>}
+                        {location.view === "attention" && result.attention && <span className="result-attention">{readableCopy(result.attention)}</span>}
                       </span>
                       <span className="result-count">
                         {result.entry ? (
                           <>
                             <strong>{count(result.entry.table.rows)}</strong>
                             <small>{tableCountUnit(result.entry.table)}</small>
-                            <small>
-                              {result.entry.table.rows === 0
-                                ? "No records yet"
-                                : result.entry.explorer
-                                  ? "Ready to explore"
-                                  : "Download only"}
-                            </small>
                           </>
                         ) : (
                           <>
                             <strong>
-                              {result.collection!.holdings.objects
+                              {result.collection!.holdings.objects > 0
                                 ? count(result.collection!.holdings.objects)
-                                : "—"}
+                                : result.collection!.statuses.includes("external-by-choice") ? "Stored elsewhere" : result.collection!.statuses.includes("known-not-acquired") ? "Not downloaded" : "0"}
                             </strong>
                             <small>
-                              {result.collection!.holdings.objects
-                                ? result.collection!.holdings.objects === 1
-                                  ? "unique file saved"
-                                  : "unique files saved"
-                                : "Files not confirmed"}
+                              {result.collection!.holdings.objects === 1 ? "file" : "files"}
                             </small>
                           </>
                         )}
                       </span>
                       <span className="result-arrow">
-                        Details <span aria-hidden="true">→</span>
+                        Open <span aria-hidden="true">→</span>
                       </span>
                     </a>
                   </div>
@@ -764,10 +748,6 @@ function SourcesPage() {
               </nav>
             )}
             <footer className="directory-footer">
-              <p>
-                A source may offer more than we’ve collected. Open an item to
-                see its dates, known gaps, and original sources.
-              </p>
               <a href="https://docs.spicygov.ai">Data documentation ↗</a>
             </footer>
           </>

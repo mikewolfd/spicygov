@@ -33,13 +33,14 @@ import {
   readableCopy,
   relatedCollections,
   tableAttention,
+  tableDescription,
   tablePublisher,
   tablePublisherAttribution,
 } from "../lib/source-browser";
 import type { CatalogCollection } from "../lib/source-catalog";
 import { TableProvenance } from "./table-provenance";
+import { tableCoverageTags } from "../lib/coverage-tags";
 import { TableCoverageMap } from "./coverage-map";
-import type { TimeView } from "./time-coverage";
 
 function Links({ links }: { links: EvidenceLink[] }) {
   return (
@@ -284,10 +285,6 @@ export function SourceTableDetail({
     [publishers, setPublishers] = useState<CoveragePublishers>();
   const [coverageError, setCoverageError] = useState(""),
     [retry, setRetry] = useState(0);
-  const [time, setTime] = useState<TimeView>({
-    year: new Date().getFullYear(),
-    mode: "years",
-  });
   useEffect(() => {
     const controller = new AbortController();
     setCoverageError("");
@@ -334,12 +331,8 @@ export function SourceTableDetail({
         <h1 id="detail-title" tabIndex={-1}>
           {table.label}
         </h1>
-        <p>
-          {readableCopy(
-            review?.copy?.summary ||
-              "Explore the available records and check the source dates and limitations below.",
-          )}
-        </p>
+        <p className="detail-caption">{count(table.rows)} {tableCountUnit(table)}</p>
+        {maps && <div className="coverage-tags">{tableCoverageTags(table, maps).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
         <div className="detail-actions">
           {entry.explorer ? (
             <a
@@ -355,9 +348,12 @@ export function SourceTableDetail({
               </a>
             )
           )}
-          <span>{tablePublisher(entry)}{attribution.freshness === "earlier-release" && <small> · Earlier source notes</small>}{attribution.freshness === "unverified" && <small> · Recorded source notes</small>}</span>
+          <span>{tablePublisher(entry)}</span>
         </div>
       </header>
+      <details className="source-details">
+        <summary>Details</summary>
+        <p>{readableCopy(tableDescription(entry))}</p>
       <dl className="detail-facts">
         <div>
           <dt>Records</dt>
@@ -400,14 +396,14 @@ export function SourceTableDetail({
           <>
             {table.modelGenerated && <p className="context-note">AI-generated content. Check it against the original records.</p>}
             <section className="detail-section">
-              <h2>Data dates</h2>
+              <h2>Coverage</h2>
               {coverageError ? <p role="alert">{coverageError} <button className="text-button" onClick={() => setRetry(retry + 1)}>Try again</button></p>
                 : !maps ? <p role="status">Checking recorded coverage…</p>
                 : coverage ? <>
                   <p className="measurement-label">{coverage.release}</p>
-                  <p><strong>{coverage.range || "Date range not measured"}</strong></p>
+                  <p><strong>{coverage.range || coverage.dimension.label}</strong></p>
                   {coverage.range && <p className="detail-caption">{coverage.dimension.label} · Gaps may exist.</p>}
-                </> : <p>Date range not measured.</p>}
+                </> : <p>Period coverage not measured.</p>}
               <button className="text-button" onClick={() => setSection("coverage")}>See counts by period →</button>
             </section>
             {(attention || !!review?.copy?.gaps.length) && <section className="detail-section">
@@ -423,38 +419,6 @@ export function SourceTableDetail({
           <>
             <h2>Records by period</h2>
             <p>Select a period to see the measured record count.</p>
-            <div className="coverage-controls">
-              <label>
-                View
-                <select
-                  value={time.mode}
-                  onChange={(e) =>
-                    setTime({
-                      ...time,
-                      mode: e.target.value as TimeView["mode"],
-                    })
-                  }
-                >
-                  <option value="years">Years</option>
-                  <option value="months">Months</option>
-                </select>
-              </label>
-              <label>
-                {time.mode === "years" ? "Years ending in" : "Year"}
-                <input
-                  aria-label="Coverage year"
-                  type="number"
-                  min={1}
-                  max={9999}
-                  value={time.year}
-                  onChange={(e) => {
-                    const year = Number(e.target.value);
-                    if (Number.isInteger(year) && year >= 1 && year <= 9999)
-                      setTime({ ...time, year });
-                  }}
-                />
-              </label>
-            </div>
             {coverageError ? (
               <p role="alert">
                 {coverageError}{" "}
@@ -467,7 +431,6 @@ export function SourceTableDetail({
                 <TableCoverageMap
                   table={table}
                   maps={maps}
-                  view={time}
                   publishers={publishers}
                   onRetry={() => setRetry(retry + 1)}
                 />
@@ -564,6 +527,7 @@ export function SourceTableDetail({
           <ReleaseEvidence entry={entry} tables={tables} />
         )}
       </div>
+      </details>
     </article>
   );
 }

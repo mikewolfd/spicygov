@@ -74,7 +74,7 @@ test('collection status, source evidence and reference data stay distinct from o
   ];
   const entries = sourceEntries(definitions.map(([id,category]) => ({...table(id),category,family:'fec-query',group:'Elections'})), []);
   const group = sourceSections(entries)[0].groups[0];
-  assert.deepEqual(group.supporting.collection.map(e => e.table.id), ['fec_api_response_controls','fec_collections']);
+  assert.deepEqual(group.supporting.collection.map(e => e.table.id), ['fec_collections','fec_api_response_controls']);
   assert.deepEqual(group.supporting.evidence.map(e => e.table.id), ['fec_record_evidence']);
   assert.deepEqual(group.supporting.reference.map(e => e.table.id), ['fec_filing_definitions']);
   assert.deepEqual(group.entries.map(e => e.table.id).sort(), ['fec_receipts','fec_source_records']);
@@ -189,7 +189,7 @@ test('origin inputs link separate exports directly and do not claim unknown inpu
   const parent = { ...table('agency_stats'), inputs: ['comments', 'records', 'unknown_input'] };
   const html = renderToStaticMarkup(createElement(TableProvenance, { table: parent, catalog: [table(), ...parseComments(comments())] }));
   assert.match(html, /href="https:\/\/data.spicygov.ai\/comments.parquet"/);
-  assert.match(html, /Comments \(Parquet\)/);
+  assert.match(html, /Regulations.gov public comments \(Parquet\)/);
   assert.match(html, /href="\/\?table=records&amp;view=about"/);
   assert.doesNotMatch(html, /\?table=comments/);
   assert.doesNotMatch(html, /not published/);
@@ -201,7 +201,7 @@ test('bound separate inputs link to the explorer while unbound physical fields r
   const input = {...parseComments(comments())[0], recordsAvailable: true};
   const html = renderToStaticMarkup(createElement(TableProvenance, {table: {...table(), inputs:['comments']}, catalog:[input]}));
   assert.match(html, /href="\/\?table=comments&amp;view=about"/);
-  assert.doesNotMatch(html, /Comments \(Parquet\)/);
+  assert.doesNotMatch(html, /Regulations.gov public comments \(Parquet\)/);
   assert.equal(sourceEntries([input], [input])[0].explorer, true);
   assert.equal(sourceEntries([{...input, recordsAvailable:false}], [input])[0].explorer, false);
 });
@@ -223,8 +223,8 @@ test('Sources search finds displayed family headings, raw table IDs and readable
   const sam = { ...table('sam_entities'), family: 'sam-entities', label: 'Federal entity registrations', rows: 1 };
   const unrelated = { ...table('other_records'), summary: 'Uses the same source.', rows: 0 };
   const entries = sourceEntries([sam, unrelated], []);
-  assert.equal(sourceSections(entries).flatMap(section => section.groups).find(group => group.entries.some(entry => entry.table.id === sam.id)).name, 'Federal entity registrations');
-  for (const query of ['SAM entities', 'sam_entities', 'sam-entities', '  SAM   entities  ', 'Federal entity registrations']) {
+  assert.equal(sourceSections(entries).flatMap(section => section.groups).find(group => group.entries.some(entry => entry.table.id === sam.id)).name, 'Federal award registrations (SAM)');
+  for (const query of ['SAM entities', 'sam_entities', 'sam-entities', '  SAM   entities  ', 'Federal award registrations (SAM)']) {
     assert.deepEqual(filterEntries(entries, query, '', '').map(entry => entry.table.id), ['sam_entities']);
   }
   assert.equal(filterEntries(entries, 'SAM', '', '').length, 2);
@@ -433,12 +433,12 @@ test('readable family headings preserve identifiers, grouping and searches', () 
     {...table('native_legal_references'), family:'native-legal-references',group:'Law & courts'},
     {...table('bills'), family:'bill-family',group:'Congress'},
   ],[]);
-  assert.deepEqual(sourceSections(rows).map(section=>section.groups[0].name),['Bills and bill records','References in legal text']);
+  assert.deepEqual(sourceSections(rows).map(section=>section.groups[0].name),['Bills and legislative activity','Citations in laws and regulations']);
   assert.equal(sourceSections(rows)[1].groups[0].id,'topic-law-courts-native-legal-references');
-  assert.equal(filterEntries(rows,'References in legal text','','')[0].table.id,'native_legal_references');
+  assert.equal(filterEntries(rows,'Citations in laws and regulations','','')[0].table.id,'native_legal_references');
   assert.equal(filterEntries(rows,'native-legal-references','','')[0].table.id,'native_legal_references');
-  assert.equal(filterEntries(rows,'Bills and bill records','','')[0].table.id,'bills');
-  assert.equal(rows[0].table.family,'native-legal-references');
+  assert.equal(filterEntries(rows,'Bills and legislative activity','','')[0].table.id,'bills');
+  assert.equal(rows.find(entry=>entry.table.id==='native_legal_references').table.family,'native-legal-references');
 });
 
 
@@ -452,4 +452,33 @@ test('older publisher names stay visible in source groups without becoming curre
   assert.equal(group.historical,true);
   assert.equal(entry.table.metadataState,'older-publication');
   assert.equal(entry.table.artifactDigest,sha);
+});
+
+
+test('reviewed titles agree across Explore and Sources without rewriting historical evidence', async () => {
+  const { applyMetadata } = await module('lib/catalog.ts');
+  const { parseMetadata } = await module('lib/metadata.ts');
+  const id = 'scorecard_metric_items';
+  const current = { ...table(id), label: 'Actions used in each score', metadataState: 'loading' };
+  const value = { format: 'spicy-regs-explorer-metadata', version: 1, generatedAt: '2026-10-28T12:00:00Z',
+    publication: { families: { family: sha } }, joins: [], tables: { [id]: {
+      family: 'family', publicationSchema: [], label: 'Old producer label', sources: [], inputs: [],
+      metadataStatus: 'documented', sourceStatus: 'documented',
+    } } };
+  const historical = review();
+  historical.tables[id] = { ...historical.tables.records, label: current.label, copy: { label: current.label, summary: 'Historical summary', scope: 'Selected records', gaps: [] } };
+  const audit = parseSourceReview(historical);
+  const explored = applyMetadata([current], parseMetadata(value)).tables[0];
+  const sourced = sourceEntries([explored], [], audit)[0];
+  assert.equal(explored.label, 'Votes and other actions linked to scorecard ratings');
+  assert.equal(sourced.table.label, explored.label);
+  assert.equal(sourced.review.copy.label, 'Actions used in each score');
+  const { tableDescription } = await module('lib/source-browser.ts');
+  assert.equal(tableDescription(sourced), explored.summary);
+  assert.match(explored.summary, /whether they count/);
+  assert.equal(sourced.review.copy.summary, 'Historical summary');
+  assert.equal(sourced.table.metadataState, 'current');
+  assert.equal(sourced.table.artifactDigest, sha);
+  assert.equal(filterEntries([sourced], 'scorecard ratings', '', '').length, 1);
+  assert.equal(parseComments(comments())[0].label, 'Regulations.gov public comments');
 });

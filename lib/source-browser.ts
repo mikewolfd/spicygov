@@ -1,5 +1,5 @@
 import { publicationDate, supportingSection, type Dataset } from "./catalog";
-import { catalogPurpose, catalogTitle } from "./catalog-copy";
+import { catalogPurpose, catalogTitle, tablePurpose } from "./catalog-copy";
 import type { CatalogCollection, CatalogPeriod, CatalogFile } from "./source-catalog";
 import {
   sourceMetadataMessage,
@@ -115,6 +115,10 @@ export function collectionLimitation(item: CatalogCollection): string {
 export function tableLimitation(entry: SourceEntry): string {
   return tableAttention(entry) || entry.review?.copy?.gaps[0] || sourceMetadataMessage(entry.table.metadataState) ||
     "Full source coverage has not been confirmed";
+}
+export function tableDescription(entry: SourceEntry): string {
+  return tablePurpose(entry.table.id) || entry.review?.copy?.summary || entry.table.summary ||
+    'Explore the available records and check the source dates and limitations below.';
 }
 export function tableScope(entry: SourceEntry): string | undefined {
   return entry.review?.copy?.scope.trim() ||

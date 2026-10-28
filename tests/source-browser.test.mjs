@@ -387,3 +387,13 @@ test("a current reviewed publisher outranks older metadata without promoting old
   assert.equal(browser.tableScope(entry), undefined);
   assert.equal(browser.tableAttention(entry), undefined);
 });
+
+
+test('source aliases share reviewed titles while future sources keep their supplied titles', () => {
+  for (const id of ['source:usitc-edis-originals', 'publication:retained-edis-filings']) {
+    assert.equal(browser.collectionTitle(collection({ id, title: 'Internal source label' })), 'U.S. International Trade Commission filings');
+  }
+  assert.equal(browser.collectionTitle(collection({ id: 'family:cfr-sections', title: 'CFR' })), 'Annual federal regulation index');
+  assert.equal(browser.collectionTitle(collection({ id: 'future-source', title: 'Future source title' })), 'Future source title');
+  assert.equal(browser.collectionTitle(collection({ id: 'constructor', title: 'Future source title' })), 'Future source title');
+});

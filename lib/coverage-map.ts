@@ -130,8 +130,40 @@ export function coverageMapCounts(tables: Dataset[], maps?: CoverageMaps): { cur
 }
 
 export function preferredCoverageDimension(map: CoverageMap): CoverageDimension {
-  return map.dimensions.find(dim => ['month', 'year', 'season'].includes(dim.granularity) && dim.placedRows > 0)
-    ?? map.dimensions.find(dim => dim.granularity !== 'snapshot' && dim.placedRows > 0) ?? map.dimensions[0];
+  const populated = map.dimensions.filter(dim => dim.placedRows > 0);
+  const byField = (fields: string[]) => populated.find(dim =>
+    dim.fields?.length === 1 && fields.includes(dim.fields[0]));
+  // Use the period belonging to the records before incidental event or capture dates.
+  return byField(['congress'])
+    ?? byField(['source_cycle', 'cycles', 'cycles_json', 'election_cycle', 'cycle'])
+    ?? byField(['reported_cycle'])
+    ?? populated.find(dim => dim.fields?.some(field => ['agenda_edition', 'edition_year', 'requested_year', 'year_text'].includes(field)))
+    ?? byField(['congress_text'])
+    ?? populated.find(dim => ['month', 'year', 'season'].includes(dim.granularity))
+    ?? populated.find(dim => dim.granularity !== 'snapshot') ?? map.dimensions[0];
+}
+
+function dimensionRange(dimension: CoverageDimension): string | undefined {
+  let periods = Object.keys(dimension.buckets).sort();
+  if (dimension.granularity === 'category') {
+    const fields = dimension.fields ?? [];
+    const index = fields.findIndex(field => ['congress', 'congress_text', 'edition_year', 'requested_year'].includes(field));
+    if (index < 0) return undefined;
+    periods = [...new Set(periods.flatMap(key => {
+      try {
+        const value = JSON.parse(key);
+        const part = Array.isArray(value) ? value[index] : value;
+        return /^\d{1,4}$/.test(String(part)) ? [String(part)] : [];
+      } catch { return []; }
+    }))].sort((a,b) => Number(a) - Number(b));
+    if (!periods.length) return undefined;
+    const range = [...new Set([periods[0], periods.at(-1)!])].join('–');
+    return fields[index].startsWith('congress') ? `Congress ${range}` : range;
+  }
+  if (!['month', 'year', 'season'].includes(dimension.granularity) || !periods.length) return undefined;
+  return [...new Set([periods[0], periods.at(-1)!])].map(period => dimension.granularity === 'month'
+    ? new Intl.DateTimeFormat('en', {month: 'short', year: 'numeric', timeZone: 'UTC'}).format(new Date(`${period}-01T00:00:00Z`))
+    : coveragePeriodLabel(dimension, period)).join(' – ');
 }
 
 /** Every period statement carries the release it actually measured. */
@@ -140,12 +172,7 @@ export function coverageReading(table: Dataset, maps?: CoverageMaps) {
   if (!display) return undefined;
   const { map, freshness } = display;
   const dimension = preferredCoverageDimension(map);
-  const periods = ['month', 'year', 'season'].includes(dimension.granularity)
-    ? Object.keys(dimension.buckets).sort() : [];
-  const range = periods.length ? [periods[0], periods.at(-1)!].filter((value, index, values) => values.indexOf(value) === index)
-    .map(period => dimension.granularity === 'month'
-      ? new Intl.DateTimeFormat('en', {month: 'short', year: 'numeric', timeZone: 'UTC'}).format(new Date(`${period}-01T00:00:00Z`))
-      : coveragePeriodLabel(dimension, period)).join(' – ') : undefined;
+  const range = dimensionRange(dimension);
   const release = freshness === 'previous-release'
     ? map.publishedAt ? `Earlier release · ${publicationDate(map.publishedAt)}` : 'Earlier release'
     : `Checked ${publicationDate(map.measuredAt)} · Current release`;

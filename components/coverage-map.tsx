@@ -12,14 +12,22 @@ const unitLabel = (rows: number, unit = 'rows') => rows === 1 ? ({rows: 'row', c
 const rowsLabel = (rows: number) => `${count(rows)} ${rows === 1 ? 'row' : 'rows'}`;
 const coverageDate = (date: string) => new Intl.DateTimeFormat('en', {dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC'}).format(new Date(date));
 
-export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { table: Dataset; maps?: CoverageMaps; view: TimeView; publishers?: CoveragePublishers; onRetry?: () => void }) {
+export function TableCoverageMap({ table, maps, view: suppliedView, publishers, onRetry }: { table: Dataset; maps?: CoverageMaps; view?: TimeView; publishers?: CoveragePublishers; onRetry?: () => void }) {
   const [axis, setAxis] = useState('');
+  const [timeChoice, setTimeChoice] = useState<TimeView>();
   const display = coverageMapForDisplay(table, maps);
   if (!display) return <div className="coverage-map"><p className="coverage-unavailable">Coverage counts are not available for this table.</p>{onRetry && <button type="button" onClick={onRetry}>Reload published counts</button>}</div>;
   const {map, freshness} = display;
   const preferred = preferredCoverageDimension(map);
   const reading = coverageReading(table, maps)!;
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
+  const years = Object.keys(dimension.buckets).flatMap(key => { const value = /^([0-9]{4})(?:-|$)/.exec(key)?.[1]; return value ? [Number(value)] : []; }).sort((a,b) => a-b);
+  const currentYear = new Date().getFullYear();
+  // A distant source-date outlier must not hide the useful contemporary records.
+  const lastYear = years.filter(year => year <= currentYear).at(-1) ?? years[0] ?? currentYear;
+  const view = suppliedView ?? timeChoice ?? {mode: 'years', year: lastYear};
+  const temporal = ['month', 'year', 'season'].includes(dimension.granularity);
+  const cycles = coveragePeriodNoun(dimension) === 'cycle';
   const statement = coverageStatement(dimension);
   const remainingMeaning = dimension.meaning.slice(statement.length).trim();
   const sourceInputs = (Array.isArray(dimension.parent) ? dimension.parent : [dimension.parent]).filter(object).flatMap(input => typeof input.tableId === 'string' ? [input.tableId] : []);
@@ -29,7 +37,19 @@ export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { t
       <p><strong>{reading.release}</strong> · {rowsLabel(map.rows)}</p>
       {freshness !== 'current' && onRetry && <button type="button" onClick={onRetry}>Reload coverage</button>}
     </div>
-    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
+    {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => { setAxis(event.target.value); setTimeChoice(undefined); }}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
+    {temporal && !suppliedView && <div className="coverage-controls">
+      {dimension.granularity !== 'year' && <label>View<select aria-label="Coverage view" value={view.mode} onChange={event => setTimeChoice({...view, mode: event.target.value as TimeView['mode']})}>
+        <option value="years">{dimension.granularity === 'season' ? 'Editions across years' : 'Years'}</option>
+        <option value="months">{dimension.granularity === 'season' ? 'One year' : 'Months'}</option>
+      </select></label>}
+      <label>{view.mode === 'months' ? 'Year' : cycles ? 'Cycles ending in' : 'Years ending in'}
+        <input aria-label="Coverage year" type="number" min={1} max={9999} value={view.year} onChange={event => {
+          const year = Number(event.target.value);
+          if (Number.isInteger(year) && year >= 1 && year <= 9999) setTimeChoice({...view, year});
+        }} />
+      </label>
+    </div>}
     <p className="coverage-meaning">{statement}</p>
     <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} publisherNames={coveragePublisherNames(table, maps, dimension, publishers)} />
     <details className="coverage-checks">
@@ -82,9 +102,13 @@ function DimensionGrid({ dimension, view, publisherNames }: { dimension: Coverag
   if (dimension.granularity === 'category') return <CategoryGrid dimension={dimension} publisherNames={publisherNames} />;
   const yearOnlyMonths = dimension.granularity === 'year' && view.mode === 'months';
   const cycles = dimension.granularity === 'year' && coveragePeriodNoun(dimension) === 'cycle';
-  const periods = dimension.granularity === 'season'
+  let periods = dimension.granularity === 'season'
     ? Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 1 }, (_, i) => String(view.mode === 'years' ? Math.max(1, view.year - 11) + i : view.year).padStart(4, '0')).flatMap(year => [`${year}-spring`, `${year}-fall`])
     : Array.from({ length: view.mode === 'years' ? Math.min(12, view.year) : 12 }, (_, i) => view.mode === 'years' ? String(Math.max(1, view.year - 11) + i).padStart(4, '0') : `${String(view.year).padStart(4, '0')}-${String(i + 1).padStart(2, '0')}`);
+  if (cycles && view.mode === 'years') {
+    // Odd years are not missing election cycles; preserve unusual labels only when recorded.
+    periods = periods.filter(period => Number(period) % 2 === 0 || Object.hasOwn(dimension.buckets, period));
+  }
   const annual = yearOnlyMonths ? dimensionPeriodRows(dimension, String(view.year).padStart(4, '0')) : undefined;
   return <>
     {yearOnlyMonths ? <p className="coverage-unavailable">Month counts are unavailable: this field records {cycles ? 'two-year election cycles' : 'years'} only.{annual !== undefined && <> {rowsLabel(annual)} counted for {coveragePeriodLabel(dimension, String(view.year).padStart(4, '0'))}.</>}</p> : <>
@@ -106,7 +130,8 @@ function DimensionGrid({ dimension, view, publisherNames }: { dimension: Coverag
 function CategoryGrid({ dimension, publisherNames }: { dimension: CoverageDimension; publisherNames?: ReadonlyMap<string, string> }) {
   const [all, setAll] = useState(false), [selected, setSelected] = useState(''), [query, setQuery] = useState('');
   const display = (key: string) => coverageCategoryDisplay(dimension, key, publisherNames);
-  const entries = Object.entries(dimension.buckets).sort(([a], [b]) => display(a).label.localeCompare(display(b).label, undefined, { numeric: true }) || a.localeCompare(b));
+  const latestFirst = dimension.fields?.length === 1 && ['congress', 'congress_text', 'year_text', 'edition_year', 'requested_year'].includes(dimension.fields[0]);
+  const entries = Object.entries(dimension.buckets).sort(([a], [b]) => (latestFirst ? -1 : 1) * display(a).label.localeCompare(display(b).label, undefined, { numeric: true }) || a.localeCompare(b));
   if (!entries.length) return <p className="coverage-empty">No records have a usable value for {coverageViewLabel(dimension.label).toLowerCase()}.</p>;
   const tuples = entries.map(([key, n]) => {
     try { const values: unknown = JSON.parse(key); return Array.isArray(values) && values.length === 2 && values.every(value => typeof value === 'string') ? { values: values as string[], n } : undefined; } catch { return undefined; }

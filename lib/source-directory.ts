@@ -4,6 +4,7 @@ import { validDate, type Source, type MetadataStatus, type TableMetadataState } 
 import { sourceFor } from './sources';
 import { DATA_BASE, dataUrl, digest, fetchJson, object, size, type EvidenceLink } from './publication-evidence';
 import { canonicalJson } from './separate-publications';
+import { catalogTitle, tableTitle } from './catalog-copy';
 
 export const methodLabels: Record<string, string> = {
   bulk_download: 'Bulk downloads', structured_download: 'Structured file downloads', feed_download: sourceControlLabel('RSS feeds'),
@@ -61,7 +62,7 @@ export function parseSourceReview(raw: unknown): SourceReview {
   return { reviewedAt: raw.reviewedAt, sourceRevision: raw.sourceRevision, tables };
 }
 function extraTable(id: string, family: string, rows: number, bytes: number, url: string): Dataset {
-  return { id, family, label: pretty(id), rows, bytes, columns: [], members: [{ url, rows, byteSize: bytes }],
+  return { id, family, label: tableTitle(id, pretty(id)), rows, bytes, columns: [], members: [{ url, rows, byteSize: bytes }],
     group: groupFor(id), summary: '', coverage: '', kind: 'published', recordsAvailable: false, metadataState: 'missing', sources: [], inputs: [], modelGenerated: false, connectionNotes: [] };
 }
 export async function rulemakingManifestDigest(manifest: unknown): Promise<string> {
@@ -132,7 +133,7 @@ export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: Sour
     if (!explorer && source.id === 'unlisted') source = table.publication?.kind === 'rulemaking'
       ? { id: 'rulemaking-publication', name: 'Rulemaking data', kind: 'derived', note: 'Calculated from regulatory records.' }
       : { id: 'comments-publication', name: 'Public comments', kind: 'publication', note: 'Comments and comment counts.' };
-    return { table: { ...table, label: supportingSection(table) ? table.label : audit?.copy?.label ?? (table.label === pretty(table.id) && audit ? audit.label : table.label) }, review: audit, explorer, source, historicalAttribution };
+    return { table: { ...table, label: tableTitle(table.id, supportingSection(table) ? table.label : audit?.copy?.label ?? (table.label === pretty(table.id) && audit ? audit.label : table.label)) }, review: audit, explorer, source, historicalAttribution };
   }).sort((a, b) => a.table.label.localeCompare(b.table.label));
 }
 export function reviewedGenerationLinks(entry: SourceEntry): EvidenceLink[] {
@@ -151,7 +152,7 @@ export function sourceCatalogMessage(status: MetadataStatus): string | undefined
   if (status.state === 'partial') return 'Some source details are missing or older. See each table’s notes.';
 }
 function sourceFamilyName(family: string): string {
-  return sourceGroupLabel(family) ?? pretty(family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener');
+  return catalogTitle(family) ?? sourceGroupLabel(family) ?? pretty(family.replaceAll('-', '_')).replace(/\b(crs|fcc|fec|gao|cfr|sam|pdf|fr)\b/gi, word => word.toUpperCase()).replace(/Usaspending/i, 'USAspending').replace(/Courtlistener/i, 'CourtListener');
 }
 function searchText(value: string): string {
   return value.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();

@@ -1,3 +1,4 @@
+import { sourceCoverageTags } from "../lib/coverage-tags";
 import { useEffect, useRef, useState } from "react";
 import { count, publicationDate, type Dataset } from "../lib/catalog";
 import {
@@ -25,6 +26,7 @@ import { CoverageAccounting, RetainedPublications } from "./source-catalog";
 import { CatalogTableEvidence } from "./catalog-table-evidence";
 import { CatalogFileList } from "./catalog-file-list";
 import { CatalogRetainedFiles } from "./catalog-retained-files";
+import { sourcePeriodGroups } from "../lib/source-periods";
 
 export function SourceRelationships({
   detail,
@@ -60,25 +62,24 @@ export function SourceRelationships({
 }
 
 
-export function SourcePeriodOverview({ periods }: { periods: CatalogPeriod[] }) {
-  const known = uniquePeriods(periods).filter(period => period.kind !== "unknown" && period.label.trim() && !/^unknown$/i.test(period.label.trim()));
-  const observed = known.filter(period => period.kind === "observed-retained-scope" && period.start);
-  const grouped = new Map<string, CatalogPeriod[]>();
-  for (const period of known) {
-    const label = periodLabel(period);
-    const values = grouped.get(label) ?? [];
-    if (!values.some(item => periodRange(item) === periodRange(period))) values.push(period);
-    grouped.set(label, values);
-  }
+export function SourcePeriodOverview({ periods, collection }: {
+  periods: CatalogPeriod[];
+  collection?: Pick<CatalogCollection, "id" | "families">;
+}) {
+  const groups = sourcePeriodGroups(periods, collection);
+  const [selectedId, setSelectedId] = useState("");
+  const selected = groups.find(group => group.id === selectedId) ?? groups[0];
+  const observed = selected?.periods[0].kind === "observed-retained-scope" && selected.periods.some(period => period.start);
+  const values = selected?.periods ?? [];
   return <>
-    <h2>{observed.length ? 'Dates in the saved records' : 'Recorded data periods'}</h2>
-    {observed.length ? <>
-      <ul className="plain-list">{observed.slice(0, 3).map((period, index) => <li key={index}>{periodPreview(period)}</li>)}</ul>
-      {observed.length > 3 && <p>{observed.length} recorded date scopes; see source history for all of them.</p>}
+    <h2>{observed ? 'Dates in the saved records' : 'Recorded data periods'}</h2>
+    {groups.length > 1 && <label className="source-period-choice"><span>Period view</span><select aria-label="Period view" value={selected.id} onChange={event => setSelectedId(event.target.value)}>{groups.map(group => <option key={group.id} value={group.id}>{group.label}</option>)}</select></label>}
+    {observed ? <>
+      <ul className="plain-list">{values.slice(0, 3).map((period, index) => <li key={index}>{periodPreview(period)}</li>)}</ul>
+      {values.length > 3 && <p>{values.length} recorded date scopes; see source history for all of them.</p>}
       <p className="detail-caption">Saved records · Gaps may exist; published dates may differ.</p>
-    </> : known.length ? <>
-      <dl className="source-periods">{[...grouped].slice(0, 3).map(([label, values]) => <div key={label}><dt>{label}</dt><dd>{values.slice(0, 3).map(periodPreview).join(' · ')}{values.length > 3 && ` … ${values.length} recorded periods`}</dd></div>)}</dl>
-      {grouped.size > 3 && <p>More period types are recorded in source history.</p>}
+    </> : selected ? <>
+      <dl className="source-periods"><div><dt>{selected.label}</dt><dd>{values.slice(0, 3).map(periodPreview).join(' · ')}{values.length > 3 && ` … ${values.length} recorded periods`}</dd></div></dl>
       <p className="detail-caption">Recorded source scope · May be requested or partial.</p>
     </> : <p>We haven’t confirmed the dates in the saved records.</p>}
   </>;
@@ -175,16 +176,14 @@ export function SourceCollectionDetail({
   }, []);
   return (
     <article className="source-detail" aria-labelledby="detail-title">
-      <div className="detail-eyebrow">
-        Public source catalog <span>/</span>{" "}
-        {collection.publisher || "Publisher not recorded"}
-      </div>
+      {collection.publisher && <div className="detail-eyebrow">{collection.publisher}</div>}
       <header className="detail-heading">
         <h1 id="detail-title" tabIndex={-1}>
           {collectionTitle(collection)}
         </h1>
-        <p>{collectionDescription(collection, description)}</p>
-        <p className="detail-caption">{collectionHoldingsSummary(collection)}</p>
+        <p className="detail-caption">{count(collection.holdings.objects)} saved {collection.holdings.objects === 1 ? "file" : "files"}</p>
+        {collection.statuses.includes("external-by-choice") && <p className="detail-caption">{collection.holdings.objects ? "More source files are stored elsewhere." : "Source files are stored elsewhere."}</p>}
+        {detail && <div className="coverage-tags">{sourceCoverageTags(detail.collection.periods, collection).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
         <div className="detail-actions">
           {published.length === 1 ? (
             <a className="primary-action" href={published[0].recordsAvailable !== false
@@ -193,25 +192,12 @@ export function SourceCollectionDetail({
           ) : published.length > 1 ? (
             <a className="primary-action" href="#source-datasets" onClick={() => setSection("overview")}>Choose a dataset ↓</a>
           ) : <span>{publicationState === "ready"
-            ? "No published dataset linked here"
+            ? "No published data"
             : publicationState === "pending"
-              ? "Checking published datasets…"
-              : "Published dataset availability is unknown"}</span>}
-          <span>{availability.label}</span>
+              ? "Loading datasets…"
+              : "Published datasets could not be checked."}</span>}
         </div>
-        {attention && <p className="context-note" role="alert">{attention}</p>}
       </header>
-      <nav className="detail-tabs" aria-label="Source details">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            aria-current={section === tab.id ? "page" : undefined}
-            onClick={() => setSection(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
       {error && (
         <p className="load-error" role="alert">
           {error}{" "}
@@ -223,17 +209,40 @@ export function SourceCollectionDetail({
           Loading source details…
         </p>
       )}
+      {!!published.length && <section className="detail-section">
+        <h2 id="source-datasets">Datasets</h2>
+        <ul className="destination-list">{published.map(table => <li key={table.id}>
+          <a href={table.recordsAvailable !== false ? `/?table=${encodeURIComponent(table.id)}` : `/sources/?table=${encodeURIComponent(table.id)}`}>{table.label}</a>
+          <p>{count(table.rows)} records</p>
+        </li>)}</ul>
+      </section>}
+      <details className="source-details">
+        <summary>Details</summary>
+        <p>{collectionDescription(collection, description)}</p>
+        <p className="detail-caption">{!collection.publisher && "Publisher not recorded · "}{availability.label} · {collectionHoldingsSummary(collection)}</p>
+        {attention && <p className="context-note">{attention}</p>}
+        <nav className="detail-tabs" aria-label="Source details">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              aria-current={section === tab.id ? "page" : undefined}
+              onClick={() => setSection(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       {detail && (
         <div className="detail-panel" key={section}>
           {section === "overview" && (
             <>
               <section className="detail-section">
-                <SourcePeriodOverview periods={detail.collection.periods} />
+                <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />
                 {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
                 <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>
               </section>
               <section className="detail-section">
-                <h2 id="source-datasets">Published datasets</h2>
+                <h2>Published dataset details</h2>
                 {destinations.length ? (
                   <ul className="destination-list">
                     {destinations.map((item) => {
@@ -487,6 +496,7 @@ export function SourceCollectionDetail({
           )}
         </div>
       )}
+      </details>
     </article>
   );
 }
