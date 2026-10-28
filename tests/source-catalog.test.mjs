@@ -196,6 +196,38 @@ test('default reader invokes browser fetch with the global receiver', async () =
  try { globalThis.fetch=function(){ assert.equal(this,globalThis); return Promise.resolve(new Response(JSON.stringify(manifest))); }; const result=await new SourceCatalogReader('/manifest.json').manifest(); assert.equal(result.generation,generation); } finally { globalThis.fetch=original; }
 });
 
+test('catalog deadline aborts stalled headers and allows a successful retry', async () => {
+ let attempts=0, requestSignal;
+ const reader=new SourceCatalogReader('/manifest.json',false,async (_url,init)=>{
+  attempts++;requestSignal=init.signal;
+  return attempts===1 ? new Promise(()=>{}) : new Response(JSON.stringify(manifest));
+ },20);
+ await assert.rejects(reader.manifest(),/timed out.*Try again/);
+ assert.equal(requestSignal.aborted,true);
+ assert.equal((await reader.manifest()).generation,generation);
+ assert.equal(requestSignal.aborted,false);
+});
+
+test('catalog deadline covers stalled body reads and cancels the stream', async () => {
+ let cancelled=false;
+ const reader=new SourceCatalogReader('/manifest.json',false,async()=>new Response(new ReadableStream({
+  start(controller){controller.enqueue(new TextEncoder().encode('{"format":'));},
+  cancel(){cancelled=true;}
+ })),20);
+ await assert.rejects(reader.manifest(),/timed out/);
+ assert.equal(cancelled,true);
+});
+
+test('caller cancellation remains distinct from a deadline and skips pre-aborted reads', async () => {
+ const before=new AbortController();before.abort();
+ let calls=0;
+ const reader=new SourceCatalogReader('/manifest.json',false,async()=>{calls++;return new Promise(()=>{});},1000);
+ await assert.rejects(reader.manifest(before.signal),{name:'AbortError'});assert.equal(calls,0);
+ const during=new AbortController(), pending=reader.manifest(during.signal);
+ during.abort();
+ await assert.rejects(pending,{name:'AbortError'});assert.equal(calls,1);
+});
+
 const unknownStage = {status:'unknown',measurements:[]};
 const measurement = {count:1,unit:'captured-table-artifact-version',version:generation,evidenceBasis:'Retained publication snapshot; no live readback',scope:{table:'structure',capturedAt:'2026-10-09T00:00:00Z'},period:null};
 const coverage = {completenessDenominator:null,stages:{expected:unknownStage,advertised:unknownStage,acquired:unknownStage,processed:unknownStage,published:{status:'evidence-recorded',measurements:[measurement]}}};

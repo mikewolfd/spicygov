@@ -28,17 +28,17 @@ test("source scope uses current admitted descriptions without inventing date cov
     table: { rows: 157, metadataState: "current", coverage: "Selected retained comment files; broader publisher coverage is not implied." },
   };
   assert.equal(browser.tableScope(entry), entry.table.coverage);
-  assert.equal(browser.tableAttention(entry), "Dates need checking");
+  assert.equal(browser.tableAttention(entry), undefined);
   assert.equal(browser.tableScope({ ...entry, review: { copy: { scope: "Reviewed selected scope." } } }), "Reviewed selected scope.");
   assert.equal(browser.tableScope({ ...entry, review: {} }), entry.table.coverage);
   for (const metadataState of ["loading", "missing", "incompatible", "older-publication", "undocumented", "unavailable"]) {
     const stale = { ...entry, table: { ...entry.table, metadataState } };
     assert.equal(browser.tableScope(stale), undefined, metadataState);
-    assert.ok(browser.tableAttention(stale), metadataState);
+    assert.equal(!!browser.tableAttention(stale), ["incompatible", "unavailable"].includes(metadataState), metadataState);
   }
   const undescribed = { ...entry, table: { ...entry.table, coverage: "  " } };
   assert.equal(browser.tableScope(undescribed), undefined);
-  assert.equal(browser.tableAttention(undescribed), "Dates and coverage need checking");
+  assert.equal(browser.tableAttention(undescribed), undefined);
   assert.equal(browser.tableAttention({ ...entry, table: { ...entry.table, rows: 0 } }), "No records published");
 });
 test("a source title wins over an incidental mention in a different publisher’s description", () => {
@@ -225,14 +225,18 @@ test("publisher labels keep current source descriptions ahead of reviewed fallba
   assert.equal(browser.tablePublisher(publisherEntry({}, { ...reviewed, sources: [source("First"), source("Second")] })), "Multiple publishers");
 });
 
-test("publisher labels reject stale attribution and generic source-group captions", () => {
+test("publisher labels preserve recorded attribution with explicit freshness and reject generic source-group captions", () => {
   const reviewed = { artifactDigest: "sha256:" + "b".repeat(64), sources: [source("Earlier publisher")] };
-  assert.equal(browser.tablePublisher(publisherEntry({}, reviewed)), "Publisher not recorded");
-  assert.equal(browser.tablePublisher(publisherEntry({ artifactDigest: undefined }, { sources: [source("Unpinned publisher")] })), "Publisher not recorded");
+  assert.equal(browser.tablePublisher(publisherEntry({}, reviewed)), "Earlier publisher");
+  assert.equal(browser.tablePublisherAttribution(publisherEntry({}, reviewed)).freshness, "earlier-release");
+  assert.equal(browser.tablePublisher(publisherEntry({ artifactDigest: undefined }, { sources: [source("Unpinned publisher")] })), "Unpinned publisher");
+  assert.equal(browser.tablePublisherAttribution(publisherEntry({ artifactDigest: undefined }, { sources: [source("Unpinned publisher")] })).freshness, "unverified");
   assert.equal(browser.tablePublisher(publisherEntry()), "Publisher not recorded");
   assert.equal(browser.tablePublisher(publisherEntry({ sources: [source("  ")] })), "Publisher not recorded");
   for (const metadataState of ["loading", "missing", "incompatible", "older-publication", "unavailable"]) {
-    assert.equal(browser.tablePublisher(publisherEntry({ metadataState, sources: [source("Earlier metadata publisher")] })), "Publisher not recorded", metadataState);
+    const entry = publisherEntry({ metadataState, sources: [source("Earlier metadata publisher")] });
+    assert.equal(browser.tablePublisher(entry), "Earlier metadata publisher", metadataState);
+    assert.equal(browser.tablePublisherAttribution(entry).freshness, ["incompatible", "older-publication"].includes(metadataState) ? "earlier-release" : "unverified", metadataState);
   }
 });
 
@@ -245,8 +249,9 @@ test("publisher search retains every eligible name when the caption summarizes m
     assert.equal(browser.searchRank(query, "Scorecards", names.join(" ")), 40);
   }
   const stale = publisherEntry({}, { artifactDigest: "sha256:" + "b".repeat(64), sources: [source("Earlier publisher")] });
-  assert.deepEqual(browser.tablePublisherNames(stale), []);
-  assert.equal(browser.searchRank("Earlier publisher", "Scorecards", browser.tablePublisherNames(stale).join(" ")), 0);
+  assert.deepEqual(browser.tablePublisherNames(stale), ["Earlier publisher"]);
+  assert.equal(browser.searchRank("Earlier publisher", "Scorecards", browser.tablePublisherNames(stale).join(" ")), 40);
+  assert.equal(browser.tablePublisherAttribution(stale).freshness, "earlier-release");
 });
 
 test("generation-matched incomplete descriptions retain their supplied publisher names", () => {
@@ -267,10 +272,11 @@ test("v2 bounded period summaries preserve list dates and scope uncertainty", ()
 test("unlinked inventory does not turn linked publication entries into uncollected sources", () => {
   const item=collection({statuses:["inventory-unresolved"],tables:["records"]});
   assert.equal(browser.collectionAvailability(item,new Set(["records"])).id,"linked");
-  assert.equal(browser.collectionAttention(item),"Source files not linked to this entry");
+  assert.equal(browser.collectionAttention(item),undefined);
+  assert.equal(browser.collectionLimitation(item),"Source files not linked to this entry");
   assert.equal(browser.collectionDownload(item),"Downloads not confirmed");
   assert.equal(browser.matchesCollectionAvailability(item,"uncollected",new Set(["records"])),false);
-  assert.equal(browser.matchesCollectionAvailability(item,"review",new Set(["records"])),true);
+  assert.equal(browser.matchesCollectionAvailability(item,"review",new Set(["records"])),false);
   const external=collection({statuses:["external-by-choice"],tables:["records"]});
   assert.equal(browser.collectionAvailability(external,new Set()).id,"external");
   assert.equal(browser.collectionDownload(external),"Stored elsewhere");
@@ -340,4 +346,44 @@ test("native election-cycle and edition labels remain visible without invented d
 test("unlinked inventory counts do not imply source originals are absent", () => {
   assert.equal(browser.collectionHoldingsSummary(collection({statuses:["inventory-unresolved"]})),"No files linked to this entry yet.");
   assert.equal(browser.collectionHoldingsSummary(collection({holdings:{objects:4}})),"4 distinct files saved locally.");
+});
+
+
+test("information-only catalog states do not become gaps, while concrete problems remain visible", () => {
+  for (const status of ["inventory-unresolved", "integration-unresolved", "unclassified-source", "receipt-only", "published-with-baseline", "external-by-choice"]) {
+    const item = collection({statuses:[status]});
+    assert.equal(browser.collectionAttention(item), undefined, status);
+    assert.equal(browser.matchesCollectionAvailability(item, "review", new Set()), false, status);
+    assert.ok(browser.collectionLimitation(item), status);
+  }
+  for (const status of ["missing-bytes", "refused-source", "parse-error", "failed-response", "partial", "partial-source", "incomplete-response", "conflicting-receipt", "conflicting-metadata", "known-not-acquired"]) {
+    const item = collection({statuses:["inventory-unresolved", status]});
+    assert.ok(browser.collectionAttention(item), status);
+    assert.equal(browser.matchesCollectionAvailability(item, "review", new Set()), true, status);
+    assert.equal(browser.collectionLimitation(item), browser.collectionAttention(item), status);
+  }
+});
+
+test("empty-result readiness requires every input used by the selected view", () => {
+  for (const catalog of ["pending","unavailable","ready"]) {
+    for (const publications of ["pending","unavailable","ready"]) {
+      assert.equal(browser.browserDataState("catalog",catalog,publications),catalog);
+      assert.equal(browser.browserDataState("available",catalog,publications),publications);
+      const expected=[catalog,publications].includes("unavailable") ? "unavailable"
+        : [catalog,publications].includes("pending") ? "pending" : "ready";
+      assert.equal(browser.browserDataState("attention",catalog,publications),expected);
+    }
+  }
+});
+
+test("partial source coverage is distinct from an incomplete response", () => {
+  assert.equal(browser.collectionAttention(collection({statuses:["partial"]})),"Saved source coverage is partial");
+  assert.equal(browser.collectionAttention(collection({statuses:["incomplete-response"]})),"Saved source response is incomplete");
+});
+
+test("a current reviewed publisher outranks older metadata without promoting older source coverage", () => {
+  const entry = publisherEntry({metadataState:"older-publication", sources:[source("Earlier publisher")], coverage:"Old scope"}, {artifactDigest:publication, sources:[source("Current reviewed publisher")]});
+  assert.deepEqual(browser.tablePublisherAttribution(entry), {names:["Current reviewed publisher"],freshness:"current"});
+  assert.equal(browser.tableScope(entry), undefined);
+  assert.equal(browser.tableAttention(entry), undefined);
 });

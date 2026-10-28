@@ -36,6 +36,7 @@ def put(name,values,**scope):
     body=encode(values,generation=scope.get('generation',generation),dataset_id='fixture',inventory_kind='active')
     output[name]={'body':base64.b64encode(body).decode(),'rows':len(values)}
 put('valid',rows)
+put('empty-native-text',[dict(base,source_id='',source_version=' ',period_basis='')])
 put('unavailable',[dict(base,receipt_key=None,receipt_kind=None,original_receipt_key=None,original_receipt_sha256=bytes.fromhex('4'*64),conflict_fields=['receipt-reference-unavailable'])])
 for name,changes in {
  'private':{'source_id':'/Users/private/source'},'private-period':{'period_basis':'/mnt/private/source'},'unsafe-url':{'source_url':'https://example.gov/file?token=private'},
@@ -72,6 +73,12 @@ test('native inventory preserves observations, exact timestamps, nulls and direc
  assert.deepEqual(page.files.map(file=>file.id),['file:'+'1'.repeat(64),'legacy-observation:two']);
  assert.equal(page.files[0].sha256,page.files[1].sha256);
  assert.equal(page.files[0].name,'publisher-name.json');assert.equal(page.files[0].routeId,'publisher-route');
+ assert.equal(page.files[0].sourceId,'native-1');assert.equal(page.files[0].sourceVersion,'2024');
+ assert.deepEqual(page.files[0].periods,[{kind:'election-cycle',label:'2024',basis:'Native requested scope'}]);
+ assert.deepEqual(page.files[1].periods.map(p=>[p.kind,p.label,p.start,p.end]),[
+  ['congress','119',undefined,undefined],['issue-date','2026-10-28','2026-10-28','2026-10-28']]);
+ assert.deepEqual(page.files[1].metadataConflicts,['capture-time-conflict']);
+ assert.equal(page.files[0].metadataConflicts,undefined);
  assert.equal(page.files[0].provenance.capturedAt,'2026-10-28T01:02:03.123456Z');
  assert.equal(page.files[1].provenance.capturedAt,undefined);assert.equal(page.files[1].status,'refused-source');
  assert.equal(page.files[1].provenance.sourceUrls.length,2);
@@ -84,7 +91,12 @@ test('known receipt fingerprints survive an unavailable archive location without
  assert.equal(file.provenance.receipt.sha256,'sha256:'+'3'.repeat(64));assert.equal(file.provenance.receipt.key,null);
  assert.equal(file.provenance.originalReceiptSha256,'sha256:'+'4'.repeat(64));assert.equal(file.provenance.originalReceiptKey,null);
 });
-for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
+test('optional native text preserves schema-valid blanks without rejecting a file page',async()=>{
+ const file=(await decode('empty-native-text')).files[0];
+ assert.equal(file.sourceId,'');assert.equal(file.sourceVersion,' ');
+ assert.equal(file.periods[0].basis,'');
+});
+for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable','empty-native-text'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
  await assert.rejects(decode(name));
 });
 test('pinned size, fingerprint, generation, collection and inventory are checked before display',async()=>{

@@ -2,11 +2,18 @@ import { publicationDate, supportingSection, type Dataset } from "./catalog";
 import { catalogPurpose, catalogTitle } from "./catalog-copy";
 import type { CatalogCollection, CatalogPeriod, CatalogFile } from "./source-catalog";
 import {
-  sourceMetadataNeedsAttention,
+  sourceMetadataMessage,
+  publisherAttribution,
   type SourceEntry,
 } from "./source-directory";
 
 export type BrowserView = "available" | "catalog" | "attention";
+export type BrowserDataState = "pending" | "unavailable" | "ready";
+/** Gaps combines both inputs; a failed or pending input cannot prove an empty result. */
+export function browserDataState(view: BrowserView, catalog: BrowserDataState, publications: BrowserDataState): BrowserDataState {
+  const required = view === "catalog" ? [catalog] : view === "available" ? [publications] : [catalog,publications];
+  return required.includes("unavailable") ? "unavailable" : required.includes("pending") ? "pending" : "ready";
+}
 export type BrowserLocation = {
   view: BrowserView;
   query: string;
@@ -68,14 +75,19 @@ export function collectionAttention(
   if (item.statuses.includes("missing-bytes")) return "Source files missing";
   if (item.statuses.includes("refused-source")) return "Saved source response was refused or reports an error";
   if (item.statuses.some(status => ["parse-error", "failed-response"].includes(status))) return "Saved source response could not be used as data";
-  if (item.statuses.some(status => ["partial-source", "incomplete-response"].includes(status))) return "Saved source response is incomplete";
+  if (item.statuses.includes("incomplete-response")) return "Saved source response is incomplete";
+  if (item.statuses.some(status => ["partial", "partial-source"].includes(status))) return "Saved source coverage is partial";
+  if (item.statuses.includes("conflicting-receipt")) return "Saved receipt evidence disagrees";
+  if (item.statuses.includes("conflicting-metadata")) return "Saved source descriptions disagree";
+  if (item.statuses.includes("known-not-acquired")) return "Source not downloaded";
+  return undefined;
+}
+function collectionInformation(item: CatalogCollection): string | undefined {
   if (item.statuses.includes("unclassified-source")) return "Saved file content has not been classified";
   if (item.statuses.includes("integration-unresolved"))
     return "Connection to published data needs checking";
   if (item.statuses.includes("receipt-only"))
     return "Download records saved; original files not confirmed";
-  if (item.statuses.includes("known-not-acquired"))
-    return "Source not downloaded";
   if (item.statuses.includes("inventory-unresolved"))
     return "Source files not linked to this entry";
   if (item.statuses.includes("published-with-baseline"))
@@ -98,10 +110,10 @@ export function matchesCollectionAvailability(item: CatalogCollection, filter: s
   return collectionAvailability(item, tables).id === filter;
 }
 export function collectionLimitation(item: CatalogCollection): string {
-  return collectionAttention(item) || "Full source coverage has not been confirmed";
+  return collectionAttention(item) || collectionInformation(item) || "Full source coverage has not been confirmed";
 }
 export function tableLimitation(entry: SourceEntry): string {
-  return entry.review?.copy?.gaps[0] || tableAttention(entry) ||
+  return tableAttention(entry) || entry.review?.copy?.gaps[0] || sourceMetadataMessage(entry.table.metadataState) ||
     "Full source coverage has not been confirmed";
 }
 export function tableScope(entry: SourceEntry): string | undefined {
@@ -110,8 +122,8 @@ export function tableScope(entry: SourceEntry): string | undefined {
 }
 export function tableAttention(entry: SourceEntry): string | undefined {
   if (entry.table.rows === 0) return "No records published";
-  if (sourceMetadataNeedsAttention(entry)) return "Source notes need checking";
-  if (!entry.review) return tableScope(entry) ? "Dates need checking" : "Dates and coverage need checking";
+  if (entry.explorer && entry.table.metadataState === "incompatible") return "Source notes refer to different fields";
+  if (entry.explorer && entry.table.metadataState === "unavailable") return "Current source descriptions could not be loaded";
   return undefined;
 }
 export function collectionTopic(
@@ -159,14 +171,14 @@ export function periodSummary(item: CatalogCollection): string {
     ? "See dates in source details"
     : "Dates not confirmed";
 }
-export function periodLabel(period: CatalogPeriod): string {
+export function periodLabel(period: Partial<CatalogPeriod>): string {
   const basis = `${period.kind} ${period.basis}`;
   if (basis.includes("requested-scope")) return "Dates we asked for";
   if (period.kind === "documented-publisher-scope")
     return "Dates offered by the publisher";
   if (period.kind === "observed-retained-scope")
     return "Dates found in saved records";
-  return period.kind.replaceAll("-", " ").replace(/^./, (c) => c.toUpperCase());
+  return period.kind?.replaceAll("-", " ").replace(/^./, (c) => c.toUpperCase()) || "Recorded scope";
 }
 export const deliveryLabels: Record<string, string> = {
   "query-api": "Online data service (API)",
@@ -178,16 +190,12 @@ export const deliveryLabels: Record<string, string> = {
   "web-page": "Web page",
   crawl: "Web collection",
 };
+export function tablePublisherAttribution(entry: SourceEntry) {
+  const { sources, freshness } = publisherAttribution(entry);
+  return { names: [...new Set(sources.map(source => source.name.trim()).filter(Boolean))], freshness };
+}
 export function tablePublisherNames(entry: SourceEntry): string[] {
-  // Undocumented metadata still matches this publication; some descriptions are missing.
-  const current = ["current", "undocumented"].includes(entry.table.metadataState) ? entry.table.sources : [];
-  // Review names can fill missing descriptions only for the selected publication.
-  const sources = current.some((source) => source.name.trim())
-    ? current
-    : entry.table.artifactDigest && entry.table.artifactDigest === entry.review?.artifactDigest
-      ? entry.review.sources
-      : [];
-  return [...new Set(sources.map((source) => source.name.trim()).filter(Boolean))];
+  return tablePublisherAttribution(entry).names;
 }
 export function tablePublisher(entry: SourceEntry) {
   const names = tablePublisherNames(entry);

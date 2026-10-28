@@ -27,8 +27,7 @@ export function TableCoverageMap({ table, maps, view, publishers, onRetry }: { t
   return <div className="coverage-map">
     <div className={freshness === 'current' ? 'coverage-measurement' : 'coverage-previous'} role="status">
       <p><strong>{reading.release}</strong> · {rowsLabel(map.rows)}</p>
-      <p>{freshness === 'previous-release' ? 'The current release has not been checked. ' : freshness === 'previous-measurement' ? 'Counts have not been refreshed for this month. ' : ''}Measured {publicationDate(map.measuredAt)}.</p>
-      {freshness !== 'current' && onRetry && <button type="button" onClick={onRetry}>Check for updated coverage</button>}
+      {freshness !== 'current' && onRetry && <button type="button" onClick={onRetry}>Reload coverage</button>}
     </div>
     {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => setAxis(event.target.value)}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
     <p className="coverage-meaning">{statement}</p>

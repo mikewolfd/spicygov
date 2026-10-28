@@ -82,15 +82,15 @@ test("source relationships link exact catalog collections and preserve route lab
   assert.doesNotMatch(html, /collection=(?:mirror-route|unresolved-source)/);
 });
 
-test("known subjects lead with purpose while material limits remain visible", () => {
+test("known subjects lead with purpose and general processing limits leave the header", () => {
   const source = { ...collection, id: "family:sam-entities", tables: ["sam_entities"],
     description: "A baseline preserves table facts that the retained original-source history does not establish." };
   const html = renderToStaticMarkup(createElement(loaded.exports.SourceCollectionDetail, {
     reader: {}, manifest: {}, collection: source, tables: [], publicationState: "ready", onTable() {},
   }));
   assert.match(html, /System for Award Management/);
-  assert.match(html, /Registration years describe registrations, not historical snapshots/);
-  assert.match(html, /Saved source files alone have not been shown to reproduce every published record/);
+  assert.doesNotMatch(html, /Registration years describe registrations, not historical snapshots/);
+  assert.doesNotMatch(html, /Saved source files alone have not been shown to reproduce every published record/);
   assert.doesNotMatch(html, /A baseline preserves/);
 });
 
@@ -100,8 +100,8 @@ test("period overview shows discrete election cycles while qualifying source sco
   }));
   assert.match(html,/Recorded data periods/);
   assert.match(html,/Election cycle<\/dt><dd>2024 · 2026/);
-  assert.match(html,/may be requested or partial/);
-  assert.match(html,/do not establish complete saved or published coverage/);
+  assert.match(html,/May be requested or partial/);
+  assert.doesNotMatch(html,/complete saved or published coverage/);
   assert.doesNotMatch(html,/dates in the saved records|Exact dates aren’t recorded/);
 });
 

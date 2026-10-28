@@ -8,8 +8,8 @@ import {
 import {
   collectionSteps,
   parseGenerationDetails,
+  publisherAttribution,
   reviewedGenerationLinks,
-  sourceMetadataMessage,
   type GenerationDetails,
   type SourceEntry,
 } from "../lib/source-directory";
@@ -32,8 +32,9 @@ import {
   collectionTitle,
   readableCopy,
   relatedCollections,
+  tableAttention,
   tablePublisher,
-  tableScope,
+  tablePublisherAttribution,
 } from "../lib/source-browser";
 import type { CatalogCollection } from "../lib/source-catalog";
 import { TableProvenance } from "./table-provenance";
@@ -267,10 +268,14 @@ export function SourceTableDetail({
   tables,
   collections,
   onCollection,
+  catalogState,
+  onRetryCatalog,
 }: {
   entry: SourceEntry;
   tables: Dataset[];
   collections: CatalogCollection[];
+  catalogState: "pending" | "unavailable" | "ready";
+  onRetryCatalog?: () => void;
   onCollection: (id: string) => void;
 }) {
   const { table, review } = entry;
@@ -309,7 +314,10 @@ export function SourceTableDetail({
     return () => controller.abort();
   }, [table, maps, section]);
   const sources = relatedCollections(table, collections);
+  const attention = tableAttention(entry);
   const coverage = coverageReading(table, maps);
+  const attribution = tablePublisherAttribution(entry);
+  const recordedSources = publisherAttribution(entry).sources;
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "coverage", label: "Coverage by period" },
@@ -347,12 +355,12 @@ export function SourceTableDetail({
               </a>
             )
           )}
-          <span>{tablePublisher(entry)}</span>
+          <span>{tablePublisher(entry)}{attribution.freshness === "earlier-release" && <small> · Earlier source notes</small>}{attribution.freshness === "unverified" && <small> · Recorded source notes</small>}</span>
         </div>
       </header>
       <dl className="detail-facts">
         <div>
-          <dt>Current release</dt>
+          <dt>Records</dt>
           <dd>
             {count(table.rows)} {tableCountUnit(table)}
           </dd>
@@ -390,64 +398,31 @@ export function SourceTableDetail({
       <div className="detail-panel" key={section}>
         {section === "overview" && (
           <>
+            {table.modelGenerated && <p className="context-note">AI-generated content. Check it against the original records.</p>}
             <section className="detail-section">
-              <h2>What it contains</h2>
-              <p>
-                {readableCopy(
-                  tableScope(entry) ||
-                    "We haven’t confirmed which dates and records are included yet.",
-                )}
-              </p>
-              {table.modelGenerated && (
-                <p className="context-note">
-                  AI-generated content. Check it against the original records.
-                </p>
-              )}
-            </section>
-            <section className="detail-section">
-              <h2>Available periods</h2>
+              <h2>Data dates</h2>
               {coverageError ? <p role="alert">{coverageError} <button className="text-button" onClick={() => setRetry(retry + 1)}>Try again</button></p>
                 : !maps ? <p role="status">Checking recorded coverage…</p>
                 : coverage ? <>
                   <p className="measurement-label">{coverage.release}</p>
-                  <p><strong>{coverage.range || "This measurement does not establish a date range."}</strong></p>
-                  {coverage.range && <p className="detail-caption">{coverage.dimension.label}. These are the earliest and latest recorded periods; gaps may exist between them.</p>}
-                  {coverage.freshness === "previous-release" && <p className="context-note">The published dataset has changed since this coverage check. These dates describe the earlier release.</p>}
-                  {coverage.freshness === "previous-measurement" && <p className="context-note">This coverage check predates the current month.</p>}
-                </> : <p>We haven’t measured a date range for this dataset yet.</p>}
+                  <p><strong>{coverage.range || "Date range not measured"}</strong></p>
+                  {coverage.range && <p className="detail-caption">{coverage.dimension.label} · Gaps may exist.</p>}
+                </> : <p>Date range not measured.</p>}
               <button className="text-button" onClick={() => setSection("coverage")}>See counts by period →</button>
             </section>
-            <section className="detail-section">
-              <h2>Known gaps & uncertainty</h2>
-            {sourceMetadataMessage(table.metadataState) && (
-              <p className="context-note">
-                {sourceMetadataMessage(table.metadataState)} The record total
-                above follows the current publication.
-              </p>
-            )}
-
-              {review?.copy?.gaps.length ? (
-                <ul className="plain-list">
-                  {review.copy.gaps.map((gap) => (
-                    <li key={gap}>{readableCopy(gap)}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>
-                  We haven’t confirmed whether every available record is
-                  included.
-                </p>
-              )}
-            </section>
+            {(attention || !!review?.copy?.gaps.length) && <section className="detail-section">
+              <h2>Before you use it</h2>
+              {attention && <p className="context-note">{attention}</p>}
+              {!!review?.copy?.gaps.length && <ul className="plain-list">
+                {review.copy.gaps.map(gap => <li key={gap}>{readableCopy(gap)}</li>)}
+              </ul>}
+            </section>}
           </>
         )}
         {section === "coverage" && (
           <>
             <h2>Records by period</h2>
-            <p>
-              Counts show the records we measured, not everything the publisher
-              offers. Select a period to see its record count.
-            </p>
+            <p>Select a period to see the measured record count.</p>
             <div className="coverage-controls">
               <label>
                 View
@@ -510,12 +485,8 @@ export function SourceTableDetail({
         {section === "sources" && (
           <>
             <h2>Sources & history</h2>
-            <p>
-              Data may come from an online service, bulk downloads, or older
-              archives. Each source has its own dates and limitations.
-            </p>
-            <section className="detail-section">
-              <h2>How it’s collected</h2>
+            <details className="evidence-disclosure">
+              <summary>Collection notes</summary>
               {review?.methods.length ? (
                 <dl className="collection-methods">
                   {collectionSteps(review.methods).map((step) => (
@@ -528,11 +499,8 @@ export function SourceTableDetail({
               ) : (
                 <p>We haven’t added collection notes for this dataset yet.</p>
               )}
-            </section>
-            <p className="detail-caption">
-              Source notes describe the recorded collection process and may
-              predate the current release.
-            </p>
+              <p className="detail-caption">Source notes may predate the current release.</p>
+            </details>
             {sources.length ? (
               <ul className="linked-sources">
                 {sources.map((item) => (
@@ -552,31 +520,13 @@ export function SourceTableDetail({
                 ))}
               </ul>
             ) : (
-              <p>
-                We haven’t linked this dataset to a source in the catalog yet.
-              </p>
+              <SourceCatalogStatus state={catalogState} onRetry={onRetryCatalog} />
             )}
             <details className="evidence-disclosure">
               <summary>Published source notes and input tables</summary>
-              {entry.historicalAttribution ? (
-                <>
-                  <p>
-                    These names come from an earlier review and may be
-                    incomplete.
-                  </p>
-                  <Links
-                    links={
-                      review?.sources.flatMap((source) =>
-                        source.url
-                          ? [{ label: source.name, url: source.url }]
-                          : [],
-                      ) ?? []
-                    }
-                  />
-                </>
-              ) : (
-                <TableProvenance table={table} catalog={tables} />
-              )}
+              {attribution.freshness === "earlier-release" && <p>These publisher names were recorded in earlier source notes.</p>}
+              {attribution.freshness === "unverified" && <p>Recorded publisher sources.</p>}
+              <TableProvenance table={{ ...table, sources: recordedSources }} catalog={tables} />
             </details>
             {!!tables.filter(
               (item) => item.family === table.family && item.id !== table.id,
@@ -601,7 +551,7 @@ export function SourceTableDetail({
         {section === "files" && (
           <>
             <h2>Download data</h2>
-            <p>Files from the current published release, in Parquet format. Original downloads are listed under each source in Sources & history.</p>
+            <p>Current release · Parquet format. Original files are listed under Sources & history.</p>
             <ul className="source-file-list">{table.members.map((member, index) => (
               <li key={member.url}>
                 <a href={member.url}>Download {table.members.length === 1 ? "dataset" : `part ${index + 1}`} ↗</a>
@@ -616,4 +566,10 @@ export function SourceTableDetail({
       </div>
     </article>
   );
+}
+
+export function SourceCatalogStatus({ state, onRetry }: { state: "pending" | "unavailable" | "ready"; onRetry?: () => void }) {
+  return state === "pending" ? <p role="status">Loading linked sources…</p>
+    : state === "unavailable" ? <p role="alert">Linked sources could not be loaded. {onRetry && <button className="text-button" onClick={onRetry}>Retry catalog</button>}</p>
+      : <p>No source is linked in this catalog.</p>;
 }

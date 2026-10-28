@@ -1105,3 +1105,22 @@
   color: inherit;
   text-decoration: none;
 }
+
+.catalog-file-browser > label {
+  display: block;
+  margin: 24px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.catalog-file-browser > input {
+  width: min(100%, 600px);
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #b8c8ad;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+}
+.catalog-file-browser .context-note {
+  color: #6c3616;
+}

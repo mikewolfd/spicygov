@@ -20,6 +20,18 @@ export type TableReview = {
 };
 export type SourceReview = { reviewedAt: string; sourceRevision: string; tables: Record<string, TableReview> };
 export type SourceEntry = { table: Dataset; review?: TableReview; explorer: boolean; source: Source; historicalAttribution: boolean };
+export type PublisherAttribution = { sources: Source[]; freshness: 'current' | 'earlier-release' | 'unverified' | 'missing' };
+/** A recorded publisher remains useful even when its source notes describe an older release. */
+export function publisherAttribution(entry: Pick<SourceEntry, 'table' | 'review'>): PublisherAttribution {
+  const { table, review } = entry;
+  const recorded = table.sources.filter(source => source.name.trim());
+  if (recorded.length && ['current', 'undocumented'].includes(table.metadataState)) return { sources: recorded, freshness: 'current' };
+  const reviewed = review?.sources.filter(source => source.name.trim()) ?? [];
+  if (reviewed.length && table.artifactDigest && table.artifactDigest === review?.artifactDigest) return { sources: reviewed, freshness: 'current' };
+  if (recorded.length) return { sources: recorded, freshness: ['older-publication', 'incompatible'].includes(table.metadataState) ? 'earlier-release' : 'unverified' };
+  if (reviewed.length) return { sources: reviewed, freshness: review?.artifactDigest ? 'earlier-release' : 'unverified' };
+  return { sources: [], freshness: 'missing' };
+}
 const strings = (raw: unknown): string[] => Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [];
 function links(raw: unknown): EvidenceLink[] {
   return Array.isArray(raw) ? raw.filter(object).flatMap(value => {
@@ -114,8 +126,9 @@ export function sourceEntries(tables: Dataset[], extra: Dataset[], review?: Sour
   return [...current.values()].map(({ table, explorer }) => {
     const candidate = review?.tables[table.id];
     const audit = candidate?.family === table.family ? candidate : undefined;
-    const historicalAttribution = !table.sources.length && !table.inputs.length && !!audit?.sources.length;
-    let source = sourceFor(historicalAttribution ? { ...table, sources: audit!.sources } : table);
+    const attribution = publisherAttribution({table, review: audit});
+    const historicalAttribution = attribution.sources.length > 0 && (attribution.freshness !== 'current' || !table.sources.length && !table.inputs.length);
+    let source = sourceFor(attribution.sources.length ? { ...table, sources: attribution.sources } : table);
     if (!explorer && source.id === 'unlisted') source = table.publication?.kind === 'rulemaking'
       ? { id: 'rulemaking-publication', name: 'Rulemaking data', kind: 'derived', note: 'Calculated from regulatory records.' }
       : { id: 'comments-publication', name: 'Public comments', kind: 'publication', note: 'Comments and comment counts.' };
@@ -221,7 +234,7 @@ export function sourceSections(entries: SourceEntry[]): SourceSection[] {
     const role = supportingSection(entry.table);
     (role ? group.supporting[role] : group.entries).push(entry);
     group.historical ||= entry.historicalAttribution;
-    const publishers = entry.table.sources.length ? entry.table.sources : entry.historicalAttribution ? entry.review?.sources ?? [] : [];
+    const publishers = publisherAttribution(entry).sources;
     for (const publisher of publishers) if (!group.publishers.some(source => source.id === publisher.id && source.name === publisher.name)) group.publishers.push(publisher);
     sections.set(topic, section);
   }

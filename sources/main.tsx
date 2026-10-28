@@ -24,11 +24,10 @@ import {
   collectionAvailability,
   matchesCollectionAvailability,
   collectionAttention,
-  collectionLimitation,
+  browserDataState,
   collectionTopic,
   periodSummary,
   tableAttention,
-  tableLimitation,
   tableScope,
   tablePublisher,
   tablePublisherNames,
@@ -71,13 +70,13 @@ const views: { id: BrowserView; label: string; description: string }[] = [
   {
     id: "catalog",
     label: "Public source catalog",
-    description: "Sources included in this public catalog, including data we haven’t added yet.",
+    description: "Original sources, saved files, and data dates.",
   },
   {
     id: "attention",
     label: "Gaps",
     description:
-      "Missing files, sources not yet downloaded, and notes that need checking.",
+      "Missing files, failed downloads, and issues that affect use.",
   },
 ];
 
@@ -308,10 +307,10 @@ function SourcesPage() {
     (item) => item.rank > 0,
   ).length;
   const warnings = [...publicationWarnings, ...reviewWarnings];
-  const busy =
-    location.view === "catalog"
-      ? !manifest && !catalogError
-      : !entries.length && !error;
+  const resultState = browserDataState(location.view,
+    manifest ? "ready" : catalogError ? "unavailable" : "pending",
+    error ? "unavailable" : publicationsPending || reviewPending ? "pending" : "ready");
+  const busy = resultState === "pending";
   const detailPending = location.table
     ? publicationsPending || (!entries.length && !error)
     : !manifest && !catalogError;
@@ -367,6 +366,8 @@ function SourcesPage() {
                   entry={selectedTable}
                   tables={tables}
                   collections={manifest?.collections || []}
+                  catalogState={manifest ? "ready" : catalogError ? "unavailable" : "pending"}
+                  onRetryCatalog={() => setCatalogRetry(catalogRetry + 1)}
                   onCollection={(id) =>
                     navigate({ table: undefined, collection: id })
                   }
@@ -416,8 +417,7 @@ function SourcesPage() {
                 <h1>Sources</h1>
               </div>
               <p>
-                Find the data you need. <br />
-                See where it comes from and what’s missing.
+                Find public data to explore or download.
               </p>
             </header>
             <div className="directory-search">
@@ -535,7 +535,7 @@ function SourcesPage() {
                 )}
               </div>
             </div>
-            {location.view === "catalog" && <p className="detail-caption">Data periods describe recorded source scope, which may be requested or partial. Download dates do not establish data coverage. Unknown periods do not mean data is missing.</p>}
+            {location.view === "catalog" && <p className="detail-caption">Dates describe recorded source scope and may be partial.</p>}
             {loadingPeriods && <p role="status" className="detail-caption">Loading recorded data periods… Search results may change.</p>}
             {!!discovery?.failures.length && <p role="alert" className="detail-caption">Data periods could not be loaded for {discovery.failures.length} sources. Those sources remain visible when narrowing by period.</p>}
             <div className="results-summary">
@@ -553,14 +553,6 @@ function SourcesPage() {
                     : "Current publications"}
               </span>
             </div>
-            {location.view === "catalog" ? (
-              <p className="directory-notices">
-                Saved files and processing evidence describe this input snapshot.
-                Published datasets use the current publication index separately.{" "}
-                The local source operations inventory includes retained collections
-                omitted from this public catalog.
-              </p>
-            ) : null}
             {(error || catalogError || warnings.length > 0) && (
               <div className="directory-notices">
                 {error && (
@@ -671,11 +663,7 @@ function SourcesPage() {
                             <small>{result.summary}</small>
                           </>
                         )}
-                        <span className="result-attention">
-                          {readableCopy(result.entry
-                            ? tableLimitation(result.entry)
-                            : collectionLimitation(result.collection!))}
-                        </span>
+                        {result.attention && <span className="result-attention">{readableCopy(result.attention)}</span>}
                       </span>
                       <span className="result-count">
                         {result.entry ? (
@@ -708,14 +696,14 @@ function SourcesPage() {
                         )}
                       </span>
                       <span className="result-arrow">
-                        View details <span aria-hidden="true">→</span>
+                        Details <span aria-hidden="true">→</span>
                       </span>
                     </a>
                   </div>
                 );
               })}
             </div>
-            {!busy && !loadingPeriods && !results.length && (
+            {resultState === "ready" && !loadingPeriods && !results.length && (
               <div className="empty-state">
                 <h2>
                   No matching{" "}

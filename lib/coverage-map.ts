@@ -95,12 +95,13 @@ export function coverageInputsFingerprint(table: Dataset): string {
   return table.rulemakingSnapshot ? canonicalJson({members,snapshot:table.rulemakingSnapshot}).replace(/[^\x00-\x7f]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0')) : JSON.stringify(members);
 }
 function matchesCoverageRelease(table: Dataset, map: CoverageMap): boolean {
+  const schema = table.physicalColumns ?? table.columns;
   return map.family === table.family && map.fingerprint === timeFingerprint(table) && map.rows === table.rows
     && (map.publishedAt ?? undefined) === (table.published ?? undefined)
     && map.inputsFingerprint === coverageInputsFingerprint(table)
     && (map.artifactDigest ?? undefined) === table.artifactDigest
     && (map.publicationSha256 ?? undefined) === table.publication?.sha256
-    && (!table.columns.length || JSON.stringify(map.schema) === JSON.stringify(table.columns.map(c => [c.name, c.type])));
+    && (!schema.length || JSON.stringify(map.schema) === JSON.stringify(schema.map(c => [c.name, c.type])));
 }
 
 export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): CoverageMap | undefined {
@@ -146,10 +147,8 @@ export function coverageReading(table: Dataset, maps?: CoverageMaps) {
       ? new Intl.DateTimeFormat('en', {month: 'short', year: 'numeric', timeZone: 'UTC'}).format(new Date(`${period}-01T00:00:00Z`))
       : coveragePeriodLabel(dimension, period)).join(' – ') : undefined;
   const release = freshness === 'previous-release'
-    ? `Coverage checked against ${map.publishedAt ? publicationDate(map.publishedAt) + ' release' : 'an earlier release'}`
-    : freshness === 'previous-measurement'
-      ? `Current release · coverage last checked ${publicationDate(map.measuredAt)}`
-      : 'Current release';
+    ? map.publishedAt ? `Earlier release · ${publicationDate(map.publishedAt)}` : 'Earlier release'
+    : `Checked ${publicationDate(map.measuredAt)} · Current release`;
   return { range, release, freshness, dimension, rows: map.rows, measuredAt: map.measuredAt };
 }
 

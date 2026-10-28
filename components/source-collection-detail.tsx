@@ -6,10 +6,8 @@ import {
   collectionLimitations,
   collectionHoldingsSummary,
   periodPreview,
-  fileAvailabilitySummary,
   collectionAvailability,
   collectionAttention,
-  collectionDownload,
   deliveryLabels,
   periodLabel,
   periodRange,
@@ -25,7 +23,7 @@ import {
 } from "../lib/source-catalog";
 import { CoverageAccounting, RetainedPublications } from "./source-catalog";
 import { CatalogTableEvidence } from "./catalog-table-evidence";
-import { CatalogFileEvidence } from "./catalog-file-evidence";
+import { CatalogFileList } from "./catalog-file-list";
 import { CatalogRetainedFiles } from "./catalog-retained-files";
 
 export function SourceRelationships({
@@ -77,11 +75,11 @@ export function SourcePeriodOverview({ periods }: { periods: CatalogPeriod[] }) 
     {observed.length ? <>
       <ul className="plain-list">{observed.slice(0, 3).map((period, index) => <li key={index}>{periodPreview(period)}</li>)}</ul>
       {observed.length > 3 && <p>{observed.length} recorded date scopes; see source history for all of them.</p>}
-      <p className="detail-caption">Dates found in saved records. They may contain gaps and may differ from the published dataset.</p>
+      <p className="detail-caption">Saved records · Gaps may exist; published dates may differ.</p>
     </> : known.length ? <>
       <dl className="source-periods">{[...grouped].slice(0, 3).map(([label, values]) => <div key={label}><dt>{label}</dt><dd>{values.slice(0, 3).map(periodPreview).join(' · ')}{values.length > 3 && ` … ${values.length} recorded periods`}</dd></div>)}</dl>
       {grouped.size > 3 && <p>More period types are recorded in source history.</p>}
-      <p className="detail-caption">These periods describe recorded source scope, which may be requested or partial. They do not establish complete saved or published coverage.</p>
+      <p className="detail-caption">Recorded source scope · May be requested or partial.</p>
     </> : <p>We haven’t confirmed the dates in the saved records.</p>}
   </>;
 }
@@ -108,8 +106,7 @@ export function SourceCollectionDetail({
     [retry, setRetry] = useState(0);
   const [section, setSection] = useState("overview");
   const [page, setPage] = useState<CatalogFilePage>(),
-    [pageIndex, setPageIndex] = useState(0),
-    [visibleFiles, setVisibleFiles] = useState(50);
+    [pageIndex, setPageIndex] = useState(0);
   const [fileLoading, setFileLoading] = useState(false),
     [fileError, setFileError] = useState("");
   const fileRequest = useRef<AbortController | undefined>(undefined);
@@ -150,7 +147,6 @@ export function SourceCollectionDetail({
       if (!controller.signal.aborted) {
         setPage(result);
         setPageIndex(index);
-        setVisibleFiles(50);
       }
     } catch {
       if (!controller.signal.aborted)
@@ -188,7 +184,7 @@ export function SourceCollectionDetail({
           {collectionTitle(collection)}
         </h1>
         <p>{collectionDescription(collection, description)}</p>
-        <p className="detail-caption">{collectionHoldingsSummary(collection)} File counts do not establish usable records or full coverage.</p>
+        <p className="detail-caption">{collectionHoldingsSummary(collection)}</p>
         <div className="detail-actions">
           {published.length === 1 ? (
             <a className="primary-action" href={published[0].recordsAvailable !== false
@@ -203,7 +199,7 @@ export function SourceCollectionDetail({
               : "Published dataset availability is unknown"}</span>}
           <span>{availability.label}</span>
         </div>
-        <ul className="detail-caption">{collectionLimitations(collection).map(note => <li key={note}>{note}</li>)}</ul>
+        {attention && <p className="context-note" role="alert">{attention}</p>}
       </header>
       <nav className="detail-tabs" aria-label="Source details">
         {tabs.map((tab) => (
@@ -233,18 +229,8 @@ export function SourceCollectionDetail({
             <>
               <section className="detail-section">
                 <SourcePeriodOverview periods={detail.collection.periods} />
-                <button className="text-button" onClick={() => setSection("routes")}>Compare sources and historical coverage →</button>
-              </section>
-              <section className="detail-section">
-                <h2>Known gaps & uncertainty</h2>
-                {attention && <p className="context-note">{attention}.</p>}
-                <dl className="reading-facts">
-                  <div><dt>Download status</dt><dd>{collectionDownload(collection)}</dd></div>
-                  <div><dt>Is everything included?</dt><dd>We haven’t confirmed whether every available record is included.</dd></div>
-                  <div><dt>Recorded missing files</dt><dd>{collection.holdings.missing > 0
-                    ? `${count(collection.holdings.missing)} inventoried files are unavailable locally. Total raw-file gaps are unknown.`
-                    : "No inventoried files are marked missing. Total raw-file gaps are unknown."}</dd></div>
-                </dl>
+                {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
+                <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>
               </section>
               <section className="detail-section">
                 <h2 id="source-datasets">Published datasets</h2>
@@ -259,6 +245,7 @@ export function SourceCollectionDetail({
                           <strong>
                             {current?.label || item.id.replaceAll("_", " ")}
                           </strong>
+                          {current && <p>{count(current.rows)} records{current.published ? ` · Published ${publicationDate(current.published)}` : ""}</p>}
                           <CatalogTableEvidence destination={item} current={current} />
                           {current ? (
                             <button
@@ -289,11 +276,7 @@ export function SourceCollectionDetail({
           {section === "routes" && (
             <>
               <h2>Sources & history</h2>
-              <p>
-                For each source, we distinguish the dates the publisher offers
-                from the dates we asked for and the records we’ve saved. A date
-                range can still contain gaps.
-              </p>
+              <p>Publisher dates, requested dates, and saved records may differ.</p>
               {detail.routes.length ? (
                 <div className="route-list">
                   {detail.routes.map((route) => (
@@ -304,13 +287,6 @@ export function SourceCollectionDetail({
                         {["legacy", "retired"].includes(route.lifecycle) &&
                           " · Historical source"}
                       </div>
-                      <p>{route.deliveryMethod === "bulk"
-                        ? "Downloads many records together, often by issue or period."
-                        : route.deliveryMethod === "archive"
-                          ? "Preserves older material that may not be included in an online service."
-                          : ["query-api", "api"].includes(route.deliveryMethod)
-                            ? "Lets us request individual records and updates from the publisher."
-                            : "Provides source documents or files. See the recorded dates below."}</p>
                       <h3>
                         {route.accessUrl ? (
                           <a
@@ -386,12 +362,8 @@ export function SourceCollectionDetail({
           {section === "files" && (
             <>
               <h2>Source files</h2>
-              <p>{collectionHoldingsSummary(collection)} Catalog input snapshot {publicationDate(manifest.generatedAt)}.</p>
-              <p>
-                {count(detail.files.total)} file references are recorded.
-                References can point to the same file; they are not a count of
-                distinct downloads.
-              </p>
+              <p>{collectionHoldingsSummary(collection)} · Catalog updated {publicationDate(manifest.generatedAt)}</p>
+              <p>{count(detail.files.total)} file references · Some may refer to the same original.</p>
               {detail.files.pages.length ? (
                 <button
                   className="secondary-action"
@@ -407,49 +379,13 @@ export function SourceCollectionDetail({
               ) : (
                 <p>{detail.retainedFiles?.total
                   ? 'Other file references are listed under “Files that need attention” below.'
-                  : 'No file inventory is available for this source.'}</p>
+                  : 'No direct file inventory is listed.'}</p>
               )}
+              {!detail.files.pages.length && <SourceRelationships detail={detail} collections={manifest.collections} />}
               {fileError && <p role="alert">{fileError}</p>}
               {page && (
                 <>
-                  <ul className="source-file-list">
-                    {page.files.slice(0, visibleFiles).map((file) => (
-                      <li key={file.id}>
-                        <h3>{file.name}</h3>
-                        <p>
-                          {file.bytes !== undefined
-                            ? `${count(file.bytes)} bytes in the original file`
-                            : "File size not recorded"}
-                          {file.routeId && (
-                            <>
-                              {" "}
-                              ·{" "}
-                              {detail.routes.find(
-                                (route) => route.id === file.routeId,
-                              )?.label || "Recorded source route"}
-                            </>
-                          )}
-                        </p>
-                        <p>{fileAvailabilitySummary(file)}</p>
-                        <CatalogFileEvidence file={file} />
-                        <details>
-                          <summary>Recorded file identifiers</summary>
-                          <p>Recorded state: {file.status}</p>
-                          <p>
-                            File reference: <code>{file.id}</code>
-                          </p>
-                        </details>
-                      </li>
-                    ))}
-                  </ul>
-                  {visibleFiles < page.files.length && (
-                    <button
-                      className="text-button"
-                      onClick={() => setVisibleFiles(visibleFiles + 50)}
-                    >
-                      Show more files on this page
-                    </button>
-                  )}
+                  <CatalogFileList key={pageIndex} files={page.files} routes={detail.routes} />
                   <nav className="result-pagination" aria-label="File pages">
                     <button
                       disabled={fileLoading || pageIndex === 0}
@@ -479,11 +415,7 @@ export function SourceCollectionDetail({
             <div className="technical-content">
               <h2>Technical evidence</h2>
               {collection.description && <p>{collection.description}</p>}
-              <p>A checksum is a file fingerprint used to check that a file has not changed.</p>
-              <p>
-                The exact catalog observations are retained here. An accepted
-                check applies only to its stated scope.
-              </p>
+              <ul className="plain-list">{collectionLimitations(collection).map(note => <li key={note}>{note}</li>)}</ul>
               {detail.coverage && (
                 <details className="evidence-disclosure">
                   <summary>Coverage accounting</summary>

@@ -34,12 +34,14 @@ function render(item = destination, current = { id: "table", artifactDigest: gen
 }
 const visible = html => html.replace(/<details>[\s\S]*?<\/details>/g, "");
 
-test("raw-file coverage and incomplete historical records remain separately visible", () => {
+test("general source coverage and incomplete build proof stay collapsed", () => {
   const html = render();
-  assert.match(visible(html), /Source coverage:.*Reviewed raw files cover 2020–2025/);
-  assert.match(visible(html), /Past processing:.*Incomplete historical build records/);
+  assert.doesNotMatch(visible(html), /Source coverage:/);
+  assert.match(html, /Source coverage:.*Reviewed raw files cover 2020–2025/);
+  assert.doesNotMatch(visible(html), /Past processing:|Incomplete historical build records/);
+  assert.match(html, /Past processing:.*Incomplete historical build records/);
   assert.doesNotMatch(visible(html), /exact historical file references|catalog-unmatched|3 .*missing/);
-  assert.match(html, /<details><summary>How the published dataset was made<\/summary>/);
+  assert.match(html, /<details><summary>Technical evidence<\/summary>/);
   assert.match(html, /3 exact historical file references have no accepted match/);
   assert.match(html, /catalog-unmatched references, not a count of missing raw files/);
 });
@@ -75,10 +77,12 @@ test("rulemaking compares the exact manifest while descriptor identity remains s
 
 test("conflicts and unmatched historical references have distinct attention messages", () => {
   const conflict = render({ ...destination, publication: { ...publication, status: "conflicting_evidence" } });
-  assert.match(visible(conflict), /Historical build records conflict/);
+  assert.match(visible(conflict), /Historical file evidence conflicts/);
+  assert.match(conflict, /Historical build records conflict/);
   assert.doesNotMatch(visible(conflict), /Incomplete historical build records/);
   const unmatched = render({ ...destination, publication: { ...publication, status: "missing_local_files" } });
-  assert.match(visible(unmatched), /Historical file references need review/);
+  assert.doesNotMatch(visible(unmatched), /Historical file references need review/);
+  assert.match(unmatched, /Historical file references need review/);
   assert.doesNotMatch(visible(unmatched), /Missing local files|3 .*missing/);
 });
 
@@ -96,11 +100,13 @@ test("coverage summaries require the complete reviewed wording", async () => {
   const samNote = JSON.parse(await fs.readFile("content/catalog-coverage-copy.json", "utf8"));
   const [original, summary] = Object.entries(samNote).find(([note]) => note.startsWith("Retained SAM observations"));
   const html = render({ ...destination, coverageNote: original });
-  assert.ok(visible(html).includes(summary));
+  assert.ok(html.includes(summary));
+  assert.doesNotMatch(visible(html), /Saved active registrations/);
   assert.doesNotMatch(visible(html), /named 15 journals/);
   assert.ok(html.includes(original));
   const revised = original + " Additional scope restriction.";
-  assert.ok(visible(render({...destination,coverageNote:revised})).includes(revised));
+  assert.ok(render({...destination,coverageNote:revised}).includes(revised));
+  assert.doesNotMatch(visible(render({...destination,coverageNote:revised})), /Additional scope restriction/);
 });
 
 test("short scorecard review preserves current custody and the separate older missing versions", async () => {
@@ -108,10 +114,11 @@ test("short scorecard review preserves current custody and the separate older mi
   const copy=JSON.parse(await fs.readFile("content/catalog-coverage-copy.json","utf8"));
   const original=Object.keys(copy).find(note=>note.startsWith("Scorecard analysis derives"));
   const html=render({...destination,coverageNote:original});
-  assert.match(visible(html),/selected source originals are saved in the central raw archive/);
-  assert.match(visible(html),/older League of Conservation Voters selection still references 69 originals not located locally/);
-  assert.match(visible(html),/newer captures are different versions/);
-  assert.match(visible(html),/do not verify score interpretation or reproduce the published scores/);
+  assert.match(html,/selected source originals are saved in the central raw archive/);
+  assert.doesNotMatch(visible(html),/69|older.*originals|different versions/);
+  assert.match(html,/older League of Conservation Voters selection still references 69 originals/);
+  assert.match(html,/do not verify score interpretation or reproduce the published scores/);
+  assert.doesNotMatch(visible(html),/interpretation or reproduce/);
   assert.ok(html.includes(original));
 });
 
@@ -120,11 +127,31 @@ test("CFR filename year does not substitute for the sampled document edition", a
   const copy=JSON.parse(await fs.readFile("content/catalog-coverage-copy.json","utf8"));
   const original=Object.keys(copy).find(note=>note.startsWith("The named CFR-2025-title1-vol1"));
   const html=render({...destination,coverageNote:original});
-  assert.match(visible(html),/Files named CFR-2025-title1-vol1 are saved/);
-  assert.match(visible(html),/sampled XML prints a January 1, 2023 revision date/);
-  assert.match(visible(html),/filename does not establish the requested 2025 edition; edition coverage remains unresolved/);
-  assert.match(visible(html),/full annual XML for Title 14, volume 4 was not found/);
-  assert.match(visible(html),/eCFR.*separate choices/);
+  assert.match(visible(html),/Title 1 files are named 2025/);
+  assert.match(visible(html),/sampled XML shows January 1, 2023/);
+  assert.match(visible(html),/2025 edition is unconfirmed/);
+  assert.match(visible(html),/Title 14, volume 4 annual XML was not found/);
+  assert.match(html,/eCFR.*separate choices/);
+  assert.doesNotMatch(visible(html),/eCFR/);
   assert.doesNotMatch(visible(html),/The 2025 Title 1, volume 1 originals are saved/);
   assert.ok(html.includes(original));
+});
+
+test("older raw reviews use one short label while detailed qualification stays collapsed", async () => {
+  const fs = await import("node:fs/promises");
+  const copy = JSON.parse(await fs.readFile("content/catalog-coverage-copy.json", "utf8"));
+  const note = Object.keys(copy).find(note => note.startsWith("The named CFR-2025-title1-vol1"));
+  const html = render({...destination, coverageNote: note}, { id: "table", artifactDigest: later });
+  assert.match(visible(html), /Checked earlier release/);
+  assert.doesNotMatch(visible(html), /has not been checked|historical build records|raw-file coverage review describes/);
+  assert.equal((visible(html).match(/earlier release/g) ?? []).length, 1);
+});
+
+test("unreviewed changes cannot promote a guessed actionable warning", async () => {
+  const fs = await import("node:fs/promises");
+  const copy = JSON.parse(await fs.readFile("content/catalog-coverage-copy.json", "utf8"));
+  const note = Object.keys(copy).find(note => note.startsWith("The named CFR-2025-title1-vol1"));
+  const html = render({...destination, coverageNote: note + " New evidence."});
+  assert.doesNotMatch(visible(html), /2025 edition is unconfirmed|Title 14/);
+  assert.match(html, /New evidence/);
 });

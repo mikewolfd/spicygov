@@ -1,7 +1,7 @@
 import { parquetMetadataAsync, parquetReadObjects, parquetSchema, type SchemaTree } from 'hyparquet';
 import { compressors } from 'hyparquet-compressors';
 import { exactParsers } from './exact-parquet';
-import { parseCatalogFilePage, validatePublicCatalog, catalogArchiveKey, type CatalogFile, type CatalogFilePage } from './source-catalog';
+import { parseCatalogFilePage, validatePublicCatalog, catalogArchiveKey, type CatalogFile, type CatalogFilePage, type CatalogFilePeriod } from './source-catalog';
 
 export const catalogShardBytes = 4 * 1024 * 1024;
 export const catalogShardRows = 5000;
@@ -132,6 +132,10 @@ function validateRow(row: Record<string, unknown>, context: CatalogShardContext)
   if (pointer !== undefined && (!originalKey || !/^(?:\/(?:[^~]|~[01])*)*$/.test(pointer) || /\/(Users|home|private|tmp|Volumes)(\/|$)|credential|password|secret|token|api[_-]?key|:\/\/|\.\./i.test(pointer))) fail('original receipt pointer is invalid');
   const file: CatalogFile = {
     id: clean.alias_id as string, name: clean.name as string, status: clean.status as string,
+    ...(clean.source_id !== undefined ? {sourceId:clean.source_id as string} : {}),
+    ...(clean.source_version !== undefined ? {sourceVersion:clean.source_version as string} : {}),
+    ...(clean.periods ? {periods:clean.periods as CatalogFilePeriod[]} : singlePeriod ? {periods:[Object.fromEntries(periodFields.filter(key => clean['period_' + key] !== undefined).map(key => [key,clean['period_' + key]]))]} : {}),
+    ...(clean.conflict_fields !== undefined ? {metadataConflicts:clean.conflict_fields as string[]} : {}),
     ...(clean.route_id !== undefined ? {routeId:clean.route_id as string} : {}),
     ...(clean.content_sha256 !== undefined ? {sha256:clean.content_sha256 as string} : {}),
     ...(clean.original_bytes !== undefined ? {bytes:clean.original_bytes as number} : {}),

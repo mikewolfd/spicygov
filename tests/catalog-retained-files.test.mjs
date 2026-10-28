@@ -23,9 +23,8 @@ test('saved source responses are an optional separate disclosure, not usable sou
   const html=render({total:4,pages:[{path:'retained-responses/page-0.json',rows:4}]});
   assert.match(html,/<details class="evidence-disclosure catalog-retained-files">/);
   assert.match(html,/Files that need attention \(4 references\)/);
-  assert.match(html,/missing originals, saved source errors, refusals, incomplete responses or unchecked content/);
-  assert.match(html,/separate from the source-file counts above/);
-  assert.match(html,/do not establish usable data/);
+  assert.match(html,/Missing files, errors, refusals, incomplete responses, and unchecked content/);
+  assert.match(html,/Excluded from usable source-file counts/);
   assert.match(html,/Browse files needing attention/);
   assert.doesNotMatch(html,/<ul|File origin and capture evidence/);
 });

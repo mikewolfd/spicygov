@@ -14,14 +14,7 @@ const availabilityLabels = {
   unknown: 'Local or external availability is unknown.',
 };
 
-/** Uses safe, per-alias metadata; archive-relative receipt lookup requires direct receipt evidence. */
-export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov.ai/spicyregs/raw/' }: { file: CatalogFile; archiveBase?: string }) {
-  const provenance = file.provenance;
-  const urls = provenance?.sourceUrls ?? [];
-  const receipt = provenance?.receipt;
-  const legacyDigest = provenance?.basis === 'receipt-backed' && receipt?.key === undefined ? receipt?.sha256.slice('sha256:'.length) : undefined;
-  const receiptKey = receipt?.key ?? (legacyDigest ? `acquisitions/sha256/${legacyDigest.slice(0,2)}/${legacyDigest}` : undefined);
-  function archiveUrl(key: string | null | undefined) {
+function archiveUrl(key: string | null | undefined, archiveBase = 'https://data.spicygov.ai/spicyregs/raw/') {
     if (!key || key.startsWith('/') || key.includes('\\') || /[%?#:]/.test(key) || key.split('/').some(part => !part || part === '.' || part === '..')) return;
     try {
       const base = new URL(archiveBase), url = new URL(key,base);
@@ -29,13 +22,24 @@ export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov
       return url.href;
     } catch { return; }
   }
-  const receiptUrl = archiveUrl(receiptKey), originalReceiptUrl = archiveUrl(provenance?.originalReceiptKey);
-  const contentUrl = provenance?.availability === 'local' ? archiveUrl(file.contentKey) : undefined;
+
+export function catalogFileDownload(file: CatalogFile, archiveBase?: string) {
+  return file.provenance?.availability === 'local' ? archiveUrl(file.contentKey, archiveBase) : undefined;
+}
+
+/** Uses safe, per-alias metadata; archive-relative receipt lookup requires direct receipt evidence. */
+export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov.ai/spicyregs/raw/' }: { file: CatalogFile; archiveBase?: string }) {
+  const provenance = file.provenance;
+  const urls = provenance?.sourceUrls ?? [];
+  const receipt = provenance?.receipt;
+  const legacyDigest = provenance?.basis === 'receipt-backed' && receipt?.key === undefined ? receipt?.sha256.slice('sha256:'.length) : undefined;
+  const receiptKey = receipt?.key ?? (legacyDigest ? `acquisitions/sha256/${legacyDigest.slice(0,2)}/${legacyDigest}` : undefined);
+  const receiptUrl = archiveUrl(receiptKey, archiveBase), originalReceiptUrl = archiveUrl(provenance?.originalReceiptKey, archiveBase);
+  const contentUrl = catalogFileDownload(file, archiveBase);
   return <details className="catalog-file-evidence">
-    <summary>File origin and capture evidence</summary>
+    <summary>Technical evidence</summary>
     <p>{basisLabels[provenance?.basis ?? 'unknown']}</p>
     <p><strong>Source location:</strong> {urls.length ? urls.map((url, index) => <span key={url}>{index > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{url} ↗</a></span>) : 'Unknown or withheld from public metadata.'}</p>
-    {contentUrl && <p><a href={contentUrl} target="_blank" rel="noreferrer">Open stored original file ↗</a></p>}
     {contentUrl && file.contentKey?.endsWith('.gz') && <p>This download is losslessly compressed for storage. Decompress it once to check the original file’s fingerprint and size.</p>}
     {receiptUrl && <p><a href={receiptUrl} target="_blank" rel="noreferrer">Open indexed receipt ↗</a></p>}
     {originalReceiptUrl && <p><a href={originalReceiptUrl} target="_blank" rel="noreferrer">Open original acquisition receipt ↗</a></p>}
@@ -64,6 +68,12 @@ export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov
         <pre><code>{`python3 verify.py restore --sha256 ${provenance.originalReceiptSha256} --destination ../receipt-review.json`}</code></pre>
         <p>This restores the original bytes, including compressed storage, checks the fingerprint, and refuses to overwrite an existing destination.</p></>}
     </details>}
-    <p className="detail-caption">This evidence describes one retained file location. Local retention does not establish source accuracy or complete coverage. Receipt bodies stay in the raw archive; local filesystem paths are not shown.</p>
+    <p><strong>Recorded state:</strong> {file.status}</p>
+    {!!file.metadataConflicts?.length && <p><strong>Metadata notes:</strong> {file.metadataConflicts.join(" · ")}</p>}
+    <p><strong>File reference:</strong> <code>{file.id}</code></p>
+    {!!file.periods?.length && <details><summary>Recorded date metadata</summary><pre>{JSON.stringify(file.periods, null, 2)}</pre></details>}
+    {file.sourceId && <p><strong>Source identifier:</strong> <code>{file.sourceId}</code></p>}
+    {file.sourceVersion && <p><strong>Source version:</strong> <code>{file.sourceVersion}</code></p>}
+    <p className="detail-caption">Retention does not establish source accuracy or complete coverage.</p>
   </details>;
 }

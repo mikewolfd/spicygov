@@ -440,3 +440,16 @@ test('readable family headings preserve identifiers, grouping and searches', () 
   assert.equal(filterEntries(rows,'Bills and bill records','','')[0].table.id,'bills');
   assert.equal(rows[0].table.family,'native-legal-references');
 });
+
+
+test('older publisher names stay visible in source groups without becoming current source notes', () => {
+  const known = {id:'publisher',name:'Recorded publisher',kind:'official',note:''};
+  const [entry] = sourceEntries([{...table(),rows:1,metadataState:'older-publication',sources:[known]}], []);
+  assert.equal(entry.historicalAttribution,true);
+  assert.equal(entry.source.name,'Recorded publisher');
+  const group = sourceSections([entry])[0].groups[0];
+  assert.deepEqual(group.publishers,[known]);
+  assert.equal(group.historical,true);
+  assert.equal(entry.table.metadataState,'older-publication');
+  assert.equal(entry.table.artifactDigest,sha);
+});

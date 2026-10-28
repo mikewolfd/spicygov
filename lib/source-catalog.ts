@@ -1,13 +1,14 @@
 import type { CatalogParquetPart, CatalogShardContext } from './catalog-parquet';
 /** Shared, generation-bound metadata reader. File partitions load only on request. */
 export type CatalogPeriod = { kind: string; label: string; start?: string; end?: string; basis: string };
+export type CatalogFilePeriod = Partial<CatalogPeriod>;
 export type CatalogVersion = 1 | 2 | 3;
 export type CatalogPeriodSummary = { count: number; observedRetained?: CatalogPeriod };
 export type CatalogCollection = { id: string; title: string; publisher?: string; description?: string; statuses: string[]; families: string[]; tables: string[]; routeCount: number; holdings: { aliases: number; objects: number; decodedBytes: number; missing: number }; periods?: CatalogPeriod[]; periodSummary?: CatalogPeriodSummary; detailPath: string; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
 export type CatalogManifest = { format: 'spicy-source-catalog'; version: CatalogVersion; generation: string; generatedAt: string; collections: CatalogCollection[]; totals: Record<string, number>; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
 export type CatalogRoute = { id: string; label: string; deliveryMethod: string; lifecycle: string; custodian: string; contentBehavior: string; accessUrl?: string; periods: CatalogPeriod[]; status?: string; note?: string; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
 export type CatalogFileProvenance = { basis: 'receipt-backed' | 'provisional' | 'inferred' | 'unknown'; sourceUrls: string[]; capturedAt?: string; receipt?: { sha256: string; entry?: number; key?: string | null; kind?: string }; originalReceiptSha256?: string; originalReceiptKey?: string | null; originalReceiptPointer?: string; availability: 'local' | 'missing' | 'external' | 'not-acquired' | 'unknown' };
-export type CatalogFile = { id: string; name: string; status: string; provenance?: CatalogFileProvenance; sha256?: string; bytes?: number; contentKey?: string; storedBytes?: number; routeId?: string; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
+export type CatalogFile = { id: string; name: string; status: string; provenance?: CatalogFileProvenance; sha256?: string; bytes?: number; contentKey?: string; storedBytes?: number; routeId?: string; sourceId?: string; sourceVersion?: string; periods?: CatalogFilePeriod[]; metadataConflicts?: string[]; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
 export const coverageStages = ['expected', 'advertised', 'acquired', 'processed', 'published'] as const;
 export type CoverageStage = typeof coverageStages[number];
 export type CoverageMeasurement = { count: number; unit: string; routeId?: string; version?: string; evidenceBasis: string; scope: { collectionId?: string; table?: string; observationId?: string; capturedAt?: string; qualificationScope?: string }; period: { kind?: string; label?: string; start?: string; end?: string } | null };
@@ -200,7 +201,31 @@ function validateFileProvenance(raw: unknown) {
   }
 }
 export function parseCatalogFilePage(raw: unknown, generation: string, collectionId: string, rows: number, internal = false, version?: CatalogVersion): CatalogFilePage {
-  if (!internal) publicSafe(raw); if (rows > 5000) throw Error('Catalog file page exceeds export bound'); const value = header(raw, 'spicy-source-files', ['collectionId','files'], internal, generation, version); if (value.collectionId !== collectionId) throw Error('Catalog file collection mismatch'); if (array(value.files).length !== rows) throw Error('Catalog file page count mismatch'); array(value.files).forEach(raw => { const row = fields(raw, ['id','name','status','sha256','bytes','contentKey','storedBytes','routeId','provenance'], internal); ['id','name','status'].forEach(key => string(row[key])); ['sha256','routeId'].forEach(key => optionalString(row[key])); if (row.bytes !== undefined) number(row.bytes); if (row.storedBytes !== undefined) number(row.storedBytes); if (row.contentKey !== undefined) catalogArchiveKey(row.contentKey); if (row.provenance !== undefined) validateFileProvenance(row.provenance); if (internal) { optionalString(row.localPath); optionalString(row.verification); if (row.encodedBytes !== undefined) number(row.encodedBytes); } }); unique(array(value.files), 'id'); return value as unknown as CatalogFilePage;
+  if (!internal) publicSafe(raw);
+  if (rows > 5000) throw Error('Catalog file page exceeds export bound');
+  const value = header(raw, 'spicy-source-files', ['collectionId','files'], internal, generation, version);
+  if (value.collectionId !== collectionId) throw Error('Catalog file collection mismatch');
+  if (array(value.files).length !== rows) throw Error('Catalog file page count mismatch');
+  const nativeFields = value.version === 3 ? ['sourceId','sourceVersion','periods','metadataConflicts'] : [];
+  array(value.files).forEach(raw => {
+    const row = fields(raw, ['id','name','status','sha256','bytes','contentKey','storedBytes','routeId','provenance',...nativeFields], internal);
+    ['id','name','status'].forEach(key => string(row[key]));
+    ['sha256','routeId'].forEach(key => optionalString(row[key]));
+    const nativeText = (value: unknown) => { if (value !== undefined && typeof value !== 'string') throw Error('Catalog native text expected'); };
+    ['sourceId','sourceVersion'].forEach(key => nativeText(row[key]));
+    if (row.bytes !== undefined) number(row.bytes);
+    if (row.storedBytes !== undefined) number(row.storedBytes);
+    if (row.contentKey !== undefined) catalogArchiveKey(row.contentKey);
+    if (row.provenance !== undefined) validateFileProvenance(row.provenance);
+    if (row.metadataConflicts !== undefined) strings(row.metadataConflicts);
+    if (row.periods !== undefined) array(row.periods).forEach(raw => {
+      const period = fields(raw, ['kind','label','start','end','basis'], false);
+      Object.values(period).forEach(nativeText);
+    });
+    if (internal) { optionalString(row.localPath); optionalString(row.verification); if (row.encodedBytes !== undefined) number(row.encodedBytes); }
+  });
+  unique(array(value.files), 'id');
+  return value as unknown as CatalogFilePage;
 }
 export function catalogArchiveKey(raw: unknown): string {
   const key = string(raw);
@@ -211,30 +236,60 @@ export async function parseCatalogParquet(buffer: ArrayBuffer, context: CatalogS
   return (await import('./catalog-parquet')).decodeCatalogFileShard(buffer,context);
 }
 export const catalogResponseByteLimit = 16 * 1024 * 1024;
+export const catalogReadTimeoutMs = 30_000;
 export class SourceCatalogReader {
-  constructor(readonly manifestUrl = '/source-catalog/manifest.json', readonly internal = false, readonly fetcher: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
+  constructor(readonly manifestUrl = '/source-catalog/manifest.json', readonly internal = false, readonly fetcher: typeof fetch = (input, init) => globalThis.fetch(input, init), readonly timeoutMs = catalogReadTimeoutMs) {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw Error('Positive catalog read timeout required');
+  }
+  private async bounded<T>(read: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal?.reason ?? new DOMException('Catalog read aborted','AbortError'));
+    if (signal?.aborted) abort();
+    else signal?.addEventListener('abort',abort,{once:true});
+    const timer = setTimeout(() => controller.abort(Error('Source catalog request timed out. Try again.')),this.timeoutMs);
+    let rejectRead: () => void = () => {};
+    const cancelled = new Promise<never>((_,reject) => {
+      rejectRead = () => reject(controller.signal.reason);
+      controller.signal.addEventListener('abort',rejectRead,{once:true});
+    });
+    try {
+      controller.signal.throwIfAborted();
+      return await Promise.race([read(controller.signal),cancelled]);
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort',abort);
+      controller.signal.removeEventListener('abort',rejectRead);
+    }
+  }
   private async bytes(url: string, limit = catalogResponseByteLimit, signal?: AbortSignal): Promise<ArrayBuffer> {
+    return this.bounded(signal => this.readBytes(url,limit,signal),signal);
+  }
+  private async readBytes(url: string, limit: number, signal: AbortSignal): Promise<ArrayBuffer> {
     const response = await this.fetcher(url, { signal, cache: 'no-cache' });
     if (!response.ok) throw Error(`Source catalog request failed (${response.status})`);
     const stream = response.body?.getReader();
     if (!stream) throw Error('Source catalog response is empty');
-    if (Number(response.headers.get('content-length')) > limit) { await stream.cancel(); throw Error(limit === catalogResponseByteLimit ? 'Source catalog response exceeds 16 MiB limit' : 'Source catalog response exceeds partition byte limit'); }
+    const cancel = () => { void stream.cancel().catch(() => {}); };
+    if (signal.aborted) { cancel(); signal.throwIfAborted(); }
+    signal.addEventListener('abort',cancel,{once:true});
     let bytes = 0;
     const chunks: Uint8Array[] = [];
     try {
+      if (Number(response.headers.get('content-length')) > limit) throw Error(limit === catalogResponseByteLimit ? 'Source catalog response exceeds 16 MiB limit' : 'Source catalog response exceeds partition byte limit');
       for (;;) {
         const chunk = await stream.read();
+        signal.throwIfAborted();
         if (chunk.done) break;
         bytes += chunk.value.byteLength;
-        if (bytes > limit) { await stream.cancel(); throw Error(limit === catalogResponseByteLimit ? 'Source catalog response exceeds 16 MiB limit' : 'Source catalog response exceeds partition byte limit'); }
+        if (bytes > limit) throw Error(limit === catalogResponseByteLimit ? 'Source catalog response exceeds 16 MiB limit' : 'Source catalog response exceeds partition byte limit');
         chunks.push(chunk.value);
       }
       const result = new Uint8Array(bytes);
       let offset = 0;
       for (const chunk of chunks) { result.set(chunk,offset); offset += chunk.byteLength; }
       return result.buffer;
-    } catch (error) { await stream.cancel().catch(() => {}); throw error; }
-    finally { stream.releaseLock(); }
+    } catch (error) { cancel(); throw error; }
+    finally { signal.removeEventListener('abort',cancel); stream.releaseLock(); }
   }
   private async json(url: string, signal?: AbortSignal): Promise<unknown> {
     return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await this.bytes(url,catalogResponseByteLimit,signal)));
@@ -250,7 +305,7 @@ export class SourceCatalogReader {
     if (signal?.aborted) throw new DOMException('Catalog read aborted','AbortError');
     const context: CatalogShardContext = {generation:manifest.generation,collectionId,inventoryKind,part};
     if (typeof window === 'undefined') return (await import('./catalog-parquet')).decodeCatalogFileShard(buffer,context);
-    return new Promise<CatalogFilePage>((resolve,reject) => {
+    return this.bounded(signal => new Promise<CatalogFilePage>((resolve,reject) => {
       const worker = new Worker(new URL('./parquet.worker.ts',import.meta.url),{type:'module'});
       const finish = () => { signal?.removeEventListener('abort',abort); worker.terminate(); };
       const abort = () => { finish(); reject(new DOMException('Catalog read aborted','AbortError')); };
@@ -261,7 +316,7 @@ export class SourceCatalogReader {
         else if (event.data.type === 'error') { finish(); reject(Error(event.data.message)); }
       };
       worker.postMessage({type:'catalog-files',buffer,context},[buffer]);
-    });
+    }),signal);
   }
   async files(manifest: CatalogManifest, detail: CatalogDetail, page: number, signal?: AbortSignal) { return this.filePage(manifest,detail.collection.id,detail.files.pages[page],'active',signal); }
   async retainedFiles(manifest: CatalogManifest, detail: CatalogDetail, page: number, signal?: AbortSignal) { return this.filePage(manifest,detail.collection.id,detail.retainedFiles?.pages[page],'attention',signal); }
