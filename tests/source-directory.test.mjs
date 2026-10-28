@@ -92,12 +92,14 @@ test('a new generation or different family cannot inherit verified journal links
   assert.deepEqual(reviewedGenerationLinks(sourceEntries([{ ...table(), artifactDigest: newer }], [], audit)[0]), []);
   assert.equal(sourceEntries([{ ...table(), family: 'changed' }], [], audit)[0].review, undefined);
 });
-test('rulemaking uses its exact snapshot and only public files', () => {
-  const tables = parseRulemaking(pointer, manifest());
+test('rulemaking uses its exact snapshot and only public files', async () => {
+  const identity = await rulemakingManifestDigest(manifest());
+  const tables = parseRulemaking(pointer, manifest(), identity);
   assert.equal(tables.length, 1);
   assert.equal(tables[0].rows, 12);
   assert.match(tables[0].members[0].url, /snapshots\/snapshot_123\/proceedings.parquet$/);
   assert.equal(tables[0].publication.snapshotId, 'snapshot_123');
+  assert.equal(tables[0].artifactDigest, identity);
   assert.throws(() => parseRulemaking(pointer, { ...manifest(), snapshot_id: 'snapshot_other' }));
   const malicious = manifest(); malicious.artifacts['proceedings.parquet'].remote_key = '../secret';
   assert.throws(() => parseRulemaking(pointer, malicious));

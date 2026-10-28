@@ -16,6 +16,7 @@ import {
 } from "../lib/source-catalog";
 import {
   collectionTitle,
+  collectionDescription,
   readableCopy,
   browserSearch,
   readBrowserLocation,
@@ -30,11 +31,13 @@ import {
   tableLimitation,
   tableScope,
   tablePublisher,
+  tablePublisherNames,
   recordEntries,
   pageSize,
   type BrowserLocation,
   type BrowserView,
 } from "../lib/source-browser";
+import { collectionMatches, loadDiscoveryPeriods, periodSummary as recordedPeriodSummary } from "../lib/catalog-discovery";
 import "../app/globals.css";
 import "./style.css";
 
@@ -67,8 +70,8 @@ const views: { id: BrowserView; label: string; description: string }[] = [
   },
   {
     id: "catalog",
-    label: "All known sources",
-    description: "All known sources, including data we haven’t added yet.",
+    label: "Public source catalog",
+    description: "Sources included in this public catalog, including data we haven’t added yet.",
   },
   {
     id: "attention",
@@ -114,6 +117,20 @@ function SourcesPage() {
     () => new Set(tables.map((table) => table.id)),
     [tables],
   );
+  const [discovery, setDiscovery] = useState<Awaited<ReturnType<typeof loadDiscoveryPeriods>>>();
+  const [loadingPeriods, setLoadingPeriods] = useState(false);
+  const needsPeriods = !!(location.query.trim() || location.period.trim());
+  useEffect(() => {
+    if (!manifest || !needsPeriods) { setLoadingPeriods(false); return; }
+    if (discovery?.generation === manifest.generation) return;
+    const controller = new AbortController();
+    setLoadingPeriods(true);
+    void loadDiscoveryPeriods(reader, manifest, controller.signal).then(value => {
+      if (!controller.signal.aborted) { setDiscovery(value); setLoadingPeriods(false); }
+    });
+    return () => controller.abort();
+  }, [reader, manifest, needsPeriods]);
+  const discoveryPeriods = discovery?.generation === manifest?.generation ? discovery?.periods : undefined;
   const listFocus = useRef<string | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
@@ -189,18 +206,18 @@ function SourcesPage() {
         id: item.id,
         title: collectionTitle(item),
         publisher: item.publisher || "Publisher not recorded",
-        summary: periodSummary(item),
+        summary: discoveryPeriods?.[item.id] ? recordedPeriodSummary(discoveryPeriods[item.id], location.period) : periodSummary(item),
         topic: collectionTopic(item, tables),
-        rank: searchRank(
+        rank: Math.max(collectionMatches(item, tables, discoveryPeriods?.[item.id] ?? item.periods, location.query, "", "", true) ? 10 : 0, searchRank(
           location.query,
           collectionTitle(item),
           item.publisher,
-          `${item.description || ""} ${item.families.join(" ")} ${item.tables.join(" ")} ${item.id}`,
-        ),
+          `${collectionDescription(item)} ${item.description || ""} ${item.families.join(" ")} ${item.tables.join(" ")} ${item.id}`,
+        )),
         attention: collectionAttention(item),
         collection: item,
       })),
-    [manifest, tables, location.query],
+    [manifest, tables, location.query, location.period, discoveryPeriods],
   );
   const tableResults = useMemo<Result[]>(
     () =>
@@ -213,8 +230,8 @@ function SourcesPage() {
         rank: searchRank(
           location.query,
           entry.table.label,
-          tablePublisher(entry),
-          `${entry.table.id} ${entry.table.family} ${entry.review?.copy?.summary || entry.table.summary} ${entry.review?.sources.map((source) => source.name).join(" ") || ""}`,
+          tablePublisherNames(entry).join(" "),
+          `${entry.table.id} ${entry.table.family} ${tableScope(entry) || ""} ${entry.review?.copy?.summary || entry.table.summary}`,
         ),
         attention: tableAttention(entry),
         entry,
@@ -259,6 +276,7 @@ function SourcesPage() {
     .filter(
       (item) =>
         item.rank > 0 &&
+        (location.view !== "catalog" || collectionMatches(item.collection!, tables, discoveryPeriods?.[item.id] ?? item.collection!.periods, "", "", location.period, location.includeUnknown)) &&
         (!location.topic || location.topic === item.topic) &&
         (!location.availability ||
           location.availability === "supporting" ||
@@ -328,6 +346,14 @@ function SourcesPage() {
               ← Back to results
               {location.query && <span> for “{location.query}”</span>}
             </button>
+            {error && (
+              <p role="alert">
+                Published data could not be loaded. Availability is unknown.{" "}
+                <button onClick={() => setRetry(retry + 1)}>
+                  Retry publications
+                </button>
+              </p>
+            )}
             <Suspense
               fallback={
                 <p className="loading-state" role="status">
@@ -357,6 +383,7 @@ function SourcesPage() {
                     )?.review?.copy?.summary
                   }
                   tables={tables}
+                  publicationState={error ? "unavailable" : publicationsPending === false ? "ready" : "pending"}
                   onTable={(id) =>
                     navigate({ table: id, collection: undefined })
                   }
@@ -366,12 +393,16 @@ function SourcesPage() {
                   <h1>
                     {detailPending
                       ? "Loading source…"
-                      : "This item is not in the current catalog"}
+                      : error && location.table
+                        ? "This dataset could not be checked"
+                        : "This item is not in the current catalog"}
                   </h1>
                   <p>
                     {detailPending
                       ? "Checking the selected catalog and publications."
-                      : "Return to the results to choose an available source or table."}
+                      : error && location.table
+                        ? "Retry publications to check whether this dataset is available."
+                        : "Return to the results to choose an available source or table."}
                   </p>
                 </div>
               )}
@@ -400,7 +431,7 @@ function SourcesPage() {
               <input
                 id="source-search"
                 type="search"
-                placeholder="Search a dataset, source, or publisher…"
+                placeholder="Search a dataset, table, source, publisher or year…"
                 value={location.query}
                 onChange={(event) =>
                   filter({ query: event.target.value }, true)
@@ -485,16 +516,28 @@ function SourcesPage() {
                     </select>
                   </label>
                 )}
-                {(location.topic || location.availability) && (
+                {location.view === "catalog" && <>
+                  <label>
+                    <span className="sr-only">Data year or period</span>
+                    <input aria-label="Data year or period" type="search" placeholder="Data year or period" value={location.period} onChange={event => filter({ period: event.target.value }, true)} />
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={location.includeUnknown} onChange={event => filter({ includeUnknown: event.target.checked })} /> Include unknown periods
+                  </label>
+                </>}
+                {(location.topic || location.availability || location.period || !location.includeUnknown) && (
                   <button
                     className="text-button"
-                    onClick={() => filter({ topic: "", availability: "" })}
+                    onClick={() => filter({ topic: "", availability: "", period: "", includeUnknown: true })}
                   >
                     Reset filters
                   </button>
                 )}
               </div>
             </div>
+            {location.view === "catalog" && <p className="detail-caption">Data periods describe recorded source scope, which may be requested or partial. Download dates do not establish data coverage. Unknown periods do not mean data is missing.</p>}
+            {loadingPeriods && <p role="status" className="detail-caption">Loading recorded data periods… Search results may change.</p>}
+            {!!discovery?.failures.length && <p role="alert" className="detail-caption">Data periods could not be loaded for {discovery.failures.length} sources. Those sources remain visible when narrowing by period.</p>}
             <div className="results-summary">
               <p aria-live="polite">
                 {busy
@@ -513,7 +556,9 @@ function SourcesPage() {
             {location.view === "catalog" ? (
               <p className="directory-notices">
                 Saved files and processing evidence describe this input snapshot.
-                Published datasets use the current publication index separately.
+                Published datasets use the current publication index separately.{" "}
+                The local source operations inventory includes retained collections
+                omitted from this public catalog.
               </p>
             ) : null}
             {(error || catalogError || warnings.length > 0) && (
@@ -599,9 +644,11 @@ function SourcesPage() {
                         <span className="result-publisher">
                           {result.publisher}
                         </span>
+                        {result.collection && <span className="result-publisher">{readableCopy(collectionDescription(result.collection))}</span>}
+                        {result.collection?.tables.includes("sam_entities") && <span className="result-match">SAM registration years describe registrations, not historical database snapshots.</span>}
                         {location.query && result.rank === 10 && (
                           <span className="result-match">
-                            Mentioned in source description
+                            Matches recorded source information
                           </span>
                         )}
                       </span>
@@ -668,7 +715,7 @@ function SourcesPage() {
                 );
               })}
             </div>
-            {!busy && !results.length && (
+            {!busy && !loadingPeriods && !results.length && (
               <div className="empty-state">
                 <h2>
                   No matching{" "}
@@ -684,16 +731,16 @@ function SourcesPage() {
                         filter({ view: "catalog", topic: "", availability: "" })
                       }
                     >
-                      See {count(catalogMatches)} matches in all known sources →
+                      See {count(catalogMatches)} matches in the public source catalog →
                     </button>
                   )}
                 {(location.query ||
                   location.topic ||
-                  location.availability) && (
+                  location.availability || location.period || !location.includeUnknown) && (
                   <button
                     className="text-button"
                     onClick={() =>
-                      filter({ query: "", topic: "", availability: "" })
+                      filter({ query: "", topic: "", availability: "", period: "", includeUnknown: true })
                     }
                   >
                     Clear search and filters

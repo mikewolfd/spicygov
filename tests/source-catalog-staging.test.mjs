@@ -111,3 +111,56 @@ test('inspection rejects a format-less private manifest in an arbitrary director
   await writeFile(join(args.source, 'manifest.json'), JSON.stringify({ generation: args.selected.generation, collections: [], localPath: '/Users/private' }));
   await assert.rejects(inspectCatalog(args.source), /internal|local|format/i);
 });
+
+async function addRetainedCollection(args, mutate = () => {}) {
+  await addCollection(args);
+  const prefix = `generations/${args.selected.generation.slice(7)}/`;
+  const detailPath = `${prefix}collection.json`;
+  const retainedPath = `${prefix}retained-files-00000.json`;
+  const detail = JSON.parse(await readFile(join(args.source, detailPath)));
+  const retained = {format:'spicy-source-files',version:1,generation:args.selected.generation,
+    collectionId:'held',files:[{id:'saved-error',name:'response.json',status:'refused-source'}]};
+  detail.retainedFiles = {total:1,pages:[{path:retainedPath,rows:1}]};
+  mutate({detail,retained});
+  for (const [path,value] of [[detailPath,detail],[retainedPath,retained]]) {
+    const body=Buffer.from(JSON.stringify(value));
+    await writeFile(join(args.source,path),body);
+    args.selected.files=args.selected.files.filter(member=>member.path!==path);
+    args.selected.files.push({path,bytes:body.length,sha256:hash(body)});
+  }
+  const raw=Buffer.from(JSON.stringify(args.selected));
+  await writeFile(args.selection,raw);args.selectionSha256=hash(raw);
+  return retainedPath;
+}
+
+test('inspection and staging retain separately counted response partitions', async t => {
+  const args=await fixture(t);
+  const retained=await addRetainedCollection(args);
+  const inspected=await inspectCatalog(args.source);
+  assert.equal(inspected.files.length,4);
+  assert.ok(inspected.files.some(member=>member.path===retained));
+  assert.equal((await stageCatalog(args)).files,4);
+  assert.deepEqual(await readFile(join(args.output,retained)),await readFile(join(args.source,retained)));
+});
+
+for (const fault of ['rows','total','generation','private','duplicate','unreferenced']) {
+  test(`retained response ${fault} fault still fails guarded staging`, async t => {
+    const args=await fixture(t);
+    const retainedPath=await addRetainedCollection(args,({detail,retained})=>{
+      if(fault==='rows') detail.retainedFiles.pages[0].rows=2;
+      else if(fault==='total') detail.retainedFiles.total=2;
+      else if(fault==='generation') retained.generation=`sha256:${'b'.repeat(64)}`;
+      else if(fault==='private') retained.localPath='/Users/private';
+      else if(fault==='duplicate') detail.retainedFiles.pages[0].path=detail.files.pages[0].path;
+    });
+    if(fault==='unreferenced') {
+      const selected=JSON.parse(await readFile(args.selection));
+      const extra={path:retainedPath.replace('retained-files-00000','unreferenced'),bytes:2,sha256:hash(Buffer.from('{}'))};
+      await writeFile(join(args.source,extra.path),'{}');selected.files.push(extra);
+      const raw=Buffer.from(JSON.stringify(selected));await writeFile(args.selection,raw);args.selectionSha256=hash(raw);
+    }
+    await assert.rejects(stageCatalog(args));
+    await assert.rejects(readFile(join(args.output,'manifest.json')),/ENOENT/);
+    if(fault!=='unreferenced') await assert.rejects(inspectCatalog(args.source));
+  });
+}

@@ -59,7 +59,11 @@ jobs:
             --output "${{ github.workspace }}/public/source-catalog"
       - run: npm test
       - name: Build UI with explicit coverage status
-        run: npm run build:ui -- --coverage "${{ github.event_name == 'workflow_dispatch' && !inputs.build_only && 'completed' || 'unavailable' }}"
+        run: |
+          if [[ "${{ inputs.source_catalog }}" == "true" ]]; then
+            export VITE_SOURCE_CATALOG_URL=/source-catalog/manifest.json
+          fi
+          npm run build:ui -- --coverage "${{ github.event_name == 'workflow_dispatch' && !inputs.build_only && 'completed' || 'unavailable' }}"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

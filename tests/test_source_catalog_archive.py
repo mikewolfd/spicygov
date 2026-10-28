@@ -92,6 +92,17 @@ class Tests(unittest.TestCase):
         self.assertEqual(len(archive.selection_members(json.dumps(selected).encode(),generation,expected_members=1,expected_bytes=2)),1)
         selected['files'][0]['path']='../escape.json'
         with self.assertRaises(ValueError):archive.selection_members(json.dumps(selected).encode(),generation,expected_members=1,expected_bytes=2)
+    def test_native_inventory_members_keep_transport_bounds(self):
+        generation='sha256:'+'a'*64
+        page={'path':'generations/'+'a'*64+'/dataset/files-00000.parquet','bytes':4,'sha256':sha(b'PAR1')}
+        selected={'format':'spicy-public-source-catalog-selection','version':1,'generation':generation,
+                  'files':[{'path':'manifest.json','bytes':2,'sha256':sha(b'{}')},page]}
+        self.assertEqual(len(archive.selection_members(json.dumps(selected).encode(),generation,expected_members=2,expected_bytes=6)),2)
+        for path in ('generations/'+'b'*64+'/files.parquet', page['path']+'.exe'):
+            with self.subTest(path=path):
+                invalid={**selected,'files':[selected['files'][0],{**page,'path':path}]}
+                with self.assertRaises(ValueError):
+                    archive.selection_members(json.dumps(invalid).encode(),generation,expected_members=2,expected_bytes=6)
     def test_download_redirect_status(self):
         opener=self.response(b'{}');response=opener.open(None,30);response.status=302
         with self.assertRaises(ValueError):fetch.download('https://example.invalid/exact',self.root/'redirect',2,sha(b'{}'),opener=opener)

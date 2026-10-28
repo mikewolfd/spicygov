@@ -73,6 +73,7 @@ export function parseRulemaking(pointer: unknown, manifest: unknown, manifestDef
     if (!object(file) || file.visibility !== 'public') return [];
     if (!/^[a-z0-9_]+\.parquet$/.test(key) || file.remote_key !== `${prefix}/${key}` || !size(file.rows) || !size(file.bytes) || !digest(file.sha256)) throw new Error('Rulemaking contains an invalid public file.');
     return [{ ...extraTable(key.replace(/\.parquet$/, ''), 'rulemaking', file.rows, file.bytes, dataUrl(file.remote_key)!),
+      artifactDigest: manifestDefinitionDigest,
       ...(native ? {rulemakingSnapshot:{pointer:{...pointer},manifestDefinitionDigest:manifestDefinitionDigest!,generationId:native.generationId,
         subjects:[selectedMember(key,file)],receipts:selectedMember(native.key,receipt)},} : {}),
       published: validDate(manifest.asserted_at), publication: { kind: 'rulemaking' as const, recordUrl: dataUrl(pointer.manifest_key)!, snapshotId: pointer.snapshot_id, sha256: file.sha256,
@@ -98,7 +99,7 @@ export async function loadOtherPublications(signal?: AbortSignal): Promise<{ tab
       const pointer = await fetchJson(`${DATA_BASE}/materialized/rulemaking/latest.json`, signal);
       if (!object(pointer) || !/^snapshot_[a-zA-Z0-9]+$/.test(pointer.snapshot_id) || pointer.manifest_key !== `materialized/rulemaking/snapshots/${pointer.snapshot_id}/manifest.json`) throw new Error('Invalid rulemaking pointer.');
       const manifest = await fetchJson(dataUrl(pointer.manifest_key)!, signal);
-      return parseRulemaking(pointer, manifest, object(manifest) && manifest.etlReceipts !== undefined ? await rulemakingManifestDigest(manifest) : undefined);
+      return parseRulemaking(pointer, manifest, await rulemakingManifestDigest(manifest));
     })(),
     fetchJson(`${DATA_BASE}/comments-publication.json`, signal).then(parseComments),
   ]);

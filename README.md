@@ -13,8 +13,9 @@ maintained `spicy-regs` source checkout at `../spicy-regs`. Set
 `SOURCE_CATALOG_PYTHON` and `SOURCE_CATALOG_PYTHONPATH` to use another interpreter
 or source directory (the latter must point to `spicy-regs/src`). Both CI
 workflows use the exact producer revision pinned in
-`.github/actions/catalog-producer/action.yml`; the tests require only Python's
-standard library and do not need the backend virtual environment.
+`.github/actions/catalog-producer/action.yml`. Install its pinned `httpx`,
+`loguru` and `pyarrow` dependencies for the catalog integration tests; the full
+backend virtual environment is not required.
 
 ```sh
 npm ci
@@ -64,6 +65,13 @@ Each lookup worker reuses one complete, version-bound key map for a declared pri
 `npm test` covers metadata refresh, outage, unsupported formats, schema changes, missing and duplicate join keys, source URL safety, bidirectional composite navigation, missing publication dates, and Parquet reading. `node scripts/check-scorecard-joins.mjs` optionally checks live scorecard schemas and five record traversals.
 
 ## Sources directory
+
+Production pins the public catalog URL in `.env.production`. The small JSON
+summaries and separate Parquet inventories live on R2, alongside a separate raw
+archive of originals and receipts. Catalog rows hold searchable facts and exact
+archive references; they do not repeat receipt bodies. Local development uses
+`public/source-catalog`, unless `VITE_SOURCE_CATALOG_URL` is set. Explicit catalog
+proposal builds use their staged catalog instead of the production URL.
 
 `/sources/` combines the main publication index with the live rulemaking snapshot at `materialized/rulemaking/latest.json` and the comments export receipt at `comments-publication.json`. Only public snapshot artifacts are listed. Comments agency partitions are not counted again. Main-index entries take precedence when tables migrate between publication formats. Separate publications offer record browsing when their exact schema metadata is available and Parquet downloads otherwise. Failure to read one publication leaves the others visible with an explicit warning.
 

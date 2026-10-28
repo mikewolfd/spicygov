@@ -1,8 +1,13 @@
+import { decodeCatalogFileShard } from './catalog-parquet';
 import { receiptFields, readSourceEvidence } from "./receipt-reader";
 import { readPage } from "./reader";
 import {locateRecord} from './record-lookup';
 self.onmessage = async (event) => {
   try {
+    if (event.data.type === 'catalog-files') {
+      const page = await decodeCatalogFileShard(event.data.buffer,event.data.context);
+      self.postMessage({type:'catalog-files',page}); return;
+    }
     if(event.data.type==='lookup') {
       const result=await locateRecord(event.data.table,event.data.filters,event.data.cursor,event.data.positions,(scanned)=>self.postMessage({type:'progress',scanned}));
       self.postMessage({type:'lookup',...result});return;

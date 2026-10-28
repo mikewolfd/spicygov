@@ -151,6 +151,8 @@ test("a shared detail URL preserves search, filters, and result page", () => {
     query: "Older rules & notices",
     topic: "Regulation",
     availability: "held",
+    period: "2024",
+    includeUnknown: false,
     page: 3,
     collection: "family:federal-register",
   };
@@ -197,4 +199,145 @@ test('download and missing-file filters still find sources that have published d
     assert.equal(browser.matchesCollectionAvailability(item, filter, tables), true, filter);
   }
   assert.equal(browser.matchesCollectionAvailability(item, 'uncollected', tables), false);
+});
+
+
+const source = (name, id = name) => ({ id, name, kind: "official", note: "" });
+const publication = "sha256:" + "a".repeat(64);
+const publisherEntry = (table = {}, review) => ({
+  table: { sources: [], metadataState: "current", artifactDigest: publication, ...table },
+  review,
+  source: source("Calculated from other tables"),
+});
+
+test("publisher labels summarize every current name rather than the first source", () => {
+  const publishers = [source("AFSCME"), source("League of Conservation Voters")];
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: publishers })), "Multiple publishers");
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: publishers.toReversed() })), "Multiple publishers");
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: [source("AFSCME")] })), "AFSCME");
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: [source(" AFSCME ", "route-a"), source("AFSCME", "route-b")] })), "AFSCME");
+});
+
+test("publisher labels keep current source descriptions ahead of reviewed fallback names", () => {
+  const reviewed = { artifactDigest: publication, sources: [source("Reviewed publisher")] };
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: [source("Current publisher")] }, reviewed)), "Current publisher");
+  assert.equal(browser.tablePublisher(publisherEntry({}, reviewed)), "Reviewed publisher");
+  assert.equal(browser.tablePublisher(publisherEntry({}, { ...reviewed, sources: [source("First"), source("Second")] })), "Multiple publishers");
+});
+
+test("publisher labels reject stale attribution and generic source-group captions", () => {
+  const reviewed = { artifactDigest: "sha256:" + "b".repeat(64), sources: [source("Earlier publisher")] };
+  assert.equal(browser.tablePublisher(publisherEntry({}, reviewed)), "Publisher not recorded");
+  assert.equal(browser.tablePublisher(publisherEntry({ artifactDigest: undefined }, { sources: [source("Unpinned publisher")] })), "Publisher not recorded");
+  assert.equal(browser.tablePublisher(publisherEntry()), "Publisher not recorded");
+  assert.equal(browser.tablePublisher(publisherEntry({ sources: [source("  ")] })), "Publisher not recorded");
+  for (const metadataState of ["loading", "missing", "incompatible", "older-publication", "unavailable"]) {
+    assert.equal(browser.tablePublisher(publisherEntry({ metadataState, sources: [source("Earlier metadata publisher")] })), "Publisher not recorded", metadataState);
+  }
+});
+
+
+test("publisher search retains every eligible name when the caption summarizes multiple publishers", () => {
+  const entry = publisherEntry({ sources: [source("21Wilberforce"), source("AFSCME"), source(" AFSCME ", "second-route")] });
+  const names = browser.tablePublisherNames(entry);
+  assert.deepEqual(names, ["21Wilberforce", "AFSCME"]);
+  for (const query of names) {
+    assert.equal(browser.searchRank(query, "Scorecards", names.join(" ")), 40);
+  }
+  const stale = publisherEntry({}, { artifactDigest: "sha256:" + "b".repeat(64), sources: [source("Earlier publisher")] });
+  assert.deepEqual(browser.tablePublisherNames(stale), []);
+  assert.equal(browser.searchRank("Earlier publisher", "Scorecards", browser.tablePublisherNames(stale).join(" ")), 0);
+});
+
+test("generation-matched incomplete descriptions retain their supplied publisher names", () => {
+  const entry = publisherEntry({ metadataState: "undocumented", sources: [source("Recorded publisher")] });
+  assert.deepEqual(browser.tablePublisherNames(entry), ["Recorded publisher"]);
+  assert.equal(browser.tablePublisher(entry), "Recorded publisher");
+});
+
+
+test("v2 bounded period summaries preserve list dates and scope uncertainty", () => {
+  const observed = {kind:"observed-retained-scope",label:"Saved records",start:"1994",end:"1995",basis:"Saved rows"};
+  const legacy=collection({periods:[observed,observed]});
+  const slim=collection({periods:undefined,periodSummary:{count:2000,observedRetained:observed}});
+  assert.equal(browser.periodSummary(slim),browser.periodSummary(legacy));
+  assert.equal(browser.periodSummary(collection({periods:undefined,periodSummary:{count:2000}})),"See dates in source details");
+  assert.equal(browser.periodSummary(collection({periods:undefined,periodSummary:{count:0}})),"Dates not confirmed");
+});
+test("unlinked inventory does not turn linked publication entries into uncollected sources", () => {
+  const item=collection({statuses:["inventory-unresolved"],tables:["records"]});
+  assert.equal(browser.collectionAvailability(item,new Set(["records"])).id,"linked");
+  assert.equal(browser.collectionAttention(item),"Source files not linked to this entry");
+  assert.equal(browser.collectionDownload(item),"Downloads not confirmed");
+  assert.equal(browser.matchesCollectionAvailability(item,"uncollected",new Set(["records"])),false);
+  assert.equal(browser.matchesCollectionAvailability(item,"review",new Set(["records"])),true);
+  const external=collection({statuses:["external-by-choice"],tables:["records"]});
+  assert.equal(browser.collectionAvailability(external,new Set()).id,"external");
+  assert.equal(browser.collectionDownload(external),"Stored elsewhere");
+  assert.equal(browser.matchesCollectionAvailability(external,"uncollected",new Set(["records"])),false);
+});
+
+test("collection purpose and evidence limits answer different questions", () => {
+  const sam = collection({id:"family:sam-entities",tables:["sam_entities"],description:"A baseline preserves table facts that the retained original-source history does not establish."});
+  assert.match(browser.collectionDescription(sam), /Organizations registered in the System for Award Management/);
+  assert.doesNotMatch(browser.collectionDescription(sam), /baseline|provenance/);
+  assert.match(browser.collectionLimitations(sam).join(" "), /historical snapshots/);
+  assert.match(browser.collectionLimitations(sam).join(" "), /reproduce every published record/);
+  assert.match(browser.collectionDescription(collection({id:"family:cfr-sections"})), /looking up federal agency rules/);
+  assert.match(browser.collectionDescription(collection({id:"family:comments-mirror"})), /kept elsewhere by choice/);
+});
+
+test("saved errors, missing files, external files and unknown availability stay distinct", () => {
+  const summarize = (status, availability) => browser.fileAvailabilitySummary({status,provenance:availability ? {availability} : undefined});
+  assert.match(summarize("parse-error","local"), /could not be read; usable content has not been confirmed/);
+  assert.match(summarize("held","missing"), /missing locally/);
+  assert.match(summarize("held","external"), /kept elsewhere by choice/);
+  assert.match(summarize("held","not-acquired"), /download not recorded/);
+  assert.match(summarize("held"), /availability is not checked/);
+  assert.match(summarize("other"), /availability is unknown/);
+});
+
+test("retention never promotes saved refusals or unchecked JSON into usable data", () => {
+  for (const status of ["refused-source", "failed-response", "incomplete-response", "unclassified-source"]) {
+    const message = browser.fileAvailabilitySummary({status,provenance:{availability:"local"}});
+    assert.match(message,/Saved/);
+    assert.match(message,/not usable data|usable data is not confirmed/);
+    assert.match(message,/Bytes saved locally/);
+  }
+  const held=browser.fileAvailabilitySummary({status:"held",provenance:{availability:"local"}});
+  assert.match(held,/usable content has not been confirmed/);
+  assert.match(browser.collectionAttention(collection({statuses:["refused-source"]})), /refused|error/);
+});
+
+test("older missing-byte rows remain missing when provenance metadata is absent", () => {
+  assert.match(browser.fileAvailabilitySummary({status:"missing-bytes"}), /missing locally/);
+});
+
+test("conflicting receipts and metadata remain separate from byte availability", () => {
+  for (const [status, wording] of [
+    ["conflicting-receipt", /receipt evidence disagrees; the file’s origin needs review/],
+    ["conflicting-metadata", /metadata records disagree; the source information needs review/],
+  ]) {
+    const local = browser.fileAvailabilitySummary({status,provenance:{availability:"local"}});
+    assert.match(local, wording);
+    assert.match(local, /Bytes saved locally/);
+    const missing = browser.fileAvailabilitySummary({status,provenance:{availability:"missing"}});
+    assert.match(missing, wording);
+    assert.match(missing, /missing locally/);
+    assert.doesNotMatch(missing, /Bytes saved locally/);
+    const unknown = browser.fileAvailabilitySummary({status});
+    assert.match(unknown, wording);
+    assert.match(unknown, /availability is unknown/);
+  }
+});
+
+test("native election-cycle and edition labels remain visible without invented dates", () => {
+  assert.equal(browser.periodRange({kind:"election-cycle",label:"2024",basis:"explicit-retained-scope"}),"2024");
+  assert.equal(browser.periodRange({kind:"edition",label:"2025 edition",basis:"publisher-label"}),"2025 edition");
+  assert.match(browser.periodRange({kind:"unknown",label:"Unknown",basis:"no-period"}), /Exact dates aren’t recorded/);
+});
+
+test("unlinked inventory counts do not imply source originals are absent", () => {
+  assert.equal(browser.collectionHoldingsSummary(collection({statuses:["inventory-unresolved"]})),"No files linked to this entry yet.");
+  assert.equal(browser.collectionHoldingsSummary(collection({holdings:{objects:4}})),"4 distinct files saved locally.");
 });

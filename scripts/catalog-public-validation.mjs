@@ -2,6 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { inspectCatalog } from './catalog-inspection.mjs';
 let schemaReader;
 async function validators() {
   if (!schemaReader) schemaReader = build({
@@ -13,7 +14,16 @@ async function validators() {
 export async function validatePublicDirectory(directory) {
   const schema = await validators();
   async function walk(path) {
-    for (const entry of await readdir(path, { withFileTypes: true })) {
+    const entries = await readdir(path,{withFileTypes:true});
+    if (entries.some(entry => entry.name === 'manifest.json' && entry.isFile())) {
+      const candidate = join(path,'manifest.json');
+      const raw = JSON.parse(await readFile(candidate,'utf8'));
+      if (basename(path) === 'source-catalog' || raw?.format === 'spicy-source-catalog') {
+        try { await inspectCatalog(path); } catch (error) { throw Error(`${relative(directory,candidate)}: ${error.message}`); }
+        return;
+      }
+    }
+    for (const entry of entries) {
       const child = join(path, entry.name);
       try {
         if (entry.isSymbolicLink()) throw Error('Public artifact symlink');

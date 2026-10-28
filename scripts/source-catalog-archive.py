@@ -151,7 +151,7 @@ def selection_members(raw, generation, *, expected_members, expected_bytes):
     for item in members:
         name, size = item['path'], item['bytes']
         if (name in names or (name != 'manifest.json' and not name.startswith(prefix))
-                or not name.endswith('.json') or type(size) is not int
+                or not name.endswith(('.json', '.parquet')) or type(size) is not int
                 or not 0 <= size <= 4194304
                 or not re.fullmatch(r'sha256:[a-f0-9]{64}', item['sha256'])):
             raise ValueError('Invalid selected member')
