@@ -1028,6 +1028,9 @@ h1 {
   display: inline;
   margin-left: 6px;
 }
+.record-original-text { margin-top: .5rem; font-size: .8rem; color: var(--muted-foreground); }
+.record-original-text summary { cursor: pointer; }
+.record-original-text p { margin-top: .5rem; }
 .financial-profile { margin: 24px 0; }
 .lobbying-profile { margin: 24px 0; line-height: 1.5; }
 .lobbying-profile h2 { font-size: 1.25rem; font-weight: 600; }

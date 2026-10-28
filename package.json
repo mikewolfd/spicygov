@@ -22,6 +22,7 @@
   "dependencies": {
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "entities": "8.1.0",
     "hyparquet": "^1.31.2",
     "hyparquet-compressors": "^1.1.2",
     "lucide-react": "^1.31.0",

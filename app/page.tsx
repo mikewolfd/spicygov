@@ -2,6 +2,7 @@
 import { SourceConnections } from '../components/source-connections';
 import { FinancialProfile } from '../components/financial-profile';
 import { LobbyingProfile } from '../components/lobbying-profile';
+import { RecordText } from '../components/record-text';
 import { LOBBYING_TABLES, LOBBYING_BODY_NAVIGATION_ID } from '../lib/lobbying-navigation';
 import { connectionCountStatus } from '../lib/connection-counts';
 import { useEffect, useRef, useState } from "react";
@@ -703,7 +704,7 @@ export default function Explorer() {
                                     openRecord(r, i, c);
                                   }}
                                 >
-                                  {display(r[c])}
+                                  <RecordText column={c} value={r[c]} />
                                   <Link2 size={12} />
                                 </button>
                               ) : (
@@ -712,7 +713,7 @@ export default function Explorer() {
                                     c.endsWith("_id") ? "identifier" : ""
                                   }
                                 >
-                                  {display(r[c])}
+                                  <RecordText column={c} value={r[c]} />
                                 </span>
                               )}
                             </td>
@@ -1070,7 +1071,7 @@ export default function Explorer() {
                           <ExternalLink size={13} />
                         </a>
                       ) : (
-                        display(record![c.name])
+                        <RecordText column={c.name} value={record![c.name]} showOriginal />
                       )}
                     </dd>
                   </div>
