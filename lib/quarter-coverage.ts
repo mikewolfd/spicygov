@@ -1,12 +1,13 @@
 import type { CoverageDimension } from './coverage-map';
 
+const quarter = (month: string) => Number(month.slice(0, 4)) * 4 + Math.floor((Number(month.slice(5)) - 1) / 3);
+const label = (value: number) => `${Math.floor(value / 4)} Q${value % 4 + 1}`;
+
 /** Find quarters with no dated records between the first and last recorded months. */
-export function quarterCoverage(dimension: CoverageDimension) {
+export function quarterCoverage(dimension: Pick<CoverageDimension, 'granularity' | 'overlapping' | 'buckets' | 'unplacedRows' | 'latestDate'>) {
   if (dimension.granularity !== 'month' || dimension.overlapping) return undefined;
   const months = Object.keys(dimension.buckets).sort();
   if (!months.length || !months.every(month => /^\d{4}-(0[1-9]|1[0-2])$/.test(month))) return undefined;
-  const quarter = (month: string) => Number(month.slice(0, 4)) * 4 + Math.floor((Number(month.slice(5)) - 1) / 3);
-  const label = (value: number) => `${Math.floor(value / 4)} Q${value % 4 + 1}`;
   const present = new Set(months.map(quarter));
   const first = quarter(months[0]), last = quarter(months[months.length - 1]);
   const missing: string[] = [];
@@ -19,4 +20,10 @@ export function quarterCoverage(dimension: CoverageDimension) {
     segments.push(start === quarters[i] ? label(start) : `${label(start)}–${label(quarters[i])}`);
   }
   return { first: label(first), last: label(last), segments, missing, undated: dimension.unplacedRows, latestDate: dimension.latestDate };
+}
+
+/** Quarters present in the published records without an indexed source date. */
+export function unindexedQuarters(sourceMonths: string[], publishedMonths: string[]) {
+  const source = new Set(sourceMonths.map(quarter));
+  return [...new Set(publishedMonths.map(quarter))].filter(value => !source.has(value)).sort((a, b) => a - b).map(label);
 }

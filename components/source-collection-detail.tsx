@@ -29,17 +29,25 @@ import { CatalogRetainedFiles } from "./catalog-retained-files";
 import { sourcePeriodGroups } from "../lib/source-periods";
 import { currentCoverageMap, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
 import { fetchJson } from "../lib/publication-evidence";
-import { quarterCoverage } from "../lib/quarter-coverage";
+import { quarterCoverage, unindexedQuarters } from "../lib/quarter-coverage";
+import sourcePeriods from "../content/federal-register-source-periods.json";
 
-export function FederalRegisterQuarterSummary({ table, maps }: { table?: Dataset; maps?: CoverageMaps }) {
+export function FederalRegisterQuarterSummary({ table, maps, generation }: { table?: Dataset; maps?: CoverageMaps; generation?: string }) {
   const dimension = table && currentCoverageMap(table, maps)?.dimensions.find(item => item.id === "federal-register-publication-dates");
   const quarters = dimension && quarterCoverage(dimension);
-  if (!quarters) return <p className="detail-caption">Published records by quarter have not been checked for this release.</p>;
+  const source = generation === sourcePeriods.generation ? quarterCoverage({
+    granularity: 'month', buckets: Object.fromEntries(sourcePeriods.months.map(month => [month, 1])), unplacedRows: 0,
+  }) : undefined;
+  const unindexed = source && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets)) : [];
   return <div>
-    <p>Published records: {quarters.segments.join(', ')}.</p>
-    {quarters.missing.length > 0 && <p>No dated published records: {quarters.missing.join(', ')}.</p>}
-    {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}.</p>}
-    <p className="detail-caption">A quarter with records may still be incomplete. Saved source files have not been checked by quarter.{quarters.undated ? ` ${count(quarters.undated)} records have no usable publication date.` : ''}</p>
+    {source && <><p>Saved source files with indexed dates: {source.segments.join(', ')}.</p>
+      <p>Latest indexed source date: {publicationDate(sourcePeriods.latestIndexedDate)}.</p>
+      {unindexed.length > 0 && <p>No indexed source dates: {unindexed.join(', ')}.</p>}</>}
+    {quarters ? <><p>Published records: {quarters.segments.join(', ')}.</p>
+      {quarters.missing.length > 0 && <p>No dated published records: {quarters.missing.join(', ')}.</p>}
+      {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}.</p>}</>
+      : <p>Published records by quarter have not been checked for this release.</p>}
+    <p className="detail-caption">A quarter with records may still be incomplete. {source ? 'Unindexed source dates are unverified; files may still exist.' : 'Saved source files have not been checked by quarter.'}{quarters?.undated ? ` ${count(quarters.undated)} records have no usable publication date.` : ''}</p>
   </div>;
 }
 
@@ -261,7 +269,7 @@ export function SourceCollectionDetail({
             <>
               <section className="detail-section">
                 <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />
-                {collection.id === "family:federal-register" && <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} />}
+                {collection.id === "family:federal-register" && <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} generation={manifest.generation} />}
                 {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
                 <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>
               </section>

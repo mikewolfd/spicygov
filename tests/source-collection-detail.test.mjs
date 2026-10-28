@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { build } from "esbuild";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFile } from "node:fs/promises";
 
 const built = await build({
   entryPoints: ["components/source-collection-detail.tsx"],
@@ -48,6 +49,18 @@ test('quarter summary is tied to the current published table and names empty qua
   const stale = renderSummary({ ...table, rows: 3 }, map);
   assert.match(stale, /have not been checked for this release/);
   assert.doesNotMatch(stale, /2024 Q2/);
+});
+
+test('source quarter evidence is shown only for its catalog generation', async () => {
+  const source = JSON.parse(await readFile('content/federal-register-source-periods.json', 'utf8'));
+  const renderSummary = generation => renderToStaticMarkup(createElement(
+    loaded.exports.FederalRegisterQuarterSummary, { generation },
+  ));
+  const current = renderSummary(source.generation);
+  assert.match(current, /Saved source files with indexed dates: 1994 Q1–2026 Q3/);
+  assert.match(current, /Latest indexed source date: Sep 2, 2026/);
+  assert.match(current, /Unindexed source dates are unverified/);
+  assert.doesNotMatch(renderSummary('sha256:' + 'b'.repeat(64)), /Saved source files with indexed dates/);
 });
 
 test("collection details distinguish unavailable publication information from confirmed absence", () => {
