@@ -310,14 +310,14 @@ test('prior release maps stay visible with their original date and counts, witho
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,onRetry:()=>{},view:{year:2024,mode:'years'}}));
   assert.equal(currentCoverageMap(changed,maps),undefined);
   assert.equal(coverageMapForDisplay(changed,maps).freshness,'previous-release');
-  assert.match(html,/Earlier release · Oct 4, 2026/);
+  assert.match(html,/Counts are from an earlier dataset \(Oct 4, 2026\)/);
   assert.match(html,/Measured <time dateTime="2026-10-05T00:00:00Z">Oct 5, 2026/);
   assert.match(html,/3 rows/);
   assert.doesNotMatch(html,/Checked Oct 5, 2026 · Current release/);
   assert.doesNotMatch(html,/4 rows/);
   assert.match(html,/2024: 2 rows counted here/);
   assert.match(html,/Count by|Event date/);
-  assert.match(html,/Reload coverage/);
+  assert.doesNotMatch(html,/Reload coverage/);
   assert.doesNotMatch(html,/recalculate|scan records/i);
 });
 
@@ -329,7 +329,7 @@ test('expired monthly measurements stay visible with their original check date',
   assert.equal(currentCoverageMap(table,maps),undefined);
   assert.equal(coverageMapForDisplay(table,maps).freshness,'previous-measurement');
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
-  assert.match(html,/Checked Oct 5, 2026 · Current release/);
+  assert.match(html,/Counts were checked earlier/);
   assert.match(html,/Measured <time dateTime="2026-10-05T00:00:00Z">Oct 5, 2026/);
   assert.equal(coverageReading(table,maps).freshness,'previous-measurement');
   assert.match(html,/2024: 2 rows counted here/);
@@ -363,7 +363,7 @@ test('previous publisher coverage keeps recorded IDs instead of borrowing names 
   const publishers={source,names:new Map([['afp','Americans for Prosperity']])};
   const changed={...source,artifactDigest:'sha256:'+'b'.repeat(64)};
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table:changed,maps,publishers,view:{year:2026,mode:'years'}}));
-  assert.match(html,/Earlier release/);
+  assert.match(html,/Counts are from an earlier dataset/);
   assert.match(html,/Publisher ID: afp/);
   assert.doesNotMatch(html,/Americans for Prosperity/);
 });
