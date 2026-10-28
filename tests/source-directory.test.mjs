@@ -99,7 +99,12 @@ test('rulemaking uses its exact snapshot and only public files', async () => {
   assert.equal(tables[0].rows, 12);
   assert.match(tables[0].members[0].url, /snapshots\/snapshot_123\/proceedings.parquet$/);
   assert.equal(tables[0].publication.snapshotId, 'snapshot_123');
-  assert.equal(tables[0].artifactDigest, identity);
+  assert.equal(tables[0].artifactDigest, undefined);
+  assert.equal(tables[0].publication.manifestSha256, identity);
+  const {bindExtraTables} = await module('lib/separate-publications.ts');
+  const [bound] = await bindExtraTables(tables,null);
+  assert.notEqual(bound.publicationIdentity,identity);
+  assert.equal(bound.publication.manifestSha256,identity);
   assert.throws(() => parseRulemaking(pointer, { ...manifest(), snapshot_id: 'snapshot_other' }));
   const malicious = manifest(); malicious.artifacts['proceedings.parquet'].remote_key = '../secret';
   assert.throws(() => parseRulemaking(pointer, malicious));

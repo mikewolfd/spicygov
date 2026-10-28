@@ -20,7 +20,8 @@ export function CatalogTableEvidence({ destination, current }: {
   destination: CatalogTable;
   current?: Dataset;
 }) {
-  const currentVersion = current?.artifactDigest ?? current?.publicationIdentity;
+  const currentVersion = current?.artifactDigest ?? (current?.publication?.kind === 'rulemaking'
+    ? current.publication.manifestSha256 : current?.publicationIdentity);
   const rawVersion = destination.artifactDigest;
   const rawStale = !!(currentVersion && rawVersion && currentVersion !== rawVersion);
   const publication = destination.publication;

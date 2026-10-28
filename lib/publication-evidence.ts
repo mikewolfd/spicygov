@@ -6,6 +6,8 @@ export type PublicationEvidence = {
   recordUrl: string;
   nativeReceipts?: NativeReceipts;
   snapshotId?: string;
+  /** Canonical manifest JSON identity; separate from published file bytes. */
+  manifestSha256?: string;
   sha256?: string;
   etag?: string;
 };

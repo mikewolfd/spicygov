@@ -63,6 +63,16 @@ test("generation drift qualifies the raw review and historical records independe
   assert.match(render({ ...destination, artifactDigest: undefined }), /raw-file coverage review could not be compared/);
 });
 
+test("rulemaking compares the exact manifest while descriptor identity remains separate", () => {
+  const current = { id: "table", publicationIdentity: later,
+    publication: {kind:"rulemaking",recordUrl:"https://data.spicygov.ai/manifest.json",manifestSha256:generation} };
+  assert.doesNotMatch(render(destination,current), /describes? an earlier publication/);
+  assert.match(render(destination,{...current,publication:{...current.publication,manifestSha256:later}}), /raw-file coverage review describes an earlier publication/);
+  const unknown = render(destination,{...current,publication:{...current.publication,manifestSha256:undefined}});
+  assert.match(unknown,/Current publication identity could not be compared/);
+  assert.doesNotMatch(unknown,/describes? an earlier publication/);
+});
+
 test("conflicts and unmatched historical references have distinct attention messages", () => {
   const conflict = render({ ...destination, publication: { ...publication, status: "conflicting_evidence" } });
   assert.match(visible(conflict), /Historical build records conflict/);

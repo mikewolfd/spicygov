@@ -73,10 +73,10 @@ export function parseRulemaking(pointer: unknown, manifest: unknown, manifestDef
     if (!object(file) || file.visibility !== 'public') return [];
     if (!/^[a-z0-9_]+\.parquet$/.test(key) || file.remote_key !== `${prefix}/${key}` || !size(file.rows) || !size(file.bytes) || !digest(file.sha256)) throw new Error('Rulemaking contains an invalid public file.');
     return [{ ...extraTable(key.replace(/\.parquet$/, ''), 'rulemaking', file.rows, file.bytes, dataUrl(file.remote_key)!),
-      artifactDigest: manifestDefinitionDigest,
       ...(native ? {rulemakingSnapshot:{pointer:{...pointer},manifestDefinitionDigest:manifestDefinitionDigest!,generationId:native.generationId,
         subjects:[selectedMember(key,file)],receipts:selectedMember(native.key,receipt)},} : {}),
       published: validDate(manifest.asserted_at), publication: { kind: 'rulemaking' as const, recordUrl: dataUrl(pointer.manifest_key)!, snapshotId: pointer.snapshot_id, sha256: file.sha256,
+        ...(typeof manifestDefinitionDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(manifestDefinitionDigest) ? {manifestSha256:manifestDefinitionDigest} : {}),
         ...(native ? {nativeReceipts:{url:dataUrl(receipt.remote_key)!,generationId:native.generationId,rows:receipt.rows,bytes:receipt.bytes,sha256:receipt.sha256}} : {}) } }];
   });
 }
