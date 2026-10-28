@@ -108,6 +108,19 @@ def validate_counts(dimension, rows):
     if 'notes' in dimension and (not isinstance(dimension['notes'], list)
             or any(not isinstance(note, str) for note in dimension['notes'])):
         raise ValueError('Coverage notes must be a list of text')
+    if 'billCoverage' in dimension:
+        value = dimension['billCoverage']
+        keys = ('total', 'policyAreas', 'subjects')
+        def valid_counts(group):
+            return (isinstance(group, dict) and all(type(group.get(k)) is int and group[k] >= 0 for k in keys)
+                    and group['policyAreas'] <= group['total'] and group['subjects'] <= group['total'])
+        if (not valid_counts(value) or not isinstance(value.get('byCongress'), dict)
+                or any(not valid_counts(group) for group in value['byCongress'].values())
+                or any(sum(group[k] for group in value['byCongress'].values()) != value[k] for k in keys)
+                or not isinstance(value.get('comparison'), dict)
+                or value['comparison'].get('family') != 'bill-family'
+                or value['comparison'].get('rows', -1) < value['total']):
+            raise ValueError('Bill availability counts do not reconcile')
     if grain != 'snapshot':
         total = sum(buckets.values())
         if dimension.get('overlapping'):

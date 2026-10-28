@@ -29,6 +29,18 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_current_comparison_is_bound_even_when_denominator_is_not_remeasured(self):
+        table, policy, measured=fixture()
+        policy['dimensions'][0]['comparisonTable']='congress_bills'
+        bills={**table,'family':'bill-family','rows':10}
+        policies={'records':policy}
+        builder.validate_plan({'records':table},policies,{'records':table,'congress_bills':bills})
+        self.assertEqual(policies['records']['dimensions'][0]['comparison'],bills)
+        self.assertNotIn('comparison',policy['dimensions'][0])
+        first=builder.binding(table,policies['records'])['definitionDigest']
+        builder.validate_plan({'records':table},policies,{'records':table,'congress_bills':{**bills,'rows':11}})
+        self.assertNotEqual(builder.binding(table,policies['records'])['definitionDigest'],first)
+
     def test_selected_refresh_does_not_require_definitions_for_unselected_new_tables(self):
         import coverage_release
         table, policy, measured = fixture()

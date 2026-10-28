@@ -20,6 +20,7 @@ import {
 } from "../lib/source-observations";
 import {
   parseCoverageMaps,
+  billAvailability,
   coverageReading,
   textAvailabilityDetails,
   type CoverageMaps,
@@ -41,6 +42,7 @@ import type { CatalogCollection } from "../lib/source-catalog";
 import { TableProvenance } from "./table-provenance";
 import { tableCoverageTags } from "../lib/coverage-tags";
 import { TableCoverageMap } from "./coverage-map";
+import { BillAvailabilitySummary } from "./bill-availability";
 
 function Links({ links }: { links: EvidenceLink[] }) {
   return (
@@ -313,6 +315,7 @@ export function SourceTableDetail({
   const sources = relatedCollections(table, collections);
   const attention = tableAttention(entry);
   const coverage = coverageReading(table, maps);
+  const availability = billAvailability(table, tables, maps);
   const attribution = tablePublisherAttribution(entry);
   const recordedSources = publisherAttribution(entry).sources;
   const tabs = [
@@ -351,6 +354,7 @@ export function SourceTableDetail({
           <span>{tablePublisher(entry)}</span>
         </div>
       </header>
+      {availability && <BillAvailabilitySummary key={table.artifactDigest} availability={availability} />}
       <details className="source-details">
         <summary>Details</summary>
         <p>{readableCopy(tableDescription(entry))}</p>

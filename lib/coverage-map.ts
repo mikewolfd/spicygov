@@ -4,6 +4,12 @@ import { object } from './publication-evidence';
 import { timeFingerprint } from './time-coverage';
 import { canonicalJson } from './separate-publications';
 
+export type BillAvailabilityCounts = { total: number; policyAreas: number; subjects: number };
+export type BillAvailability = BillAvailabilityCounts & {
+  byCongress: Record<string, BillAvailabilityCounts>;
+  comparison: Pick<CoverageMap, 'family' | 'fingerprint' | 'rows' | 'publishedAt' | 'inputsFingerprint' | 'artifactDigest' | 'publicationSha256' | 'schema'>;
+};
+
 export type CoverageDimension = {
   id: string; label: string; meaning: string; status: 'measured'; kind?: string;
   granularity: 'month' | 'year' | 'season' | 'category' | 'snapshot'; unit?: string;
@@ -13,6 +19,7 @@ export type CoverageDimension = {
   snapshot?: { publishedAt?: string; artifactDigest?: string; recordUrl?: string; asOf?: string; facts?: { label: string; value: string }[] };
   matchedRows?: number; unmatchedRows?: number; notes?: string[];
   anomalies?: unknown; parent?: unknown; evidence?: unknown;
+  billCoverage?: BillAvailability;
   activityBoundary?: { month: string; basis: 'publication-month' | 'measurement-month' };
 };
 export type CoverageMap = {
@@ -83,6 +90,7 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
       if (dim.yearBuckets !== undefined && (!object(dim.yearBuckets) || !Object.entries(dim.yearBuckets).every(([year, n]) => /^[0-9]{4}$/.test(year) && year !== '0000' && integer(n) && n > 0 && n <= value.rows))) throw new Error('Invalid annual coverage counts: ' + id);
       if (dim.notes !== undefined && (!Array.isArray(dim.notes) || !dim.notes.every((note: unknown) => typeof note === 'string'))) throw new Error('Invalid coverage notes: ' + id);
       if (!validActivityBoundary(dim.activityBoundary, value.publishedAt)) throw new Error('Invalid activity boundary: ' + id);
+      if (dim.billCoverage !== undefined && !validBillAvailability(dim.billCoverage)) throw new Error('Invalid bill availability: ' + id);
       dimensions.push(dim as CoverageDimension);
     }
     tables[id] = { ...value, dimensions } as CoverageMap;
@@ -94,7 +102,7 @@ export function coverageInputsFingerprint(table: Dataset): string {
   const members = [...(table.coverageInputs ?? [])].sort((a, b) => a.id.localeCompare(b.id)).map(i => [i.id, i.url, i.rows, i.byteSize, i.sha256, i.etag]);
   return table.rulemakingSnapshot ? canonicalJson({members,snapshot:table.rulemakingSnapshot}).replace(/[^\x00-\x7f]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0')) : JSON.stringify(members);
 }
-function matchesCoverageRelease(table: Dataset, map: CoverageMap): boolean {
+function matchesCoverageRelease(table: Dataset, map: BillAvailability['comparison']): boolean {
   const schema = table.physicalColumns ?? table.columns;
   return map.family === table.family && map.fingerprint === timeFingerprint(table) && map.rows === table.rows
     && (map.publishedAt ?? undefined) === (table.published ?? undefined)
@@ -102,6 +110,33 @@ function matchesCoverageRelease(table: Dataset, map: CoverageMap): boolean {
     && (map.artifactDigest ?? undefined) === table.artifactDigest
     && (map.publicationSha256 ?? undefined) === table.publication?.sha256
     && (!schema.length || JSON.stringify(map.schema) === JSON.stringify(schema.map(c => [c.name, c.type])));
+}
+
+function validBillAvailability(value: unknown): value is BillAvailability {
+  const counts = (v: unknown): boolean => object(v)
+    && integer(v.total) && integer(v.policyAreas) && integer(v.subjects)
+    && v.policyAreas <= v.total && v.subjects <= v.total;
+  if (!counts(value) || !object(value) || !object(value.byCongress) || !object(value.comparison)) return false;
+  const groups = Object.entries(value.byCongress);
+  if (!groups.every(([key, group]) => (key === 'unknown' || /^[1-9][0-9]*$/.test(key)) && counts(group))) return false;
+  if (!(['total', 'policyAreas', 'subjects'] as const).every(key =>
+    groups.reduce((sum, [, group]) => sum + (group as BillAvailabilityCounts)[key], 0) === value[key])) return false;
+  const source = value.comparison;
+  return source.family === 'bill-family' && digest(source.artifactDigest)
+    && typeof source.fingerprint === 'string' && source.inputsFingerprint === '[]'
+    && integer(source.rows) && source.rows >= value.total
+    && (source.publishedAt == null || date(source.publishedAt))
+    && Array.isArray(source.schema) && source.schema.length > 0
+    && source.schema.every((pair: unknown) => Array.isArray(pair) && pair.length === 2 && pair.every(v => typeof v === 'string'));
+}
+
+export function billAvailability(table: Dataset, tables: Dataset[], maps?: CoverageMaps): BillAvailability | undefined {
+  if (table.id !== 'bill_subjects') return;
+  const value = currentCoverageMap(table, maps)?.dimensions.find(dim => dim.id === 'bill-subject-availability')?.billCoverage;
+  const bills = tables.find(candidate => candidate.id === 'congress_bills');
+  // A changed denominator invalidates the percentage even when subjects have
+  // not changed. It is never a count of attempted downloads or subject rows.
+  return value && bills && validBillAvailability(value) && matchesCoverageRelease(bills, value.comparison) ? value : undefined;
 }
 
 export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): CoverageMap | undefined {

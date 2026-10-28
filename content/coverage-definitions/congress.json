@@ -2898,8 +2898,21 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Coverage uses original acquisition records retained with the published native subjects. This generation does not record a bill-family parent, so Congress coverage is unavailable. Counts describe saved records; empty periods do not prove the publisher has no records.",
+      "note": "Availability compares distinct bills with nonblank policy areas or subjects against the current bill inventory. This is a comparison of published holdings, not a reconstruction of historical processing inputs.",
       "dimensions": [
+        {
+          "id": "bill-subject-availability",
+          "kind": "snapshot",
+          "method": "bill-subject-availability",
+          "label": "Bills with policy areas and subjects",
+          "meaning": "Distinct bills with nonblank values in this table, out of all distinct bills and resolutions in our current bill inventory.",
+          "fields": [
+            "bill_id",
+            "policy_area",
+            "subjects_json"
+          ],
+          "comparisonTable": "congress_bills"
+        },
         {
           "id": "subject-acquisition-route",
           "kind": "category",

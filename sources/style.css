@@ -1134,5 +1134,13 @@
 .source-period-choice { display: inline-grid; gap: 6px; margin-bottom: 12px; max-width: min(100%, 360px); }
 
 .source-details { margin-top: 28px; }
+.bill-availability { margin: 28px 0; padding: 24px 0; border-block: 1px solid #d8dfd3; }
+.bill-availability label { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.bill-availability select { padding: 8px 12px; border: 1px solid #b3c0ae; border-radius: 4px; background: transparent; color: inherit; font: inherit; }
+.bill-availability dl { display: flex; flex-wrap: wrap; gap: 24px 64px; margin: 24px 0 16px; }
+.bill-availability dt { font-size: 15px; }
+.bill-availability dd { margin: 8px 0 0; font-size: 32px; font-weight: 600; }
+.bill-availability small { display: block; margin-top: 4px; font-size: 14px; font-weight: 400; }
+.bill-availability p { margin: 0; color: #62715b; font-size: 14px; }
 .source-details > summary { cursor: pointer; font-weight: 600; color: #315e43; padding: 10px 0; }
 .source-details[open] > summary { margin-bottom: 16px; }

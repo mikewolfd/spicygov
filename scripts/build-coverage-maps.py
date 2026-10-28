@@ -45,12 +45,19 @@ def definitions(folder=None):
     return result
 
 
-def validate_plan(tables, policies):
+def validate_plan(tables, policies, available_tables=None):
+    available_tables = tables if available_tables is None else available_tables
     missing = sorted(set(tables) - set(policies))
     if missing: raise ValueError('Published tables need coverage review: ' + ', '.join(missing))
     # Old reviewed entries may remain as history, but cannot create runtime tables.
     for id, table in tables.items():
-        policy = policies[id] = additional.variant(id, table, variant(id, table, policies[id]))
+        # Holdings comparisons use the same captured publication census. They
+        # describe what we have now, not the inputs of an earlier processing run.
+        definition = {**policies[id], 'dimensions': [
+            {**dim, **({'comparison': available_tables[dim['comparisonTable']]}
+                      if dim.get('comparisonTable') else {})}
+            for dim in policies[id]['dimensions']]}
+        policy = policies[id] = additional.variant(id, table, variant(id, table, definition))
         if policy.get('family') != table['family']: raise ValueError('Coverage family changed: ' + id)
         if not isinstance(policy.get('classification'), str) or not policy['classification'].strip():
             raise ValueError('Coverage classification is missing: ' + id)
@@ -154,7 +161,7 @@ def main():
     # One reader call per native dataset, in parallel; validate_plan and every scan reuse it.
     native.describe_all(native.DATASETS & selected_tables.keys())
     additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & selected_tables.keys())
-    validate_plan(selected_tables, policies)
+    validate_plan(selected_tables, policies, tables)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)
     for id in selected_tables:

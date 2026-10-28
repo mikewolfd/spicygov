@@ -46,6 +46,27 @@ class Inputs:
 
 
 class CongressCoverageTests(unittest.TestCase):
+    def test_subject_availability_counts_distinct_bills_with_actual_values(self):
+        child=self.file('subjects', """SELECT * FROM (VALUES
+            ('a','Health','["Care","Care"]'), ('a','','[]'),
+            ('b','  ','[" "]'), ('c',NULL,'["Tax"]'),
+            ('outside','Energy','["Fuel"]')) t(bill_id,policy_area,subjects_json)""")
+        parent=self.file('bills', "SELECT * FROM (VALUES ('a','118'),('a','118'),('b','118'),('c','119'),('d','119')) t(bill_id,congress)")
+        comparison=self.table(parent,5,'bill-family')
+        comparison['columns']=[['bill_id','VARCHAR'],['congress','VARCHAR']]
+        comparison['members'][0].update(rows=5,byteSize=pathlib.Path(parent).stat().st_size)
+        dim={**self.dim('bill-subject-availability','snapshot',['bill_id','policy_area','subjects_json']),
+             'comparisonTable':'congress_bills','comparison':comparison}
+        result=coverage.scan_special(self.conn,'bill_subjects',self.table(child,5),dim,None)
+        value=result['billCoverage']
+        self.assertEqual((value['total'],value['policyAreas'],value['subjects']),(4,1,2))
+        self.assertEqual(value['byCongress'],{'118':{'total':2,'policyAreas':1,'subjects':1},'119':{'total':2,'policyAreas':0,'subjects':1}})
+        self.assertEqual((result['placedRows'],result['unplacedRows']),(4,1))
+        self.assertEqual(value['comparison']['rows'],5)
+        invalid=self.file('invalid_subjects',"SELECT 'a' bill_id, 'Health' policy_area, '{}' subjects_json")
+        with self.assertRaisesRegex(ValueError,'list of subject names'):
+            coverage.scan_special(self.conn,'bill_subjects',self.table(invalid,1),dim,None)
+
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.root=pathlib.Path(self.temp.name);self.conn=duckdb.connect()
     def tearDown(self):self.conn.close();self.temp.cleanup()

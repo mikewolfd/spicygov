@@ -12,7 +12,7 @@ import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
-from coverage_dimensions import definition_digest, parsed_values, quote, scan_dimension, day, iso_day
+from coverage_dimensions import binding, definition_digest, parsed_values, quote, scan_dimension, day, iso_day
 from publication_census import BASE, path
 
 
@@ -224,6 +224,7 @@ def _scorecard_periods(conn, table, dim, source_view=None):
 def scan_special(conn, table_id, table, dim, inputs):
     """Return source-specific measurement, or None for a generic dimension."""
     method = dim.get('method')
+    if method == 'bill-subject-availability': return _bill_subject_availability(conn, table, dim)
     if method in ('committee-history-starts','committee-history-ends','committee-history-spans'):
         return _committee_history(conn,table,dim)
     if method == 'committee-action-dates': return _committee_action_dates(conn,table,dim)
@@ -240,6 +241,56 @@ def scan_special(conn, table_id, table, dim, inputs):
     if method in ('citing-source-year','cited-read-source-year','citing-source-month','cited-read-source-month'):
         return _citation_scope(conn,table_id,table,dim,inputs)
     return None
+
+
+def _bill_subject_availability(conn, table, dim):
+    """Distinct bills with actual values, compared with current published bills."""
+    comparison = dim['comparison']
+    if dim['comparisonTable'] != 'congress_bills' or comparison['family'] != 'bill-family':
+        raise ValueError('Bill availability requires the published bill inventory')
+    conn.read_parquet(_urls(comparison), hive_partitioning=False).create_view('availability_bills', replace=True)
+    conn.read_parquet(_urls(table), hive_partitioning=False).create_view('availability_subjects', replace=True)
+    total, valid = conn.execute("SELECT count(*), count(nullif(trim(bill_id),'')) FROM availability_bills").fetchone()
+    if total != comparison['rows'] or valid != total:
+        raise ValueError('Bill inventory count or identifiers do not reconcile')
+    if conn.execute("SELECT count(*) FROM (SELECT bill_id FROM availability_bills GROUP BY bill_id HAVING count(DISTINCT coalesce(congress,'')) > 1)").fetchone()[0]:
+        raise ValueError('Bill inventory has conflicting Congress values')
+    # Deduplicate identifiers on both sides. Repeated source rows and multiple
+    # subject terms must never increase either the numerator or denominator.
+    conn.execute("CREATE OR REPLACE TEMP TABLE availability_denominator AS SELECT DISTINCT bill_id, nullif(trim(congress),'') AS congress FROM availability_bills")
+    flags = {}
+    rows = conn.execute('SELECT bill_id, policy_area, subjects_json FROM availability_subjects').fetchall()
+    if len(rows) != table['rows']:
+        raise ValueError('Subject availability row count does not reconcile')
+    for bill_id, policy_area, raw_subjects in rows:
+        if not isinstance(bill_id, str) or not bill_id.strip():
+            raise ValueError('Subject availability has a missing bill identifier')
+        subjects = json.loads(raw_subjects) if raw_subjects else []
+        if not isinstance(subjects, list) or any(not isinstance(value, str) for value in subjects):
+            raise ValueError('Subject availability requires a list of subject names')
+        area, subject = flags.get(bill_id, (False, False))
+        flags[bill_id] = (area or bool(policy_area and policy_area.strip()),
+                          subject or any(value.strip() for value in subjects))
+    conn.execute('CREATE OR REPLACE TEMP TABLE availability_flags (bill_id VARCHAR, policy_area BOOLEAN, subjects BOOLEAN)')
+    # Arrow avoids hundreds of thousands of single-row inserts.
+    import pyarrow as pa
+    batch = pa.table({'bill_id': pa.array(list(flags), type=pa.string()),
+                      'policy_area': pa.array([v[0] for v in flags.values()], type=pa.bool_()),
+                      'subjects': pa.array([v[1] for v in flags.values()], type=pa.bool_())})
+    conn.register('availability_batch', batch)
+    conn.execute('INSERT INTO availability_flags SELECT * FROM availability_batch')
+    measured = conn.execute('''SELECT b.congress, count(*),
+        count(*) FILTER (WHERE s.policy_area), count(*) FILTER (WHERE s.subjects)
+        FROM availability_denominator b LEFT JOIN availability_flags s USING (bill_id)
+        GROUP BY b.congress ORDER BY b.congress''').fetchall()
+    counts = lambda values: dict(zip(('total', 'policyAreas', 'subjects'), values))
+    by_congress = {congress or 'unknown': counts(values) for congress, *values in measured}
+    overall = {key: sum(group[key] for group in by_congress.values()) for key in ('total', 'policyAreas', 'subjects')}
+    unmatched = conn.execute('SELECT count(*) FROM availability_subjects s ANTI JOIN availability_denominator b USING (bill_id)').fetchone()[0]
+    return _result(table, dim, 'snapshot', {}, table['rows'] - unmatched,
+                   billCoverage={**overall, 'byCongress': by_congress,
+                                 'comparison': binding(comparison, {})},
+                   notes=['Each bill counts once. Policy areas and subjects count only nonblank values in this table. The denominator includes bills and resolutions in the current bill inventory.'])
 
 
 def _committee_history(conn, table, dim):
