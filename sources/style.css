@@ -1142,5 +1142,3 @@
 .bill-availability dd { margin: 8px 0 0; font-size: 32px; font-weight: 600; }
 .bill-availability small { display: block; margin-top: 4px; font-size: 14px; font-weight: 400; }
 .bill-availability p { margin: 0; color: #62715b; font-size: 14px; }
-.source-details > summary { cursor: pointer; font-weight: 600; color: #315e43; padding: 10px 0; }
-.source-details[open] > summary { margin-bottom: 16px; }

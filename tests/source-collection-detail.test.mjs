@@ -94,7 +94,7 @@ test("known subjects lead with purpose and general processing limits leave the h
   assert.doesNotMatch(html, /A baseline preserves/);
 });
 
-test("the front view shows files and datasets while one closed Details disclosure retains process notes", () => {
+test("the detail view shows files, datasets and process notes without a disclosure", () => {
   const source = { ...collection, id: "family:other-records", publisher: "Example publisher", tables: ["records"],
     statuses: ["partial-source"], description: "Acquisition metadata describes a partial crawl." };
   const html = renderToStaticMarkup(createElement(loaded.exports.SourceCollectionDetail, {
@@ -102,20 +102,19 @@ test("the front view shows files and datasets while one closed Details disclosur
     tables: [{ id: "records", label: "Useful records", rows: 42 }],
     publicationState: "ready", onTable() {},
   }));
-  const [front, details] = html.split('<details class="source-details">');
+  const [front, details] = html.split('<section class="source-details" aria-label="Details">');
   assert.match(front, /Example publisher/);
   assert.match(front, /1 saved file/);
   assert.match(front, /Explore data/);
   assert.match(front, /<a href="\/\?table=records">Useful records<\/a>/);
   assert.match(front, /42 records/);
   assert.doesNotMatch(front, /Saved source coverage is partial|Acquisition metadata|Has published data|Source details/);
-  assert.match(details, /^<summary>Details<\/summary>/);
   assert.match(details, /Acquisition metadata describes a partial crawl/);
   assert.match(details, /Saved source coverage is partial/);
   assert.match(details, /aria-label="Source details"/);
   assert.match(details, /Sources &amp; history/);
   assert.match(details, /Technical evidence/);
-  assert.doesNotMatch(html, /<details class="source-details" open/);
+  assert.doesNotMatch(html, /<details class="source-details"/);
 });
 
 test("external holdings remain visible and unavailable publication checks do not look like absent data", () => {
@@ -124,7 +123,7 @@ test("external holdings remain visible and unavailable publication checks do not
       holdings: { ...collection.holdings, objects: 0 } },
     tables: [], publicationState: "unavailable", onTable() {},
   }));
-  const front = html.split('<details class="source-details">')[0];
+  const front = html.split('<section class="source-details" aria-label="Details">')[0];
   assert.match(front, /0 saved files/);
   assert.match(front, /Source files are stored elsewhere/);
   assert.match(front, /Published datasets could not be checked/);

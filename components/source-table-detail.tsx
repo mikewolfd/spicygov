@@ -355,8 +355,7 @@ export function SourceTableDetail({
         </div>
       </header>
       {availability && <BillAvailabilitySummary key={table.artifactDigest} availability={availability} />}
-      <details className="source-details">
-        <summary>Details</summary>
+      <section className="source-details" aria-label="Details">
         <p>{readableCopy(tableDescription(entry))}</p>
       <dl className="detail-facts">
         <div>
@@ -531,7 +530,7 @@ export function SourceTableDetail({
           <ReleaseEvidence entry={entry} tables={tables} />
         )}
       </div>
-      </details>
+      </section>
     </article>
   );
 }

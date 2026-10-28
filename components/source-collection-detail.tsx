@@ -216,8 +216,7 @@ export function SourceCollectionDetail({
           <p>{count(table.rows)} records</p>
         </li>)}</ul>
       </section>}
-      <details className="source-details">
-        <summary>Details</summary>
+      <section className="source-details" aria-label="Details">
         <p>{collectionDescription(collection, description)}</p>
         <p className="detail-caption">{!collection.publisher && "Publisher not recorded · "}{availability.label} · {collectionHoldingsSummary(collection)}</p>
         {attention && <p className="context-note">{attention}</p>}
@@ -496,7 +495,7 @@ export function SourceCollectionDetail({
           )}
         </div>
       )}
-      </details>
+      </section>
     </article>
   );
 }
