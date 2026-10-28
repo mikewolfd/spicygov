@@ -2,6 +2,7 @@
 import {writeFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {consumeRelease, readSelection} from './consume-coverage-release.mjs';
+import {inspectCatalog} from './catalog-inspection.mjs';
 
 const args = process.argv.slice(2);
 const value = key => {
@@ -16,6 +17,8 @@ let admitted;
 if (mode === 'completed') {
   const selection = await readSelection(value('--selection'));
   admitted = await consumeRelease(selection.directory, selection.manifestSha256);
+  // A deployable site must include the catalog its Sources page reads.
+  await inspectCatalog('public/source-catalog');
 }
 const result = spawnSync('npm', ['run', 'build:assets'], {stdio: 'inherit'});
 if (result.status !== 0) process.exit(result.status ?? 1);
