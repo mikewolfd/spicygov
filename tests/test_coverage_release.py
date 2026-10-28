@@ -143,6 +143,13 @@ if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed
         executable.chmod(0o755)
         env={**os.environ,'PATH':str(self.root)+os.pathsep+os.environ['PATH']}
         script=str(ROOT/'scripts/build-ui.mjs')
+        missing_catalog=subprocess.run(['node',script,'--coverage','completed'],cwd=self.root,env=env,capture_output=True,text=True)
+        self.assertNotEqual(missing_catalog.returncode,0)
+        self.assertIn('source-catalog',missing_catalog.stderr)
+        catalog=self.root/'public/source-catalog'
+        catalog.mkdir(parents=True)
+        (catalog/'manifest.json').write_text(json.dumps({'format':'spicy-source-catalog','version':1,
+            'generation':'sha256:'+'a'*64,'generatedAt':'2026-10-10T00:00:00Z','collections':[],'totals':{}}))
         for mode in ('completed','unavailable'):
             subprocess.run(['node',script,'--coverage',mode],cwd=self.root,env=env,check=True,capture_output=True)
             served=json.loads((self.root/'dist/coverage-maps.v1.json').read_text())
