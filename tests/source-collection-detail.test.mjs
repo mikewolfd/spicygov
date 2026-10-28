@@ -28,6 +28,28 @@ const render = (publicationState, tables = []) => renderToStaticMarkup(
   }),
 );
 
+test('quarter summary is tied to the current published table and names empty quarters', () => {
+  const hash = 'sha256:' + 'a'.repeat(64);
+  const table = { id: 'federal_register', family: 'federal-register', rows: 2, artifactDigest: hash,
+    columns: [{ name: 'publication_date', type: 'VARCHAR' }],
+    members: [{ sha256: hash, rows: 2, byteSize: 100 }] };
+  const map = { family: table.family, rows: 2, artifactDigest: hash,
+    fingerprint: JSON.stringify([[hash, 2, 100]]), inputsFingerprint: '[]',
+    schema: [['publication_date', 'VARCHAR']], dimensions: [{ id: 'federal-register-publication-dates',
+      granularity: 'month', buckets: { '2024-01': 1, '2024-07': 1 }, latestDate: '2024-07-18', unplacedRows: 0 }] };
+  const renderSummary = (dataset, coverage) => renderToStaticMarkup(createElement(
+    loaded.exports.FederalRegisterQuarterSummary, { table: dataset, maps: { tables: { federal_register: coverage } } },
+  ));
+  const current = renderSummary(table, map);
+  assert.match(current, /Published records: 2024 Q1, 2024 Q3/);
+  assert.match(current, /No dated published records: 2024 Q2/);
+  assert.match(current, /Latest record: Jul 18, 2024/);
+  assert.match(current, /Saved source files have not been checked by quarter/);
+  const stale = renderSummary({ ...table, rows: 3 }, map);
+  assert.match(stale, /have not been checked for this release/);
+  assert.doesNotMatch(stale, /2024 Q2/);
+});
+
 test("collection details distinguish unavailable publication information from confirmed absence", () => {
   assert.match(render("pending"), /Loading datasets/);
   assert.match(render("unavailable"), /Published datasets could not be checked/);

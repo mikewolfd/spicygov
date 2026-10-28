@@ -20,6 +20,15 @@ const table = {id:'records',family:'test',rows:3,artifactDigest:hash, columns:[{
 const dimension = {id:'date',label:'Event date',meaning:'Source-stated event dates.',status:'measured',granularity:'month',rows:3,placedRows:2,unplacedRows:1,buckets:{'2024-01':1,'2024-02':1}};
 const map = {fingerprint:JSON.stringify([[hash,3,100]]),inputsFingerprint:'[]',publishedAt:null,rows:3,family:'test',artifactDigest:hash,schema:[['date','DATE']],status:'measured',classification:'temporal',note:'Selected source rows.',measuredAt:'2026-10-05T00:00:00Z',definitionDigest:hash,dimensions:[dimension]};
 const document = () => ({format:'spicygov-coverage-maps',version:1,partial:false,generatedAt:'2026-10-05T00:00:00Z',censusDigest:hash,tables:{records:structuredClone(map)}});
+test('latest exact date must be real and in the last measured month', () => {
+  const raw = document();
+  raw.tables.records.dimensions[0].latestDate = '2024-02-29';
+  assert.equal(parseCoverageMaps(raw).tables.records.dimensions[0].latestDate, '2024-02-29');
+  for (const day of ['2024-02-30', '2024-01-31', '2024-03-01']) {
+    raw.tables.records.dimensions[0].latestDate = day;
+    assert.throws(() => parseCoverageMaps(raw), /Invalid latest coverage date/);
+  }
+});
 test('native snapshot coverage becomes stale when a selected receipt, run or pointer changes',()=>{
  const snapshot={pointer:{snapshot_id:'snapshot_native',label:'café😀'},manifestDefinitionDigest:hash,generationId:'selected',subjects:[{key:'records.parquet',rows:3,byteSize:100,sha256:hash}],receipts:{key:'etl_receipts.parquet',rows:3,byteSize:200,sha256:hash}};
  const selected={...table,rulemakingSnapshot:snapshot};

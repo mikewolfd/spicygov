@@ -27,6 +27,21 @@ import { CatalogTableEvidence } from "./catalog-table-evidence";
 import { CatalogFileList } from "./catalog-file-list";
 import { CatalogRetainedFiles } from "./catalog-retained-files";
 import { sourcePeriodGroups } from "../lib/source-periods";
+import { currentCoverageMap, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
+import { fetchJson } from "../lib/publication-evidence";
+import { quarterCoverage } from "../lib/quarter-coverage";
+
+export function FederalRegisterQuarterSummary({ table, maps }: { table?: Dataset; maps?: CoverageMaps }) {
+  const dimension = table && currentCoverageMap(table, maps)?.dimensions.find(item => item.id === "federal-register-publication-dates");
+  const quarters = dimension && quarterCoverage(dimension);
+  if (!quarters) return <p className="detail-caption">Published records by quarter have not been checked for this release.</p>;
+  return <div>
+    <p>Published records: {quarters.segments.join(', ')}.</p>
+    {quarters.missing.length > 0 && <p>No dated published records: {quarters.missing.join(', ')}.</p>}
+    {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}.</p>}
+    <p className="detail-caption">A quarter with records may still be incomplete. Saved source files have not been checked by quarter.{quarters.undated ? ` ${count(quarters.undated)} records have no usable publication date.` : ''}</p>
+  </div>;
+}
 
 export function SourceRelationships({
   detail,
@@ -110,6 +125,7 @@ export function SourceCollectionDetail({
     [pageIndex, setPageIndex] = useState(0);
   const [fileLoading, setFileLoading] = useState(false),
     [fileError, setFileError] = useState("");
+  const [maps, setMaps] = useState<CoverageMaps>();
   const fileRequest = useRef<AbortController | undefined>(undefined);
   useEffect(() => {
     const controller = new AbortController();
@@ -131,6 +147,14 @@ export function SourceCollectionDetail({
       fileRequest.current?.abort();
     };
   }, [reader, manifest, collection, retry]);
+  useEffect(() => {
+    if (collection.id !== "family:federal-register") return;
+    const controller = new AbortController();
+    void fetchJson("/coverage-maps.v1.json", controller.signal).then(parseCoverageMaps)
+      .then(value => { if (!controller.signal.aborted) setMaps(value); })
+      .catch(() => { if (!controller.signal.aborted) setMaps(undefined); });
+    return () => controller.abort();
+  }, [collection.id]);
   async function loadFiles(index: number) {
     if (!detail) return;
     fileRequest.current?.abort();
@@ -237,6 +261,7 @@ export function SourceCollectionDetail({
             <>
               <section className="detail-section">
                 <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />
+                {collection.id === "family:federal-register" && <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} />}
                 {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
                 <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>
               </section>

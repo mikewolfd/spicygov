@@ -16,6 +16,7 @@ export type CoverageDimension = {
   rows: number; placedRows: number; unplacedRows: number; partialRows?: number;
   overlapping?: boolean; buckets: Record<string, number>; fields?: string[];
   yearBuckets?: Record<string, number>;
+  latestDate?: string;
   snapshot?: { publishedAt?: string; artifactDigest?: string; recordUrl?: string; asOf?: string; facts?: { label: string; value: string }[] };
   matchedRows?: number; unmatchedRows?: number; notes?: string[];
   anomalies?: unknown; parent?: unknown; evidence?: unknown;
@@ -88,6 +89,9 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
       const pattern = dim.granularity === 'month' ? /^[0-9]{4}-(0[1-9]|1[0-2])$/ : dim.granularity === 'year' ? /^[0-9]{4}$/ : dim.granularity === 'season' ? /^[0-9]{4}-(spring|fall)$/ : undefined;
       if (pattern && !Object.keys(dim.buckets).every(key => pattern.test(key) && key.slice(0, 4) !== '0000')) throw new Error('Invalid coverage period: ' + id);
       if (dim.yearBuckets !== undefined && (!object(dim.yearBuckets) || !Object.entries(dim.yearBuckets).every(([year, n]) => /^[0-9]{4}$/.test(year) && year !== '0000' && integer(n) && n > 0 && n <= value.rows))) throw new Error('Invalid annual coverage counts: ' + id);
+      if (dim.latestDate !== undefined && (dim.granularity !== 'month' || typeof dim.latestDate !== 'string'
+          || !/^\d{4}-\d{2}-\d{2}$/.test(dim.latestDate) || !instant(`${dim.latestDate}T00:00:00Z`)
+          || dim.latestDate.slice(0, 7) !== Object.keys(dim.buckets).sort().at(-1))) throw new Error('Invalid latest coverage date: ' + id);
       if (dim.notes !== undefined && (!Array.isArray(dim.notes) || !dim.notes.every((note: unknown) => typeof note === 'string'))) throw new Error('Invalid coverage notes: ' + id);
       if (!validActivityBoundary(dim.activityBoundary, value.publishedAt)) throw new Error('Invalid activity boundary: ' + id);
       if (dim.billCoverage !== undefined && !validBillAvailability(dim.billCoverage)) throw new Error('Invalid bill availability: ' + id);

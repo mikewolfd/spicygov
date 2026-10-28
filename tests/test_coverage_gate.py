@@ -30,6 +30,31 @@ def fixture():
 
 
 class CoverageGateTest(unittest.TestCase):
+    def test_federal_register_coverage_reads_reviewed_published_date_fields(self):
+        from native_legislative_coverage import variant
+        policy = builder.definitions()['federal_register']
+        dates = {'publication_date', 'effective_on', 'comments_close_on', 'signing_date'}
+        self.assertEqual({field for dim in policy['dimensions'] for field in dim['fields']}, dates)
+        self.assertTrue(all(dict(policy['publishedSchema'])[field] == 'VARCHAR' for field in dates))
+        table = {'family':'federal-register', 'kind':'generation', 'columns':policy['publishedSchema']}
+        resolved = variant('federal_register', table, policy)
+        self.assertEqual(resolved['schema'], policy['publishedSchema'])
+        self.assertNotIn('_nativeProcessing', resolved)
+        with self.assertRaisesRegex(ValueError, 'Published schema needs coverage review'):
+            variant('federal_register', {**table, 'columns':table['columns'][:-1]}, policy)
+
+    def test_latest_day_uses_the_same_eligible_rows_as_month_buckets(self):
+        from coverage_dimensions import scan_dimension
+        conn = duckdb.connect()
+        conn.execute("CREATE TABLE example (day VARCHAR, precision VARCHAR, accepted VARCHAR)")
+        conn.execute("INSERT INTO example VALUES ('2024-01-03','day','yes'), ('2024-03-17','day','yes'), ('2024-03-25','month','yes'), ('2025-01-01','day','no'), ('bad','day','yes')")
+        dim = {'id':'day', 'kind':'date', 'fields':['day'], 'label':'Date', 'meaning':'Selected dates.',
+               'precisionField':'precision', 'conditions':[{'field':'accepted', 'values':['yes']}]}
+        result = scan_dimension(conn, [], 5, dim, source_view='example')
+        self.assertEqual(result['buckets'], {'2024-01':1, '2024-03':1})
+        self.assertEqual(result['latestDate'], '2024-03-17')
+        self.assertEqual(result['unplacedRows'], 3)
+
     def test_published_scan_reuses_exact_cached_bytes_without_rebinding_the_map(self):
         table,policy,_=fixture()
         with tempfile.TemporaryDirectory() as folder:

@@ -223,9 +223,13 @@ def scan_dimension(conn, urls, expected_rows, dim, *, weight=None, snapshot=None
     expression = scalar_expression(dim)
     aggregate = f'sum({quote(weight)})' if weight else 'count(*)'
     if expression:
-        groups = conn.execute(f'SELECT {expression}, {aggregate} FROM {source} GROUP BY 1', args).fetchall()
-        buckets = {k: int(n) for k, n in groups if k is not None and (not k[:4] == '0000')}
-        total = sum(int(n) for _, n in groups)
+        # Preserve the latest exact day alongside the month counts, using the
+        # same eligibility and precision rules that place a row in a bucket.
+        exact_day = dim['kind'] == 'date' and dim.get('syntax', 'iso') == 'iso'
+        latest = f", strftime(max(CASE WHEN ({expression}) IS NOT NULL THEN {iso_expression(dim['fields'][0])} END), '%Y-%m-%d')" if exact_day else ''
+        groups = conn.execute(f'SELECT {expression}, {aggregate}{latest} FROM {source} GROUP BY 1', args).fetchall()
+        buckets = {group[0]: int(group[1]) for group in groups if group[0] is not None and group[0][:4] != '0000'}
+        total = sum(int(group[1]) for group in groups)
         placed = sum(buckets.values())
         partial = 0
     else:
@@ -250,6 +254,9 @@ def scan_dimension(conn, urls, expected_rows, dim, *, weight=None, snapshot=None
     result = {**base, 'granularity': granularity, 'buckets': dict(sorted(buckets.items())),
               'placedRows': placed, 'unplacedRows': total - placed, 'partialRows': partial,
               'overlapping': dim['kind'] in ('interval', 'list')}
+    if expression and exact_day and buckets:
+        days = [group[2] for group in groups if group[0] in buckets and group[2]]
+        if days: result['latestDate'] = max(days)
     if result['overlapping']: result['unit'] = 'rows per period'
     if result['overlapping'] and granularity == 'month': result['yearBuckets'] = dict(sorted(year_buckets.items()))
     if dim['kind'] == 'interval':
