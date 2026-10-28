@@ -357,6 +357,7 @@ export function SourceTableDetail({
   const sources = relatedCollections(table, collections);
   const attention = tableAttention(entry);
   const coverage = coverageReading(table, maps);
+  const coverageTags = tableCoverageTags(table, maps, tables);
   const availability = billAvailability(table, tables, maps);
   const attribution = tablePublisherAttribution(entry);
   const recordedSources = publisherAttribution(entry).sources;
@@ -377,7 +378,7 @@ export function SourceTableDetail({
           {table.label}
         </h1>
         <p className="detail-caption">{count(table.rows)} {tableCountUnit(table)}</p>
-        {maps && <div className="coverage-tags">{tableCoverageTags(table, maps, tables).map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
+        {!!coverageTags.length && <div className="coverage-tags">{coverageTags.map(tag => <span className="coverage-tag" key={tag.label} title={tag.detail}>{tag.label}</span>)}</div>}
         <div className="detail-actions">
           {entry.explorer ? (
             <a
@@ -446,8 +447,9 @@ export function SourceTableDetail({
                 : !maps ? <p role="status">Checking recorded coverage…</p>
                 : coverage ? <>
                   <p className="measurement-label">{coverage.release}</p>
-                  <p><strong>{coverage.range || coverage.dimension.label}</strong></p>
-                  {coverage.range && <p className="detail-caption">{coverage.dimension.label} · Gaps may exist.</p>}
+                  {coverageTags.length
+                    ? coverageTags.map(tag => <p key={tag.label}><strong title={tag.detail}>{tag.label}</strong></p>)
+                    : <p>{coverage.freshness === "current" ? "No period summary available." : "Period coverage has not been checked for this release."}</p>}
                 </> : <p>Period coverage not measured.</p>}
               <button className="text-button" onClick={() => setSection("coverage")}>See counts by period →</button>
             </section>
