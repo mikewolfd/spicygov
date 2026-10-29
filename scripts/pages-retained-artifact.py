@@ -370,7 +370,8 @@ def main():
         for key, value in members.items():
             from urllib.parse import quote
             route = key[:-10] if key in HTML_MEMBERS else key
-            request = urllib.request.Request('https://spicygov.ai/' + quote(route, safe='/'), headers={'Accept-Encoding': 'identity'})
+            request = urllib.request.Request('https://spicygov.ai/' + quote(route, safe='/'),
+                headers={'Accept-Encoding': 'identity', 'User-Agent': 'SpicyGov-RetainedArtifact/1.0'})
             with opener.open(request, timeout=30) as response:
                 if response.status != 200 or response.headers.get('Content-Encoding') is not None:
                     raise ValueError('Live response framing')
