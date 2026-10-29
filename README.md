@@ -228,6 +228,24 @@ checks pass. For an interrupted catalog switch with inconsistent controls, keep 
 paused and follow its `selection-backup-*/recovery.json` through the maintained
 catalog selection procedure before retrying.
 
+Use `--resume` with the same run and arguments to reuse completed validation,
+auditing, export, inspection and staging phases. The run freezes the receipt list,
+control files and interpretation inputs. Changed inputs require a new run;
+changed completed outputs stop with their evidence preserved. Native SQLite
+generations use their owner's validation and unchanged file custody; exported
+members retain byte checksums. A committed selection with a lost acknowledgement
+resumes through the existing native controls. Unchanged new refreshes use the
+producer's opt-in `--reuse-unchanged` path and preserve the selected website.
+The wrapper reuses a completed native builder's database checks after comparing
+its returned report, saved report and indexed report. Supplied candidates keep
+the separate full database check.
+
+Website builds reuse accepted catalog interpretation when every member byte and
+the reader implementation match. They still check member hashes and membership
+on copies. The private `.cache/catalog-inspections/` entries are disposable
+accelerators; removing them repeats semantic inspection, without changing source
+files or selection. Dates remain bound to the inspected catalog generation.
+
 Source dates mean recognized publication dates; undated-file counts remain in
 the supporting detail. A changed published release keeps its previous measurement
 clearly labelled until the exact new release can be measured. Archive-relative

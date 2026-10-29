@@ -19,6 +19,60 @@ refresh = importlib.util.module_from_spec(refresh_spec)
 refresh_spec.loader.exec_module(refresh)
 
 
+class CompletedRefreshPhases(unittest.TestCase):
+    def test_completed_native_build_refuses_changed_rows_with_the_same_generation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);candidate=root/'index.sqlite'
+            with sqlite3.connect(candidate) as db:
+                db.executescript('CREATE TABLE metadata(key TEXT,value TEXT); CREATE TABLE payload(value TEXT);')
+                db.execute('INSERT INTO metadata VALUES(?,?)',('generation',json.dumps('g')))
+                db.execute("INSERT INTO payload VALUES('valid')")
+            completed=refresh.CompletedSteps(root,{'definitions':'fixed'})
+            def build(*args,stdout,**kwargs):stdout.write('{"status":"validated","generation":"g"}')
+            outputs=lambda value: () if value['status']=='unchanged' else (candidate,)
+            with patch.object(refresh.subprocess,'run',side_effect=build):
+                completed.step('build',['native-build'],cwd=root,artifacts=outputs)
+            with sqlite3.connect(candidate) as db:
+                db.execute("UPDATE payload SET value='other'")
+            with self.assertRaisesRegex(ValueError,'Completed refresh phase changed'):
+                refresh.CompletedSteps(root,{'definitions':'fixed'}).step(
+                    'build',['native-build'],cwd=root,artifacts=outputs)
+
+    def test_native_completion_reuse_rejects_a_different_candidate_or_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            candidate=Path(directory)/'index.sqlite'
+            report={'status':'validated','generation':'g','validation':{'foreignKeys':[]}}
+            with sqlite3.connect(candidate) as db:
+                db.execute('CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT)')
+                db.executemany('INSERT INTO metadata VALUES(?,?)',
+                    [('generation',json.dumps('g')),('reconciliation',json.dumps(report))])
+            refresh.native_validation(candidate,report,dict(report))
+            with self.assertRaisesRegex(ValueError,'native builder validation'):
+                refresh.native_validation(candidate,report,{**report,'generation':'other'})
+            with sqlite3.connect(candidate) as db:
+                db.execute("UPDATE metadata SET value=? WHERE key='generation'",(json.dumps('other'),))
+            with self.assertRaisesRegex(ValueError,'native builder validation'):
+                refresh.native_validation(candidate,report,report)
+
+    def test_fresh_process_style_resume_reuses_export_and_rejects_same_size_corruption(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);export=root/'public';export.mkdir()
+            (export/'member').write_bytes(b'valid')
+            def command(*args,stdout,**kwargs):stdout.write('{"generation":"g"}')
+            first=refresh.CompletedSteps(root,{'receipts':['immutable-receipt']})
+            with patch.object(refresh.subprocess,'run',side_effect=command) as run:
+                first.step('export',['export'],cwd=root,artifacts=(export,))
+                self.assertEqual(run.call_count,1)
+            resumed=refresh.CompletedSteps(root,{'receipts':['immutable-receipt']})
+            with patch.object(refresh.subprocess,'run',side_effect=AssertionError('Repeated export')):
+                self.assertEqual(resumed.step('export',['export'],cwd=root,artifacts=(export,))['generation'],'g')
+            (export/'member').write_bytes(b'other')
+            with self.assertRaisesRegex(ValueError,'Completed refresh phase changed'):
+                resumed.step('export',['export'],cwd=root,artifacts=(export,))
+            with self.assertRaisesRegex(ValueError,'inputs changed'):
+                refresh.CompletedSteps(root,{'receipts':['immutable-receipt','later-receipt']})
+
+
 class LocalSourceVerification(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

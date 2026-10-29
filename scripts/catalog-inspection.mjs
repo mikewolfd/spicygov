@@ -1,14 +1,21 @@
 /** Shared inspection of the complete, selected public catalog, including native file inventories. */
 import {createHash} from 'node:crypto';
-import {lstat,readdir,readFile} from 'node:fs/promises';
+import {lstat,readdir,readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild';
+import {registerSourcePeriods} from './register-source-periods.mjs';
 export const catalogDigest = body => `sha256:${createHash('sha256').update(body).digest('hex')}`;
 let reader;
+let interpretation;
 async function schema() {
-  reader ??= build({entryPoints:[fileURLToPath(new URL('../lib/source-catalog.ts',import.meta.url))],bundle:true,platform:'node',format:'esm',write:false})
-    .then(({outputFiles}) => import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`));
+  reader ??= build({entryPoints:[fileURLToPath(new URL('../lib/source-catalog.ts',import.meta.url))],bundle:true,platform:'node',format:'esm',write:false,metafile:true})
+    .then(async ({outputFiles,metafile}) => {
+      const paths = Object.keys(metafile.inputs).filter(path => !path.includes('node_modules/'));
+      paths.push(fileURLToPath(import.meta.url),fileURLToPath(new URL('./register-source-periods.mjs',import.meta.url)),fileURLToPath(new URL('../package-lock.json',import.meta.url)));
+      interpretation = catalogDigest(JSON.stringify(await Promise.all([...new Set(paths)].sort().map(async path => [resolve(path),catalogDigest(await readFile(path))]))));
+      return import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+    });
   return reader;
 }
 export async function catalogRegularFile(root,relative) {
@@ -71,4 +78,53 @@ export async function inspectCatalog(source, {onFilePage} = {}) {
   }
   await checkCatalogMembers(root,members);
   return {format:'spicy-public-source-catalog-selection',version:1,generation:manifest.generation,files:[...members.values()].sort((a,b)=>a.path.localeCompare(b.path))};
+}
+
+/** Reuse semantic admission of identical bytes; retain whole-member transfer checks. */
+export async function inspectCatalogCached(source, {cacheRoot=resolve('.cache/catalog-inspections')} = {}) {
+  const root = resolve(source);
+  await schema();
+  const observed = new Map();
+  let bytes = 0;
+  async function hashMembers(path, relative='') {
+    for (const child of (await readdir(path,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))) {
+      const name = relative ? relative+'/'+child.name : child.name;
+      if (child.isSymbolicLink()) throw Error('Catalog symlink refused');
+      if (child.isDirectory()) await hashMembers(join(path,child.name),name);
+      else {
+        const file = await catalogRegularFile(root,name), size = (await lstat(file)).size;
+        bytes += size;
+        if (size > 4*1024**2 || bytes > 1024**3) throw Error('Catalog inspection exceeds byte bound');
+        observed.set(name,{path:name,bytes:size,sha256:catalogDigest(await readFile(file))});
+      }
+    }
+  }
+  await hashMembers(root);
+  const key = catalogDigest(JSON.stringify([interpretation,[...observed.values()]]));
+  const path = join(cacheRoot,key.slice(7)+'.json');
+  let raw;
+  try {raw = await readFile(path,'utf8');} catch (error) {if (error.code !== 'ENOENT') throw error;}
+  if (raw !== undefined) {
+    const saved = JSON.parse(raw), payload = saved.payload;
+    if (saved.key !== key || catalogDigest(JSON.stringify(payload)) !== saved.sha256)
+      throw Error('Completed catalog inspection changed');
+    const members = new Map();
+    for (const member of payload.selection.files) {
+      if (members.has(member.path)) throw Error('Repeated completed catalog member');
+      const actual = observed.get(member.path);
+      if (!actual || actual.bytes !== member.bytes || actual.sha256 !== member.sha256)
+        throw Error('Completed catalog member changed: '+member.path);
+      members.set(member.path,member);
+    }
+    if (members.size !== observed.size) throw Error('Completed catalog member set differs');
+    return {...payload,reused:true};
+  }
+  const register = registerSourcePeriods();
+  const selection = await inspectCatalog(root,{onFilePage:register.addPage});
+  const payload = {selection,sourcePeriods:register.result(selection.generation)};
+  await mkdir(cacheRoot,{recursive:true});
+  const temporary = path+'.'+process.pid+'.tmp';
+  await writeFile(temporary,JSON.stringify({key,payload,sha256:catalogDigest(JSON.stringify(payload))})+'\n',{flag:'wx',mode:0o600});
+  await rename(temporary,path);
+  return {...payload,reused:false};
 }

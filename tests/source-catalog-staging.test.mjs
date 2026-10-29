@@ -5,6 +5,23 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stageCatalog, inspectCatalog } from '../scripts/stage-source-catalog.mjs';
+import {inspectCatalogCached} from '../scripts/catalog-inspection.mjs';
+import {spawnSync} from 'node:child_process';
+
+test('accepted catalog admission survives a fresh process while changed bytes are rechecked', async t => {
+  const args = await fixture(t), cacheRoot = join(args.root,'accepted');
+  const first = await inspectCatalogCached(args.source,{cacheRoot});
+  assert.equal(first.reused,false);
+  const script = `import {inspectCatalogCached} from './scripts/catalog-inspection.mjs'; console.log(JSON.stringify(await inspectCatalogCached(process.argv[1],{cacheRoot:process.argv[2]})));`;
+  const result = spawnSync(process.execPath,['--input-type=module','-e',script,args.source,cacheRoot],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);
+  const reused = JSON.parse(result.stdout);
+  assert.equal(reused.reused,true);
+  assert.deepEqual(reused.selection,first.selection);
+  assert.deepEqual(reused.sourcePeriods,first.sourcePeriods);
+  await writeFile(join(args.source,'manifest.json'),'{}');
+  await assert.rejects(inspectCatalogCached(args.source,{cacheRoot}),/Unsupported source catalog version/);
+});
 
 const hash = (body) => `sha256:${createHash('sha256').update(body).digest('hex')}`;
 async function fixture(t) {

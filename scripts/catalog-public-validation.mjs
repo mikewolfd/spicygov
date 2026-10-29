@@ -2,8 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
-import { inspectCatalog } from './catalog-inspection.mjs';
-import { registerSourcePeriods } from './register-source-periods.mjs';
+import { inspectCatalogCached } from './catalog-inspection.mjs';
 let schemaReader;
 async function validators() {
   if (!schemaReader) schemaReader = build({
@@ -23,9 +22,8 @@ export async function validatePublicDirectory(directory, {collectSourcePeriods =
       if (basename(path) === 'source-catalog' || raw?.format === 'spicy-source-catalog') {
         try {
           const canonical = resolve(path) === resolve(directory) || resolve(path) === resolve(directory, 'source-catalog');
-          const register = collectSourcePeriods && canonical ? registerSourcePeriods() : undefined;
-          const catalog = await inspectCatalog(path, {onFilePage: register?.addPage});
-          if (register) sourcePeriods = register.result(catalog.generation);
+          const inspected = await inspectCatalogCached(path);
+          if (collectSourcePeriods && canonical) sourcePeriods = inspected.sourcePeriods;
         } catch (error) { throw Error(`${relative(directory,candidate)}: ${error.message}`); }
         return;
       }
