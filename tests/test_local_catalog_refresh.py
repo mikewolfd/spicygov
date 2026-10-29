@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sqlite3
+import shutil
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -71,6 +72,157 @@ class CompletedRefreshPhases(unittest.TestCase):
                 resumed.step('export',['export'],cwd=root,artifacts=(export,))
             with self.assertRaisesRegex(ValueError,'inputs changed'):
                 refresh.CompletedSteps(root,{'receipts':['immutable-receipt','later-receipt']})
+
+
+class FixedInputSelectionBoundary(unittest.TestCase):
+    """A native-accepted late receipt must not escape the wrapper's fixed capture."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.website, self.raw, self.cache, self.public, self.run = [
+            self.root/name for name in ('site', 'raw', 'cache', 'public', 'run')]
+        for path in (self.website/'scripts', self.website/'lib', self.raw/'acquisitions/sha256', self.cache, self.public):
+            path.mkdir(parents=True)
+        for name in ('refresh-local-catalog.py', 'verify-register-sources.py', 'stage-source-catalog.mjs',
+                     'catalog-inspection.mjs', 'register-source-periods.mjs'):
+            (self.website/'scripts'/name).write_text('fixed implementation')
+        (self.website/'lib/source-catalog.ts').write_text('fixed schema')
+        (self.website/'package-lock.json').write_text('{}')
+        (self.raw/'snapshot.json').write_text('{}')
+        self.publication = self.root/'publication.json'
+        self.publication.write_text('{}')
+        self.old, self.new = 'sha256:'+'a'*64, 'sha256:'+'b'*64
+        self.write(self.cache/'current.json', {'generation': self.old})
+        self.index(self.cache/'index.sqlite', self.old)
+        for path in (self.public, self.website/'public/source-catalog', self.website/'dist/source-catalog'):
+            path.mkdir(parents=True, exist_ok=True)
+            self.write(path/'manifest.json', {'generation': self.old})
+        self.calls = []
+        self.late_at = None
+        self.interrupt_inspection = False
+        self.arguments = ['refresh-local-catalog.py', '--raw-root', str(self.raw), '--cache', str(self.cache),
+            '--public', str(self.public), '--run', str(self.run), '--publication-reconciliation', str(self.publication)]
+
+    @staticmethod
+    def write(path, value):
+        path.write_text(json.dumps(value))
+
+    def index(self, path, generation, report=None):
+        with sqlite3.connect(path) as db:
+            db.executescript('CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT);'
+                             'CREATE TABLE tables(id TEXT,collection_id TEXT,data TEXT);')
+            db.execute('INSERT INTO metadata VALUES(?,?)', ('generation', json.dumps(generation)))
+            if report is not None:
+                db.execute('INSERT INTO metadata VALUES(?,?)', ('reconciliation', json.dumps(report)))
+
+    def add_receipt(self):
+        body = b'{"receipt":"late addition"}'
+        sha = hashlib.sha256(body).hexdigest()
+        path = self.raw/'acquisitions/sha256'/sha[:2]/sha
+        path.parent.mkdir(exist_ok=True)
+        path.write_bytes(body)
+
+    def command(self, command, *, stdout, **kwargs):
+        action = command[3] if command[:3] == [refresh.sys.executable, '-m', 'spicy_regs.source_catalog'] else (
+            'verify-sources' if command[1] == 'scripts/verify-register-sources.py' else
+            'inspect' if '--inspect' in command else 'stage')
+        self.calls.append(action)
+        periods = {'generation': self.new, 'months': ['2026-09'], 'latestIndexedDate': '2026-09-30'}
+        if action == 'refresh-metadata':
+            if self.late_at == 'unchanged':
+                value = {'status': 'unchanged', 'generation': self.old}
+                self.add_receipt()
+            else:
+                if self.late_at == 'build': self.add_receipt()
+                value = {'status': 'validated', 'generation': self.new,
+                         'rawInventory': {'raw_acquisition_receipts': int(self.late_at == 'build')}}
+                self.index(self.run/'index.sqlite', self.new, value)
+                self.write(self.run/'index.sqlite.reconciliation.json', value)
+        elif action == 'verify-sources': value = {**periods, 'verifiedObjects': 1}
+        elif action == 'export':
+            target = self.run/'public'; target.mkdir()
+            value = {'generation': self.new}; self.write(target/'manifest.json', value)
+        elif action == 'inspect':
+            if self.interrupt_inspection:
+                self.interrupt_inspection = False
+                raise RuntimeError('interruption after completed export')
+            self.write(self.run/'source-periods.json', periods)
+            value = {'generation': self.new, 'files': []}
+        elif action == 'stage':
+            target = Path(command[-1]); target.mkdir(parents=True)
+            self.write(target/'manifest.json', {'generation': self.new})
+            if self.late_at == 'stage': self.add_receipt()
+            if self.late_at == 'publication': self.publication.write_text('{"changed":true}')
+            value = {'generation': self.new}
+        elif action == 'select': value = {'status': 'selected', 'generation': self.new}
+        else: raise AssertionError('Unexpected fixture command: '+str(command))
+        stdout.write(json.dumps(value))
+
+    def execute(self, resume=False):
+        with (patch.object(refresh.sys, 'argv', self.arguments+(['--resume'] if resume else [])),
+              patch.object(refresh, '__file__', str(self.website/'scripts/refresh-local-catalog.py')),
+              patch.object(refresh.shutil, 'disk_usage', return_value=SimpleNamespace(free=1024**4)),
+              patch.object(refresh.subprocess, 'check_output', return_value='v22.13.0\n'),
+              patch.object(refresh.subprocess, 'run', side_effect=self.command),
+              patch.object(refresh, 'finish_selected') as finish):
+            refresh.main()
+            return finish.call_count
+
+    def test_late_receipts_or_changed_selected_inputs_stop_before_selection_and_keep_outputs(self):
+        for boundary in ('build', 'stage', 'publication'):
+            with self.subTest(boundary=boundary):
+                if self.run.exists(): shutil.rmtree(self.run)
+                for path in self.raw.glob('acquisitions/sha256/*/*'): path.unlink()
+                for path in (self.website/'public').glob('.catalog-*'): shutil.rmtree(path)
+                self.publication.write_text('{}')
+                self.calls.clear(); self.late_at = boundary
+                with self.assertRaisesRegex(ValueError, 'inputs changed before selection'):
+                    self.execute()
+                self.assertNotIn('select', self.calls)
+                self.assertEqual(json.loads((self.cache/'current.json').read_text())['generation'], self.old)
+                for name in ('build', 'verify-sources', 'export', 'inspect', 'stage'):
+                    self.assertTrue((self.run/(name+'.done.json')).is_file())
+                self.assertTrue((self.run/'index.sqlite').is_file())
+                completed = (self.run/'export.done.json').read_bytes()
+                self.calls.clear()
+                with self.assertRaisesRegex(ValueError, 'Refresh inputs changed'):
+                    self.execute(resume=True)
+                self.assertEqual(self.calls, [])
+                self.assertEqual((self.run/'export.done.json').read_bytes(), completed)
+
+    def test_unchanged_result_is_refused_if_a_receipt_arrives_before_completion(self):
+        self.late_at = 'unchanged'
+        with self.assertRaisesRegex(ValueError, 'inputs changed before unchanged completion'):
+            self.execute()
+        self.assertFalse((self.run/'complete.json').exists())
+        self.assertFalse((self.run/'index.sqlite').exists())
+
+    def test_failed_run_releases_its_run_lock(self):
+        self.late_at = 'stage'
+        locks = []
+        original = Path.open
+        def opened(path, *args, **kwargs):
+            stream = original(path, *args, **kwargs)
+            if path.resolve() == (self.run/'run.lock').resolve(): locks.append(stream)
+            return stream
+        with patch.object(Path, 'open', opened):
+            with self.assertRaisesRegex(ValueError, 'inputs changed before selection'):
+                self.execute()
+        self.assertEqual(len(locks), 1)
+        self.assertTrue(locks[0].closed)
+
+    def test_stable_interrupted_run_reuses_completed_build_audit_and_export(self):
+        self.interrupt_inspection = True
+        with self.assertRaisesRegex(RuntimeError, 'interruption after completed export'):
+            self.execute()
+        before = {name: (self.run/(name+'.done.json')).read_bytes()
+                  for name in ('build', 'verify-sources', 'export')}
+        self.calls.clear()
+        self.assertEqual(self.execute(resume=True), 1)
+        self.assertEqual(self.calls, ['inspect', 'stage', 'select'])
+        for name, raw in before.items():
+            self.assertEqual((self.run/(name+'.done.json')).read_bytes(), raw)
 
 
 class LocalSourceVerification(unittest.TestCase):

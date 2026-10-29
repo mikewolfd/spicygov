@@ -236,6 +236,10 @@ generations use their owner's validation and unchanged file custody; exported
 members retain byte checksums. A committed selection with a lost acknowledgement
 resumes through the existing native controls. Unchanged new refreshes use the
 producer's opt-in `--reuse-unchanged` path and preserve the selected website.
+Before selection or unchanged completion, the wrapper compares the current
+inputs with the initial capture again. Late receipts stop the switch even if
+the native reader consumed them. The prepared candidate and completed phase
+reports stay available; resume requires the same inputs or an explicit new run.
 The wrapper reuses a completed native builder's database checks after comparing
 its returned report, saved report and indexed report. Supplied candidates keep
 the separate full database check.

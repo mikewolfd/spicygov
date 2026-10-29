@@ -85,6 +85,13 @@ class CompletedSteps:
         else:save(pin,snapshot)
         self.snapshot = hashlib.sha256(pin.read_bytes()).hexdigest()
 
+    def check_inputs(self, snapshot, *, boundary):
+        """Refuse changes since capture, including receipts consumed by a native reader."""
+        pin = self.run/'input-snapshot.json'
+        if fingerprint(pin)['sha256'] != self.snapshot or read(pin) != snapshot:
+            raise ValueError('Refresh inputs changed before '+boundary+
+                             '; keep completed outputs and start a new run for the new input set')
+
     def step(self, name, command, *, cwd, artifacts=()):
         report, completion = self.run/(name+'.json'), self.run/(name+'.done.json')
         def output_pins(value):
@@ -215,9 +222,13 @@ def main():
     if args.resume or args.finish_selected:
         if not run.is_dir():raise ValueError('Refresh run does not exist')
     else:run.mkdir()
-    lock = (run/'run.lock').open('a')
-    try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-    except BlockingIOError:raise ValueError('Another process owns this refresh run')
+    with (run/'run.lock').open('a') as lock:
+        try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:raise ValueError('Another process owns this refresh run')
+        return run_refresh(args,website,run,raw,parser)
+
+
+def run_refresh(args, website, run, raw, parser):
     if args.finish_selected:
         if args.candidate or args.full_rebuild:
             parser.error('--finish-selected cannot build or replace a candidate')
@@ -254,6 +265,7 @@ def main():
             if any(read(path)['generation'] != generation for path in (args.public/'manifest.json',
                     website/'public/source-catalog/manifest.json',website/'dist/source-catalog/manifest.json')):
                 raise ValueError('Catalog unchanged but website selection differs; finish the selected run')
+            completed.check_inputs(input_snapshot(args),boundary='unchanged completion')
             (run/'complete.json').write_text(json.dumps({**built,'website':'Existing selected website preserved'},indent=2)+'\n')
             print('Catalog unchanged; no source payloads, validation, export or website rebuild.',flush=True)
             return
@@ -284,6 +296,7 @@ def main():
     digest = 'sha256:' + hashlib.sha256(selection.read_bytes()).hexdigest()
     site_stage = website / 'public' / ('.catalog-' + report['generation'][7:])
     step('stage', ['node', 'scripts/stage-source-catalog.mjs', str(staged), str(selection), digest, str(site_stage)],(site_stage,))
+    completed.check_inputs(input_snapshot(args),boundary='selection')
     step('select', cli + ['select', '--candidate', str(candidate),
          '--reconciliation', str(candidate.with_suffix(candidate.suffix + '.reconciliation.json')),
          '--staged-public', str(staged), '--cache', str(args.cache.resolve()),
