@@ -224,6 +224,30 @@ class FixedInputSelectionBoundary(unittest.TestCase):
         for name, raw in before.items():
             self.assertEqual((self.run/(name+'.done.json')).read_bytes(), raw)
 
+    def test_cohort_and_prior_audit_are_forwarded_and_pinned_for_resume(self):
+        cohort,proof = self.root/'affected.txt',self.root/'audit.json'
+        cohort.write_text('sha256:'+'c'*64+'\n');proof.write_text('{}')
+        self.arguments += ['--refresh-object-list',str(cohort),'--reuse-source-verification',str(proof)]
+        commands=[]
+        original=self.command
+        def observed(command,**kwargs):
+            commands.append(command)
+            return original(command,**kwargs)
+        self.command=observed
+        self.assertEqual(self.execute(),1)
+        build=next(c for c in commands if 'refresh-metadata' in c)
+        audit=next(c for c in commands if 'scripts/verify-register-sources.py' in c)
+        self.assertEqual(build[build.index('--refresh-object-list')+1],str(cohort.resolve()))
+        self.assertEqual(audit[audit.index('--reuse-verified')+1],str(proof.resolve()))
+        self.assertEqual(audit[audit.index('--objects-from')+1],str(cohort.resolve()))
+        self.assertEqual(audit[audit.index('--base-index')+1],str((self.cache/'index.sqlite').resolve()))
+        pins=json.loads((self.run/'input-snapshot.json').read_text())['definitions']
+        self.assertIn(str(cohort.resolve()),pins);self.assertIn(str(proof.resolve()),pins)
+        proof.write_text('{"changed":true}')
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError,'Refresh inputs changed'):self.execute(resume=True)
+        self.assertEqual(self.calls,[])
+
 
 class LocalSourceVerification(unittest.TestCase):
     def setUp(self):

@@ -63,6 +63,8 @@ def input_snapshot(args):
     code.update(reader_inputs('family:federal-register'))
     code.add(Path(maintenance.__file__).parent/'config/registry.v1.json')
     code.add(args.publication_reconciliation.resolve())
+    for name in ('coverage_selection','refresh_object_list','reuse_source_verification'):
+        if getattr(args,name,None) is not None:code.add(getattr(args,name).resolve())
     website = Path(__file__).resolve().parents[1]
     code.update(website/'scripts'/name for name in ('refresh-local-catalog.py','verify-register-sources.py',
                 'stage-source-catalog.mjs','catalog-inspection.mjs','register-source-periods.mjs'))
@@ -213,8 +215,14 @@ def main():
     parser.add_argument('--full-rebuild', action='store_true', help='Explicitly replay the full archive instead of updating the selected index')
     parser.add_argument('--coverage-selection', type=Path, help='Preserve a completed published-table coverage release')
     parser.add_argument('--finish-selected', action='store_true', help='Resume only website preparation for an already committed native selection')
+    parser.add_argument('--refresh-object-list', type=Path, help='Replay only these canonical SHA-256 originals')
+    parser.add_argument('--reuse-source-verification', type=Path, help='Reuse an earlier matching byte audit outside the affected object list')
     parser.add_argument('--resume', action='store_true', help='Reuse completed phases of the same fixed-input run')
     args = parser.parse_args()
+    if args.reuse_source_verification and not args.refresh_object_list:
+        parser.error('--reuse-source-verification requires --refresh-object-list')
+    if args.refresh_object_list and (args.full_rebuild or args.candidate):
+        parser.error('--refresh-object-list requires an incremental native refresh')
     website = Path(__file__).resolve().parents[1]
     run, raw = args.run.resolve(), args.raw_root.resolve()
     if any(path.resolve().is_relative_to(raw) for path in (run, args.cache, args.public, website)):
@@ -256,6 +264,8 @@ def run_refresh(args, website, run, raw, parser):
                    ['refresh-metadata', '--index', str(args.cache.resolve() / 'index.sqlite'),
                     '--expected-generation', current['generation'], '--include-acquisitions',
                     '--refresh-content', 'family:federal-register', '--reuse-unchanged'])
+        if args.refresh_object_list:
+            command += ['--refresh-object-list', str(args.refresh_object_list.resolve())]
         built = step('build', cli + command + ['--output', str(candidate),
              '--publication-reconciliation', str(args.publication_reconciliation.resolve())],
              lambda value: () if value.get('status') == 'unchanged' else
@@ -281,8 +291,13 @@ def run_refresh(args, website, run, raw, parser):
             raise ValueError('Candidate validation differs from its build')
     if publications(candidate) != previous_publications:
         raise ValueError('Refresh changed the selected published table versions')
-    verified = step('verify-sources', [sys.executable, 'scripts/verify-register-sources.py',
-                    '--index', str(candidate), '--raw-root', str(raw)],(candidate,))
+    audit = [sys.executable, 'scripts/verify-register-sources.py',
+             '--index', str(candidate), '--raw-root', str(raw)]
+    if args.reuse_source_verification:
+        audit += ['--reuse-verified', str(args.reuse_source_verification.resolve()),
+                  '--base-index', str(args.cache.resolve()/'index.sqlite'),
+                  '--objects-from', str(args.refresh_object_list.resolve())]
+    verified = step('verify-sources', audit,(candidate,))
     staged = run / 'public'
     exported = step('export', cli + ['export', '--index', str(candidate), '--output', str(staged)],(staged,))
     if exported['generation'] != report['generation']:

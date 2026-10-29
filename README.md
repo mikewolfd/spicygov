@@ -285,3 +285,16 @@ refuses production builds and preview serving.
 `tests/source-catalog.test.mjs` covers lazy loading, upstream-only collections,
 route distinctions, generation drift, failure fallback, partition boundaries,
 public privacy validation and the operations server's access boundary.
+
+For an identified reader fix, pass `--refresh-object-list affected-sha256.txt`
+(one canonical `sha256:…` per line). The native refresh remaps every retained alias
+of those originals from its original receipt, then reruns the reader. Its partial
+reader pin covers only that exact object set; it does not certify the rest of the
+family as parsed by the new reader. An identical selected cohort can be reused.
+To avoid repeating an accepted whole-source byte audit, also pass
+`--reuse-source-verification <prior-verify-sources.json>`. The audit checks that
+proof against the base catalog, requires unchanged descriptors and current
+stored size/mtime custody for every reused original, and rehashes only the listed
+cohort. The report separately counts reread and inherited objects. Missing or
+changed custody requires a renewed audit. Literal publisher dates retain their
+actual year, including dates before 1994.
