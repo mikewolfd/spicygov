@@ -89,6 +89,16 @@ test('published periods without an indexed source are presented as unverified', 
   assert.match(html, /Latest record: Oct 27, 2026/);
 });
 
+test('historical issue metadata keeps sparse source quarters concise',()=>{
+  const sourcePeriods={generation:'sha256:'+'a'.repeat(64),months:['1936-12','1994-01','1994-04'],latestIndexedDate:'1994-04-01'};
+  const html=renderToStaticMarkup(createElement(loaded.exports.FederalRegisterQuarterSummary,{sourcePeriods}));
+  assert.match(html,/Saved source files<\/dt><dd><strong>1936 Q4, 1994 Q1–1994 Q2/);
+  assert.match(html,/No verified source dates: 1937 Q1–1993 Q4\./);
+  assert.doesNotMatch(html,/1937 Q2|1938 Q1/);
+  assert.match(html,/metadata; full-text coverage is separate/);
+  assert.match(html,/Published records<\/dt><dd>Not checked for this release/);
+});
+
 test("collection details distinguish unavailable publication information from confirmed absence", () => {
   assert.match(render("pending"), /Loading datasets/);
   assert.match(render("unavailable"), /Published datasets could not be checked/);

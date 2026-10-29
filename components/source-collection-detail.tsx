@@ -30,7 +30,7 @@ import { useArchiveMirror } from '../lib/use-archive-mirror';
 import { sourcePeriodGroups } from "../lib/source-periods";
 import { coverageMapForDisplay, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
 import { fetchJson } from "../lib/publication-evidence";
-import { quarterCoverage, unindexedQuarters } from "../lib/quarter-coverage";
+import { quarterCoverage, quarterRanges, unindexedQuarters } from "../lib/quarter-coverage";
 import type { RegisterSourcePeriods } from "../lib/register-source-periods";
 
 export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, loading = false, sourceLoading = false }: { table?: Dataset; maps?: CoverageMaps; sourcePeriods?: RegisterSourcePeriods; loading?: boolean; sourceLoading?: boolean }) {
@@ -42,7 +42,7 @@ export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, load
     granularity: 'month', buckets: Object.fromEntries(sourcePeriods.months.map(month => [month, 1])), unplacedRows: 0,
   }) : undefined;
   const unindexed = source && sourcePeriods && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets).filter(month => dimension.buckets[month] > 0)) : [];
-  const unverified = [...new Set([...(source?.missing ?? []), ...unindexed])].sort();
+  const unverified = quarterRanges([...(source?.missing ?? []), ...unindexed]);
   return <>
     <h2>Coverage</h2>
     <dl className="source-periods">
@@ -50,12 +50,13 @@ export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, load
         {previous && <p className="detail-caption">Previous release{reading.map.measuredAt && ` · measured ${publicationDate(reading.map.measuredAt)}`}. Current release not checked.</p>}
         <strong>{quarters.segments.join(', ')}</strong>
         {quarters.latestDate && <p>{previous ? 'Latest measured record' : 'Latest record'}: {publicationDate(quarters.latestDate)}</p>}
-        {quarters.missing.length > 0 && <p>No dated records: {quarters.missing.join(', ')}</p>}
+        {quarters.missing.length > 0 && <p>No dated records: {quarterRanges(quarters.missing).join(', ')}</p>}
       </> : loading ? 'Loading coverage…' : 'Not checked for this release'}</dd></div>
       <div><dt>Saved source files</dt><dd>{source ? <>
         <strong>{source.segments.join(', ')}</strong>
         {sourcePeriods?.latestIndexedDate && <p>Latest dated source: {publicationDate(sourcePeriods.latestIndexedDate)}</p>}
         {unverified.length > 0 && <p>No verified source dates: {unverified.join(', ')}.</p>}
+        <p className="detail-caption">Saved dates can come from metadata; full-text coverage is separate.</p>
       </> : sourceLoading ? 'Loading coverage…' : 'Not checked for this catalog'}</dd></div>
     </dl>
     <p className="detail-caption">A quarter means at least one dated record is present; it may still be incomplete.{quarters?.undated ? ` ${count(quarters.undated)} published records have no usable date.` : ''}</p>
