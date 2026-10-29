@@ -26,6 +26,7 @@ import { CoverageAccounting, RetainedPublications } from "./source-catalog";
 import { CatalogTableEvidence } from "./catalog-table-evidence";
 import { CatalogFileList } from "./catalog-file-list";
 import { CatalogRetainedFiles } from "./catalog-retained-files";
+import { useArchiveMirror } from '../lib/use-archive-mirror';
 import { sourcePeriodGroups } from "../lib/source-periods";
 import { coverageMapForDisplay, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
 import { fetchJson } from "../lib/publication-evidence";
@@ -142,6 +143,7 @@ export function SourceCollectionDetail({
   registerSourceLoading?: boolean;
   onTable: (id: string) => void;
 }) {
+  const mirror = useArchiveMirror(reader,manifest);
   const [detail, setDetail] = useState<CatalogDetail>(),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
@@ -447,7 +449,7 @@ export function SourceCollectionDetail({
               {fileError && <p role="alert">{fileError}</p>}
               {page && (
                 <>
-                  <CatalogFileList key={pageIndex} files={page.files} routes={detail.routes} />
+                  <CatalogFileList key={pageIndex} files={page.files} routes={detail.routes} mirror={mirror} />
                   <nav className="result-pagination" aria-label="File pages">
                     <button
                       disabled={fileLoading || pageIndex === 0}
@@ -472,7 +474,7 @@ export function SourceCollectionDetail({
               )}
             </>
           )}
-          {section === "files" && <CatalogRetainedFiles key={`${manifest.generation}-${detail.collection.id}`} reader={reader} manifest={manifest} detail={detail} />}
+          {section === "files" && <CatalogRetainedFiles key={`${manifest.generation}-${detail.collection.id}`} reader={reader} manifest={manifest} detail={detail} mirror={mirror} />}
           {section === "evidence" && (
             <div className="technical-content">
               <h2>Technical evidence</h2>

@@ -4,6 +4,7 @@ import type { Dataset } from '../lib/catalog';
 import { CatalogTableEvidence } from './catalog-table-evidence';
 import { CatalogFileEvidence } from './catalog-file-evidence';
 import { CatalogRetainedFiles } from './catalog-retained-files';
+import { useArchiveMirror } from '../lib/use-archive-mirror';
 import { collectionTitle, collectionDescription, collectionLimitations, fileAvailabilitySummary } from '../lib/source-browser';
 import { collectionMatches, loadDiscoveryPeriods, periodSummary } from '../lib/catalog-discovery';
 const stateLabels: Record<string, string> = {
@@ -54,6 +55,7 @@ export function TableDestinations({ destinations, tables }: { destinations: Cata
   })}</ul> : <p>No published dataset is linked here.</p>;
 }
 export function CollectionDetail({ reader, manifest, collection, tables }: { reader: SourceCatalogReader; manifest: CatalogManifest; collection: CatalogCollection; tables: Dataset[] }) {
+  const mirror = useArchiveMirror(reader,manifest);
   const pageRequest = useRef<AbortController | undefined>(undefined);
   const [detail, setDetail] = useState<CatalogDetail>(), [error, setError] = useState(''), [retry, setRetry] = useState(0);
   const [page, setPage] = useState<CatalogFilePage>(), [pageIndex, setPageIndex] = useState<number>(), [pageError, setPageError] = useState(''), [loadingPage, setLoadingPage] = useState(false);
@@ -79,8 +81,8 @@ export function CollectionDetail({ reader, manifest, collection, tables }: { rea
     <h4>Source files</h4><p>{detail.files.total.toLocaleString()} file references recorded. Several references may point to the same saved file.</p>
     {detail.files.pages.length > 0 && <button disabled={loadingPage} onClick={() => void loadPage(pageIndex ?? 0)}>{page ? 'Reload this file page' : 'Load first file page'}</button>}
     {loadingPage && <p role="status">Loading one file page…</p>}{pageError && <p role="alert">File page unavailable: {pageError}</p>}
-    {page && <><ul className="catalog-files">{page.files.map(file => <li key={file.id}><strong>{file.name}</strong><span>{fileAvailabilitySummary(file)}</span><CatalogFileEvidence file={file} /><details><summary>Recorded file identifiers</summary><p>Recorded state: {file.status}</p><code>{file.id}</code>{file.routeId && <p>Source identifier: <code>{file.routeId}</code></p>}</details>{reader.internal && <details><summary>Local file details</summary><p>Recorded state: {file.status}</p>{file.routeId && <p>Source identifier: <code>{file.routeId}</code></p>}{file.localPath && <code>{file.localPath}</code>}{file.encodedBytes !== undefined && <span>{file.encodedBytes.toLocaleString()} stored bytes</span>}{file.verification && <span>Verification: {file.verification}</span>}</details>}</li>)}</ul><div className="source-list-toolbar"><button disabled={loadingPage || pageIndex === 0} onClick={() => void loadPage(pageIndex! - 1)}>Previous files</button><span>Page {pageIndex! + 1} of {detail.files.pages.length}</span><button disabled={loadingPage || pageIndex === detail.files.pages.length - 1} onClick={() => void loadPage(pageIndex! + 1)}>Next files</button></div></>}
-    <CatalogRetainedFiles key={`${manifest.generation}-${detail.collection.id}`} reader={reader} manifest={manifest} detail={detail} />
+    {page && <><ul className="catalog-files">{page.files.map(file => <li key={file.id}><strong>{file.name}</strong><span>{fileAvailabilitySummary(file)}</span><CatalogFileEvidence file={file} mirror={mirror} /><details><summary>Recorded file identifiers</summary><p>Recorded state: {file.status}</p><code>{file.id}</code>{file.routeId && <p>Source identifier: <code>{file.routeId}</code></p>}</details>{reader.internal && <details><summary>Local file details</summary><p>Recorded state: {file.status}</p>{file.routeId && <p>Source identifier: <code>{file.routeId}</code></p>}{file.localPath && <code>{file.localPath}</code>}{file.encodedBytes !== undefined && <span>{file.encodedBytes.toLocaleString()} stored bytes</span>}{file.verification && <span>Verification: {file.verification}</span>}</details>}</li>)}</ul><div className="source-list-toolbar"><button disabled={loadingPage || pageIndex === 0} onClick={() => void loadPage(pageIndex! - 1)}>Previous files</button><span>Page {pageIndex! + 1} of {detail.files.pages.length}</span><button disabled={loadingPage || pageIndex === detail.files.pages.length - 1} onClick={() => void loadPage(pageIndex! + 1)}>Next files</button></div></>}
+    <CatalogRetainedFiles key={`${manifest.generation}-${detail.collection.id}`} reader={reader} manifest={manifest} detail={detail} mirror={mirror} />
     {reader.internal && !!detail.internalOnly && <details><summary>Local evidence and lineage</summary><pre className="catalog-internal">{JSON.stringify(detail.internalOnly, null, 2)}</pre></details>}
     <details><summary>Collection identifier</summary><code>{collection.id}</code></details>
   </div>;

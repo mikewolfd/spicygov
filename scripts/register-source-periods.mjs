@@ -14,7 +14,7 @@ export function registerSourcePeriods() {
           if (period.kind !== 'publication-date' || period.basis !== 'Observed in source content'
               || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
           const parsed = new Date(`${date}T00:00:00Z`);
-          if (!Number.isFinite(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== date || date < '1994-01-01') continue;
+          if (!Number.isFinite(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== date) continue;
           months.add(date.slice(0, 7));
           dated.add(file.sha256);
           if (!latestIndexedDate || date > latestIndexedDate) latestIndexedDate = date;

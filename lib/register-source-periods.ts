@@ -7,7 +7,7 @@ export function parseRegisterSourcePeriods(raw: unknown, generation: string): Re
   const value = raw as Record<string, unknown>;
   if (value.format !== 'spicygov-register-source-periods' || value.version !== 1
       || value.generation !== generation || !/^sha256:[a-f0-9]{64}$/.test(generation)
-      || !Array.isArray(value.months) || !value.months.every(month => typeof month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(month) && month >= '1994-01')
+      || !Array.isArray(value.months) || !value.months.every(month => typeof month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(month))
       || new Set(value.months).size !== value.months.length) return;
   const latest = value.latestIndexedDate;
   if (latest !== undefined) {

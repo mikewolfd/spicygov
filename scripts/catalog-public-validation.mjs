@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { resolve, join, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
-import { inspectCatalogCached } from './catalog-inspection.mjs';
+import { catalogDigest, inspectCatalogCached } from './catalog-inspection.mjs';
 let schemaReader;
 async function validators() {
   if (!schemaReader) schemaReader = build({
@@ -37,7 +37,11 @@ export async function validatePublicDirectory(directory, {collectSourcePeriods =
           await walk(child);
         } else if (entry.name.endsWith('.json')) {
           const raw = JSON.parse(await readFile(child, 'utf8'));
-          if (basename(path) === 'source-catalog' || String(raw?.format ?? '').startsWith('spicy-source-')) {
+          if (entry.name === 'archive-mirror.v1.json' || raw?.format === 'spicygov-archive-mirror') {
+            if (resolve(path) !== resolve(directory) || entry.name !== 'archive-mirror.v1.json') throw Error('Archive mirror evidence must be at the public root');
+            const manifest = await readFile(join(directory,'source-catalog/manifest.json'));
+            schema.parseArchiveMirror(raw,schema.parseCatalogManifest(JSON.parse(manifest)),catalogDigest(manifest));
+          } else if (basename(path) === 'source-catalog' || String(raw?.format ?? '').startsWith('spicy-source-')) {
             if (raw.format === 'spicy-source-catalog') schema.parseCatalogManifest(raw);
             else if (raw.format === 'spicy-source-collection') schema.parseCatalogDetail(raw, raw.generation, raw.collection?.id);
             else if (raw.format === 'spicy-source-files') schema.parseCatalogFilePage(raw, raw.generation, raw.collectionId, raw.files?.length);

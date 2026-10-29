@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CatalogDetail, CatalogFilePage, CatalogManifest, SourceCatalogReader } from '../lib/source-catalog';
 import { CatalogFileList } from './catalog-file-list';
+import type { ArchiveMirror } from '../lib/archive-mirror';
 
 /** Separate, on-demand pages keep missing, rejected and unchecked files out of usable source-file counts. */
-export function CatalogRetainedFiles({ reader, manifest, detail }: {
+export function CatalogRetainedFiles({ reader, manifest, detail, mirror }: {
   reader: SourceCatalogReader;
   manifest: CatalogManifest;
   detail: CatalogDetail;
+  mirror?: ArchiveMirror;
 }) {
   const request = useRef<AbortController | undefined>(undefined);
   const [page, setPage] = useState<CatalogFilePage>();
@@ -42,7 +44,7 @@ export function CatalogRetainedFiles({ reader, manifest, detail }: {
     </button>
     {error && <p role="alert">{error} <button disabled={loading} onClick={() => void load(page ? index : 0)}>Retry these files</button></p>}
     {page && <>
-      <CatalogFileList key={index} files={page.files} routes={detail.routes} />
+      <CatalogFileList key={index} files={page.files} routes={detail.routes} mirror={mirror} />
       <nav className="result-pagination source-list-toolbar" aria-label="Files needing attention pages">
         <button disabled={loading || index === 0} onClick={() => void load(index - 1)}>← Previous</button>
         <span aria-live="polite">Page {index + 1} of {inventory.pages.length}</span>

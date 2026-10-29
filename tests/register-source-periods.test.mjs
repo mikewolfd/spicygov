@@ -46,3 +46,17 @@ test('date coverage counts originals once across aliases and preserves undated f
   assert.deepEqual(parseRegisterSourcePeriods(result,generation).dateCoverage,result.dateCoverage);
   assert.equal(parseRegisterSourcePeriods({...result,dateCoverage:{files:2,datedFiles:2,undatedFiles:1}},generation),undefined);
 });
+
+test('verified issue metadata dates before 1994 remain source dates',()=>{
+  const collector=registerSourcePeriods();
+  // FR-1936-12-31_mods.xml: the source reader checks FR collection, issue ID,
+  // and literal originInfo/dateIssued agreement. This does not assert body coverage.
+  collector.addPage('family:federal-register','active',[
+    {...file([date('1936-12-31')]),sha256:'sha256:a6be5b0dc77b878eb728819ea12828678baca0ade7073cd7bd7a8dd5368a6c56'},
+    file([date('2026-10-09')]),
+  ]);
+  const result=collector.result(generation);
+  assert.deepEqual(result.months,['1936-12','2026-10']);
+  assert.deepEqual(result.dateCoverage,{files:2,datedFiles:2,undatedFiles:0});
+  assert.equal(parseRegisterSourcePeriods(result,generation).latestIndexedDate,'2026-10-09');
+});

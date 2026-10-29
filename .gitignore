@@ -12,3 +12,5 @@ __pycache__/
 # Local generated public catalog staging; retained exports live in the corpus.
 /public/source-catalog/
 /public/register-source-periods.v1.json
+
+/public/archive-mirror.v1.json

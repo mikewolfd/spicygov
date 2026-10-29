@@ -22,6 +22,15 @@ const catalogExists = await lstat('public/source-catalog').then(() => true, erro
   throw error;
 });
 if (!catalogExists && mode === 'completed') throw Error('Missing public/source-catalog for completed UI build');
+if (process.env.SOURCE_CATALOG_MIRROR_INVENTORY) {
+  if (!catalogExists || !process.env.SOURCE_CATALOG_CACHE || !process.env.SPICYGOV_RAW_ROOT)
+    throw Error('Mirror inventory requires the selected catalog cache and raw archive root');
+  const prepared = spawnSync(process.env.SOURCE_CATALOG_PYTHON || 'python3', ['scripts/prepare-archive-mirror.py',
+    '--inventory', process.env.SOURCE_CATALOG_MIRROR_INVENTORY, '--cache', process.env.SOURCE_CATALOG_CACHE,
+    '--catalog', 'public/source-catalog', '--raw-root', process.env.SPICYGOV_RAW_ROOT,
+    '--output', 'public/archive-mirror.v1.json'], {stdio:'inherit'});
+  if (prepared.status !== 0) process.exit(prepared.status ?? 1);
+}
 // A bundled catalog and its date summary must be the catalog the browser reads.
 const result = spawnSync('npm', ['run', 'build:assets'], {stdio: 'inherit',
   env: {...process.env, ...(catalogExists ? {VITE_SOURCE_CATALOG_URL: '/source-catalog/manifest.json'} : {})}});

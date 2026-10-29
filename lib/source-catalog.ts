@@ -1,4 +1,5 @@
 import type { CatalogParquetPart, CatalogShardContext } from './catalog-parquet';
+export { parseArchiveMirror } from './archive-mirror';
 /** Shared, generation-bound metadata reader. File partitions load only on request. */
 export type CatalogPeriod = { kind: string; label: string; start?: string; end?: string; basis: string };
 export type CatalogFilePeriod = Partial<CatalogPeriod>;
@@ -238,6 +239,7 @@ export async function parseCatalogParquet(buffer: ArrayBuffer, context: CatalogS
 export const catalogResponseByteLimit = 16 * 1024 * 1024;
 export const catalogReadTimeoutMs = 30_000;
 export class SourceCatalogReader {
+  private readonly manifestBytes = new WeakMap<CatalogManifest, ArrayBuffer>();
   constructor(readonly manifestUrl = '/source-catalog/manifest.json', readonly internal = false, readonly fetcher: typeof fetch = (input, init) => globalThis.fetch(input, init), readonly timeoutMs = catalogReadTimeoutMs) {
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw Error('Positive catalog read timeout required');
   }
@@ -294,7 +296,18 @@ export class SourceCatalogReader {
   private async json(url: string, signal?: AbortSignal): Promise<unknown> {
     return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await this.bytes(url,catalogResponseByteLimit,signal)));
   }
-  async manifest(signal?: AbortSignal) { return parseCatalogManifest(await this.json(this.manifestUrl, signal), this.internal); }
+  async manifest(signal?: AbortSignal) {
+    const bytes = await this.bytes(this.manifestUrl, catalogResponseByteLimit, signal);
+    const manifest = parseCatalogManifest(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes)), this.internal);
+    this.manifestBytes.set(manifest,bytes);
+    return manifest;
+  }
+  /** Exact bytes read by this instance; unrelated manifest objects have no identity. */
+  async manifestIdentity(manifest: CatalogManifest): Promise<string | undefined> {
+    const bytes = this.manifestBytes.get(manifest);
+    if (bytes) return 'sha256:' + [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))]
+      .map(byte => byte.toString(16).padStart(2,'0')).join('');
+  }
   async detail(manifest: CatalogManifest, item: CatalogCollection, signal?: AbortSignal) { return parseCatalogDetail(await this.json(catalogPartitionUrl(this.manifestUrl, item.detailPath), signal), manifest.generation, item.id, this.internal, manifest.version); }
   private async filePage(manifest: CatalogManifest, collectionId: string, part: CatalogFilePart | undefined, inventoryKind: 'active' | 'attention', signal?: AbortSignal) {
     if (!part) throw Error('Catalog file page unavailable');
