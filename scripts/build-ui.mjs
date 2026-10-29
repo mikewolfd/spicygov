@@ -22,7 +22,9 @@ const catalogExists = await lstat('public/source-catalog').then(() => true, erro
   throw error;
 });
 if (!catalogExists && mode === 'completed') throw Error('Missing public/source-catalog for completed UI build');
-const result = spawnSync('npm', ['run', 'build:assets'], {stdio: 'inherit'});
+// A bundled catalog and its date summary must be the catalog the browser reads.
+const result = spawnSync('npm', ['run', 'build:assets'], {stdio: 'inherit',
+  env: {...process.env, ...(catalogExists ? {VITE_SOURCE_CATALOG_URL: '/source-catalog/manifest.json'} : {})}});
 if (result.status !== 0) process.exit(result.status ?? 1);
 // Vite derives dates during its required validation of the built catalog.
 // Reuse that result instead of scanning the entire input catalog a third time.

@@ -142,11 +142,13 @@ if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed
         executable.write_text('''#!/bin/sh
 test "$1 $2" = "run build:assets" || exit 7
 mkdir -p dist
+printf '%s' "$VITE_SOURCE_CATALOG_URL" > dist/compiled-catalog-url.txt
 cp -R public/source-catalog dist/
 node --input-type=module -e 'import {readFile,writeFile} from "node:fs/promises"; const {generation}=JSON.parse(await readFile("dist/source-catalog/manifest.json")); await writeFile("dist/register-source-periods.v1.json",JSON.stringify({format:"spicygov-register-source-periods",version:1,generation,months:[]}));'
 ''')
         executable.chmod(0o755)
-        env={**os.environ,'PATH':str(self.root)+os.pathsep+os.environ['PATH']}
+        env={**os.environ,'PATH':str(self.root)+os.pathsep+os.environ['PATH'],
+             'VITE_SOURCE_CATALOG_URL':'https://example.test/older-catalog/manifest.json'}
         script=str(ROOT/'scripts/build-ui.mjs')
         missing_catalog=subprocess.run(['node',script,'--coverage','completed'],cwd=self.root,env=env,capture_output=True,text=True)
         self.assertNotEqual(missing_catalog.returncode,0)
@@ -159,6 +161,7 @@ node --input-type=module -e 'import {readFile,writeFile} from "node:fs/promises"
             subprocess.run(['node',script,'--coverage',mode],cwd=self.root,env=env,check=True,capture_output=True)
             served=json.loads((self.root/'dist/coverage-maps.v1.json').read_text())
             self.assertEqual(served['format'],'spicygov-coverage-maps' if mode=='completed' else 'spicygov-coverage-unavailable')
+            self.assertEqual((self.root/'dist/compiled-catalog-url.txt').read_text(),'/source-catalog/manifest.json')
             self.assertEqual((self.root/'public/register-source-periods.v1.json').read_bytes(),
                              (self.root/'dist/register-source-periods.v1.json').read_bytes())
         compiler=executable.read_text()
