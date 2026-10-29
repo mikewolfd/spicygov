@@ -19,7 +19,9 @@ MAX_MAP = 2 * 1024 * 1024
 MAX_TAR = 768 * 1024 * 1024
 BASE = 'https://data.spicygov.ai/pages-retained/t01/'
 HTML_FRAGMENT_SHA = 'f639ffee489b6bf2685ce5675ec83fd22e071ed2de5915bd84e437481c9c3bf6'
-HTML_FRAGMENT_SHAS = {HTML_FRAGMENT_SHA, 'cc727afab9ddfc1578fef5fb49c8eea005cf717c6337ca3b9c0a2927c8e8164d'}
+HTML_FRAGMENT_SHAS = {HTML_FRAGMENT_SHA, 'cc727afab9ddfc1578fef5fb49c8eea005cf717c6337ca3b9c0a2927c8e8164d',
+    # Reviewed 2026-10-29 Cloudflare analytics addition (same exact 367-byte bound).
+    '3fdbd197dbce1df03da5f425a59f230541842d9d5455ff001fe52643072ec849'}
 HTML_MEMBERS = {'index.html', 'sources/index.html', 'mcp/index.html'}
 
 def sha(raw):
@@ -375,8 +377,11 @@ def main():
             with opener.open(request, timeout=30) as response:
                 if response.status != 200 or response.headers.get('Content-Encoding') is not None:
                     raise ValueError('Live response framing')
-                if live_body(response, key, value, fragment):
-                    normalized.append(key)
+                try:
+                    if live_body(response, key, value, fragment):
+                        normalized.append(key)
+                except ValueError as error:
+                    raise ValueError(f'{key}: {error}') from error
         with args.output.open('x') as output:
             output.write(json.dumps({'status': 'complete-member-live-byte-match', 'members': len(members), 'exact_hosting_fragment_normalized': normalized}) + '\n')
 
