@@ -4,7 +4,6 @@ import { createRequire } from "node:module";
 import { build } from "esbuild";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFile } from "node:fs/promises";
 
 const built = await build({
   entryPoints: ["components/source-collection-detail.tsx"],
@@ -47,27 +46,35 @@ test('quarter summary is tied to the current published table and names empty qua
   assert.match(current, /Latest record: Jul 18, 2024/);
   assert.match(current, /Saved source files<\/dt><dd>Not checked for this catalog/);
   const stale = renderSummary({ ...table, rows: 3 }, map);
-  assert.match(stale, /Not checked for this release/);
-  assert.doesNotMatch(stale, /2024 Q2/);
+  assert.match(stale, /Previous release/);
+  assert.match(stale, /Current release not checked/);
+  assert.match(stale, /Latest measured record: Jul 18, 2024/);
+  assert.match(stale, /2024 Q2/);
   const loading = renderToStaticMarkup(createElement(loaded.exports.FederalRegisterQuarterSummary, { loading: true }));
   assert.match(loading, /Loading coverage/);
   assert.doesNotMatch(loading, /Not checked for this release/);
 });
 
-test('source quarter evidence is shown only for its catalog generation', async () => {
-  const source = JSON.parse(await readFile('content/federal-register-source-periods.json', 'utf8'));
-  const renderSummary = generation => renderToStaticMarkup(createElement(
-    loaded.exports.FederalRegisterQuarterSummary, { generation },
+test('source quarter evidence uses the selected catalog summary', () => {
+  const source = {generation:'sha256:'+'a'.repeat(64), months:['2026-01','2026-04','2026-09'], latestIndexedDate:'2026-09-23'};
+  const renderSummary = sourcePeriods => renderToStaticMarkup(createElement(
+    loaded.exports.FederalRegisterQuarterSummary, { sourcePeriods },
   ));
-  const current = renderSummary(source.generation);
-  assert.match(current, /Saved source files<\/dt><dd><strong>1994 Q1–2026 Q3/);
-  assert.match(current, /Latest indexed date: Sep 2, 2026/);
+  const current = renderSummary(source);
+  assert.match(current, /Saved source files<\/dt><dd><strong>2026 Q1–2026 Q3/);
+  assert.match(current, /Latest dated source: Sep 23, 2026/);
   assert.match(current, /A quarter means at least one dated record/);
-  assert.match(renderSummary('sha256:' + 'b'.repeat(64)), /Not checked for this catalog/);
+  assert.match(renderSummary(undefined), /Not checked for this catalog/);
+  const gaps = renderSummary({...source, months:['2026-01','2026-09']});
+  assert.match(gaps, /No verified source dates: 2026 Q2/);
+  assert.doesNotMatch(gaps, /source files.*missing/i);
+  const unresolved=renderSummary({...source,dateCoverage:{files:10,datedFiles:7,undatedFiles:3}});
+  assert.match(unresolved,/About these dates/);
+  assert.match(unresolved,/Dates remain unknown in 3 files/);
 });
 
-test('published periods without an indexed source are presented as unverified', async () => {
-  const source = JSON.parse(await readFile('content/federal-register-source-periods.json', 'utf8'));
+test('published periods without an indexed source are presented as unverified', () => {
+  const source = {generation:'sha256:'+'a'.repeat(64), months:['2026-09'], latestIndexedDate:'2026-09-23'};
   const hash = 'sha256:' + 'a'.repeat(64);
   const table = { id: 'federal_register', family: 'federal-register', rows: 1, artifactDigest: hash,
     columns: [{ name: 'publication_date', type: 'VARCHAR' }], members: [{ sha256: hash, rows: 1, byteSize: 100 }] };
@@ -76,8 +83,8 @@ test('published periods without an indexed source are presented as unverified', 
     schema: [['publication_date', 'VARCHAR']], dimensions: [{ id: 'federal-register-publication-dates',
       granularity: 'month', buckets: { '2026-10': 1 }, latestDate: '2026-10-27', unplacedRows: 0 }] };
   const html = renderToStaticMarkup(createElement(loaded.exports.FederalRegisterQuarterSummary,
-    { generation: source.generation, table, maps: { tables: { federal_register: map } } }));
-  assert.match(html, /Source files for 2026 Q4 have not been verified/);
+    { sourcePeriods: source, table, maps: { tables: { federal_register: map } } }));
+  assert.match(html, /No verified source dates: 2026 Q4/);
   assert.doesNotMatch(html, /source files.*missing/i);
   assert.match(html, /Latest record: Oct 27, 2026/);
 });

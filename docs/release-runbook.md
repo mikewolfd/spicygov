@@ -193,5 +193,9 @@ original evidence for rollback. New selections require a separately reviewed
 binding and workflow revision. Do not substitute a newly rebuilt directory for
 an archived exact release.
 
+The native inventory site is about 685 MiB. Retained transfers and expanded
+content are each capped at 768 MiB, below the Pages site limit. The workflow
+requires 4 GiB of free temporary storage for overlapping verification copies.
+
 Run `python -B tests/test_release_workflows.py` for the local condition matrix.
 This check does not upload, deploy, publish, or prove hosted readback.

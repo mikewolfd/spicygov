@@ -14,7 +14,7 @@ async function component(path) {
 }
 const { SourceCatalogStatus } = await component("components/source-table-detail.tsx");
 const { CatalogFileList, matchingCatalogFiles } = await component("components/catalog-file-list.tsx");
-const { catalogFileDownload } = await component("components/catalog-file-evidence.tsx");
+const { catalogFileMirrorLocation } = await component("components/catalog-file-evidence.tsx");
 const render = (type, props) => renderToStaticMarkup(createElement(type, props));
 const outsideEvidence = html => {
   let depth = 0;
@@ -77,15 +77,16 @@ test("saved file rows avoid repeated caveats and bound date previews", () => {
   assert.match(visible,/\+17 in details/);assert.match(html,/2025-01-20/);
 });
 
-test("original downloads use guarded local archive keys and keep checksums collapsed", () => {
+test("mirror locations are qualified, use guarded archive keys, and keep checksums collapsed", () => {
   const file = { id: "safe", name: "Original.json", status: "held", sha256: "sha256:" + "a".repeat(64),
     contentKey: "objects/original.json.gz", provenance: { availability: "local", basis: "unknown", sourceUrls: [] } };
   const html = render(CatalogFileList, { files: [file] });
-  assert.match(outsideEvidence(html), /Download original \(.gz\)/);
+  assert.match(outsideEvidence(html), /Try public copy \(.gz\)/);
+  assert.match(outsideEvidence(html), /Public copies may lag/);
   assert.doesNotMatch(outsideEvidence(html), /sha256:|File fingerprint|Capture date/);
   assert.match(html, /Technical evidence/);
   for (const key of ["../escape", "/absolute", "https://evil.invalid/file", "bad%2fkey", "bad?key", "bad\\key"]) {
-    assert.equal(catalogFileDownload({ ...file, contentKey: key }), undefined);
+    assert.equal(catalogFileMirrorLocation({ ...file, contentKey: key }), undefined);
   }
-  assert.equal(catalogFileDownload({ ...file, provenance: { ...file.provenance, availability: "missing" } }), undefined);
+  assert.equal(catalogFileMirrorLocation({ ...file, provenance: { ...file.provenance, availability: "missing" } }), undefined);
 });

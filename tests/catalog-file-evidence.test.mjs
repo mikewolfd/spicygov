@@ -46,7 +46,8 @@ test('local receipt lookup is actionable only for a directly recorded acquisitio
   const direct = render({basis:'receipt-backed',sourceUrls:[],availability:'local',receipt:{sha256:sha,entry:3}});
   assert.match(direct, /acquisitions\/sha256\/aa\/a{64}/);
   assert.match(direct, /files\[2\].*entry 3/);
-  assert.match(direct, /Public links open the same archived bytes/);
+  assert.match(direct, /A public copy may not have been uploaded yet/);
+  assert.match(direct, /Public copy availability has not been checked/);
   for (const basis of ['provisional','inferred','unknown']) {
     const html = render({basis,sourceUrls:[],availability:'unknown',receipt:{sha256:sha,entry:3}});
     assert.doesNotMatch(html,/acquisitions\/sha256/);

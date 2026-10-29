@@ -1,17 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
-import { readFile } from 'node:fs/promises';
 
 const { outputFiles } = await build({ entryPoints: ['lib/coverage-tags.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
 const { periodRuns, registerSourceCoverageTags, sourceCoverageTags, tableCoverageTags } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const period = (kind, label, extra = {}) => ({ kind, label, basis: 'Selected retained source scope; completeness unknown', ...extra });
 const context = (family) => ({ id: `family:${family}`, families: [family] });
 const hash = 'sha256:' + 'a'.repeat(64);
-test('Register source tags match the indexed quarters and disappear for a different catalog', async () => {
-  const source = JSON.parse(await readFile('content/federal-register-source-periods.json', 'utf8'));
-  assert.equal(registerSourceCoverageTags(source.generation)[0].label, 'Saved sources 1994 Q1–2026 Q3');
-  assert.deepEqual(registerSourceCoverageTags('sha256:' + 'b'.repeat(64)), []);
+test('Register source tags match the selected indexed quarters', () => {
+  const source = {generation:hash, months:['2026-01','2026-04','2026-09'], latestIndexedDate:'2026-09-23'};
+  assert.equal(registerSourceCoverageTags(source)[0].label, 'Saved sources 2026 Q1–2026 Q3');
+  assert.deepEqual(registerSourceCoverageTags(undefined), []);
 });
 function measured(dimension) {
   const table = { id: 'records', family: 'test', rows: 3, columns: [{ name: 'date', type: 'DATE' }], members: [{ url: 'https://example.test/records.parquet', rows: 3, byteSize: 100, sha256: hash }] };

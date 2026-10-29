@@ -23,7 +23,21 @@ export async function catalogRegularFile(root,relative) {
   if (!(await lstat(path)).isFile()) throw Error('Catalog member must be a regular file');
   return path;
 }
-export async function inspectCatalog(source) {
+export async function checkCatalogMembers(root,members) {
+  let count = 0;
+  async function walk(path,relative = '') {
+    for (const item of await readdir(path,{withFileTypes:true})) {
+      const name = relative ? `${relative}/${item.name}` : item.name;
+      if (item.isSymbolicLink()) throw Error('Catalog symlink refused');
+      if (item.isDirectory()) await walk(join(path,item.name),name);
+      else if (!item.isFile() || !members.has(name)) throw Error('Catalog includes an unreferenced member');
+      else count += 1;
+    }
+  }
+  await walk(root);
+  if (count !== members.size) throw Error('Catalog members differ from selection');
+}
+export async function inspectCatalog(source, {onFilePage} = {}) {
   const root = resolve(source), api = await schema(), members = new Map();
   async function bytes(relative) {
     if (members.has(relative)) throw Error('Repeated catalog reference');
@@ -46,19 +60,15 @@ export async function inspectCatalog(source) {
         if (manifest.version === 3) {
           const body = await bytes(path), pin = members.get(path);
           if (pin.bytes !== part.bytes || pin.sha256 !== part.sha256) throw Error('Catalog Parquet descriptor differs from member bytes');
-          await api.parseCatalogParquet(body.buffer.slice(body.byteOffset,body.byteOffset + body.byteLength),{generation:manifest.generation,collectionId:collection.id,inventoryKind,part});
-        } else api.parseCatalogFilePage(await json(path),manifest.generation,collection.id,part.rows,false,manifest.version);
+          const page = await api.parseCatalogParquet(body.buffer.slice(body.byteOffset,body.byteOffset + body.byteLength),{generation:manifest.generation,collectionId:collection.id,inventoryKind,part});
+          onFilePage?.(collection.id,inventoryKind,page.files);
+        } else {
+          const page = api.parseCatalogFilePage(await json(path),manifest.generation,collection.id,part.rows,false,manifest.version);
+          onFilePage?.(collection.id,inventoryKind,page.files);
+        }
       }
     }
   }
-  async function walk(path,relative = '') {
-    for (const item of await readdir(path,{withFileTypes:true})) {
-      const name = relative ? `${relative}/${item.name}` : item.name;
-      if (item.isSymbolicLink()) throw Error('Catalog symlink refused');
-      if (item.isDirectory()) await walk(join(path,item.name),name);
-      else if (!item.isFile() || !members.has(name)) throw Error('Catalog includes an unreferenced member');
-    }
-  }
-  await walk(root);
+  await checkCatalogMembers(root,members);
   return {format:'spicy-public-source-catalog-selection',version:1,generation:manifest.generation,files:[...members.values()].sort((a,b)=>a.path.localeCompare(b.path))};
 }

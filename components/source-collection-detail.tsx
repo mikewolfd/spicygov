@@ -27,33 +27,40 @@ import { CatalogTableEvidence } from "./catalog-table-evidence";
 import { CatalogFileList } from "./catalog-file-list";
 import { CatalogRetainedFiles } from "./catalog-retained-files";
 import { sourcePeriodGroups } from "../lib/source-periods";
-import { currentCoverageMap, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
+import { coverageMapForDisplay, parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
 import { fetchJson } from "../lib/publication-evidence";
 import { quarterCoverage, unindexedQuarters } from "../lib/quarter-coverage";
-import sourcePeriods from "../content/federal-register-source-periods.json";
+import type { RegisterSourcePeriods } from "../lib/register-source-periods";
 
-export function FederalRegisterQuarterSummary({ table, maps, generation, loading = false }: { table?: Dataset; maps?: CoverageMaps; generation?: string; loading?: boolean }) {
-  const dimension = table && currentCoverageMap(table, maps)?.dimensions.find(item => item.id === "federal-register-publication-dates");
+export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, loading = false, sourceLoading = false }: { table?: Dataset; maps?: CoverageMaps; sourcePeriods?: RegisterSourcePeriods; loading?: boolean; sourceLoading?: boolean }) {
+  const reading = table && coverageMapForDisplay(table, maps);
+  const dimension = reading?.map.dimensions.find(item => item.id === "federal-register-publication-dates");
+  const previous = reading && reading.freshness !== 'current';
   const quarters = dimension && quarterCoverage(dimension);
-  const source = generation === sourcePeriods.generation ? quarterCoverage({
+  const source = sourcePeriods ? quarterCoverage({
     granularity: 'month', buckets: Object.fromEntries(sourcePeriods.months.map(month => [month, 1])), unplacedRows: 0,
   }) : undefined;
-  const unindexed = source && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets)) : [];
+  const unindexed = source && sourcePeriods && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets).filter(month => dimension.buckets[month] > 0)) : [];
+  const unverified = [...new Set([...(source?.missing ?? []), ...unindexed])].sort();
   return <>
     <h2>Coverage</h2>
     <dl className="source-periods">
       <div><dt>Published records</dt><dd>{quarters ? <>
+        {previous && <p className="detail-caption">Previous release{reading.map.measuredAt && ` · measured ${publicationDate(reading.map.measuredAt)}`}. Current release not checked.</p>}
         <strong>{quarters.segments.join(', ')}</strong>
-        {quarters.latestDate && <p>Latest record: {publicationDate(quarters.latestDate)}</p>}
+        {quarters.latestDate && <p>{previous ? 'Latest measured record' : 'Latest record'}: {publicationDate(quarters.latestDate)}</p>}
         {quarters.missing.length > 0 && <p>No dated records: {quarters.missing.join(', ')}</p>}
       </> : loading ? 'Loading coverage…' : 'Not checked for this release'}</dd></div>
       <div><dt>Saved source files</dt><dd>{source ? <>
         <strong>{source.segments.join(', ')}</strong>
-        <p>Latest indexed date: {publicationDate(sourcePeriods.latestIndexedDate)}</p>
-        {unindexed.length > 0 && <p>Source files for {unindexed.join(', ')} have not been verified.</p>}
-      </> : 'Not checked for this catalog'}</dd></div>
+        {sourcePeriods?.latestIndexedDate && <p>Latest dated source: {publicationDate(sourcePeriods.latestIndexedDate)}</p>}
+        {unverified.length > 0 && <p>No verified source dates: {unverified.join(', ')}.</p>}
+      </> : sourceLoading ? 'Loading coverage…' : 'Not checked for this catalog'}</dd></div>
     </dl>
     <p className="detail-caption">A quarter means at least one dated record is present; it may still be incomplete.{quarters?.undated ? ` ${count(quarters.undated)} published records have no usable date.` : ''}</p>
+    {!!sourcePeriods?.dateCoverage?.undatedFiles && <details><summary>About these dates</summary>
+      <p>{count(sourcePeriods.dateCoverage.datedFiles)} of {count(sourcePeriods.dateCoverage.files)} saved files have a recognized publication date. Dates remain unknown in {count(sourcePeriods.dateCoverage.undatedFiles)} files, so the latest dated source may not be the newest file.</p>
+    </details>}
   </>;
 }
 
@@ -121,6 +128,8 @@ export function SourceCollectionDetail({
   description,
   tables,
   publicationState,
+  registerSourcePeriods,
+  registerSourceLoading,
   onTable,
 }: {
   reader: SourceCatalogReader;
@@ -129,6 +138,8 @@ export function SourceCollectionDetail({
   description?: string;
   tables: Dataset[];
   publicationState: "pending" | "unavailable" | "ready";
+  registerSourcePeriods?: RegisterSourcePeriods;
+  registerSourceLoading?: boolean;
   onTable: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<CatalogDetail>(),
@@ -278,7 +289,7 @@ export function SourceCollectionDetail({
           {section === "overview" && (
             <>
               <section className="detail-section">
-                {register ? <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} generation={manifest.generation} loading={coverageLoading || publicationState === 'pending'} />
+                {register ? <FederalRegisterQuarterSummary table={published.find(table => table.id === "federal_register")} maps={maps} sourcePeriods={registerSourcePeriods?.generation === manifest.generation ? registerSourcePeriods : undefined} sourceLoading={registerSourceLoading} loading={coverageLoading || publicationState === 'pending'} />
                   : <SourcePeriodOverview key={detail.collection.id} periods={detail.collection.periods} collection={detail.collection} />}
                 {collection.tables.includes("sam_entities") && <p className="context-note">Registration years describe registrations, not historical database snapshots.</p>}
                 <button className="text-button" onClick={() => setSection("routes")}>Source dates & history →</button>

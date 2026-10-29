@@ -1,0 +1,48 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { registerSourcePeriods } from '../scripts/register-source-periods.mjs';
+
+const {outputFiles} = await build({entryPoints:['lib/register-source-periods.ts'],bundle:true,platform:'node',format:'esm',write:false});
+const {parseRegisterSourcePeriods} = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const generation = 'sha256:' + 'a'.repeat(64);
+const date = label => ({kind:'publication-date', label, basis:'Observed in source content'});
+const file = periods => ({status:'held', sha256:'sha256:'+'b'.repeat(64), provenance:{availability:'local'}, periods});
+
+test('builds periods only from locally held, content-observed dates', () => {
+  const build = registerSourcePeriods();
+  build.addPage('family:federal-register','active',[
+    file([date('2024-01-31'),date('2024-03-01'),date('2024-03-01'),date('2024-02-30')]),
+    file([{kind:'requested-publication-range',label:'2024-04-01',basis:'Requested'}]),
+    {...file([date('2025-01-01')]),status:'missing-bytes'},
+    {...file([date('2025-02-01')]),provenance:{availability:'external'}},
+  ]);
+  build.addPage('family:other','active',[file([date('2025-03-01')])]);
+  build.addPage('family:federal-register','attention',[file([date('2025-04-01')])]);
+  const result = build.result(generation);
+  assert.deepEqual(result.months,['2024-01','2024-03']);
+  assert.equal(result.latestIndexedDate,'2024-03-01');
+  assert.deepEqual(parseRegisterSourcePeriods(result,generation),{generation,months:result.months,latestIndexedDate:result.latestIndexedDate,dateCoverage:{files:1,datedFiles:1,undatedFiles:0}});
+  assert.equal(parseRegisterSourcePeriods(result,'sha256:'+'c'.repeat(64)),undefined);
+});
+
+test('empty, malformed, or stale summaries do not claim source coverage', () => {
+  const empty = registerSourcePeriods().result(generation);
+  assert.deepEqual(parseRegisterSourcePeriods(empty,generation),{generation,months:[],dateCoverage:{files:0,datedFiles:0,undatedFiles:0}});
+  for (const invalid of [
+    {...empty,months:['2024-13'],latestIndexedDate:'2024-13-01'},
+    {...empty,months:['2024-02'],latestIndexedDate:'2024-02-30'},
+    {...empty,months:['2024-01'],latestIndexedDate:'2024-02-01'},
+    {...empty,months:['2024-01']},
+  ]) assert.equal(parseRegisterSourcePeriods(invalid,generation),undefined);
+});
+
+test('date coverage counts originals once across aliases and preserves undated files',()=>{
+  const collector=registerSourcePeriods();
+  collector.addPage('family:federal-register','active',[file([date('2026-09-30')]),file([]),
+    {...file([]),sha256:'sha256:'+'c'.repeat(64)}]);
+  const result=collector.result(generation);
+  assert.deepEqual(result.dateCoverage,{files:2,datedFiles:1,undatedFiles:1});
+  assert.deepEqual(parseRegisterSourcePeriods(result,generation).dateCoverage,result.dateCoverage);
+  assert.equal(parseRegisterSourcePeriods({...result,dateCoverage:{files:2,datedFiles:2,undatedFiles:1}},generation),undefined);
+});

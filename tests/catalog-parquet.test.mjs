@@ -8,6 +8,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {inspectCatalog,stageCatalog} from '../scripts/stage-source-catalog.mjs';
 import {validatePublicDirectory} from '../scripts/catalog-public-validation.mjs';
+import {registerSourcePeriods} from '../scripts/register-source-periods.mjs';
 const built=await build({entryPoints:['lib/source-catalog.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {parseCatalogParquet,parseCatalogManifest,parseCatalogDetail,SourceCatalogReader}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
 const generation='sha256:'+'a'.repeat(64);
@@ -36,6 +37,7 @@ def put(name,values,**scope):
     body=encode(values,generation=scope.get('generation',generation),dataset_id='fixture',inventory_kind='active')
     output[name]={'body':base64.b64encode(body).decode(),'rows':len(values)}
 put('valid',rows)
+put('register-date',[dict(base,period_kind='publication-date',period_label='2026-09-23',period_basis='Observed in source content')])
 put('empty-native-text',[dict(base,source_id='',source_version=' ',period_basis='')])
 put('unavailable',[dict(base,receipt_key=None,receipt_kind=None,original_receipt_key=None,original_receipt_sha256=bytes.fromhex('4'*64),conflict_fields=['receipt-reference-unavailable'])])
 for name,changes in {
@@ -96,8 +98,14 @@ test('optional native text preserves schema-valid blanks without rejecting a fil
  assert.equal(file.sourceId,'');assert.equal(file.sourceVersion,' ');
  assert.equal(file.periods[0].basis,'');
 });
-for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable','empty-native-text'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
+for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable','empty-native-text','register-date'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
  await assert.rejects(decode(name));
+});
+test('native catalog dates feed the automatic source-period summary',async()=>{
+ const page=await decode('register-date'),collector=registerSourcePeriods();
+ collector.addPage('family:federal-register','active',page.files);
+ assert.deepEqual(collector.result(generation).months,['2026-09']);
+ assert.equal(collector.result(generation).latestIndexedDate,'2026-09-23');
 });
 test('pinned size, fingerprint, generation, collection and inventory are checked before display',async()=>{
  const value=context();
@@ -127,14 +135,16 @@ test('v3 reads only the chosen pinned shard and fails oversized streams',async t
  await assert.rejects(oversized.files(fixture.manifest,fixture.detail,0),/byte limit/);
 });
 test('inspection and staging apply the same native decoder and preserve exact bytes',async t=>{
- const fixture=await catalogFixture(t),selected=await inspectCatalog(fixture.root);
+ const fixture=await catalogFixture(t),pages=[],selected=await inspectCatalog(fixture.root,{onFilePage:(id,kind,files)=>pages.push({id,kind,files})});
+ assert.equal(pages.length,1);assert.equal(pages[0].id,'fixture');assert.equal(pages[0].kind,'active');assert.equal(pages[0].files.length,2);
  const selection=join(fixture.root,'..',fixture.root.split('/').at(-1)+'.selection.json');t.after(()=>rm(selection,{force:true}));
  const raw=Buffer.from(JSON.stringify(selected));await writeFile(selection,raw);
  const output=fixture.root+'-stage';t.after(()=>rm(output,{recursive:true,force:true}));
  await stageCatalog({source:fixture.root,selection,selectionSha256:sha(raw),output});
  assert.deepEqual(await readFile(join(output,fixture.part.path)),fixture.body);
- await validatePublicDirectory(output);
+ const derived=await validatePublicDirectory(output,{collectSourcePeriods:true});
+ assert.equal(derived.generation,generation);assert.deepEqual(derived.months,[]);
  const bad=context('private');fixture.detail.files.pages[0]={...bad.context.part,path:fixture.part.path};fixture.detail.files.total=1;
  await writeFile(join(fixture.root,fixture.part.path),bad.body);await writeFile(join(fixture.root,fixture.manifest.collections[0].detailPath),JSON.stringify(fixture.detail));
- await assert.rejects(inspectCatalog(fixture.root),/private|Local/);await assert.rejects(validatePublicDirectory(fixture.root),/private|Local/);
+ await assert.rejects(inspectCatalog(fixture.root),/private|Local/);await assert.rejects(validatePublicDirectory(fixture.root,{collectSourcePeriods:true}),/private|Local/);
 });

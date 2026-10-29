@@ -67,6 +67,17 @@ def validate_plan(tables, policies, available_tables=None):
         validate_definition(policy, schema(policy.get('processingSchema', expected)))
 
 
+def warm_native_readers(tables, policies):
+    """Prewarm only potential native scans; variants still own schema admission."""
+    needed = {id for id, table in tables.items() if id in policies and
+              (table.get('kind') == 'rulemaking' or not (
+                  table.get('columns') == policies[id]['schema'] or
+                  (policies[id].get('publishedSchema') and
+                   table.get('columns') == policies[id]['publishedSchema'])))}
+    native.describe_all(native.DATASETS & needed)
+    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & needed)
+
+
 def cached(table, policy, old):
     if not isinstance(old, dict) or old.get('status') != 'measured': return False
     if old.get('measurementRevision') != measurement_revision(policy): return False
@@ -159,8 +170,7 @@ def main():
         raise ValueError('Requested table is not currently published')
     policies = {id: policy for id, policy in reviewed_policies.items() if id in selected_tables}
     # One reader call per native dataset, in parallel; validate_plan and every scan reuse it.
-    native.describe_all(native.DATASETS & selected_tables.keys())
-    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & selected_tables.keys())
+    warm_native_readers(selected_tables, policies)
     validate_plan(selected_tables, policies, tables)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)

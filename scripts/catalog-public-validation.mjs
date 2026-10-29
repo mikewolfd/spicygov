@@ -3,6 +3,7 @@ import { resolve, join, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { inspectCatalog } from './catalog-inspection.mjs';
+import { registerSourcePeriods } from './register-source-periods.mjs';
 let schemaReader;
 async function validators() {
   if (!schemaReader) schemaReader = build({
@@ -11,15 +12,21 @@ async function validators() {
   }).then(async ({ outputFiles }) => import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`));
   return schemaReader;
 }
-export async function validatePublicDirectory(directory) {
+export async function validatePublicDirectory(directory, {collectSourcePeriods = false} = {}) {
   const schema = await validators();
+  let sourcePeriods;
   async function walk(path) {
     const entries = await readdir(path,{withFileTypes:true});
     if (entries.some(entry => entry.name === 'manifest.json' && entry.isFile())) {
       const candidate = join(path,'manifest.json');
       const raw = JSON.parse(await readFile(candidate,'utf8'));
       if (basename(path) === 'source-catalog' || raw?.format === 'spicy-source-catalog') {
-        try { await inspectCatalog(path); } catch (error) { throw Error(`${relative(directory,candidate)}: ${error.message}`); }
+        try {
+          const canonical = resolve(path) === resolve(directory) || resolve(path) === resolve(directory, 'source-catalog');
+          const register = collectSourcePeriods && canonical ? registerSourcePeriods() : undefined;
+          const catalog = await inspectCatalog(path, {onFilePage: register?.addPage});
+          if (register) sourcePeriods = register.result(catalog.generation);
+        } catch (error) { throw Error(`${relative(directory,candidate)}: ${error.message}`); }
         return;
       }
     }
@@ -47,6 +54,7 @@ export async function validatePublicDirectory(directory) {
     }
   }
   await walk(directory);
+  return sourcePeriods;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {

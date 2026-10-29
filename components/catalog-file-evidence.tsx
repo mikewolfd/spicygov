@@ -23,7 +23,8 @@ function archiveUrl(key: string | null | undefined, archiveBase = 'https://data.
     } catch { return; }
   }
 
-export function catalogFileDownload(file: CatalogFile, archiveBase?: string) {
+/** A possible mirror location; local custody does not establish public delivery. */
+export function catalogFileMirrorLocation(file: CatalogFile, archiveBase?: string) {
   return file.provenance?.availability === 'local' ? archiveUrl(file.contentKey, archiveBase) : undefined;
 }
 
@@ -35,14 +36,15 @@ export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov
   const legacyDigest = provenance?.basis === 'receipt-backed' && receipt?.key === undefined ? receipt?.sha256.slice('sha256:'.length) : undefined;
   const receiptKey = receipt?.key ?? (legacyDigest ? `acquisitions/sha256/${legacyDigest.slice(0,2)}/${legacyDigest}` : undefined);
   const receiptUrl = archiveUrl(receiptKey, archiveBase), originalReceiptUrl = archiveUrl(provenance?.originalReceiptKey, archiveBase);
-  const contentUrl = catalogFileDownload(file, archiveBase);
+  const contentUrl = catalogFileMirrorLocation(file, archiveBase);
   return <details className="catalog-file-evidence">
     <summary>Technical evidence</summary>
     <p>{basisLabels[provenance?.basis ?? 'unknown']}</p>
     <p><strong>Source location:</strong> {urls.length ? urls.map((url, index) => <span key={url}>{index > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{url} ↗</a></span>) : 'Unknown or withheld from public metadata.'}</p>
     {contentUrl && file.contentKey?.endsWith('.gz') && <p>This download is losslessly compressed for storage. Decompress it once to check the original file’s fingerprint and size.</p>}
-    {receiptUrl && <p><a href={receiptUrl} target="_blank" rel="noreferrer">Open indexed receipt ↗</a></p>}
-    {originalReceiptUrl && <p><a href={originalReceiptUrl} target="_blank" rel="noreferrer">Open original acquisition receipt ↗</a></p>}
+    {(receiptUrl || originalReceiptUrl) && <p className="detail-caption">Public copy availability has not been checked for this catalog.</p>}
+    {receiptUrl && <p><a href={receiptUrl} target="_blank" rel="noreferrer">Try indexed receipt copy ↗</a></p>}
+    {originalReceiptUrl && <p><a href={originalReceiptUrl} target="_blank" rel="noreferrer">Try original receipt copy ↗</a></p>}
     <p><strong>Capture date:</strong> {provenance?.capturedAt ?? 'Unknown; no confirmed per-file capture time.'}</p>
     <p><strong>Availability:</strong> {availabilityLabels[provenance?.availability ?? 'unknown']}</p>
     <p><strong>File fingerprint (SHA-256):</strong> {file.sha256 ? <code>{file.sha256}</code> : 'Unknown.'}</p>
@@ -54,7 +56,7 @@ export function CatalogFileEvidence({ file, archiveBase = 'https://data.spicygov
     {provenance?.basis === 'provisional' && <p>Legacy receipts may have been associated by identical bytes. A matching checksum does not establish the same acquisition or capture date.</p>}
     {(receiptKey || provenance?.originalReceiptSha256) && <details>
       <summary>Find the original receipt (local archive)</summary>
-      <p>These references identify exact files in the raw archive. Public links open the same archived bytes; a local archive copy can be inspected using the keys below.</p>
+      <p>These keys identify exact files in the local raw archive. A public copy may not have been uploaded yet.</p>
       {receiptKey && <><p>Indexed receipt archive key: <code>{receiptKey}</code></p>
         {receipt?.entry !== undefined && <p>{receipt.kind === 'frozen-index'
           ? `In the decoded JSON-lines index, inspect line ${receipt.entry} (counting from 1).`

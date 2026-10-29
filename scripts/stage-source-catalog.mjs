@@ -3,8 +3,8 @@ import {constants} from 'node:fs';
 import {copyFile,lstat,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {dirname,join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {catalogDigest as digest,catalogRegularFile,inspectCatalog} from './catalog-inspection.mjs';
-import {validatePublicDirectory} from './catalog-public-validation.mjs';
+import {catalogDigest as digest,checkCatalogMembers,catalogRegularFile,inspectCatalog} from './catalog-inspection.mjs';
+import {registerSourcePeriods} from './register-source-periods.mjs';
 export {inspectCatalog};
 
 export async function stageCatalog({source,selection,selectionSha256,output}) {
@@ -24,12 +24,7 @@ export async function stageCatalog({source,selection,selectionSha256,output}) {
     if (digest(await readFile(path)) !== member.sha256) throw Error('Catalog member digest differs');
     members.set(member.path,{member,path});
   }
-  const inspected = await inspectCatalog(root);
-  if (inspected.generation !== selected.generation) throw Error('Catalog manifest generation differs');
-  if (inspected.files.length !== members.size || inspected.files.some(member => {
-    const expected = members.get(member.path)?.member;
-    return !expected || expected.bytes !== member.bytes || expected.sha256 !== member.sha256;
-  })) throw Error('Catalog selection differs from referenced members');
+  await checkCatalogMembers(root,members);
   await mkdir(output,{recursive:false});
   try {
     for (const [relative,{member,path}] of members) {
@@ -41,12 +36,26 @@ export async function stageCatalog({source,selection,selectionSha256,output}) {
     }
     await writeFile(join(output,'manifest.json'),await readFile(members.get('manifest.json').path),{flag:'wx'});
     if (digest(await readFile(join(output,'manifest.json'))) !== members.get('manifest.json').member.sha256) throw Error('Manifest changed during copy');
-    await validatePublicDirectory(output);
+    // Validate the actual copied bytes against both the native schema and the
+    // selected hashes. Source schema decoding would repeat this same work.
+    const inspected = await inspectCatalog(output);
+    if (inspected.generation !== selected.generation) throw Error('Catalog manifest generation differs');
+    if (inspected.files.length !== members.size || inspected.files.some(member => {
+      const expected = members.get(member.path)?.member;
+      return !expected || expected.bytes !== member.bytes || expected.sha256 !== member.sha256;
+    })) throw Error('Catalog selection differs from referenced members');
     return {generation:selected.generation,files:members.size,bytes,selectionSha256};
   } catch (error) { await rm(output,{recursive:true,force:true}); throw error; }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv[2] === '--inspect') console.log(JSON.stringify(await inspectCatalog(process.argv[3])));
+  if (process.argv[2] === '--inspect') {
+    const register = registerSourcePeriods();
+    const selection = await inspectCatalog(process.argv[3], {onFilePage: register.addPage});
+    if (process.argv[4] === '--source-periods' && process.argv[5]) {
+      await writeFile(process.argv[5], JSON.stringify(register.result(selection.generation)) + '\n', {flag:'wx'});
+    }
+    console.log(JSON.stringify(selection));
+  }
   else {
     const [source,selection,selectionSha256,output] = process.argv.slice(2);
     if (!source || !selection || !selectionSha256 || !output) throw Error('Usage: node scripts/stage-source-catalog.mjs SOURCE SELECTION SHA256 NEW_OUTPUT');

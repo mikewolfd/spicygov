@@ -29,7 +29,7 @@ jobs:
         env:
           ARTIFACT_WORK: ${{ runner.temp }}/t01-pages-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 1048576
+          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 4194304
           mkdir "$ARTIFACT_WORK"
           python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role prior --output "$ARTIFACT_WORK/prior"
           python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role forward --output "$ARTIFACT_WORK/forward"
@@ -89,7 +89,7 @@ jobs:
         env:
           ROLE: ${{ inputs.operation == 'restore_prior' && 'prior' || 'forward' }}
         run: |
-          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 1048576
+          test "$(df -Pk "$RUNNER_TEMP" | awk 'NR==2 {print $4}')" -ge 4194304
           python3 -I -B scripts/pages-retained-artifact.py fetch --binding .github/pages-retained-binding.json --role "$ROLE" --require-deployment-role --output "$RUNNER_TEMP/pages-input"
       - name: Package verified content with standard GNU Pages tar
         run: |

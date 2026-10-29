@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 // @ts-expect-error JavaScript validation module is also used by node checks.
 import { validatePublicDirectory } from './scripts/catalog-public-validation.mjs';
 import { resolve } from 'node:path';
+import { writeFile } from 'node:fs/promises';
 import { fileURLToPath, URL } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 function operationsBoundary(request: IncomingMessage, response: ServerResponse, next: () => void) {
@@ -16,8 +17,16 @@ function operationsBoundary(request: IncomingMessage, response: ServerResponse, 
 export default defineConfig({
   plugins: [react(), {
     name: 'public-catalog-boundary',
+    apply: 'build',
     async buildStart() { await validatePublicDirectory(resolve('public')); },
-    async closeBundle() { await validatePublicDirectory(resolve('dist')); },
+    async closeBundle() {
+      const sourcePeriods = await validatePublicDirectory(resolve('dist'), {collectSourcePeriods: true});
+      await writeFile(resolve('dist/register-source-periods.v1.json'), JSON.stringify(sourcePeriods ?? {
+        format: 'spicygov-register-source-periods', version: 1, status: 'unavailable',
+      }) + '\n');
+    },
+  }, {
+    name: 'local-operations-boundary',
     configureServer(server) { server.middlewares.use(operationsBoundary); },
     configurePreviewServer(server) { server.middlewares.use(operationsBoundary); },
   }],

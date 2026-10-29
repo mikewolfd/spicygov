@@ -93,6 +93,13 @@ test('stages complete collection and file references', async (t) => {
   assert.equal((await stageCatalog(args)).files, 3);
 });
 
+test('staging rejects an unselected source member and leaves no output', async t => {
+  const args=await fixture(t);
+  await writeFile(join(args.source,'unselected.json'),'{}');
+  await assert.rejects(stageCatalog(args),/unreferenced/);
+  await assert.rejects(readFile(join(args.output,'manifest.json')),/ENOENT/);
+});
+
 test('rejects stale referenced page even when all selected hashes match', async (t) => {
   const args = await fixture(t);
   await addCollection(args, ({ page }) => { page.generation = `sha256:${'b'.repeat(64)}`; });

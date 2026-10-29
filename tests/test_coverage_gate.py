@@ -40,6 +40,10 @@ class CoverageGateTest(unittest.TestCase):
         resolved = variant('federal_register', table, policy)
         self.assertEqual(resolved['schema'], policy['publishedSchema'])
         self.assertNotIn('_nativeProcessing', resolved)
+        with mock.patch.object(builder.native, 'bridge', side_effect=AssertionError('Unexpected native reader')), \
+             mock.patch.object(builder.additional, 'bridge', side_effect=AssertionError('Unexpected private restoration')):
+            builder.warm_native_readers({'federal_register':table},{'federal_register':policy})
+            builder.validate_plan({'federal_register':table},{'federal_register':policy})
         with self.assertRaisesRegex(ValueError, 'Published schema needs coverage review'):
             variant('federal_register', {**table, 'columns':table['columns'][:-1]}, policy)
 

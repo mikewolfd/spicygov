@@ -139,7 +139,12 @@ if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed
             'directory':str(self.release),'manifestSha256':pin}))
         # Replace only the asset compiler for this CLI-shape probe.
         executable=self.root/'npm'
-        executable.write_text('#!/bin/sh\ntest "$1 $2" = "run build:assets" || exit 7\nmkdir -p dist\n')
+        executable.write_text('''#!/bin/sh
+test "$1 $2" = "run build:assets" || exit 7
+mkdir -p dist
+cp -R public/source-catalog dist/
+node --input-type=module -e 'import {readFile,writeFile} from "node:fs/promises"; const {generation}=JSON.parse(await readFile("dist/source-catalog/manifest.json")); await writeFile("dist/register-source-periods.v1.json",JSON.stringify({format:"spicygov-register-source-periods",version:1,generation,months:[]}));'
+''')
         executable.chmod(0o755)
         env={**os.environ,'PATH':str(self.root)+os.pathsep+os.environ['PATH']}
         script=str(ROOT/'scripts/build-ui.mjs')
@@ -154,6 +159,15 @@ if(currentCoverageMap(changed,r.maps)!==undefined||coverageMapForDisplay(changed
             subprocess.run(['node',script,'--coverage',mode],cwd=self.root,env=env,check=True,capture_output=True)
             served=json.loads((self.root/'dist/coverage-maps.v1.json').read_text())
             self.assertEqual(served['format'],'spicygov-coverage-maps' if mode=='completed' else 'spicygov-coverage-unavailable')
+            self.assertEqual((self.root/'public/register-source-periods.v1.json').read_bytes(),
+                             (self.root/'dist/register-source-periods.v1.json').read_bytes())
+        compiler=executable.read_text()
+        executable.write_text(compiler.replace('version:1,generation,months:[]',
+            'version:1,generation:"sha256:"+"b".repeat(64),months:[]'))
+        mismatched=subprocess.run(['node',script,'--coverage','unavailable'],cwd=self.root,env=env,capture_output=True,text=True)
+        self.assertNotEqual(mismatched.returncode,0)
+        self.assertIn('Built source dates differ',mismatched.stderr)
+        executable.write_text(compiler)
         missing=subprocess.run(['node',script,'--coverage'],cwd=self.root,env=env,capture_output=True,text=True)
         self.assertNotEqual(missing.returncode,0);self.assertIn('Missing value',missing.stderr)
         (self.root/'empty').mkdir()

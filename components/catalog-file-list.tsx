@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import type { CatalogFile, CatalogRoute } from "../lib/source-catalog";
 import { fileAvailabilitySummary, periodLabel } from "../lib/source-browser";
-import { CatalogFileEvidence, catalogFileDownload } from "./catalog-file-evidence";
+import { CatalogFileEvidence, catalogFileMirrorLocation } from "./catalog-file-evidence";
 
 /** Search is deliberately limited to metadata already loaded for this file page. */
 export function matchingCatalogFiles(files: CatalogFile[], query: string): CatalogFile[] {
@@ -32,8 +32,9 @@ export function CatalogFileList({ files, routes = [] }: { files: CatalogFile[]; 
     <input id={searchId} type="search" value={query} placeholder="File name, source, or year…"
       onChange={event => { setQuery(event.target.value); setVisible(50); }} />
     <p className="detail-caption" aria-live="polite">{matching.length.toLocaleString()} of {files.length.toLocaleString()} file references on this page. Search covers this page only.</p>
+    <p className="detail-caption">Files are saved locally. Public copies may lag behind this catalog.</p>
     <ul className="source-file-list catalog-files">{matching.slice(0, visible).map(file => {
-      const download = catalogFileDownload(file);
+      const download = catalogFileMirrorLocation(file);
       const conflict = fileConflictSummary(file);
       const route = routes.find(item => item.id === file.routeId);
       const periods = (file.periods ?? []).filter(period => period.kind !== "unknown").map(period => {
@@ -47,7 +48,7 @@ export function CatalogFileList({ files, routes = [] }: { files: CatalogFile[]; 
         {route && <p>{route.label}</p>}
         {!(file.status === "held" && file.provenance?.availability === "local") && <p>{fileAvailabilitySummary(file)}</p>}
         {conflict && <p className="context-note" role="alert">{conflict}</p>}
-        {download && <a className="text-button" href={download} target="_blank" rel="noreferrer">Download original{file.contentKey?.endsWith(".gz") ? " (.gz)" : ""} ↗</a>}
+        {download && <a className="text-button" href={download} title="Public availability has not been checked" target="_blank" rel="noreferrer">Try public copy{file.contentKey?.endsWith(".gz") ? " (.gz)" : ""} ↗</a>}
         <CatalogFileEvidence file={file} />
       </li>;
     })}</ul>

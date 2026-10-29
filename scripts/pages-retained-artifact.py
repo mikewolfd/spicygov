@@ -12,9 +12,11 @@ import tarfile
 import urllib.request
 import zipfile
 
-MAX_CONTAINER = 64 * 1024 * 1024
+# The native file inventory makes the reviewed 2026-10-29 site about 685 MiB.
+# Keep both transfer and expanded content bounded below the Pages 1 GB limit.
+MAX_CONTAINER = 768 * 1024 * 1024
 MAX_MAP = 2 * 1024 * 1024
-MAX_TAR = 192 * 1024 * 1024
+MAX_TAR = 768 * 1024 * 1024
 BASE = 'https://data.spicygov.ai/pages-retained/t01/'
 HTML_FRAGMENT_SHA = 'f639ffee489b6bf2685ce5675ec83fd22e071ed2de5915bd84e437481c9c3bf6'
 HTML_FRAGMENT_SHAS = {HTML_FRAGMENT_SHA, 'cc727afab9ddfc1578fef5fb49c8eea005cf717c6337ca3b9c0a2927c8e8164d'}

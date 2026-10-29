@@ -38,6 +38,7 @@ import { collectionMatches, loadDiscoveryPeriods } from "../lib/catalog-discover
 import { parseCoverageMaps, type CoverageMaps } from "../lib/coverage-map";
 import { registerSourceCoverageTags, sourceCoverageTags, tableCoverageTags } from "../lib/coverage-tags";
 import { fetchJson } from "../lib/publication-evidence";
+import { parseRegisterSourcePeriods, type RegisterSourcePeriods } from "../lib/register-source-periods";
 import "../app/globals.css";
 import "./style.css";
 
@@ -132,6 +133,19 @@ function SourcesPage() {
   const [coverageError, setCoverageError] = useState("");
   const [coveragePending, setCoveragePending] = useState(false);
   const [coverageRetry, setCoverageRetry] = useState(0);
+  const [registerPeriods, setRegisterPeriods] = useState<RegisterSourcePeriods>();
+  const [registerPeriodsLoading, setRegisterPeriodsLoading] = useState(false);
+  useEffect(() => {
+    if (!manifest) return;
+    const controller = new AbortController();
+    setRegisterPeriods(undefined);
+    setRegisterPeriodsLoading(true);
+    void fetchJson('/register-source-periods.v1.json', controller.signal)
+      .then(raw => { if (!controller.signal.aborted) setRegisterPeriods(parseRegisterSourcePeriods(raw, manifest.generation)); })
+      .catch(() => { if (!controller.signal.aborted) setRegisterPeriods(undefined); })
+      .finally(() => { if (!controller.signal.aborted) setRegisterPeriodsLoading(false); });
+    return () => controller.abort();
+  }, [manifest?.generation]);
   const showingList = !location.table && !location.collection;
   const needsPeriods = showingList && (location.view !== "available" || !!(location.query.trim() || location.period.trim()));
   const needsCoverageMaps = showingList && location.view !== "catalog";
@@ -412,6 +426,8 @@ function SourcesPage() {
                   }
                   tables={tables}
                   publicationState={error ? "unavailable" : publicationsPending === false ? "ready" : "pending"}
+                  registerSourcePeriods={registerPeriods}
+                  registerSourceLoading={registerPeriodsLoading}
                   onTable={(id) =>
                     navigate({ table: id, collection: undefined })
                   }
@@ -625,7 +641,7 @@ function SourcesPage() {
                   ? discovery?.generation === manifest?.generation && discovery?.failures.includes(result.id)
                     ? []
                     : result.collection.id === 'family:federal-register'
-                      ? registerSourceCoverageTags(manifest?.generation)
+                      ? registerSourceCoverageTags(registerPeriods?.generation === manifest?.generation ? registerPeriods : undefined)
                       : sourceCoverageTags(discoveryPeriods?.[result.id] ?? result.collection.periods, result.collection)
                   : coveragePending && !coverageMaps
                     ? []

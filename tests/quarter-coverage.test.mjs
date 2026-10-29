@@ -16,6 +16,13 @@ test('reports published quarters without an indexed source date as unverified', 
   assert.deepEqual(unindexedQuarters(['2024-01', '2024-09'], ['2024-02', '2024-05', '2024-06', '2024-12']), ['2024 Q2', '2024 Q4']);
 });
 
+test('a zero-count bucket does not establish data in that quarter', () => {
+  const coverage = quarterCoverage(dimension({'2024-01': 1, '2024-04': 0, '2024-07': 2}));
+  assert.deepEqual(coverage.segments, ['2024 Q1', '2024 Q3']);
+  assert.deepEqual(coverage.missing, ['2024 Q2']);
+  assert.equal(quarterCoverage(dimension({'2024-01': 0})), undefined);
+});
+
 test('does not infer outside the measured range or from non-monthly counts', () => {
   assert.deepEqual(quarterCoverage(dimension({ '2024-02': 1, '2024-06': 1 })), {
     first: '2024 Q1', last: '2024 Q2', segments: ['2024 Q1–2024 Q2'], missing: [], undated: 0, latestDate: undefined,

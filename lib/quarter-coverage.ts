@@ -6,7 +6,7 @@ const label = (value: number) => `${Math.floor(value / 4)} Q${value % 4 + 1}`;
 /** Find quarters with no dated records between the first and last recorded months. */
 export function quarterCoverage(dimension: Pick<CoverageDimension, 'granularity' | 'overlapping' | 'buckets' | 'unplacedRows' | 'latestDate'>) {
   if (dimension.granularity !== 'month' || dimension.overlapping) return undefined;
-  const months = Object.keys(dimension.buckets).sort();
+  const months = Object.keys(dimension.buckets).filter(month => dimension.buckets[month] > 0).sort();
   if (!months.length || !months.every(month => /^\d{4}-(0[1-9]|1[0-2])$/.test(month))) return undefined;
   const present = new Set(months.map(quarter));
   const first = quarter(months[0]), last = quarter(months[months.length - 1]);
