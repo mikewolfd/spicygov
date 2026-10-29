@@ -250,6 +250,16 @@ on copies. The private `.cache/catalog-inspections/` entries are disposable
 accelerators; removing them repeats semantic inspection, without changing source
 files or selection. Dates remain bound to the inspected catalog generation.
 
+For an unchanged-run original-read check on macOS, use
+`scripts/check-refresh-no-original-reads.py --report <new-proof.json>` with the
+normal refresh arguments and a new `--run`. Run this only after the selected
+catalog matches the current reader and configuration. The helper binds the raw
+directory to the selected index, tests a private canary, then uses the existing
+OS sandbox to deny original-data access to the refresh and its descendants.
+Success requires the normal `unchanged` result under that denial. It records a
+kernel-enforced no-successful-access proof, not a count of attempted file opens;
+it refuses unsupported platforms rather than substituting application hooks.
+
 Source dates mean recognized publication dates; undated-file counts remain in
 the supporting detail. A changed published release keeps its previous measurement
 clearly labelled until the exact new release can be measured. Archive-relative
