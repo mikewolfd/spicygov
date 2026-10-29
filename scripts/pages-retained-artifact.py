@@ -10,6 +10,7 @@ import re
 import signal
 import stat
 import tarfile
+import time
 import urllib.request
 import zipfile
 
@@ -326,14 +327,22 @@ def live_members(members, fragment):
         for key, value in members.items():
             route = key[:-10] if key in HTML_MEMBERS else key
             for attempt in range(3):
+                delay = attempt + 1
                 try:
                     if connection is None:
                         connection = http.client.HTTPSConnection('spicygov.ai', timeout=30)
                     connection.request('GET', '/' + quote(route, safe='/'),
                         headers={'Accept-Encoding': 'identity', 'User-Agent': 'SpicyGov-RetainedArtifact/1.0'})
                     with connection.getresponse() as response:
+                        if response.status in (408, 429, 500, 502, 503, 504):
+                            retry_after = response.headers.get('Retry-After', '')
+                            if retry_after.isdigit():
+                                delay = max(delay, int(retry_after))
+                            if delay > 30:
+                                raise ValueError(f'HTTP {response.status}; retry after {delay}s exceeds this check’s wait bound')
+                            raise http.client.HTTPException(f'HTTP {response.status}')
                         if response.status != 200 or response.headers.get('Content-Encoding') is not None:
-                            raise ValueError('Live response framing')
+                            raise ValueError(f'Live response framing: HTTP {response.status}, encoding {response.headers.get("Content-Encoding")}')
                         if live_body(response, key, value, fragment):
                             normalized.append(key)
                     break
@@ -343,6 +352,7 @@ def live_members(members, fragment):
                     connection = None
                     if attempt == 2:
                         raise OSError(f'{key}: transport failed after 3 attempts') from error
+                    time.sleep(delay)
                 except ValueError as error:
                     raise ValueError(f'{key}: {error}') from error
     finally:

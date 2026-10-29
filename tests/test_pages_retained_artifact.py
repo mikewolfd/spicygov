@@ -179,7 +179,7 @@ class Controls(unittest.TestCase):
         first.getresponse.side_effect = TimeoutError('transient handshake failure')
         second.getresponse.side_effect = [Response(), Response()]
         members = {**self.members, 'file.json': self.members['index.html']}
-        with patch.object(pages.http.client, 'HTTPSConnection', side_effect=[first, second]) as connect:
+        with patch.object(pages.http.client, 'HTTPSConnection', side_effect=[first, second]) as connect, patch.object(pages.time, 'sleep'):
             self.assertEqual(pages.live_members(members, None), [])
             self.assertEqual(connect.call_count, 2)
             self.assertEqual(second.request.call_count, 2)
@@ -192,6 +192,20 @@ class Controls(unittest.TestCase):
                 pages.live_members(self.members, None)
             self.assertEqual(connect.call_count, 1)
             self.assertEqual(bad.request.call_count, 1)
+    def test_live_retries_temporary_http_and_respects_access_refusal(self):
+        from unittest.mock import MagicMock
+        first, second = MagicMock(), MagicMock()
+        first.getresponse.return_value = Response(status=429, headers={'Retry-After':'2'})
+        second.getresponse.return_value = Response()
+        with patch.object(pages.http.client, 'HTTPSConnection', side_effect=[first, second]), patch.object(pages.time, 'sleep') as sleep:
+            self.assertEqual(pages.live_members(self.members, None), [])
+            sleep.assert_called_once_with(2)
+        denied = MagicMock()
+        denied.getresponse.return_value = Response(status=403)
+        with patch.object(pages.http.client, 'HTTPSConnection', return_value=denied), patch.object(pages.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError, 'HTTP 403'):
+                pages.live_members(self.members, None)
+            sleep.assert_not_called()
     def same_run_fixture(self):
         directory = self.path / 'download'
         directory.mkdir()
