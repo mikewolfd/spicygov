@@ -7,18 +7,24 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: mikewolfd/spicy-regs
-        ref: 7faed9c8d8f090686814a40123b09b8144fc94e7
+        ref: f2c4704f3a4f33853ba486e7a5731657f36a66c0
         path: .ci/spicy-regs
         persist-credentials: false
+        sparse-checkout-cone-mode: false
         sparse-checkout: |
           src/spicy_regs/source_catalog
           src/spicy_regs/sources
+          vendor/rulespec_artifacts-1.1.2-py3-none-any.whl
+          vendor/spicy_docs-0.65.0+centralraw.523052e8a6fe-py3-none-any.whl
     - uses: actions/setup-python@v5
       with:
         python-version: '3.12'
     - name: Install catalog export dependencies
       shell: bash
-      run: python -m pip install --disable-pip-version-check httpx==0.28.1 loguru==0.7.3 pyarrow==23.0.0
+      run: |
+        python -m pip install --disable-pip-version-check httpx==0.28.1 loguru==0.7.3 pyarrow==23.0.0 jsonschema==4.26.0 \
+          .ci/spicy-regs/vendor/rulespec_artifacts-1.1.2-py3-none-any.whl \
+          .ci/spicy-regs/vendor/spicy_docs-0.65.0+centralraw.523052e8a6fe-py3-none-any.whl
     - name: Configure producer integration tests
       shell: bash
       run: |
