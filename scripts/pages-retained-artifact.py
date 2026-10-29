@@ -26,6 +26,9 @@ HTML_FRAGMENT_SHAS = {HTML_FRAGMENT_SHA, 'cc727afab9ddfc1578fef5fb49c8eea005cf71
     '3fdbd197dbce1df03da5f425a59f230541842d9d5455ff001fe52643072ec849'}
 HTML_MEMBERS = {'index.html', 'sources/index.html', 'mcp/index.html'}
 
+class OperationDeadline(TimeoutError):
+    """The whole-operation deadline must never become a retryable socket error."""
+
 def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
@@ -347,6 +350,8 @@ def live_members(members, fragment):
                             normalized.append(key)
                     break
                 except (OSError, http.client.HTTPException) as error:
+                    if isinstance(error, OperationDeadline):
+                        raise
                     if connection is not None:
                         connection.close()
                     connection = None
@@ -376,7 +381,7 @@ def main():
     parser.add_argument('--artifact-directory', type=Path)
     parser.add_argument('--require-deployment-role', action='store_true')
     args = parser.parse_args()
-    signal.signal(signal.SIGALRM, lambda *unused: (_ for _ in ()).throw(TimeoutError('Whole operation deadline')))
+    signal.signal(signal.SIGALRM, lambda *unused: (_ for _ in ()).throw(OperationDeadline('Whole operation deadline')))
     signal.alarm(600)
     if args.command == 'package':
         members = read_map(args.map, args.map_sha)

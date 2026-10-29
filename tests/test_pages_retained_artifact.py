@@ -206,6 +206,16 @@ class Controls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'HTTP 403'):
                 pages.live_members(self.members, None)
             sleep.assert_not_called()
+    def test_whole_operation_deadline_is_not_retried(self):
+        from unittest.mock import MagicMock
+        connection = MagicMock()
+        connection.request.side_effect = pages.OperationDeadline('Whole operation deadline')
+        with patch.object(pages.http.client, 'HTTPSConnection', return_value=connection), patch.object(pages.time, 'sleep') as sleep:
+            with self.assertRaises(pages.OperationDeadline):
+                pages.live_members(self.members, None)
+            self.assertEqual(connection.request.call_count, 1)
+            sleep.assert_not_called()
+        connection.close.assert_called_once()
     def same_run_fixture(self):
         directory = self.path / 'download'
         directory.mkdir()
