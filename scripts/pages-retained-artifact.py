@@ -2,6 +2,7 @@
 import argparse
 import datetime as dt
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -316,6 +317,39 @@ def live_body(response, key, expected, fragment):
         raise ValueError('Normalized HTML differs')
     return True
 
+def live_members(members, fragment):
+    """Reuse one verified TLS connection; retry only transport failures."""
+    from urllib.parse import quote
+    normalized = []
+    connection = None
+    try:
+        for key, value in members.items():
+            route = key[:-10] if key in HTML_MEMBERS else key
+            for attempt in range(3):
+                try:
+                    if connection is None:
+                        connection = http.client.HTTPSConnection('spicygov.ai', timeout=30)
+                    connection.request('GET', '/' + quote(route, safe='/'),
+                        headers={'Accept-Encoding': 'identity', 'User-Agent': 'SpicyGov-RetainedArtifact/1.0'})
+                    with connection.getresponse() as response:
+                        if response.status != 200 or response.headers.get('Content-Encoding') is not None:
+                            raise ValueError('Live response framing')
+                        if live_body(response, key, value, fragment):
+                            normalized.append(key)
+                    break
+                except (OSError, http.client.HTTPException) as error:
+                    if connection is not None:
+                        connection.close()
+                    connection = None
+                    if attempt == 2:
+                        raise OSError(f'{key}: transport failed after 3 attempts') from error
+                except ValueError as error:
+                    raise ValueError(f'{key}: {error}') from error
+    finally:
+        if connection is not None:
+            connection.close()
+    return normalized
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=['package', 'fetch', 'live', 'preflight'])
@@ -367,21 +401,7 @@ def main():
         fragment = None
         if args.html_fragment is not None:
             fragment = read_fragment(args.html_fragment)
-        normalized = []
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-        for key, value in members.items():
-            from urllib.parse import quote
-            route = key[:-10] if key in HTML_MEMBERS else key
-            request = urllib.request.Request('https://spicygov.ai/' + quote(route, safe='/'),
-                headers={'Accept-Encoding': 'identity', 'User-Agent': 'SpicyGov-RetainedArtifact/1.0'})
-            with opener.open(request, timeout=30) as response:
-                if response.status != 200 or response.headers.get('Content-Encoding') is not None:
-                    raise ValueError('Live response framing')
-                try:
-                    if live_body(response, key, value, fragment):
-                        normalized.append(key)
-                except ValueError as error:
-                    raise ValueError(f'{key}: {error}') from error
+        normalized = live_members(members, fragment)
         with args.output.open('x') as output:
             output.write(json.dumps({'status': 'complete-member-live-byte-match', 'members': len(members), 'exact_hosting_fragment_normalized': normalized}) + '\n')
 

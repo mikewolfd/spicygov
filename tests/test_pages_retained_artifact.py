@@ -173,6 +173,25 @@ class Controls(unittest.TestCase):
                 pages.live_body(io.BytesIO(raw), 'index.html', self.members['index.html'], b'KNOWN')
         with self.assertRaises(ValueError):
             pages.live_body(io.BytesIO(b'okKNOWN'), 'other.json', self.members['index.html'], b'KNOWN')
+    def test_live_reads_reuse_connection_and_retry_transport_only(self):
+        from unittest.mock import MagicMock
+        first, second = MagicMock(), MagicMock()
+        first.getresponse.side_effect = TimeoutError('transient handshake failure')
+        second.getresponse.side_effect = [Response(), Response()]
+        members = {**self.members, 'file.json': self.members['index.html']}
+        with patch.object(pages.http.client, 'HTTPSConnection', side_effect=[first, second]) as connect:
+            self.assertEqual(pages.live_members(members, None), [])
+            self.assertEqual(connect.call_count, 2)
+            self.assertEqual(second.request.call_count, 2)
+        first.close.assert_called_once()
+        second.close.assert_called_once()
+        bad = MagicMock()
+        bad.getresponse.return_value = Response(body=b'no')
+        with patch.object(pages.http.client, 'HTTPSConnection', return_value=bad) as connect:
+            with self.assertRaisesRegex(ValueError, 'index.html: Body identity'):
+                pages.live_members(self.members, None)
+            self.assertEqual(connect.call_count, 1)
+            self.assertEqual(bad.request.call_count, 1)
     def same_run_fixture(self):
         directory = self.path / 'download'
         directory.mkdir()

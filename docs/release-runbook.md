@@ -16,6 +16,9 @@ unchanged. `npm run build:assets` is the internal asset compiler; use the suppor
 build commands to apply the intended coverage status.
 
 For completed coverage, run `npm run build:ui -- --selection <selection.json>`.
+When the build includes a source catalog, it compiles the browser to read that
+same catalog at `/source-catalog/manifest.json`. A stale remote URL setting cannot
+replace the bundled selection. Check the production preview before packaging.
 The selection has the format shown in
 `content/coverage-release-selection.v1.example.json`. Review and supply the
 release directory and exact manifest SHA-256; never use a mutable latest pointer.
