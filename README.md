@@ -287,8 +287,9 @@ route distinctions, generation drift, failure fallback, partition boundaries,
 public privacy validation and the operations server's access boundary.
 
 For an identified reader fix, pass `--refresh-object-list affected-sha256.txt`
-(one canonical `sha256:…` per line). The native refresh remaps every retained alias
-of those originals from its original receipt, then reruns the reader. Its partial
+(one canonical `sha256:…` per line). The native refresh remaps retained aliases in the named collection
+from their original receipts, then reruns the reader. Selective replay accepts
+one named collection per run. Its partial
 reader pin covers only that exact object set; it does not certify the rest of the
 family as parsed by the new reader. An identical selected cohort can be reused.
 To avoid repeating an accepted whole-source byte audit, also pass
