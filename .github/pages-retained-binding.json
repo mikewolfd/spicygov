@@ -1,32 +1,18 @@
 {
-  "state": "AUTHORIZED_RECONCILED_REGISTER",
+  "state": "AUTHORIZED_LOCAL_CATALOG_20261029",
   "upload_authorized": true,
   "deployment_authorized": true,
   "exclusive_writers_confirmed": true,
-  "expires_at": "2026-10-29T01:34:11.982297+00:00",
+  "expires_at": "2026-10-29T23:23:29.036101+00:00",
   "expected_current": {
-    "generic_id": 7395266549,
-    "sha": "007aedff410d7e328f700b73f1ba2311fc37f0af",
+    "generic_id": 7395399894,
+    "sha": "82663777ab5671f5988fdfed992108b3d109dc7b",
     "state": "success",
-    "pages_id": "007aedff410d7e328f700b73f1ba2311fc37f0af",
+    "pages_id": "82663777ab5671f5988fdfed992108b3d109dc7b",
     "pages_status": "succeed"
   },
   "roles": {
     "prior": {
-      "container": {
-        "sha256": "4faf4991f004f94a2a7456dbedd75fd150a0808e5f774e5a1155ffb9f44a5da0",
-        "bytes": 52326775,
-        "filename": "artifact.tar.gz",
-        "url": "https://data.spicygov.ai/pages-retained/t01/4faf4991f004f94a2a7456dbedd75fd150a0808e5f774e5a1155ffb9f44a5da0/artifact.tar.gz"
-      },
-      "map": {
-        "sha256": "1911943132e9e8938c28ad50465c997968ed9d2bc8bf0104563f835a6eb102ba",
-        "bytes": 944524,
-        "filename": "members.json",
-        "url": "https://data.spicygov.ai/pages-retained/t01/1911943132e9e8938c28ad50465c997968ed9d2bc8bf0104563f835a6eb102ba/members.json"
-      }
-    },
-    "forward": {
       "container": {
         "sha256": "39ea19662b9375e45407d4bc8602d6ec58c7a4b3ad73063c8c0414b26e14b3ca",
         "bytes": 52326794,
@@ -38,6 +24,20 @@
         "bytes": 944524,
         "filename": "members.json",
         "url": "https://data.spicygov.ai/pages-retained/t01/a1b3a3158159fe5b3e5195de605b6f873e8d29094ac8f73ef30913a3db8ced73/members.json"
+      }
+    },
+    "forward": {
+      "container": {
+        "sha256": "abd13c576504c8bd01f5ed9c8a9a9333c6955cccc8594e7e7cf08f0e569a3685",
+        "bytes": 703253406,
+        "filename": "artifact.tar.gz",
+        "url": "https://data.spicygov.ai/pages-retained/t01/abd13c576504c8bd01f5ed9c8a9a9333c6955cccc8594e7e7cf08f0e569a3685/artifact.tar.gz"
+      },
+      "map": {
+        "sha256": "7469210510cbb6915cd6e082a4cad8ca7b2b1e8dac93bb3601205d04b82ae197",
+        "bytes": 222110,
+        "filename": "members.json",
+        "url": "https://data.spicygov.ai/pages-retained/t01/7469210510cbb6915cd6e082a4cad8ca7b2b1e8dac93bb3601205d04b82ae197/members.json"
       }
     }
   },
