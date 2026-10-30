@@ -43,6 +43,9 @@ export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, load
   }) : undefined;
   const unindexed = source && sourcePeriods && dimension ? unindexedQuarters(sourcePeriods.months, Object.keys(dimension.buckets).filter(month => dimension.buckets[month] > 0)) : [];
   const unverified = quarterRanges([...(source?.missing ?? []), ...unindexed]);
+  const compactSource = !!source && (source.segments.length > 4 || unverified.length > 4);
+  const publishedGaps = quarterRanges(unindexed);
+  const otherGaps = source?.missing.filter(quarter => !unindexed.includes(quarter)) ?? [];
   return <>
     <h2>Coverage</h2>
     <dl className="source-periods">
@@ -53,15 +56,26 @@ export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, load
         {quarters.missing.length > 0 && <p>No dated records: {quarterRanges(quarters.missing).join(', ')}</p>}
       </> : loading ? 'Loading coverage…' : 'Not checked for this release'}</dd></div>
       <div><dt>Saved source files</dt><dd>{source ? <>
-        <strong>{source.segments.join(', ')}</strong>
+        <strong>{compactSource ? `${source.first}–${source.last}` : source.segments.join(', ')}</strong>
+        {compactSource && <p className="detail-caption">Dates found in {count(source.segments.length)} separate ranges.</p>}
         {sourcePeriods?.latestIndexedDate && <p>Latest dated source: {publicationDate(sourcePeriods.latestIndexedDate)}</p>}
-        {unverified.length > 0 && <p>No verified source dates: {unverified.join(', ')}.</p>}
+        {unverified.length > 0 && <p>{compactSource ? <>
+          {unindexed.length > 0 && (publishedGaps.length <= 4
+            ? <>No saved source dates: {publishedGaps.join(', ')}. </>
+            : <>{count(unindexed.length)} published quarters have no saved source date. </>)}
+          {otherGaps.length > 0 && <>{count(otherGaps.length)} other quarters have no saved date. </>}
+          See details below.
+        </> : <>No verified source dates: {unverified.join(', ')}.</>}</p>}
         <p className="detail-caption">Saved dates can come from metadata; full-text coverage is separate.</p>
       </> : sourceLoading ? 'Loading coverage…' : 'Not checked for this catalog'}</dd></div>
     </dl>
     <p className="detail-caption">A quarter means at least one dated record is present; it may still be incomplete.{quarters?.undated ? ` ${count(quarters.undated)} published records have no usable date.` : ''}</p>
-    {!!sourcePeriods?.dateCoverage?.undatedFiles && <details><summary>About these dates</summary>
-      <p>{count(sourcePeriods.dateCoverage.datedFiles)} of {count(sourcePeriods.dateCoverage.files)} saved files have a recognized publication date. Dates remain unknown in {count(sourcePeriods.dateCoverage.undatedFiles)} files, so the latest dated source may not be the newest file.</p>
+    {(compactSource || !!sourcePeriods?.dateCoverage?.undatedFiles) && <details><summary>About these dates</summary>
+      {compactSource && source && <>
+        <p>Saved date ranges: {source.segments.join(', ')}.</p>
+        {unverified.length > 0 && <p>No verified source dates: {unverified.join(', ')}.</p>}
+      </>}
+      {sourcePeriods?.dateCoverage && <p>{count(sourcePeriods.dateCoverage.datedFiles)} of {count(sourcePeriods.dateCoverage.files)} saved files have a recognized publication date.{sourcePeriods.dateCoverage.undatedFiles > 0 && <> Dates remain unknown in {count(sourcePeriods.dateCoverage.undatedFiles)} files, so the latest dated source may not be the newest file.</>}</p>}
     </details>}
   </>;
 }
