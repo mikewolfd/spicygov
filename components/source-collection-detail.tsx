@@ -50,7 +50,7 @@ export function FederalRegisterQuarterSummary({ table, maps, sourcePeriods, load
     <h2>Coverage</h2>
     <dl className="source-periods">
       <div><dt>Published records</dt><dd>{quarters ? <>
-        {previous && <p className="detail-caption">Previous release{reading.map.measuredAt && ` · measured ${publicationDate(reading.map.measuredAt)}`}. Current release not checked.</p>}
+        {previous && <p className="detail-caption">{reading.freshness === 'previous-release' ? 'Earlier release' : 'Earlier measurement'}{reading.map.measuredAt && ` · measured ${publicationDate(reading.map.measuredAt)}`}. Current release not checked.</p>}
         <strong>{quarters.segments.join(', ')}</strong>
         {quarters.latestDate && <p>{previous ? 'Latest measured record' : 'Latest record'}: {publicationDate(quarters.latestDate)}</p>}
         {quarters.missing.length > 0 && <p>No dated records: {quarterRanges(quarters.missing).join(', ')}</p>}

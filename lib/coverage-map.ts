@@ -3,6 +3,7 @@ import { publicationDate, type Dataset } from './catalog';
 import { object } from './publication-evidence';
 import { timeFingerprint } from './time-coverage';
 import { canonicalJson } from './separate-publications';
+import { dimensionPeriodSummary } from './period-summary';
 
 export type BillAvailabilityCounts = { total: number; policyAreas: number; subjects: number };
 export type BillAvailability = BillAvailabilityCounts & {
@@ -30,7 +31,8 @@ export type CoverageMap = {
   classification: string; note: string; measuredAt: string; definitionDigest: string;
   dimensions: CoverageDimension[];
 };
-export type CoverageMaps = { generatedAt: string; censusDigest: string; tables: Record<string, CoverageMap> };
+export type CoverageMaps = { generatedAt: string; censusDigest: string; tables: Record<string, CoverageMap>;
+  measurementStates?: Record<string, 'held' | 'unavailable'> };
 
 const integer = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 const date = (value: unknown): value is string => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -99,7 +101,11 @@ export function parseCoverageMaps(raw: unknown): CoverageMaps {
     }
     tables[id] = { ...value, dimensions } as CoverageMap;
   }
-  return { generatedAt: raw.generatedAt, censusDigest: raw.censusDigest, tables };
+  if (raw.measurementStates !== undefined && (!object(raw.measurementStates)
+      || !Object.entries(raw.measurementStates).every(([id, state]) => /^[a-z0-9_]+$/.test(id)
+        && typeof state === 'string' && ['held', 'unavailable'].includes(state)))) throw new Error('Invalid coverage measurement states');
+  return { generatedAt: raw.generatedAt, censusDigest: raw.censusDigest, tables,
+    ...(raw.measurementStates === undefined ? {} : {measurementStates: raw.measurementStates as CoverageMaps['measurementStates']}) };
 }
 
 export function coverageInputsFingerprint(table: Dataset): string {
@@ -145,7 +151,7 @@ export function billAvailability(table: Dataset, tables: Dataset[], maps?: Cover
 
 export function currentCoverageMap(table: Dataset, maps?: CoverageMaps): CoverageMap | undefined {
   const map = maps?.tables[table.id];
-  return map && matchesCoverageRelease(table, map)
+  return map && !maps?.measurementStates?.[table.id] && matchesCoverageRelease(table, map)
     && !map.dimensions.some(dim => !validActivityBoundary(dim.activityBoundary, map.publishedAt)
       || (dim.activityBoundary?.basis === 'measurement-month' && dim.activityBoundary.month !== new Date().toISOString().slice(0, 7))) ? map : undefined;
 }
@@ -173,7 +179,8 @@ export function preferredCoverageDimension(map: CoverageMap): CoverageDimension 
   const byField = (fields: string[]) => populated.find(dim =>
     dim.fields?.length === 1 && fields.includes(dim.fields[0]));
   // Use the period belonging to the records before incidental event or capture dates.
-  return byField(['congress'])
+  return byField(['covered_congress'])
+    ?? byField(['congress'])
     ?? byField(['source_cycle', 'cycles', 'cycles_json', 'election_cycle', 'cycle'])
     ?? byField(['reported_cycle'])
     ?? populated.find(dim => dim.fields?.some(field => ['agenda_edition', 'edition_year', 'requested_year', 'year_text'].includes(field)))
@@ -182,27 +189,8 @@ export function preferredCoverageDimension(map: CoverageMap): CoverageDimension 
     ?? populated.find(dim => dim.granularity !== 'snapshot') ?? map.dimensions[0];
 }
 
-function dimensionRange(dimension: CoverageDimension): string | undefined {
-  let periods = Object.keys(dimension.buckets).sort();
-  if (dimension.granularity === 'category') {
-    const fields = dimension.fields ?? [];
-    const index = fields.findIndex(field => ['congress', 'congress_text', 'edition_year', 'requested_year'].includes(field));
-    if (index < 0) return undefined;
-    periods = [...new Set(periods.flatMap(key => {
-      try {
-        const value = JSON.parse(key);
-        const part = Array.isArray(value) ? value[index] : value;
-        return /^\d{1,4}$/.test(String(part)) ? [String(part)] : [];
-      } catch { return []; }
-    }))].sort((a,b) => Number(a) - Number(b));
-    if (!periods.length) return undefined;
-    const range = [...new Set([periods[0], periods.at(-1)!])].join('–');
-    return fields[index].startsWith('congress') ? `Congress ${range}` : range;
-  }
-  if (!['month', 'year', 'season'].includes(dimension.granularity) || !periods.length) return undefined;
-  return [...new Set([periods[0], periods.at(-1)!])].map(period => dimension.granularity === 'month'
-    ? new Intl.DateTimeFormat('en', {month: 'short', year: 'numeric', timeZone: 'UTC'}).format(new Date(`${period}-01T00:00:00Z`))
-    : coveragePeriodLabel(dimension, period)).join(' – ');
+function dimensionRange(dimension: CoverageDimension, tableId: string, measuredAt: string): string | undefined {
+  return dimensionPeriodSummary(dimension, { tableId, measuredAt })?.range;
 }
 
 /** Every period statement carries the release it actually measured. */
@@ -211,11 +199,15 @@ export function coverageReading(table: Dataset, maps?: CoverageMaps) {
   if (!display) return undefined;
   const { map, freshness } = display;
   const dimension = preferredCoverageDimension(map);
-  const range = dimensionRange(dimension);
+  const range = dimensionRange(dimension, table.id, map.measuredAt);
   const release = freshness === 'previous-release'
     ? map.publishedAt ? `Earlier release · ${publicationDate(map.publishedAt)}` : 'Earlier release'
+    : freshness === 'previous-measurement' ? `Earlier measurement · Checked ${publicationDate(map.measuredAt)}`
     : `Checked ${publicationDate(map.measuredAt)} · Current release`;
-  return { range, release, freshness, dimension, rows: map.rows, measuredAt: map.measuredAt };
+  const state = maps?.measurementStates?.[table.id];
+  const explanation = state === 'held' ? 'Remeasurement is held; the earlier counts remain available.'
+    : state === 'unavailable' ? 'This release could not be remeasured; the earlier counts remain available.' : undefined;
+  return { range, release, freshness, dimension, rows: map.rows, measuredAt: map.measuredAt, explanation };
 }
 
 export function textAvailabilityDetails(table: Dataset, maps?: CoverageMaps): { label: string; rows: number; withText: number; notSaved: number; blank: number }[] {

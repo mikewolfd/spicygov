@@ -28,6 +28,28 @@ SAMPLES = {
 
 
 class PublishedPeriods(unittest.TestCase):
+    def test_scorecard_geo_extension_keeps_exact_public_schema_and_recorded_parent_keys(self):
+        policy = builder.definitions()['scorecard_member_links']
+        columns = policy['publishedSchema']
+        self.assertEqual(set(dict(columns)) - set(dict(policy['schema'])), {
+            'normalized_state', 'state_status', 'normalized_district',
+            'district_status', 'correction_evidence_json'})
+        self.assertTrue(all(dict(columns)[field] == 'VARCHAR'
+                            for field in ('scorecard_id', 'publisher_member_key')))
+        self.assertTrue(all(d['kind'] == 'inherited' and d['parent']['mode'] == 'recorded-parent'
+                            for d in policy['dimensions']))
+        table = dict(kind='generation', family=policy['family'], columns=columns)
+        with patch.object(native, 'native_schema', side_effect=AssertionError('No processing reader')):
+            selected = {'scorecard_member_links': policy}
+            builder.validate_plan({'scorecard_member_links': table}, selected)
+            self.assertEqual(selected['scorecard_member_links']['schema'], columns)
+            self.assertNotIn('_nativeProcessing', selected['scorecard_member_links'])
+            for changed in (columns + [['unreviewed', 'VARCHAR']],
+                            [['scorecard_id', 'INTEGER']] + columns[1:]):
+                with self.assertRaisesRegex(ValueError, 'schema needs coverage review'):
+                    builder.validate_plan({'scorecard_member_links': {**table, 'columns': changed}},
+                                          {'scorecard_member_links': policy})
+
     def test_all_four_measure_unchanged_public_fields_without_readers_or_receipts(self):
         for name, sample in SAMPLES.items():
             with self.subTest(table=name), tempfile.TemporaryDirectory() as folder:

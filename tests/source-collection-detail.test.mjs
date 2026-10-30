@@ -46,7 +46,7 @@ test('quarter summary is tied to the current published table and names empty qua
   assert.match(current, /Latest record: Jul 18, 2024/);
   assert.match(current, /Saved source files<\/dt><dd>Not checked for this catalog/);
   const stale = renderSummary({ ...table, rows: 3 }, map);
-  assert.match(stale, /Previous release/);
+  assert.match(stale, /Earlier release/);
   assert.match(stale, /Current release not checked/);
   assert.match(stale, /Latest measured record: Jul 18, 2024/);
   assert.match(stale, /2024 Q2/);

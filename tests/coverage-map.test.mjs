@@ -338,11 +338,33 @@ test('expired monthly measurements stay visible with their original check date',
   assert.equal(currentCoverageMap(table,maps),undefined);
   assert.equal(coverageMapForDisplay(table,maps).freshness,'previous-measurement');
   const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
-  assert.match(html,/Counts were checked earlier/);
+  assert.match(html,/Earlier measurement/);
   assert.match(html,/Measured <time dateTime="2026-10-05T00:00:00Z">Oct 5, 2026/);
   assert.equal(coverageReading(table,maps).freshness,'previous-measurement');
   assert.match(html,/2024: 2 rows counted here/);
   assert.doesNotMatch(html,/Previous release/);
+});
+
+test('held and unavailable measurements stay earlier with safe optional explanations', async () => {
+  const {TableCoverageMap}=await coverageComponent();
+  for (const state of ['held','unavailable']) {
+    const raw=document(), prior=JSON.stringify(raw.tables.records);
+    raw.measurementStates={records:state};
+    const maps=parseCoverageMaps(raw);
+    assert.equal(JSON.stringify(maps.tables.records),prior);
+    assert.equal(currentCoverageMap(table,maps),undefined);
+    assert.equal(coverageMapForDisplay(table,maps).freshness,'previous-measurement');
+    assert.match(coverageReading(table,maps).release,/Earlier measurement/);
+    const html=renderToStaticMarkup(createElement(TableCoverageMap,{table,maps,view:{year:2024,mode:'years'}}));
+    assert.match(html,/Earlier measurement/);
+    assert.doesNotMatch(html,/Current release/);
+    const details=html.slice(html.indexOf('<details class="coverage-checks">'));
+    assert.match(details,/earlier counts remain available/);
+    assert.equal(coverageMapCounts([table],maps).previous,1);
+  }
+  for (const invalid of ['private exception /local/path', {reason:'held'}, ['held']]) {
+    assert.throws(()=>parseCoverageMaps({...document(),measurementStates:{records:invalid}}),/measurement states/);
+  }
 });
 
 test('display fallback refuses another family and distinguishes current, previous and missing maps in summaries', async () => {
@@ -471,7 +493,7 @@ test('rendered matrices show readable fields and retain original codes without c
 test('overview periods use measured buckets and keep stale release identity', () => {
   const maps = parseCoverageMaps(document());
   const current = coverageReading(table, maps);
-  assert.equal(current.range, 'Jan 2024 – Feb 2024');
+  assert.equal(current.range, '2024 Q1');
   assert.equal(current.release, 'Checked Oct 5, 2026 · Current release');
   const stale = coverageReading({...table, rows: 4}, maps);
   assert.equal(stale.freshness, 'previous-release');

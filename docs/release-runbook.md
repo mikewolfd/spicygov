@@ -202,3 +202,41 @@ requires 4 GiB of free temporary storage for overlapping verification copies.
 
 Run `python -B tests/test_release_workflows.py` for the local condition matrix.
 This check does not upload, deploy, publish, or prove hosted readback.
+
+## Changed coverage before a local catalog refresh
+
+Add `--prepare-coverage` to `scripts/refresh-local-catalog.py` to prepare the
+published-table measurements before its existing catalog and website finish.
+Use `--coverage-selection` for the retained base selection. Preparation freezes
+publication metadata under the run's `coverage/` directory, reuses valid table
+checkpoints and exact member caches, and measures changed dependencies with the
+existing guarded scanners. It writes `coverage/selection.json` and a per-table
+`coverage/report.json`. Failed measurements keep their earlier release labels.
+Unchanged comments, expensive court measurements and the named multi-GB FEC,
+U.S. Code and comment-attribute checks remain held by default;
+`--hold-unchanged` configures that list for independent preparation. Changed
+publication identities still run. Additive public state codes keep held or failed
+checks labelled **Earlier measurement**, with a short explanation inside checks;
+the retained table measurements remain unchanged. Changed bill-family and
+Federal Register publications run before unchanged work.
+New source captures and catalog selection remain owned by the normal refresh.
+
+Set `SPICYGOV_COVERAGE_PYTHON` to the exact reviewed reader interpreter. For a
+source checkout, also set `SPICYGOV_COVERAGE_PYTHONPATH` to its `src` directory;
+the source-catalog maintenance runtime can then use its own `PYTHONPATH`.
+`SPICYGOV_NATIVE_COVERAGE_CACHE` locates the existing hash-bound member cache.
+Preparation uses one scan at a time, the readers' existing memory/time/staging
+limits, and at least 25 GiB of free-space reserve. Input totals in its report are
+not transfer or scratch measurements.
+
+For independent preparation without selecting a catalog or building the site:
+
+```sh
+python scripts/prepare-coverage-refresh.py \
+  --base-selection /absolute/path/to/selection.json \
+  --run /absolute/path/to/new-coverage-run
+```
+
+Resume the same directory with identical code, base and resource settings.
+Completed scans survive interruption. A completed release is immutable; use a
+new run for a different publication snapshot, policy, reader or resource budget.

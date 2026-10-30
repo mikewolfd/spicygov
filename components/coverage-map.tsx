@@ -5,6 +5,7 @@ import { coverageReading, preferredCoverageDimension, coverageCategoryDisplay, c
 import { object } from '../lib/publication-evidence';
 import { coveragePublisherNames, type CoveragePublishers } from '../lib/coverage-publishers';
 import type { TimeView } from './time-coverage';
+import { dimensionPeriodSummary } from '../lib/period-summary';
 import './coverage-map.css';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -21,6 +22,7 @@ export function TableCoverageMap({ table, maps, view: suppliedView, publishers, 
   const preferred = preferredCoverageDimension(map);
   const reading = coverageReading(table, maps)!;
   const dimension = map.dimensions.find(dim => dim.id === axis) ?? preferred;
+  const periodSummary = dimensionPeriodSummary(dimension, { tableId: table.id, measuredAt: map.measuredAt });
   const years = Object.keys(dimension.buckets).flatMap(key => { const value = /^([0-9]{4})(?:-|$)/.exec(key)?.[1]; return value ? [Number(value)] : []; }).sort((a,b) => a-b);
   const currentYear = new Date().getFullYear();
   // A distant source-date outlier must not hide the useful contemporary records.
@@ -36,7 +38,7 @@ export function TableCoverageMap({ table, maps, view: suppliedView, publishers, 
     <div className={freshness === 'current' ? 'coverage-measurement' : 'coverage-previous'} role="status">
       {freshness === 'current'
         ? <p>{reading.release} · {rowsLabel(map.rows)}</p>
-        : <p>{freshness === 'previous-release' ? 'Counts are from an earlier dataset' : 'Counts were checked earlier'}{map.publishedAt && freshness === 'previous-release' ? ` (${publicationDate(map.publishedAt)})` : ''} · {rowsLabel(map.rows)}.</p>}
+        : <p>{freshness === 'previous-release' ? 'Counts are from an earlier dataset' : 'Earlier measurement'}{map.publishedAt && freshness === 'previous-release' ? ` (${publicationDate(map.publishedAt)})` : ''} · {rowsLabel(map.rows)}.</p>}
     </div>
     {map.dimensions.length > 1 ? <label className="coverage-axis"><span>Count by</span><select aria-label={`Count by for ${table.label}`} value={dimension.id} onChange={event => { setAxis(event.target.value); setTimeChoice(undefined); }}>{map.dimensions.map(dim => <option key={dim.id} value={dim.id}>{coverageViewLabel(dim.label)}</option>)}</select></label> : <p className="coverage-view-label">{coverageViewLabel(dimension.label)}</p>}
     {temporal && !suppliedView && <div className="coverage-controls">
@@ -52,10 +54,17 @@ export function TableCoverageMap({ table, maps, view: suppliedView, publishers, 
       </label>
     </div>}
     <p className="coverage-meaning">{statement}</p>
+    {periodSummary && <div className="coverage-range">
+      <p><strong>{periodSummary.range}</strong></p>
+      {periodSummary.latestDate && <p>Latest dated value: {publicationDate(periodSummary.latestDate)}</p>}
+      {periodSummary.missing.length > 0 && <p>No dated values: {periodSummary.missing.join(', ')}</p>}
+      {periodSummary.note && <p>{periodSummary.note}</p>}
+    </div>}
     <DimensionGrid key={dimension.granularity === 'category' || dimension.granularity === 'snapshot' ? dimension.id : `${dimension.id}-${view.mode}-${view.year}`} dimension={dimension} view={view} publisherNames={coveragePublisherNames(table, maps, dimension, publishers)} />
     <details className="coverage-checks">
       <summary>How this count was checked<span className="sr-only"> for {table.label}, {coverageViewLabel(dimension.label)}</span></summary>
       <div className="coverage-checks-body">
+        {reading.explanation && <p>{reading.explanation}</p>}
         <p>Measured <time dateTime={map.measuredAt}>{coverageDate(map.measuredAt)} UTC</time>.{map.publishedAt && <> Release published <time dateTime={map.publishedAt}>{coverageDate(map.publishedAt)} UTC</time>.</>}</p>
         <dl className="coverage-check-counts">
           <div><dt>Rows counted for {coverageViewLabel(dimension.label).toLowerCase()}</dt><dd>{count(dimension.placedRows)}</dd></div>

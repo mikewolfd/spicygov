@@ -127,11 +127,11 @@ test('report coverage prefers the Congress covered over the date a report was is
   assert.deepEqual(tableCoverageTags({...dated.table,rows:4}, dated.maps),[]);
 });
 
-test('period end and report period labels read naturally as year ranges', () => {
+test('period end and report period labels preserve the recorded quarter segments', () => {
   const periods = measured({label:'Printed report periods',fields:['period_start'],granularity:'month',buckets:{'2023-01':1,'2026-01':2}});
-  assert.equal(tableCoverageTags(periods.table,periods.maps)[0].label,'Printed report years 2023–2026 · gaps possible');
+  assert.equal(tableCoverageTags(periods.table,periods.maps)[0].label,'Printed report quarters 2023 Q1, 2026 Q1');
   const ends = measured({label:'Statement period ends',fields:['period_end'],granularity:'month',buckets:{'2024-10':1,'2026-09':2}});
-  assert.equal(tableCoverageTags(ends.table,ends.maps)[0].label,'Statement period end years 2024–2026 · gaps possible');
+  assert.equal(tableCoverageTags(ends.table,ends.maps)[0].label,'Statement period end quarters 2024 Q4, 2026 Q3');
 });
 
 test('publisher year categories preserve discrete edition years and nonnumeric source labels', () => {
@@ -156,7 +156,7 @@ test('dataset cycle labels describe current periods and omit earlier releases fr
 
 test('dataset date ranges state gaps and snapshots produce no generic headline', () => {
   const dated = measured({});
-  assert.equal(tableCoverageTags(dated.table, dated.maps)[0].label, 'Publication years 2021–2023 · gaps possible');
+  assert.equal(tableCoverageTags(dated.table, dated.maps)[0].label, 'Publication quarters 2021 Q1, 2023 Q1');
   const snapshot = measured({ label: 'Published release', granularity: 'snapshot', fields: [], buckets: {}, snapshot: { publishedAt: '2026-10-28T00:00:00Z' } });
   assert.deepEqual(tableCoverageTags(snapshot.table, snapshot.maps), []);
   const capture = measured({ label: 'Capture dates', fields: ['captured_at'] });

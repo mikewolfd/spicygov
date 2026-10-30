@@ -1,4 +1,4 @@
-"""Refresh the local archive catalog and website together, without downloads.
+"""Refresh the local archive catalog and website together.
 
 Run with the SpicyRegs source-readers Python environment. Existing catalog CLI
 commands own validation and selection; this command sequences them and stops at
@@ -214,6 +214,8 @@ def main():
     parser.add_argument('--candidate', type=Path, help='Use an already validated rebuild')
     parser.add_argument('--full-rebuild', action='store_true', help='Explicitly replay the full archive instead of updating the selected index')
     parser.add_argument('--coverage-selection', type=Path, help='Preserve a completed published-table coverage release')
+    parser.add_argument('--prepare-coverage', action='store_true',
+                        help='Prepare changed published-table measurements before catalog refresh; permits public/R2 reads')
     parser.add_argument('--finish-selected', action='store_true', help='Resume only website preparation for an already committed native selection')
     parser.add_argument('--refresh-object-list', type=Path, help='Replay only these canonical SHA-256 originals')
     parser.add_argument('--reuse-source-verification', type=Path, help='Reuse an earlier matching byte audit outside the affected object list')
@@ -237,6 +239,15 @@ def main():
 
 
 def run_refresh(args, website, run, raw, parser):
+    if getattr(args, 'prepare_coverage', False):
+        base = args.coverage_selection or website / 'content/coverage-release-selection.v1.json'
+        coverage_env = dict(os.environ)
+        if coverage_env.get('SPICYGOV_COVERAGE_PYTHONPATH'):
+            coverage_env['PYTHONPATH'] = coverage_env['SPICYGOV_COVERAGE_PYTHONPATH']
+        subprocess.run([sys.executable, str(website / 'scripts/prepare-coverage-refresh.py'),
+                        '--base-selection', str(base.resolve()), '--run', str(run / 'coverage')],
+                       cwd=website, env=coverage_env, check=True)
+        args.coverage_selection = run / 'coverage/selection.json'
     if args.finish_selected:
         if args.candidate or args.full_rebuild:
             parser.error('--finish-selected cannot build or replace a candidate')
@@ -276,8 +287,14 @@ def run_refresh(args, website, run, raw, parser):
                     website/'public/source-catalog/manifest.json',website/'dist/source-catalog/manifest.json')):
                 raise ValueError('Catalog unchanged but website selection differs; finish the selected run')
             completed.check_inputs(input_snapshot(args),boundary='unchanged completion')
-            (run/'complete.json').write_text(json.dumps({**built,'website':'Existing selected website preserved'},indent=2)+'\n')
-            print('Catalog unchanged; no source payloads, validation, export or website rebuild.',flush=True)
+            if getattr(args, 'prepare_coverage', False):
+                subprocess.run(['npm', 'run', 'build:ui', '--', '--selection',
+                                str(args.coverage_selection.resolve())], cwd=website, check=True)
+            (run/'complete.json').write_text(json.dumps({**built,'website':
+                'Prepared coverage website built' if getattr(args, 'prepare_coverage', False)
+                else 'Existing selected website preserved'},indent=2)+'\n')
+            print('Catalog unchanged; prepared coverage website built.' if getattr(args, 'prepare_coverage', False)
+                  else 'Catalog unchanged; no source payloads, validation, export or website rebuild.', flush=True)
             return
     report = read(candidate.with_suffix(candidate.suffix + '.reconciliation.json'))
     if report.get('status') != 'validated':

@@ -3,6 +3,8 @@ import { billAvailability, coverageReading, coveragePeriodNoun, preferredCoverag
 import type { CatalogCollection, CatalogPeriod } from './source-catalog';
 import { sourcePeriodGroups, type SourcePeriodGroup } from './source-periods';
 import { quarterCoverage } from './quarter-coverage';
+import { dimensionPeriodSummary, periodRuns } from './period-summary';
+export { periodRuns } from './period-summary';
 import type { RegisterSourcePeriods } from './register-source-periods';
 
 export type CoverageTag = { label: string; detail: string };
@@ -18,18 +20,6 @@ export function registerSourceCoverageTags(registerSourcePeriods?: RegisterSourc
 }
 
 /** Compress only values actually recorded. A run describes labels, not complete records. */
-export function periodRuns(values: number[], step = 1): string {
-  const sorted = [...new Set(values)].sort((a, b) => a - b);
-  const runs: string[] = [];
-  for (let index = 0; index < sorted.length; index++) {
-    const first = sorted[index];
-    let last = first;
-    while (index + 1 < sorted.length && sorted[index + 1] === last + step) last = sorted[++index];
-    runs.push(first === last ? String(first) : `${first}–${last}`);
-  }
-  return runs.join(', ');
-}
-
 const integer = (value: string) => /^\d{1,4}$/.test(value) && Number(value) > 0 ? Number(value) : undefined;
 const year = (value: string) => {
   const match = /^(\d{4})(?:-(?:\d{2}(?:-\d{2})?(?:T.*)?|spring|fall))?$/.exec(value);
@@ -157,22 +147,28 @@ export function tableCoverageTags(table: Dataset, maps?: CoverageMaps, tables: D
     return value && Number(value) > 0 ? [Number(value)] : [];
   });
   const cycles = coveragePeriodNoun(dimension) === 'cycle';
+  const summary = dimensionPeriodSummary(dimension, { tableId: table.id, measuredAt: reading.measuredAt });
   let label: string;
   if (congress.length) label = `${covered.length ? 'Reports covering Congresses' : 'Congresses'} ${periodRuns(congress)}`;
   else if (editions.length) label = `${editionField?.startsWith('requested') ? 'Requested edition years' : 'Edition years'} ${periodRuns(editions)}`;
   else if (literalPublisherYears.length) label = `Edition years ${periodRuns(literalPublisherYears)}`;
   else if (periodYears.length) {
     if (cycles) label = `Cycles ending ${periodRuns(periodYears, 2)}`;
-    else {
+    else if (summary?.granularity === 'quarter') {
+      const subject = /\bperiod ends$/i.test(dimension.label)
+        ? dimension.label.replace(/period ends$/i, 'period end quarters')
+        : dimension.label.replace(/\b(?:dates?|months?|years?|periods)\b/i, 'quarters');
+      label = `${subject} ${summary.range}`;
+    } else {
       const subject = dimension.granularity === 'season' ? 'Edition years'
         : editionField?.startsWith('requested') ? 'Requested edition years'
         : /edition/i.test(dimension.label) ? 'Edition years'
         : /\b(?:dates?|months?|years?|periods)\b/i.test(dimension.label) ? dimension.label.replace(/\b(?:dates?|months?|years?|periods)\b/i, 'years')
         : /\bends$/i.test(dimension.label) ? `${dimension.label.replace(/ends$/i, 'end')} years` : `${dimension.label} years`;
-      label = `${subject} ${range(periodYears)}${new Set(periodYears).size > 1 ? ' · gaps possible' : ''}`;
+      label = `${subject} ${periodRuns(periodYears)}`;
     }
   } else return [];
   const otherLabels = otherPublisherYears.length ? ` Other publisher year labels: ${otherPublisherYears.slice(0, 3).map(value => value.slice(0, 80)).join(', ')}${otherPublisherYears.length > 3 ? `; ${otherPublisherYears.length - 3} more in Details` : ''}. These labels were not expanded into individual years.` : '';
-  const detail = `${dimension.label}: ${dimension.meaning} ${reading.release}. Recorded labels and date bounds do not establish complete or gap-free coverage.${otherLabels}${requestedScope ? ` ${requestedScope}` : ''}${dimension.unplacedRows ? ` ${dimension.unplacedRows.toLocaleString()} rows have no usable value for this view.` : ''}`;
+  const detail = `${dimension.label}: ${dimension.meaning} ${reading.release}. Recorded labels and date bounds do not establish complete or gap-free coverage.${summary?.missing.length ? ` No dated values: ${summary.missing.join(', ')}.` : ''}${summary?.latestDate ? ` Latest dated value: ${summary.latestDate}.` : ''}${summary?.note ? ` ${summary.note}` : ''}${otherLabels}${requestedScope ? ` ${requestedScope}` : ''}${dimension.unplacedRows ? ` ${dimension.unplacedRows.toLocaleString()} rows have no usable value for this view.` : ''}`;
   return [{ label: compact(label), detail }];
 }

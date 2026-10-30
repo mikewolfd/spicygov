@@ -733,7 +733,7 @@
             "ingest_source"
           ],
           "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row’s origin, not a complete collection history."
+          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
         }
       ]
     },
@@ -2387,7 +2387,7 @@
             "link_source"
           ],
           "label": "Docket link evidence",
-          "meaning": "Whether a link appears in the Federal Register’s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
+          "meaning": "Whether a link appears in the Federal Register\u2019s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
         }
       ]
     },
@@ -2588,7 +2588,7 @@
           ],
           "special": "government-receipt-origins",
           "label": "Saved decision origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
         }
       ]
     },
@@ -2705,7 +2705,7 @@
           ],
           "special": "government-receipt-origins",
           "label": "Saved report origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
         }
       ]
     },
@@ -4470,7 +4470,7 @@
         {
           "id": "agenda-proceeding-link-evidence-dates",
           "kind": "date",
-          "label": "Agenda–proceeding link evidence dates",
+          "label": "Agenda\u2013proceeding link evidence dates",
           "meaning": "Dates of source evidence linking an agenda regulation identifier to a proceeding. Undated evidence remains unplaced; no collection date or agenda edition is substituted.",
           "fields": [
             "evidence_date"
@@ -6203,7 +6203,7 @@
           "id": "archive-inspectors",
           "kind": "category",
           "label": "Archive inspector labels",
-          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office’s reports are saved.",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
           "fields": [
             "archive_inspector"
           ]
@@ -6212,7 +6212,7 @@
           "id": "selection-scopes",
           "kind": "category",
           "label": "Selection scope",
-          "meaning": "The scope recorded when each report was selected. Metadata only means the report’s links and files are declared, not saved.",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
           "fields": [
             "selected_scope"
           ]
@@ -7739,6 +7739,218 @@
             "record_date"
           ],
           "syntax": "iso"
+        }
+      ]
+    },
+    "ofac_snapshots": {
+      "family": "ofac-sanctions",
+      "classification": "Retained OFAC list snapshots",
+      "note": "These are retained list observations. A snapshot date does not establish when an entity was designated or that every earlier list was captured.",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "selected_list",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "data_as_of_raw",
+          "VARCHAR"
+        ],
+        [
+          "entity_count",
+          "BIGINT"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_metadata_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "ofac-list-data-as-of",
+          "kind": "date",
+          "fields": [
+            "data_as_of_raw"
+          ],
+          "label": "Source-stated list dates",
+          "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage."
+        },
+        {
+          "id": "ofac-selected-lists",
+          "kind": "category",
+          "fields": [
+            "selected_list"
+          ],
+          "label": "Selected OFAC lists",
+          "meaning": "Lists named by retained snapshots. Different selected lists may state different data-as-of dates."
+        },
+        {
+          "id": "ofac-observation-dates",
+          "kind": "date",
+          "fields": [
+            "observed_at"
+          ],
+          "label": "Observation dates",
+          "meaning": "When the source snapshot was observed. These are capture dates, separate from source-stated data-as-of dates and designation dates."
+        }
+      ]
+    },
+    "ofac_entity_observations": {
+      "family": "ofac-sanctions",
+      "classification": "Retained OFAC list snapshots",
+      "note": "These are retained list observations. A snapshot date does not establish when an entity was designated or that every earlier list was captured.",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "selected_list",
+          "VARCHAR"
+        ],
+        [
+          "entity_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_id",
+          "VARCHAR"
+        ],
+        [
+          "entity_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "entity_type_ref_id",
+          "VARCHAR"
+        ],
+        [
+          "primary_names_json",
+          "VARCHAR"
+        ],
+        [
+          "names_json",
+          "VARCHAR"
+        ],
+        [
+          "list_memberships_json",
+          "VARCHAR"
+        ],
+        [
+          "programs_json",
+          "VARCHAR"
+        ],
+        [
+          "sanction_types_json",
+          "VARCHAR"
+        ],
+        [
+          "legal_authorities_json",
+          "VARCHAR"
+        ],
+        [
+          "addresses_json",
+          "VARCHAR"
+        ],
+        [
+          "identifiers_json",
+          "VARCHAR"
+        ],
+        [
+          "relationships_json",
+          "VARCHAR"
+        ],
+        [
+          "features_json",
+          "VARCHAR"
+        ],
+        [
+          "entity_content_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_entity_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "ofac-list-data-as-of",
+          "kind": "inherited",
+          "fields": [
+            "snapshot_id",
+            "selected_list"
+          ],
+          "label": "Source-stated list dates",
+          "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage.",
+          "parent": {
+            "table": "ofac_snapshots",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "snapshot_id",
+                "snapshot_id"
+              ],
+              [
+                "selected_list",
+                "selected_list"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "ofac-list-data-as-of",
+            "kind": "date",
+            "fields": [
+              "data_as_of_raw"
+            ],
+            "label": "Source-stated list dates",
+            "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage."
+          }
+        },
+        {
+          "id": "ofac-selected-lists",
+          "kind": "category",
+          "fields": [
+            "selected_list"
+          ],
+          "label": "Selected OFAC lists",
+          "meaning": "Each entity observation belongs to the named retained list snapshot. Counts do not establish additions, removals or designation dates."
+        },
+        {
+          "id": "ofac-entity-types",
+          "kind": "category",
+          "fields": [
+            "entity_type_raw"
+          ],
+          "label": "Source-stated entity types",
+          "meaning": "Entity type labels retained from the selected source list, without interpreting dates within entity features."
         }
       ]
     }
