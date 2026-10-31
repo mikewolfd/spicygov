@@ -100,6 +100,17 @@ class RuntimePreflight(unittest.TestCase):
             self.assertEqual(json.loads((run/'phase-costs.json').read_text())[-1]['status'],'passed')
 
 
+class CatalogOnlyPreflight(unittest.TestCase):
+    def test_no_node_or_website_dependencies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);run=root/'run';run.mkdir()
+            (root/'scripts').mkdir()
+            (root/'scripts/verify-register-sources.py').write_text('present')
+            with patch.object(refresh.subprocess,'check_output',side_effect=AssertionError('Node invoked')):
+                runtime=refresh.preflight(root,run,catalog_only=True)
+            self.assertIsNone(runtime['node'])
+
+
 class FixedInputSelectionBoundary(unittest.TestCase):
     """A native-accepted late receipt must not escape the wrapper's fixed capture."""
     def setUp(self):
@@ -255,6 +266,48 @@ class FixedInputSelectionBoundary(unittest.TestCase):
                 raise subprocess.CalledProcessError(1,argv)
         self.command=command
         return sha,original
+
+    def test_lost_export_response_reaches_native_recovery_on_resume(self):
+        original=self.command
+        lost=False
+        def command(argv, *, stdout, **kwargs):
+            nonlocal lost
+            if argv[3:4] == ['export']:
+                if not lost:
+                    original(argv,stdout=stdout,**kwargs)
+                    lost=True
+                    stdout.seek(0);stdout.truncate();stdout.write('{')
+                    raise RuntimeError('Lost native export response')
+                # Native export reuses its owned completion and rewrites only
+                # the response; no staging tree reconstruction is required.
+                self.calls.append('export-recovered')
+                self.assertTrue((self.run/'public/manifest.json').exists())
+                stdout.write(json.dumps({'generation':self.new}))
+                return
+            return original(argv,stdout=stdout,**kwargs)
+        self.command=command
+        with self.assertRaisesRegex(RuntimeError,'Lost native export'):
+            self.execute()
+        self.assertFalse((self.run/'export.done.json').exists())
+        self.calls.clear()
+        self.assertEqual(self.execute(resume=True),1)
+        self.assertEqual(self.calls,['export-recovered','inspect','stage','select'])
+        # A committed report is different: corruption must refuse before use.
+        (self.run/'export.json').write_text('{')
+        with self.assertRaisesRegex(ValueError,'phase changed: export'):
+            self.execute(resume=True)
+
+    def test_catalog_only_pipeline_skips_inspection_staging_and_node(self):
+        self.arguments += ['--catalog-only']
+        self.assertEqual(self.execute(),1)
+        self.assertEqual(self.calls,['freeze-receipts','refresh-metadata','check-publication',
+                                    'verify-sources','export','select'])
+        snapshot=refresh.read(self.run/'input-snapshot.json')
+        self.assertTrue(snapshot['catalogOnly'])
+        self.assertIsNone(snapshot['node'])
+        command=refresh.read(self.run/'export.done.json')['command']
+        self.assertIn('--completion-cache',command)
+        self.assertFalse((self.run/'inspect.json').exists())
 
     def test_late_receipts_stop_before_selection_and_keep_completed_outputs(self):
         for boundary in ('build', 'stage'):
@@ -647,6 +700,16 @@ class SelectedRefreshRecovery(unittest.TestCase):
                                             'backup': str(self.native_backup)})
         (self.run / 'previous-site-catalog').mkdir()
         self.args = SimpleNamespace(cache=self.cache, public=self.public, coverage_selection=None)
+        self.write(self.run/'input-snapshot.json',{'catalogOnly':False})
+        self.pin_proof()
+
+    def pin_proof(self):
+        self.write(self.run/'verify-sources.done.json',{
+            'report':refresh.fingerprint(self.run/'verify-sources.json'),
+            'snapshot':refresh.fingerprint(self.run/'input-snapshot.json')['sha256']})
+        self.write(self.run/'export.done.json',{
+            'report':refresh.fingerprint(self.run/'export.json'),
+            'snapshot':refresh.fingerprint(self.run/'input-snapshot.json')['sha256']})
 
     @staticmethod
     def write(path, value):
@@ -661,6 +724,68 @@ class SelectedRefreshRecovery(unittest.TestCase):
         (self.website / 'dist/source-catalog').mkdir(parents=True, exist_ok=True)
         (self.website / 'dist/source-catalog/manifest.json').write_bytes(self.manifest)
         self.write(self.website / 'dist/register-source-periods.v1.json', self.summary)
+
+    def catalog_only(self):
+        self.args.catalog_only = True
+        manifest={'format':'spicy-source-catalog','version':3,'generation':self.generation,
+                  'collections':[],'totals':{'collections':0}}
+        self.write(self.public/'manifest.json',manifest)
+        (self.public/'generations'/self.generation[7:]).mkdir(parents=True)
+        body=(self.public/'manifest.json').read_bytes()
+        pins=[{'path':'manifest.json','bytes':len(body),'sha256':'sha256:'+hashlib.sha256(body).hexdigest()}]
+        self.write(self.cache/'current.json',{'generation':self.generation,
+                    'public_manifest_sha256':hashlib.sha256(body).hexdigest()})
+        self.write(self.cache/'selection.json',{'generation':self.generation,'files':pins})
+        self.write(self.run/'export.json',{'generation':self.generation,'files':pins})
+        self.write(self.run/'input-snapshot.json',{'catalogOnly':True})
+        self.write(self.run/'verify-sources.json',{**self.summary,'verifiedObjects':1,
+                   'indexAgreement':{'status':'matched'}})
+        self.pin_proof()
+        shutil.rmtree(self.website)
+
+    def test_catalog_only_completes_source_proof_without_website_or_subprocess(self):
+        self.catalog_only()
+        with patch.object(refresh.subprocess,'run',side_effect=AssertionError('Website build')):
+            refresh.finish_selected(self.args,self.website,self.run)
+        self.assertEqual(refresh.read(self.cache/'source-verification.json')['generation'],self.generation)
+        self.assertFalse(self.native_backup.exists())
+        self.assertTrue((self.run/'complete.json').exists())
+
+    def test_catalog_only_lost_select_response_keeps_backup_and_finishes(self):
+        self.catalog_only()
+        (self.run/'select.json').write_bytes(b'')
+        refresh.finish_selected(self.args,self.website,self.run)
+        self.assertTrue(self.native_backup.exists())
+        self.assertTrue((self.cache/'source-verification.json').exists())
+
+    def test_catalog_only_lost_ack_refuses_changed_source_proof_or_snapshot(self):
+        self.catalog_only()
+        (self.run/'select.json').write_bytes(b'')
+        path=self.run/'verify-sources.json'
+        original=path.read_bytes()
+        changed=refresh.read(path)
+        changed['months']=['2026-08']
+        self.write(path,changed)
+        with self.assertRaisesRegex(ValueError,'phase changed: verify-sources'):
+            refresh.finish_selected(self.args,self.website,self.run)
+        path.write_bytes(original)
+        self.write(self.run/'input-snapshot.json',{'catalogOnly':True,'changed':True})
+        with self.assertRaisesRegex(ValueError,'phase changed: verify-sources'):
+            refresh.finish_selected(self.args,self.website,self.run)
+        self.assertTrue(self.native_backup.exists())
+        self.assertFalse((self.cache/'source-verification.json').exists())
+
+    def test_catalog_only_cannot_change_finish_mode_or_selected_members(self):
+        self.catalog_only()
+        self.args.catalog_only=False
+        with self.assertRaisesRegex(ValueError,'Finish mode'):
+            refresh.finish_selected(self.args,self.website,self.run)
+        self.args.catalog_only=True
+        (self.public/'generations'/self.generation[7:]/'extra').write_text('unexpected')
+        with self.assertRaisesRegex(ValueError,'Unreferenced'):
+            refresh.finish_selected(self.args,self.website,self.run)
+        self.assertFalse((self.cache/'source-verification.json').exists())
+        self.assertTrue(self.native_backup.exists())
 
     def test_selected_retry_runs_only_the_website_and_retires_its_backup(self):
         with patch.object(refresh.subprocess, 'run', side_effect=self.build_only) as called:

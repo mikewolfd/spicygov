@@ -74,12 +74,16 @@ def input_snapshot(args, *, receipt_keys=None):
                  'attempt_source_verification','attempt_source_index'):
         if getattr(args,name,None) is not None:code.add(getattr(args,name).resolve())
     website = Path(__file__).resolve().parents[1]
-    code.update(website/'scripts'/name for name in ('refresh-local-catalog.py','verify-register-sources.py',
-                'stage-source-catalog.mjs','catalog-inspection.mjs','register-source-periods.mjs'))
-    code.update((website/'lib').rglob('*.ts'))
-    code.add(website/'package-lock.json')
+    code.update(website/'scripts'/name for name in ('refresh-local-catalog.py','verify-register-sources.py'))
+    catalog_only = getattr(args,'catalog_only',False)
+    if not catalog_only:
+        code.update(website/'scripts'/name for name in
+                    ('stage-source-catalog.mjs','catalog-inspection.mjs','register-source-periods.mjs'))
+        code.update((website/'lib').rglob('*.ts'))
+        code.add(website/'package-lock.json')
     return {'baseGeneration':read(args.cache/'current.json')['generation'], 'python':sys.version,
-            'node':subprocess.check_output(['node','--version'],text=True).strip(),
+            'node':None if catalog_only else subprocess.check_output(['node','--version'],text=True).strip(),
+            'catalogOnly':catalog_only,
             'rawSnapshot':fingerprint(raw/'snapshot.json'), 'receipts':receipts,
             'definitions':{str(p.resolve()):fingerprint(p) for p in sorted(code)},
             'fullRebuild':args.full_rebuild, 'candidate':str(args.candidate.resolve()) if args.candidate else None}
@@ -95,12 +99,13 @@ def record_phase(run, name, started, *, status, counters=None):
     save(path, records)
 
 
-def preflight(website, run):
+def preflight(website, run, catalog_only=False):
     """Import every required runtime owner before cloning or reading receipt bodies."""
     started = monotonic()
     modules = ('spicy_regs.source_catalog.__main__', 'spicy_regs.source_catalog.maintenance',
                'spicy_regs.source_catalog.publication', 'spicy_regs.source_catalog.exporter',
                'spicy_regs.source_catalog.file_inventory', 'spicy_regs.source_catalog.selection',
+               'spicy_regs.source_catalog.export_completion',
                'spicy_docs.storage.raw_archive', 'spicy_regs.sources.publication')
     try:
         origins = {}
@@ -115,15 +120,17 @@ def preflight(website, run):
         provider = importlib.import_module('spicy_docs.storage.raw_archive')
         if 'receipt_keys' not in inspect.signature(provider.iter_acquisition_receipts).parameters:
             raise ValueError('Installed receipt provider cannot select keys before payload reads')
-        for name in ('stage-source-catalog.mjs','catalog-inspection.mjs','register-source-periods.mjs',
-                     'verify-register-sources.py','build-ui.mjs'):
+        required = ('verify-register-sources.py',) if catalog_only else (
+            'stage-source-catalog.mjs','catalog-inspection.mjs','register-source-periods.mjs',
+            'verify-register-sources.py','build-ui.mjs')
+        for name in required:
             if not (website/'scripts'/name).is_file():
                 raise ValueError('Required catalog runtime path is unavailable: '+name)
         runtime = {'python':sys.version, 'executable':sys.executable,
-                   'node':subprocess.check_output(['node','--version'],text=True).strip(),
+                   'node':None if catalog_only else subprocess.check_output(['node','--version'],text=True).strip(),
                    'modules':origins, 'dependencies':{name:importlib.metadata.version(name)
                        for name in ('spicy-docs','pyarrow','duckdb')}}
-        if int(runtime['node'].removeprefix('v').split('.')[0]) < 22:
+        if not catalog_only and int(runtime['node'].removeprefix('v').split('.')[0]) < 22:
             raise ValueError('Catalog staging requires Node.js 22 or newer')
         save(run/'runtime.json',runtime)
     except BaseException:
@@ -167,8 +174,8 @@ class CompletedSteps:
             return read(report)
         print(name,flush=True)
         try:
-            with report.open('w') as output:
-                subprocess.run(command,cwd=cwd,stdout=output,check=True)
+            with report.open('w') as output, (self.run/(name+'.stderr.log')).open('a') as diagnostic:
+                subprocess.run(command,cwd=cwd,stdout=output,stderr=diagnostic,check=True)
             value = read(report)
         except BaseException:
             record_phase(self.run,name,started,status='failed')
@@ -196,10 +203,27 @@ def native_validation(candidate, report, built):
         raise ValueError('Candidate differs from its native builder validation')
 
 
+def completed_report(run, name):
+    """Check retained report ownership without reopening a moved candidate."""
+    completion = read(run/(name+'.done.json'))
+    report = run/(name+'.json')
+    if (completion['report'] != fingerprint(report)
+            or completion['snapshot'] != fingerprint(run/'input-snapshot.json')['sha256']):
+        raise ValueError('Completed refresh phase changed: '+name)
+    return read(report)
+
+
 def finish_selected(args, website, run):
     """Finish a committed native selection; never repeat its acquisition/audit/export."""
-    generation = read(run / 'export.json')['generation']
-    verified = read(run / 'verify-sources.json')
+    catalog_only = getattr(args,'catalog_only',False)
+    snapshot = run/'input-snapshot.json'
+    if snapshot.exists() and read(snapshot).get('catalogOnly',False) != catalog_only:
+        raise ValueError('Finish mode differs from the fixed-input run')
+    exported = read(run / 'export.json')
+    generation = exported['generation']
+    # The candidate has moved, but this run's report and fixed-input pins have
+    # not. Verify the existing phase completion without reopening that artifact.
+    verified = completed_report(run,'verify-sources')
     cache, public = args.cache.resolve(), args.public.resolve()
     current, selection = read(cache / 'current.json'), read(cache / 'selection.json')
     with closing(sqlite3.connect((cache / 'index.sqlite').as_uri() + '?mode=ro', uri=True)) as db:
@@ -209,7 +233,7 @@ def finish_selected(args, website, run):
         raise ValueError('Native selection is inconsistent; use its recovery.json before finishing the website')
     def pins(value):
         return sorted((item['path'], item['bytes'], item['sha256']) for item in value['files'])
-    if pins(selection) != pins(read(run / 'inspect.json')):
+    if pins(selection) != pins(exported if catalog_only else read(run / 'inspect.json')):
         raise ValueError('Selected catalog differs from this run; keep its recovery files')
     manifest_sha = hashlib.sha256((public / 'manifest.json').read_bytes()).hexdigest()
     if manifest_sha != current['public_manifest_sha256']:
@@ -227,6 +251,20 @@ def finish_selected(args, website, run):
                     'backup': None, 'acknowledgedBy': 'native-controls',
                     'note': 'Native backups retained because the acknowledgement was lost.'}
         (run / 'recovered-select.json').write_text(json.dumps(selected, indent=2) + '\n')
+    if catalog_only:
+        # The native selection already validated the exact admitted export.
+        # Check its currently selected bytes before handing off the source proof.
+        from spicy_regs.source_catalog.selection import public_members
+        members, _ = public_members(public,generation,decode=False)
+        if members != selection['files']:
+            raise ValueError('Selected public members changed before completion')
+        if verified.get('indexAgreement',{}).get('status') != 'matched':
+            raise ValueError('Source proof does not establish native index agreement')
+        complete_selection(args,run,selected,verified,{
+            'generation':generation,
+            'scope':'Local catalog completed; Federal Register source proof retained; website not built.'})
+        print('Local catalog refreshed.',flush=True)
+        return
     site = website / 'public/source-catalog'
     site_stage = website / 'public' / ('.catalog-' + generation[7:])
     backup = run / 'previous-site-catalog'
@@ -251,17 +289,29 @@ def finish_selected(args, website, run):
         raise ValueError('Catalog selection changed during website preparation')
     if read(website / 'dist/register-source-periods.v1.json') != summary:
         raise ValueError('Built and development source summaries differ')
-    save(cache/'source-verification.json',verified)
+    complete_selection(args,run,selected,verified,{'generation':generation,'sourcePeriods':summary,
+        'scope':'Local catalog and website; Federal Register byte audit only; published measurements remain release-specific; no downloads or deployment'})
     shutil.rmtree(backup, ignore_errors=True)
-    if selected.get('backup'):
-        selection_backup = Path(selected['backup']).resolve()
-        if selection_backup.parent == cache and selection_backup.name.startswith('selection-backup-'):
-            if selection_backup.exists() and read(selection_backup / 'recovery.json').get('generation') != generation:
-                raise ValueError('Recovery backup belongs to a different generation; retained')
-            shutil.rmtree(selection_backup, ignore_errors=True)
-    (run / 'complete.json').write_text(json.dumps({'generation': generation, 'sourcePeriods': summary,
-        'scope': 'Local catalog and website; Federal Register byte audit only; published measurements remain release-specific; no downloads or deployment'}, indent=2) + '\n')
     print('Local catalog and quarter coverage refreshed.', flush=True)
+
+
+def complete_selection(args, run, selected, verified, result):
+    """Hand off source proof before retiring this run's owned recovery backup."""
+    cache = args.cache.resolve()
+    generation = result['generation']
+    from spicy_regs.source_catalog.selection import selection_lock
+
+    with selection_lock(cache):
+        if read(cache/'current.json')['generation'] != generation:
+            raise ValueError('Catalog selection changed before completion')
+        save(cache/'source-verification.json',verified)
+        if selected.get('backup'):
+            selection_backup = Path(selected['backup']).resolve()
+            if selection_backup.parent == cache and selection_backup.name.startswith('selection-backup-'):
+                if selection_backup.exists() and read(selection_backup/'recovery.json').get('generation') != generation:
+                    raise ValueError('Recovery backup belongs to a different generation; retained')
+                shutil.rmtree(selection_backup,ignore_errors=True)
+        save(run/'complete.json',result)
 
 
 def main():
@@ -274,7 +324,8 @@ def main():
     parser.add_argument('--coverage-selection', type=Path, help='Preserve a completed published-table coverage release')
     parser.add_argument('--prepare-coverage', action='store_true',
                         help='Prepare changed published-table measurements before catalog refresh; permits public/R2 reads')
-    parser.add_argument('--finish-selected', action='store_true', help='Resume only website preparation for an already committed native selection')
+    parser.add_argument('--finish-selected', action='store_true', help='Finish an already committed native selection')
+    parser.add_argument('--catalog-only', action='store_true', help='Finish the local catalog and source proof without website staging or build')
     parser.add_argument('--refresh-object-list', type=Path, help='Replay only these canonical SHA-256 originals')
     parser.add_argument('--reuse-source-verification', type=Path, help='Reuse an earlier matching byte audit outside the affected object list')
     parser.add_argument('--audit-register-sources', action='store_true',
@@ -287,6 +338,8 @@ def main():
     parser.add_argument('--completion-request',type=Path,
                         help='Consume one opt-in coalesced notification after durable source/publication completion')
     args = parser.parse_args()
+    if args.catalog_only and (args.prepare_coverage or args.coverage_selection):
+        parser.error('--catalog-only cannot prepare website coverage')
     if args.max_catch_up_attempts < 0 or args.catch_up_budget_seconds < 0:
         parser.error('Catch-up limits must be nonnegative')
     if args.refresh_object_list and (args.full_rebuild or args.candidate):
@@ -312,7 +365,7 @@ def run_refresh(args, website, run, raw, parser):
         if args.completion_request and not admit_completion(args,run,raw):
             save(run/'complete.json',{'status':'no-pending-request','scope':'No catalogue refresh was started.'})
             return
-        preflight(website,run)
+        preflight(website,run,getattr(args,'catalog_only',False))
     if getattr(args, 'prepare_coverage', False):
         base = args.coverage_selection or website / 'content/coverage-release-selection.v1.json'
         coverage_env = dict(os.environ)
@@ -347,8 +400,9 @@ def run_refresh(args, website, run, raw, parser):
         attempt.mkdir(parents=True,exist_ok=True)
         if attempt != run and getattr(args,'completion_admission',None):
             save(attempt/'completion-admission.json',read(args.completion_admission))
-        if args.resume and (attempt/'export.json').exists():
-            if read(args.cache/'current.json')['generation'] == read(attempt/'export.json')['generation']:
+        if args.resume and (attempt/'export.done.json').exists():
+            exported = completed_report(attempt,'export')
+            if read(args.cache/'current.json')['generation'] == exported['generation']:
                 finish_selected(args,website,attempt)
                 acknowledge_completion(run,raw)
                 return
@@ -504,8 +558,10 @@ def refresh_attempt(args, website, run, raw, base_index, base_generation, select
                  (candidate,candidate.with_suffix(candidate.suffix+'.reconciliation.json')))
         if built.get('status') == 'unchanged':
             generation = built['generation']
-            if any(read(path)['generation'] != generation for path in (args.public/'manifest.json',
-                    website/'public/source-catalog/manifest.json',website/'dist/source-catalog/manifest.json')):
+            paths = [args.public/'manifest.json']
+            if not getattr(args,'catalog_only',False):
+                paths += [website/'public/source-catalog/manifest.json',website/'dist/source-catalog/manifest.json']
+            if any(read(path)['generation'] != generation for path in paths):
                 raise ValueError('Catalog unchanged but website selection differs; finish the selected run')
             pending = pending_receipts(completed,args,base_index,generation,boundary='unchanged completion')
             if pending:return pending
@@ -550,18 +606,20 @@ def refresh_attempt(args, website, run, raw, base_index, base_generation, select
                   '--objects-from', str(cohort.resolve())]
     verified = step('verify-sources', audit,(candidate,))
     staged = run / 'public'
-    exported = step('export', cli + ['export', '--index', str(candidate), '--output', str(staged)],(staged,))
+    exported = step('export', cli + ['export', '--index', str(candidate), '--output', str(staged),
+                    '--completion-cache',str(args.cache.resolve())],(staged,))
     if exported['generation'] != report['generation']:
         raise ValueError('Export generation differs from its build')
-    selection = run / 'inspect.json'
-    dates = run / 'source-periods.json'
-    step('inspect', ['node', 'scripts/stage-source-catalog.mjs', '--inspect', str(staged), '--source-periods', str(dates)],(staged,selection,dates))
-    observed = read(dates)
-    if observed['months'] != verified['months'] or observed.get('latestIndexedDate') != verified['latestIndexedDate']:
-        raise ValueError('Exported source dates differ from the verified local files')
-    digest = 'sha256:' + hashlib.sha256(selection.read_bytes()).hexdigest()
-    site_stage = website / 'public' / ('.catalog-' + report['generation'][7:])
-    step('stage', ['node', 'scripts/stage-source-catalog.mjs', str(staged), str(selection), digest, str(site_stage)],(site_stage,))
+    if not getattr(args,'catalog_only',False):
+        selection = run / 'inspect.json'
+        dates = run / 'source-periods.json'
+        step('inspect', ['node', 'scripts/stage-source-catalog.mjs', '--inspect', str(staged), '--source-periods', str(dates)],(staged,selection,dates))
+        observed = read(dates)
+        if observed['months'] != verified['months'] or observed.get('latestIndexedDate') != verified['latestIndexedDate']:
+            raise ValueError('Exported source dates differ from the verified local files')
+        digest = 'sha256:' + hashlib.sha256(selection.read_bytes()).hexdigest()
+        site_stage = website / 'public' / ('.catalog-' + report['generation'][7:])
+        step('stage', ['node', 'scripts/stage-source-catalog.mjs', str(staged), str(selection), digest, str(site_stage)],(site_stage,))
     pending = pending_receipts(completed,args,candidate,report['generation'],boundary='selection')
     if pending:return pending
     step('select', cli + ['select', '--candidate', str(candidate),

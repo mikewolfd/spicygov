@@ -210,6 +210,20 @@ installed dependencies are checked before receipt payloads or index cloning.
 available work counters; physical I/O, peak memory and allocated scratch remain
 unmeasured unless separately observed. It performs no downloads or deployment.
 
+Add `--catalog-only` to complete the local catalogue without Node, website staging
+or a UI build. This mode still checks publication accounting, verifies affected
+Federal Register originals, selects the exact native export, saves the new
+`source-verification.json`, and retires only its acknowledged selection backup.
+The finish mode is pinned to the run: keep `--catalog-only` on retries and
+`--finish-selected`. This mode cannot be combined with website coverage options.
+
+Exports use native completion in the selected cache. Selection verifies the
+completed members without encoding or decoding their rows again. A lost export
+response can recover from that completion; changed candidate bytes, references,
+implementation or output refuse reuse. Unadmitted exports retain native replay.
+Per-phase stderr logs, including the builder's named SQL/check timings, remain in
+the run as `<phase>.stderr.log`; inspect the relevant log when a command fails.
+
 Routine refresh reuses `source-verification.json` from the selected cache, or an
 explicit `--reuse-source-verification` report. An unrelated receipt addition uses
 an empty affected Federal Register cohort and opens no inherited source bodies
@@ -218,8 +232,8 @@ Carried dates keep their historical reader identities; the report identifies the
 current reader separately for the objects actually rehashed.
 New or explicitly affected objects receive the byte checks they need. A full
 renewal requires `--audit-register-sources`; the caller does not silently run a
-whole-family audit when a prior proof is missing or ineligible. The source dates
-must still match the website summary. Unknown formats stay explicitly undated.
+whole-family audit when a prior proof is missing or ineligible. When preparing the website, source dates
+must still match its summary. Unknown formats stay explicitly undated.
 Pass `--coverage-selection` to retain an existing completed table coverage release.
 Keep catalog readers and writers paused during the selection, as required by the
 catalog CLI. A failed check stops the workflow before its next step.
@@ -236,11 +250,11 @@ and `pending-catch-up.json` report retained progress without claiming selection.
 Changed or removed inherited inputs, changed interpretation and a changed base
 selection still refuse. Before selection, `--candidate` can admit a separately
 prepared inventory through the existing validation boundary. After selection, the
-candidate has moved into the selected cache. If only the UI build failed, run
+candidate has moved into the selected cache. If only completion failed,
 use `--finish-selected` with the existing `--run`, `--raw-root`, `--cache`,
 `--public`, and coverage selection. Omit `--candidate` and `--full-rebuild`.
 This checks the native selection controls and exact exported member pins, then
-finishes only the website. It does not repeat inventory construction, the byte
+finishes the run's selected mode. It does not repeat inventory construction, the byte
 audit, validation or export. A lost selection acknowledgement is reconciled with
 the native controls; backups without an acknowledged owner are retained.
 The command retires only this run's named backups after the build and readback
