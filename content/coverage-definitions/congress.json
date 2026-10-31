@@ -417,6 +417,52 @@
             "syntax": "positive-integer"
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "action_index",
+          "BIGINT"
+        ],
+        [
+          "action_date",
+          "VARCHAR"
+        ],
+        [
+          "action_time",
+          "VARCHAR"
+        ],
+        [
+          "action_text",
+          "VARCHAR"
+        ],
+        [
+          "action_code",
+          "VARCHAR"
+        ],
+        [
+          "action_type",
+          "VARCHAR"
+        ],
+        [
+          "source_system_name",
+          "VARCHAR"
+        ],
+        [
+          "recorded_vote_count",
+          "BIGINT"
+        ],
+        [
+          "is_latest_action",
+          "BOOLEAN"
+        ],
+        [
+          "stage",
+          "VARCHAR"
+        ]
       ]
     },
     "bill_committee_activities": {
@@ -493,6 +539,32 @@
             "syntax": "positive-integer"
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "system_code",
+          "VARCHAR"
+        ],
+        [
+          "activity_name",
+          "VARCHAR"
+        ],
+        [
+          "activity_date",
+          "VARCHAR"
+        ],
+        [
+          "occurrence",
+          "BIGINT"
+        ],
+        [
+          "parent_system_code",
+          "VARCHAR"
+        ]
       ]
     },
     "bill_committees": {
@@ -580,6 +652,40 @@
             "syntax": "positive-integer"
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "system_code",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "parent_system_code",
+          "VARCHAR"
+        ],
+        [
+          "is_subcommittee",
+          "BOOLEAN"
+        ],
+        [
+          "snapshot_update_date",
+          "VARCHAR"
+        ]
       ]
     },
     "bill_cosponsors": {
@@ -873,6 +979,36 @@
             "syntax": "positive-integer"
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "summary_version_code",
+          "VARCHAR"
+        ],
+        [
+          "action_date",
+          "VARCHAR"
+        ],
+        [
+          "action_desc",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "summary_html",
+          "VARCHAR"
+        ],
+        [
+          "summary_chars",
+          "BIGINT"
+        ]
       ]
     },
     "bill_sections": {
@@ -1504,6 +1640,40 @@
           "label": "Congress, chamber and session",
           "meaning": "Congress, chamber and session recorded together. Rows missing any of these values stay unplaced."
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "session",
+          "VARCHAR"
+        ],
+        [
+          "roll_number",
+          "VARCHAR"
+        ],
+        [
+          "action_index",
+          "BIGINT"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "full_action_name",
+          "VARCHAR"
+        ]
       ]
     },
     "cbo_cost_estimates": {
@@ -1689,6 +1859,36 @@
           ],
           "syntax": "iso"
         }
+      ],
+      "publishedSchema": [
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "pub_date",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "link",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "bill_number",
+          "VARCHAR"
+        ]
       ]
     },
     "congress_bills": {
@@ -2941,6 +3141,60 @@
             "syntax": "positive-integer"
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "from_version_code",
+          "VARCHAR"
+        ],
+        [
+          "from_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "to_version_code",
+          "VARCHAR"
+        ],
+        [
+          "to_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "from_version_date",
+          "VARCHAR"
+        ],
+        [
+          "to_version_date",
+          "VARCHAR"
+        ],
+        [
+          "added_count",
+          "BIGINT"
+        ],
+        [
+          "removed_count",
+          "BIGINT"
+        ],
+        [
+          "modified_count",
+          "BIGINT"
+        ],
+        [
+          "unchanged_count",
+          "BIGINT"
+        ],
+        [
+          "moved_count",
+          "BIGINT"
+        ],
+        [
+          "item_count",
+          "BIGINT"
+        ]
       ]
     },
     "bill_subjects": {
@@ -6955,6 +7209,124 @@
           "label": "Congress, chamber and session",
           "meaning": "Congress, chamber and session recorded together. Rows missing any of these values stay unplaced."
         }
+      ],
+      "publishedSchema": [
+        [
+          "vote_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "session",
+          "VARCHAR"
+        ],
+        [
+          "roll_number",
+          "VARCHAR"
+        ],
+        [
+          "vote_date",
+          "VARCHAR"
+        ],
+        [
+          "question",
+          "VARCHAR"
+        ],
+        [
+          "result",
+          "VARCHAR"
+        ],
+        [
+          "yea",
+          "BIGINT"
+        ],
+        [
+          "nay",
+          "BIGINT"
+        ],
+        [
+          "present",
+          "BIGINT"
+        ],
+        [
+          "not_voting",
+          "BIGINT"
+        ],
+        [
+          "tallies",
+          "STRUCT(choice VARCHAR, count BIGINT)[]"
+        ],
+        [
+          "member_vote_count",
+          "BIGINT"
+        ],
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "tally_kind",
+          "VARCHAR"
+        ],
+        [
+          "documents",
+          "STRUCT(congress BIGINT, \"name\" VARCHAR, nomination_id VARCHAR, number VARCHAR, short_title VARCHAR, title VARCHAR, \"type\" VARCHAR)[]"
+        ],
+        [
+          "amendments",
+          "STRUCT(number VARCHAR, purpose VARCHAR, to_amendment_number VARCHAR, to_amendment_to_amendment_number VARCHAR, to_document_number VARCHAR, to_document_short_title VARCHAR)[]"
+        ],
+        [
+          "vote_day",
+          "VARCHAR"
+        ],
+        [
+          "legis_num",
+          "VARCHAR"
+        ],
+        [
+          "clerk_body_element",
+          "VARCHAR"
+        ],
+        [
+          "vote_desc",
+          "VARCHAR"
+        ],
+        [
+          "vote_question_text",
+          "VARCHAR"
+        ],
+        [
+          "vote_title",
+          "VARCHAR"
+        ],
+        [
+          "majority_requirement",
+          "VARCHAR"
+        ],
+        [
+          "modify_date",
+          "VARCHAR"
+        ],
+        [
+          "tie_breaker_by_whom",
+          "VARCHAR"
+        ],
+        [
+          "tie_breaker_vote",
+          "VARCHAR"
+        ],
+        [
+          "party_totals",
+          "STRUCT(party VARCHAR, \"yea-total\" BIGINT, \"nay-total\" BIGINT, \"present-total\" BIGINT, \"not-voting-total\" BIGINT)[]"
+        ]
       ]
     },
     "scorecard_action_comparisons": {

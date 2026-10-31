@@ -1,4 +1,4 @@
-/** Collect only source-content dates from validated catalog file pages. */
+/** Collect source-content and independently qualified publication dates from validated file pages. */
 export function registerSourcePeriods() {
   const months = new Set();
   const objects = new Set(), dated = new Set();
@@ -11,7 +11,7 @@ export function registerSourcePeriods() {
         objects.add(file.sha256);
         for (const period of file.periods ?? []) {
           const date = period.label;
-          if (period.kind !== 'publication-date' || period.basis !== 'Observed in source content'
+          if (period.kind !== 'publication-date' || !['Observed in source content', 'Observed in pinned publication context'].includes(period.basis)
               || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
           const parsed = new Date(`${date}T00:00:00Z`);
           if (!Number.isFinite(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== date) continue;

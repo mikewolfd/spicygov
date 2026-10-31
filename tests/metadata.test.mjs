@@ -45,9 +45,11 @@ try {
     const value = bundle();
     value.tables.child.category = 'reference_data';
     value.tables.child.row_unit = 'filing layouts';
+    value.tables.child.grain = 'One filing layout per selected release; revisions remain distinct.';
     const result = applyMetadata((await loadCollection()).tables, parseMetadata(value));
     const reference = result.tables.find(t => t.id === 'child');
     assert.equal(reference.rowUnit, 'filing layouts');
+    assert.equal(reference.grain, value.tables.child.grain);
     assert.equal(tableCountUnit(reference), 'filing layouts');
     assert.equal(tableEyebrow(reference), 'REFERENCE DATA');
     assert.equal(result.joins.length, 1); // Evidence presentation must not erase explicit routes.

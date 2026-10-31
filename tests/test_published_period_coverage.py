@@ -92,4 +92,70 @@ class PublishedPeriods(unittest.TestCase):
                     self.assertTrue(any(d['buckets'].get(expected_month)==1 for d in result['dimensions']))
 
 
-if __name__ == '__main__': unittest.main()
+
+DEFERRED_SAMPLES = {
+    'bill_actions': dict(bill_id='hr1-119', action_date='2026-10-03'),
+    'bill_committee_activities': dict(bill_id='hr1-119', activity_date='2026-10-03'),
+    'bill_committees': dict(bill_id='hr1-119', chamber='House'),
+    'bill_publisher_summaries': dict(bill_id='hr1-119', action_date='2026-10-03'),
+    'bill_vote_references': dict(congress='119', chamber='House', session='1', date='2026-10-03'),
+    'cbo_feed_items': dict(congress=119, pub_date='2026-10-03'),
+    'roll_call_votes': dict(congress='119', chamber='House', session='1', vote_day='2026-10-03'),
+    'section_diffs': dict(bill_id='hr1-119', from_version_date='2026-09-03', to_version_date='2026-10-03'),
+}
+
+
+class DeferredPublishedPeriods(unittest.TestCase):
+    def test_public_values_and_exact_parent_keys_supply_all_reviewed_dimensions(self):
+        from types import SimpleNamespace
+        for name, sample in DEFERRED_SAMPLES.items():
+            with self.subTest(table=name), tempfile.TemporaryDirectory() as folder:
+                policy = builder.definitions()[name]
+                columns = policy['publishedSchema']
+                path, parent_path = Path(folder)/'child.parquet', Path(folder)/'parent.parquet'
+                with duckdb.connect() as con:
+                    con.execute('CREATE TABLE fixture ('+','.join('"'+field+'" '+kind for field,kind in columns)+')')
+                    con.execute('INSERT INTO fixture ('+','.join('"'+field+'"' for field in sample)+') VALUES ('+
+                                ','.join('?' for _ in sample)+')', list(sample.values()))
+                    con.execute('INSERT INTO fixture DEFAULT VALUES')
+                    con.execute('COPY fixture TO ? (FORMAT PARQUET)', [str(path)])
+                    con.execute("COPY (SELECT 'hr1-119' AS bill_id,'119' AS congress) TO ? (FORMAT PARQUET)", [str(parent_path)])
+                digest = 'sha256:'+hashlib.sha256(path.read_bytes()).hexdigest()
+                table = dict(kind='generation', family=policy['family'], rows=2, columns=columns,
+                             artifactDigest='sha256:'+'a'*64, publishedAt='2026-10-31T00:00:00Z',
+                             members=[dict(key=name+'.parquet', sha256=digest, rows=2,
+                                           byteSize=path.stat().st_size, url=str(path))])
+                parent = dict(family=policy['family'], artifactDigest=table['artifactDigest'],
+                              tableId='congress_bills', recordUrl='https://example.test/exact/artifact.json',
+                              members=[], rows=1, urls=[str(parent_path)])
+                def selected_parent(child_id, child, relation):
+                    self.assertEqual((child_id, relation['mode'], relation['table'], relation['keys']),
+                                     (name, 'same-generation', 'congress_bills', [['bill_id','bill_id']]))
+                    self.assertEqual(child['artifactDigest'], parent['artifactDigest'])
+                    return parent
+                with (patch.object(native, 'native_schema', side_effect=AssertionError('No processing reader')),
+                      patch.object(additional, 'native_schema', side_effect=AssertionError('No processing reader')),
+                      patch.object(coverage_scan, 'CoverageInputs', return_value=SimpleNamespace(parent=selected_parent)),
+                      patch.object(coverage_scan, '_connect', side_effect=duckdb.connect)):
+                    selected = {name:policy}
+                    builder.validate_plan({name:table}, selected)
+                    self.assertNotIn('_nativeProcessing', selected[name])
+                    self.assertNotIn('_additionalNativeProcessing', selected[name])
+                    result = coverage_scan.scan_table(name, table, selected[name])
+                self.assertNotIn('processingEvidence', result)
+                for definition, dimension in zip(policy['dimensions'], result['dimensions']):
+                    self.assertEqual((dimension['placedRows'], dimension['unplacedRows']), (1,1))
+                    if definition['kind'] == 'inherited':
+                        self.assertEqual(dimension['buckets'], {'["119"]':1})
+                        self.assertEqual((dimension['matchedRows'], dimension['unmatchedRows']), (1,1))
+                        self.assertEqual(dimension['parent']['artifactDigest'], table['artifactDigest'])
+                    elif definition['kind'] == 'date':
+                        expected = '2026-09' if definition['fields'] == ['from_version_date'] else '2026-10'
+                        self.assertEqual(dimension['buckets'], {expected:1})
+                changed = {**table, 'columns': columns + [['unreviewed','VARCHAR']]}
+                with self.assertRaisesRegex(ValueError, 'schema needs coverage review'):
+                    builder.validate_plan({name:changed}, {name:policy})
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -16,7 +16,7 @@ const sha=body=>'sha256:'+createHash('sha256').update(body).digest('hex');
 const result=spawnSync(process.env.SOURCE_CATALOG_PYTHON || 'python3',['-B','-c',`
 import base64,json
 from datetime import datetime,timezone
-from spicy_regs.source_catalog.file_inventory import schema,encode
+from spicy_regs.source_catalog.file_inventory import schema,encode,native_row
 import pyarrow as pa
 import pyarrow.parquet as pq
 import io
@@ -38,6 +38,14 @@ def put(name,values,**scope):
     output[name]={'body':base64.b64encode(body).decode(),'rows':len(values)}
 put('valid',rows)
 put('register-date',[dict(base,period_kind='publication-date',period_label='2026-09-23',period_basis='Observed in source content')])
+class NoReceiptReferences:
+    def indexed(self,ref):return None
+    def original(self,digest):return None
+put('register-context-date',[native_row(
+    {'id':'context-observation','name':'presidential.xml','status':'held','sha256':'sha256:'+'6'*64,'bytes':10},
+    {'encoded_bytes':10,'mapping':{'periods':[{'kind':'publication-date','label':'2025-07-11',
+        'origin':'publication-context','rule':'exact-original-unique-published-date-context/1','basis':'Independent pinned context'}]}},
+    dataset_id='fixture',publisher=None,inventory_kind='active',references=NoReceiptReferences())])
 put('empty-native-text',[dict(base,source_id='',source_version=' ',period_basis='')])
 put('unavailable',[dict(base,receipt_key=None,receipt_kind=None,original_receipt_key=None,original_receipt_sha256=bytes.fromhex('4'*64),conflict_fields=['receipt-reference-unavailable'])])
 for name,changes in {
@@ -98,7 +106,7 @@ test('optional native text preserves schema-valid blanks without rejecting a fil
  assert.equal(file.sourceId,'');assert.equal(file.sourceVersion,' ');
  assert.equal(file.periods[0].basis,'');
 });
-for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable','empty-native-text','register-date'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
+for(const name of Object.keys(fixtures).filter(name=>!['valid','unavailable','empty-native-text','register-date','register-context-date'].includes(name))) test(`native inventory refuses ${name}`,async()=>{
  await assert.rejects(decode(name));
 });
 test('native catalog dates feed the automatic source-period summary',async()=>{
@@ -106,6 +114,15 @@ test('native catalog dates feed the automatic source-period summary',async()=>{
  collector.addPage('family:federal-register','active',page.files);
  assert.deepEqual(collector.result(generation).months,['2026-09']);
  assert.equal(collector.result(generation).latestIndexedDate,'2026-09-23');
+});
+test('trusted publication-context export survives native decoding into the automatic date coverage',async()=>{
+ const page=await decode('register-context-date'),collector=registerSourcePeriods();
+ assert.equal(page.files[0].periods[0].basis,'Observed in pinned publication context');
+ collector.addPage('family:federal-register','active',page.files);
+ const result=collector.result(generation);
+ assert.deepEqual(result.months,['2025-07']);
+ assert.deepEqual(result.dateCoverage,{files:1,datedFiles:1,undatedFiles:0});
+ assert.equal(result.latestIndexedDate,'2025-07-11');
 });
 test('pinned size, fingerprint, generation, collection and inventory are checked before display',async()=>{
  const value=context();

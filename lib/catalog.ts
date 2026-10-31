@@ -25,6 +25,7 @@ export type Dataset = {
   kind: string;
   category?: string;
   rowUnit?: string;
+  grain?: string;
   quality?: string;
   rows: number;
   bytes: number;
@@ -184,7 +185,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle, compati
     if (undocumented) status.undocumentedTables++;
     return {
       ...table, label: tableTitle(table.id, metadata.label || table.label), summary: tablePurpose(table.id) ?? metadata.summary ?? "", coverage: metadata.coverage ?? "",
-      kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
+      kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, grain: metadata.grain, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
       receiptIdentity: metadata.receiptIdentity, recordIdentity: metadata.recordIdentity, receiptContainers: metadata.receiptContainers,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
