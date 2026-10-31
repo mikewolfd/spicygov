@@ -244,15 +244,19 @@ test('edited copy matches the reviewed inventory and every shipped table', async
 
 test('compact source notes preserve attribution and input links without repeating long notes', async () => {
   const { TableProvenance } = await module('components/table-provenance.tsx');
-  const parent = { ...table(), inputs: ['comments'], transformation: 'Long transformation explanation', sources: [{ id: 'original', name: 'Original publisher', url: 'https://example.gov', kind: 'government', note: 'Long source explanation' }] };
+  const parent = { ...table(), inputs: ['comments'], grain: 'One selected release and native record ID.', transformation: 'Long transformation explanation', sources: [{ id: 'original', name: 'Original publisher', url: 'https://example.gov', kind: 'government', note: 'Long source explanation' }] };
   const props = { table: parent, catalog: parseComments(comments()) };
   const compact = renderToStaticMarkup(createElement(TableProvenance, { ...props, compact: true }));
   assert.match(compact, /Original publisher/);
   assert.match(compact, /https:\/\/data.spicygov.ai\/comments.parquet/);
   assert.doesNotMatch(compact, /Long (transformation|source) explanation/);
+  assert.doesNotMatch(compact, /One selected release/);
   const full = renderToStaticMarkup(createElement(TableProvenance, props));
   assert.match(full, /Long transformation explanation/);
   assert.match(full, /Long source explanation/);
+  assert.match(full, /One selected release and native record ID\./);
+  const repeated = { ...parent, summary: parent.grain };
+  assert.doesNotMatch(renderToStaticMarkup(createElement(TableProvenance, { ...props, table: repeated })), /One selected release/);
 });
 
 

@@ -63,14 +63,18 @@ def arrow_schema(dataset):
 
 
 def implementation_identity(dataset):
-    value = hashlib.sha256(MAINTAINED.implementation_identity().encode())
-    for module in (etl_bulk, etl_receipts, regulations_bulk, regulations_receipts, regulations_shape,
-                   regulations_subjects, earlier_receipt_policies, congress_bulk, votes_batch_receipts):
-        data = Path(inspect.getfile(module)).read_bytes()
+    if dataset == "fcc_filings":
+        identity = MAINTAINED.admission_identity()
+        names = ("transforms/government_receipts.py", "transforms/government_source_shapes.py", "government_bulk.py", "native_merge.py")
+    else:
+        identity = MAINTAINED.implementation_identity(dataset)
+        names = ()
+    value = hashlib.sha256(identity.encode())
+    root = Path(inspect.getfile(etl_receipts)).parent
+    for path in (Path(__file__), *(root / name for name in names)):
+        data = path.read_bytes()
         value.update(len(data).to_bytes(8, "big"))
         value.update(data)
-    value.update((Path(inspect.getfile(etl_receipts)).parent / "navigation_policy_history.json").read_bytes())
-    value.update(Path(__file__).read_bytes())
     value.update(json.dumps(reviewed_schema(dataset), separators=(",", ":")).encode())
     return "sha256:" + value.hexdigest()
 

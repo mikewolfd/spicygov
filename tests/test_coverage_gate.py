@@ -6,6 +6,10 @@ import io
 import hashlib
 import json
 import pathlib
+import os
+import signal
+import textwrap
+import time
 import sys
 import tempfile
 import threading
@@ -94,7 +98,8 @@ class CoverageGateTest(unittest.TestCase):
         import coverage_release
         table, policy, measured = fixture()
         retained = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': False,
-                    'tables': {'earlier': {'note': 'keep this exact earlier measurement'}}}
+                    'tables': {'earlier': {'note': 'keep this exact earlier measurement'}},
+                    'measurementStates': {'earlier': 'held', 'records': 'unavailable'}}
         result = {'measurementRevision': 'fixed', 'dimensions': [measured]}
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder); base = root/'base.json'; output = root/'map.json'
@@ -117,6 +122,7 @@ class CoverageGateTest(unittest.TestCase):
                 self.assertEqual(set(complete.call_args.args[4]), {'records'})
                 self.assertEqual(complete.call_args.kwargs['base_bytes'], base.read_bytes())
                 self.assertEqual(json.loads(output.read_bytes())['tables'], retained['tables'] | {'records': result})
+                self.assertEqual(json.loads(output.read_bytes())['measurementStates'], {'earlier': 'held'})
 
     def test_full_builder_owns_release_completion_and_refuses_failure_or_changed_capture(self):
         import coverage_release
@@ -313,7 +319,7 @@ class CoverageGateTest(unittest.TestCase):
         first_finished = threading.Event()
         with tempfile.TemporaryDirectory() as shared:
             directories = []
-            def reader(command, **options):
+            def reader(**options):
                 id = json.loads(options['input'])['id']
                 directory = pathlib.Path(options.get('cwd', shared))
                 directories.append(directory)
@@ -330,7 +336,7 @@ class CoverageGateTest(unittest.TestCase):
                     self.assertTrue(spill.exists(), 'The first reader removed the second reader\'s active spill file')
                 return mock.Mock(stdout=json.dumps({'reader': id}), stderr='')
             with mock.patch.object(builder, 'cached', return_value=False), \
-                 mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
+                 mock.patch.object(builder, '_scan_process', side_effect=reader), \
                  concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                 futures = [pool.submit(builder.timed_scan, (id, {}, {}, None)) for id in ('first', 'second')]
                 self.assertEqual([future.result()[0] for future in futures], ['first', 'second'])
@@ -341,7 +347,7 @@ class CoverageGateTest(unittest.TestCase):
         for second_id in ('court_opinions', 'fr_docket_links', 'comment_periods', 'rule_targets'):
             with self.subTest(second_id=second_id):
                 started, release, second_started = (threading.Event() for _ in range(3))
-                def reader(command, **options):
+                def reader(**options):
                     id = json.loads(options['input'])['id']
                     if id == 'federal_register':
                         started.set()
@@ -351,7 +357,7 @@ class CoverageGateTest(unittest.TestCase):
                     return mock.Mock(stdout=json.dumps({'reader': id}), stderr='')
                 policy = {'_additionalNativeProcessing': True}
                 with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old == 'cached'), \
-                     mock.patch.object(builder.subprocess, 'run', side_effect=reader), \
+                     mock.patch.object(builder, '_scan_process', side_effect=reader), \
                      concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                     first = pool.submit(builder.timed_scan, ('federal_register', {}, policy, None))
                     try:
@@ -382,7 +388,7 @@ class CoverageGateTest(unittest.TestCase):
         for id, policy, expected in cases:
             with self.subTest(id=id, policy=policy), \
                  mock.patch.object(builder, 'cached', return_value=False), \
-                 mock.patch.object(builder.subprocess, 'run', return_value=mock.Mock(stdout='{}', stderr='')) as run:
+                 mock.patch.object(builder, '_scan_process', return_value=mock.Mock(stdout='{}', stderr='')) as run:
                 self.assertEqual(builder.timed_scan((id, {}, policy, None)), (id, {}))
                 self.assertEqual(run.call_args.kwargs['timeout'], expected)
 
@@ -402,7 +408,7 @@ class CoverageGateTest(unittest.TestCase):
         with mock.patch.dict(builder.native.SCHEMAS, legislative, clear=True), \
              mock.patch.dict(builder.additional.SCHEMAS, additional, clear=True), \
              mock.patch.object(builder, 'cached', return_value=False), \
-             mock.patch.object(builder.subprocess, 'run', return_value=mock.Mock(stdout='{}', stderr='')) as run:
+             mock.patch.object(builder, '_scan_process', return_value=mock.Mock(stdout='{}', stderr='')) as run:
             builder.timed_scan(('records', {}, {}, None))
         sent = json.loads(run.call_args.kwargs['input'])
         self.assertEqual(sent['descriptions'], {'legislative': legislative, 'additional': additional})
@@ -421,16 +427,148 @@ class CoverageGateTest(unittest.TestCase):
     def test_timed_out_reader_cleans_up_its_private_spill_directory(self):
         directories = []
         with tempfile.TemporaryDirectory() as shared:
-            def timeout(command, **options):
+            def timeout(**options):
                 directory = pathlib.Path(options.get('cwd', shared))
                 directories.append(directory)
                 (directory / 'spill').write_bytes(b'unfinished reader data')
-                raise builder.subprocess.TimeoutExpired(command, options['timeout'])
+                raise builder.subprocess.TimeoutExpired(['scan'], options['timeout'])
             with mock.patch.object(builder, 'cached', return_value=False), \
-                 mock.patch.object(builder.subprocess, 'run', side_effect=timeout):
+                 mock.patch.object(builder, '_scan_process', side_effect=timeout):
                 with self.assertRaisesRegex(ValueError, 'time limit'):
                     builder.timed_scan(('records', {}, {}, None))
             self.assertTrue(all(not directory.exists() for directory in directories))
 
 
-if __name__ == '__main__': unittest.main()
+
+
+class CourtFamilyJobsTests(unittest.TestCase):
+    def items(self):
+        return [(name, {'family': 'court-citations', 'artifactDigest': 'same'},
+                 {'_additionalNativeProcessing': True}, None)
+                for name in builder.additional.COURT_CITATION_DATASETS]
+
+    def test_only_complete_uncached_same_generation_family_is_grouped(self):
+        items = self.items()
+        with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old is not None):
+            self.assertEqual(builder.scan_jobs(items), [items])
+            for changed in (items[:-1], [(*items[0][:3], {'saved': True}), *items[1:]],
+                            [(items[0][0], {**items[0][1], 'artifactDigest': 'other'}, *items[0][2:]), *items[1:]],
+                            [(items[0][0], items[0][1], {}, None), *items[1:]]):
+                with self.subTest(changed=changed):
+                    self.assertTrue(all(len(job) == 1 for job in builder.scan_jobs(changed)))
+            cluster = ('court_opinion_clusters', {'family': 'court-opinion-clusters'}, {}, None)
+            self.assertEqual(builder.scan_jobs([*items, cluster]), [items, [cluster]])
+            cached_item = (*items[0][:3], {'saved': True})
+            with mock.patch.object(builder, '_scan_process', side_effect=AssertionError('cached peer reread')):
+                self.assertEqual(builder.timed_job([cached_item]), {items[0][0]: {'saved': True}})
+
+    def test_group_uses_finite_sum_allowance_and_removes_owned_scratch_on_timeout(self):
+        items, directories = self.items(), []
+
+        def run(**options):
+            self.assertEqual(options['timeout'], 27000)
+            self.assertEqual(json.loads(options['input'])['tables'], [list(item[:3]) for item in items])
+            directory = pathlib.Path(options['cwd'])
+            directories.append(directory)
+            (directory / 'partial').write_bytes(b'private')
+            raise builder.subprocess.TimeoutExpired(['scan'], options['timeout'])
+
+        with mock.patch.object(builder, '_scan_process', side_effect=run):
+            with self.assertRaisesRegex(ValueError, 'time limit'):
+                builder.timed_job(items)
+        self.assertTrue(all(not path.exists() for path in directories))
+
+    def test_actual_scan_owner_bounds_nested_processes_and_private_temp(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            helper = root / 'scan.py'
+            helper.write_text(textwrap.dedent('''\
+                import json, os, subprocess, sys, tempfile, time
+                from pathlib import Path
+                if '--nested' in sys.argv:
+                    mode, state = sys.argv[-2:]
+                    with tempfile.TemporaryDirectory(prefix='nested-admission-') as private:
+                        (Path(private) / 'private.db').write_bytes(b'tiny admission fixture')
+                        Path(state).write_text(json.dumps({
+                            'pid': os.getpid(), 'group': os.getpgrp(),
+                            'private': private, 'workdir': os.getcwd()}))
+                        print('nested reader diagnostic', file=sys.stderr, flush=True)
+                        if mode != 'success':
+                            time.sleep(30)
+                else:
+                    request = json.load(sys.stdin)
+                    child = subprocess.Popen([
+                        sys.executable, __file__, '--nested', request['mode'], request['state']],
+                        stdout=subprocess.DEVNULL if request['mode'] == 'failure' else None,
+                        stderr=subprocess.DEVNULL if request['mode'] == 'failure' else None)
+                    while not Path(request['state']).exists():
+                        time.sleep(0.01)
+                    if request['mode'] == 'failure':
+                        print('source refused', file=sys.stderr, flush=True)
+                        sys.exit(4)
+                    child.wait()
+                    print(json.dumps({'done': True}))
+                '''))
+            for mode in ('success', 'failure', 'timeout'):
+                with self.subTest(mode=mode):
+                    state_path = root / (mode + '.json')
+                    request = {'mode': mode, 'state': str(state_path)}
+                    try:
+                        with mock.patch.object(builder, '__file__', str(helper)):
+                            if mode == 'success':
+                                self.assertEqual(builder._run_scan(
+                                    request, timeout_seconds=2, serial=False, label='tiny'), {'done': True})
+                            else:
+                                with self.assertRaisesRegex(ValueError, 'source refused|time limit') as refused:
+                                    builder._run_scan(request, timeout_seconds=2, serial=False, label='tiny')
+                                self.assertIn('source refused' if mode == 'failure' else 'nested reader diagnostic',
+                                              refused.exception.__cause__.stderr)
+                                if mode == 'failure':
+                                    self.assertIsInstance(refused.exception.__cause__, builder.subprocess.CalledProcessError)
+                        state = json.loads(state_path.read_text())
+                        self.assertTrue(pathlib.Path(state['private']).resolve().is_relative_to(
+                            pathlib.Path(state['workdir']).resolve()))
+                        self.assertFalse(pathlib.Path(state['workdir']).exists())
+                        self.assertFalse(pathlib.Path(state['private']).exists())
+                        deadline = time.monotonic() + 2
+                        while True:
+                            try:
+                                os.kill(state['pid'], 0)
+                            except ProcessLookupError:
+                                break
+                            if time.monotonic() >= deadline:
+                                self.fail('Nested scan survived its owner')
+                            time.sleep(0.01)
+                        self.assertTrue(helper.exists(), 'Cleanup reached outside scan scratch')
+                    finally:
+                        # Keep an unexpected regression from leaving the tiny probe running.
+                        if state_path.exists():
+                            try:
+                                os.killpg(json.loads(state_path.read_text())['group'], signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
+
+    def test_missing_group_result_and_failed_group_do_not_return_partial_success(self):
+        with mock.patch.object(builder, '_run_scan', return_value={self.items()[0][0]: {}}):
+            with self.assertRaisesRegex(ValueError, 'omitted'):
+                builder.timed_job(self.items())
+        with mock.patch.object(builder, '_run_scan', side_effect=ValueError('last table failed')):
+            with self.assertRaisesRegex(ValueError, 'last table failed'):
+                builder.timed_job(self.items())
+
+    def test_child_dispatches_family_with_normal_member_and_count_checks(self):
+        request = {'tables': [item[:3] for item in self.items()], 'descriptions': {}}
+        expected = {item[0]: {'status': 'measured'} for item in self.items()}
+        with (mock.patch.object(sys, 'argv', ['builder', '--scan']),
+              mock.patch.object(sys, 'stdin', io.StringIO(json.dumps(request))),
+              mock.patch.object(builder.additional, 'scan_court_family', return_value=expected) as scan,
+              contextlib.redirect_stdout(io.StringIO()) as stdout):
+            builder.main()
+        self.assertEqual(json.loads(stdout.getvalue()), expected)
+        self.assertEqual(scan.call_args.args[0], json.loads(json.dumps(request['tables'])))
+        self.assertIs(scan.call_args.kwargs['validate_members'], builder.validate_members)
+        self.assertIs(scan.call_args.kwargs['validate_counts'], builder.validate_counts)
+
+
+if __name__ == '__main__':
+    unittest.main()

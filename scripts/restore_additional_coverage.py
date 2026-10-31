@@ -2,16 +2,18 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import inspect
 import json
 from pathlib import Path
+import shutil
 import sys
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 from spicy_regs import coverage_reader as MAINTAINED
-from spicy_regs import court_receipts
+from spicy_regs import court_receipts, etl_bulk
 from spicy_regs.court_subjects import LEGACY_COLUMNS
 from spicy_regs.etl_receipts import read_attempts, select_receipts
 from spicy_regs.native_types import described_schema
@@ -24,13 +26,16 @@ DATASETS = frozenset(("amendments", "court_dockets", "court_docket_groups",
 PACKAGE = Path(inspect.getfile(court_receipts)).resolve().parent
 
 
-def implementation_identity():
-    files = [Path(__file__), *(PACKAGE / name for name in (
-        "court_receipts.py", "court_subjects.py", "etl_receipts.py", "etl_bulk.py",
-        "court_bulk.py", "court_restore.py", "conversion_reads.py",
-        "native_types.py", "parquet_rows.py", "transforms/parquet_rows.py",
-    ))]
-    value = hashlib.sha256(MAINTAINED.implementation_identity().encode())
+def implementation_identity(dataset):
+    files = [Path(__file__)]
+    if dataset == "amendments":
+        identity = MAINTAINED.implementation_identity(dataset)
+    else:
+        identity = MAINTAINED.admission_identity()
+        files.extend(PACKAGE / name for name in (
+            "court_receipts.py", "court_subjects.py", "court_bulk.py", "court_restore.py", "conversion_reads.py",
+        ))
+    value = hashlib.sha256(identity.encode())
     for path in files:
         data = path.read_bytes()
         value.update(len(data).to_bytes(8, "big"))
@@ -61,7 +66,7 @@ def description(dataset):
         "receiptOnly": policy.receipt_only,
         "policyVersion": policy.policy_version,
         "policy": policy.descriptor(),
-        "implementationSha256": implementation_identity(),
+        "implementationSha256": implementation_identity(dataset),
     }
 
 
@@ -69,15 +74,16 @@ def restore(request):
     dataset = request.get("dataset") if isinstance(request, dict) else None
     if dataset == "amendments":
         result = MAINTAINED.restore(request)
-        result["implementationSha256"] = implementation_identity()
+        result["implementationSha256"] = implementation_identity(dataset)
         return result
     policy, (subject,), receipts, destination = MAINTAINED.checked_request(request, policy_for, one_subject=True)
     generation = request["generationId"]
     destination.mkdir(parents=True)
-    output = court_receipts.restore_processing_input(
-        subject, destination / (dataset + ".parquet"), dataset=dataset,
-        schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
-    )
+    with court_restoration_limits():
+        output = court_receipts.restore_processing_input(
+            subject, destination / (dataset + ".parquet"), dataset=dataset,
+            schema=processing_schema(dataset), receipt_path=receipts, generation_id=generation,
+        )
     # Restoration above performs complete subject/receipt admission. The bulk
     # tables and opinions read their restored edition/origin fields; coverage does not
     # follow inherited parents and needs no additional witness enumeration.
@@ -94,17 +100,9 @@ def restore(request):
             witnesses[key] = witnesses.get(key, 0) + 1
         if accepted != rows:
             raise ValueError("Accepted court receipt count differs from restored subjects")
-    return {
-        "format": "spicygov-private-coverage-input", "version": 1,
-        "dataset": dataset, "generationId": generation,
-        **description(dataset),
-        "selection": {"subjects": request["subjects"], "receipts": request["receipts"]},
-        "rows": rows, "urls": [str(output)],
-        "processingMembers": [{"path": str(output), "sha256": MAINTAINED.file_hash(output),
-                               "byteSize": output.stat().st_size}],
-        "acceptedWitnessGroups": [{"rows": count, "witnesses": json.loads(key)}
-                                  for key, count in sorted(witnesses.items())],
-    }
+    return restored_result(request, output, witnesses)
+
+
 
 
 def verify_artifacts(roots):
@@ -124,12 +122,116 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--schema", choices=sorted(DATASETS))
     parser.add_argument("--verify-artifacts", action="store_true")
+    parser.add_argument("--court-family", action="store_true")
     args = parser.parse_args()
-    if args.verify_artifacts:
+    if args.court_family:
+        result = restore_court_family(json.load(sys.stdin))
+    elif args.verify_artifacts:
         result = verify_artifacts(json.load(sys.stdin))
     else:
         result = description(args.schema) if args.schema else restore(json.load(sys.stdin))
     print(json.dumps(result))
+
+
+
+
+
+def court_restoration_limits():
+    """Apply coverage defaults without replacing explicit caller budgets or require_bulk."""
+    if etl_bulk._limits.get() is not None:
+        return nullcontext()
+    # The maintained scope also enables bounded inserts. 4GB is not an RSS cap.
+    return etl_bulk.bulk_limits(threads=1, memory_limit="4GB")
+
+
+
+def restored_result(request, output, witnesses):
+    dataset = request["dataset"]
+    return {
+        "format": "spicygov-private-coverage-input", "version": 1,
+        "dataset": dataset, "generationId": request["generationId"],
+        **description(dataset),
+        "selection": {"subjects": request["subjects"], "receipts": request["receipts"]},
+        "rows": pq.read_metadata(output).num_rows, "urls": [str(output)],
+        "processingMembers": [{"path": str(output), "sha256": MAINTAINED.file_hash(output),
+                               "byteSize": output.stat().st_size}],
+        "acceptedWitnessGroups": [{"rows": count, "witnesses": json.loads(key)}
+                                  for key, count in sorted(witnesses.items())],
+    }
+
+
+
+def restore_court_family(requests):
+    """Keep one complete citation-family admission alive for its three restores."""
+    from spicy_regs import court_restore
+    from spicy_regs.conversion_reads import _open_family_reader
+    from spicy_regs.etl_receipts import selected_subject_policy
+    from spicy_regs.local_data import file_signature
+    from spicy_regs.transforms.parquet_rows import write_rows
+
+    datasets = BULK_COURT_DATASETS - {"court_opinion_clusters"}
+    if (not isinstance(requests, list) or len(requests) != len(datasets)
+            or any(not isinstance(r, dict) or set(r) != MAINTAINED.REQUEST_FIELDS for r in requests)
+            or {r["dataset"] for r in requests} != datasets):
+        raise ValueError("Expected the complete court citation family")
+    first = requests[0]
+    generation = first["generationId"]
+    if not isinstance(generation, str) or not generation:
+        raise ValueError("Missing coverage receipt generation")
+    subjects, destinations, policies = {}, [], []
+    for request in requests:
+        if request["generationId"] != generation or request["receipts"] != first["receipts"]:
+            raise ValueError("Court coverage family has mixed receipt selections")
+        destination = Path(request["destination"])
+        if not destination.is_absolute() or destination.exists():
+            raise ValueError("Coverage destination must be a new absolute directory")
+        if any(destination == old or destination in old.parents or old in destination.parents for old in destinations):
+            raise ValueError("Court coverage destinations overlap")
+        destinations.append(destination)
+        if not isinstance(request["subjects"], list) or len(request["subjects"]) != 1:
+            raise ValueError("Court coverage subjects must be explicit")
+        subject = MAINTAINED.checked_member(request["subjects"][0])
+        dataset = request["dataset"]
+        subjects[dataset] = [subject]
+        policies.append(selected_subject_policy(policy_for(dataset), [subject]))
+    receipts = MAINTAINED.checked_member(first["receipts"])
+    paths = [receipts, *(paths[0] for paths in subjects.values())]
+    before = [file_signature(path) for path in paths]
+
+    def guard():
+        if [file_signature(path) for path in paths] != before:
+            raise ValueError("Selected court input changed during restoration")
+
+    # Complete admission owns policy/generation checks for every receipt and
+    # every subject. No single-dataset pre-scan or saved validation flag is used.
+    created = []
+    try:
+        with (court_restoration_limits(),
+              _open_family_reader(subjects, [receipts], policies, generation_id=generation, guard=guard) as reader):
+            results = []
+            for request, destination in zip(requests, destinations):
+                destination.mkdir(parents=True)
+                created.append(destination)
+                dataset = request["dataset"]
+                output = destination / (dataset + ".parquet")
+                schema = processing_schema(dataset)
+                try:
+                    court_restore.materialize(reader, dataset, schema, output)
+                except court_receipts.etl_bulk.NotBulkEligible as error:
+                    court_receipts.etl_bulk.log_row_fallback(
+                        "court restore", error, dataset=dataset,
+                        rows=pq.read_metadata(subjects[dataset][0]).num_rows)
+                    write_rows(court_receipts.processing_rows(
+                        reader.read_subjects(dataset), dataset=dataset, schema=schema), output, schema)
+                if pq.read_metadata(output).num_rows != pq.read_metadata(subjects[dataset][0]).num_rows:
+                    raise ValueError("Accepted court receipt count differs from restored subjects")
+                results.append(restored_result(request, output, {}))
+        return results
+    except BaseException:
+        for destination in created:
+            shutil.rmtree(destination, ignore_errors=True)
+        raise
+
 
 
 if __name__ == "__main__":

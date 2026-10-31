@@ -137,5 +137,79 @@ class InheritedSourceAudit(unittest.TestCase):
             db.execute('UPDATE files SET data=? WHERE sha256=?',(json.dumps(raw),self.stable[0]))
         self.assertNotIn('1800-01',self.verify()['months'])
 
+    def current_proof(self):
+        content=audit.extract_metadata(audit.COLLECTION,gzip.decompress(self.target[1].read_bytes()))
+        mapping={'content_metadata':content,'periods':[dict(period,origin='content') for period in content['periods']]}
+        for index in (self.base,self.candidate):
+            with sqlite3.connect(index) as db:
+                db.execute('UPDATE files SET data=? WHERE sha256=?',
+                           (json.dumps({'mapping':mapping}),self.target[0]))
+        self.proof.write_text(json.dumps(audit.verify(self.base,self.raw)))
+        self.listing.write_text('')
+
+    def test_empty_affected_cohort_reuses_exact_interpretation_without_payload_opens(self):
+        self.current_proof()
+        with patch.object(audit,'check_original',side_effect=AssertionError('Inherited payload reopened')):
+            report=self.verify()
+        self.assertEqual(report['rehashedObjects'],0)
+        self.assertEqual(report['reusedVerifiedObjects'],3)
+        self.assertEqual(report['months'],['1936-12','1960-12','2026-09'])
+
+    def test_context_cohort_proof_survives_next_empty_cohort_refresh(self):
+        self.current_proof()
+        with sqlite3.connect(self.candidate) as db:
+            data=json.loads(db.execute('SELECT data FROM files WHERE sha256=?',(self.target[0],)).fetchone()[0])
+            for period in data['mapping']['periods']:
+                period['origin']='publication-context'
+            db.execute('UPDATE files SET data=? WHERE sha256=?',(json.dumps(data),self.target[0]))
+        self.listing.write_text(self.target[0]+'\n')
+        checked=self.verify()
+        self.assertEqual(checked['rehashedObjects'],1)
+        self.proof.write_text(json.dumps(checked))
+        self.base=self.candidate
+        self.candidate=self.root/'next.sqlite'
+        shutil.copyfile(self.base,self.candidate)
+        with sqlite3.connect(self.candidate) as db:
+            db.execute('UPDATE metadata SET value=? WHERE key=?',(json.dumps('next'),'generation'))
+        self.listing.write_text('')
+        with patch.object(audit,'check_original',side_effect=AssertionError('Context original reopened')):
+            report=self.verify()
+        self.assertEqual(report['months'],checked['months'])
+        self.assertEqual(report['latestIndexedDate'],checked['latestIndexedDate'])
+        self.assertEqual(report['rehashedObjects'],0)
+
+    def test_empty_cohort_rejects_missing_or_incomplete_historical_interpretation(self):
+        self.current_proof()
+        prior=json.loads(self.proof.read_text())
+        for reader in ([{'wrong':'identity'}],None):
+            changed={**prior,'dateInterpretations':reader}
+            self.proof.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError,'interpretation is unavailable'):self.verify()
+
+    def test_carried_dates_keep_their_historical_reader_when_current_code_is_unused(self):
+        self.current_proof()
+        prior=json.loads(self.proof.read_text());historical=prior['dateInterpretations']
+        with (patch.object(audit,'interpretation',return_value={key:'sha256:'+'e'*64 for key in historical[0]}),
+              patch.object(audit,'check_original',side_effect=AssertionError('Unused reader opened old payload'))):
+            report=self.verify()
+        self.assertIsNone(report['rehashedInterpretation'])
+        self.assertEqual(report['dateInterpretations'],historical)
+        self.assertEqual(report['inheritedVerification']['carriedInterpretations'],historical)
+
+    def test_changed_candidate_dates_require_a_named_affected_cohort(self):
+        self.current_proof()
+        with sqlite3.connect(self.candidate) as db:
+            data=json.loads(db.execute('SELECT data FROM files WHERE sha256=?',(self.stable[0],)).fetchone()[0])
+            data['mapping']['periods']=[]
+            db.execute('UPDATE files SET data=? WHERE sha256=?',(json.dumps(data),self.stable[0]))
+        with self.assertRaisesRegex(ValueError,'Date observations changed'):self.verify()
+
+    def test_custody_proof_rejects_same_size_change_even_when_mtime_is_restored(self):
+        self.current_proof()
+        path=self.stable[1];before=path.stat();body=bytearray(path.read_bytes());body[-1]^=1
+        path.write_bytes(body);os.utime(path,ns=(before.st_atime_ns,before.st_mtime_ns))
+        with patch.object(audit,'check_original',side_effect=AssertionError('Unexpected deep audit')):
+            with self.assertRaisesRegex(ValueError,'custody changed'):self.verify()
+
 
 if __name__ == '__main__':unittest.main()

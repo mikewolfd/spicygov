@@ -41,6 +41,7 @@ SOURCE_NAVIGATION_FAMILIES = {"committee_meetings":"committee-meetings", "nomina
     "cfr_sections":"cfr-sections", "unified_agenda":"unified-agenda",
     "federal_register":"federal-register", "fr_docket_links":"fr-docket-links"}
 FAMILIES.update(SOURCE_NAVIGATION_FAMILIES)
+COURT_CITATION_DATASETS = tuple(name for name, family in FAMILIES.items() if family == "court-citations")
 
 
 def bridge(args=(), request=None):
@@ -49,8 +50,12 @@ def bridge(args=(), request=None):
     script = str(Path(__file__).with_name('restore_source_navigation_coverage.py' if source_navigation else 'restore_additional_coverage.py'))
     python = os.environ.get('SPICYGOV_COVERAGE_PYTHON', sys.executable)
     # Only a full restore (no arguments) gets its dataset's allowance.
-    return run_bridge([python, script, *args], request,
-                      allowances.BRIDGE if args else allowances.bridge_seconds(dataset))
+    timeout = (sum(allowances.bridge_seconds(name) for name in COURT_CITATION_DATASETS)
+               if args == ["--court-family"] else
+               allowances.BRIDGE if args else allowances.bridge_seconds(dataset))
+    return run_bridge([python, script, *args], request, timeout)
+
+
 
 
 # Each dataset is described once per build (describe_all) and handed to every
@@ -199,6 +204,12 @@ class AdditionalInputs:
         identity = (owner["family"], owner["artifactDigest"], dataset)
         if identity in self.cache:
             return self.cache[identity]
+        request, description = self._request(dataset, owner)
+        result = bridge(request=request)
+        return self._accept(owner, request, description, result)
+
+
+    def _request(self, dataset, owner, staged=None):
         key, artifact, members = self.inputs.artifact(owner["family"], owner["artifactDigest"])
         if artifact != owner["artifact"]:
             raise ValueError("Additional native artifact differs from selected owner")
@@ -217,13 +228,25 @@ class AdditionalInputs:
                 or not isinstance(spec.get("generationId"), str)
                 or spec.get("rows") != receipts[0].get("recordCount")):
             raise ValueError("Additional native selection differs from published subjects or receipts")
+        def stage(member):
+            identity = (key, member["objectKey"], member["sha256"], member["byteSize"])
+            if staged is None:
+                return self.staging._member(key, member)
+            if identity not in staged:
+                staged[identity] = self.staging._member(key, member)
+            return staged[identity]
+
         request = {"dataset": dataset, "generationId": spec["generationId"],
-                   "subjects": [self.staging._member(key, m) for m in subjects],
-                   "receipts": self.staging._member(key, receipts[0]),
+                   "subjects": [stage(m) for m in subjects],
+                   "receipts": stage(receipts[0]),
                    "destination": str(self.directory / dataset)}
-        result = bridge(request=request)
+        return request, description
+
+
+    def _accept(self, owner, request, description, result):
+        dataset = request["dataset"]
         if (result.get("selection") != {k: request[k] for k in ("subjects", "receipts")}
-                or result.get("dataset") != dataset or result.get("generationId") != spec["generationId"]
+                or result.get("dataset") != dataset or result.get("generationId") != request["generationId"]
                 or result.get("rows") != owner["rows"]
                 or any(result.get(k) != description[k] for k in (
                     "nativeSchema", "processingSchema", "policy", "implementationSha256", "receiptOnly"))
@@ -235,8 +258,29 @@ class AdditionalInputs:
                 raise ValueError("Restored coverage member escaped its private destination")
             verify_file(member)
         value = {**owner, "urls": result["urls"], "_coverageProcessing": result}
-        self.cache[identity] = value
+        self.cache[(owner["family"], owner["artifactDigest"], dataset)] = value
         return value
+
+
+    def restore_court_family(self, tables):
+        if set(tables) != set(COURT_CITATION_DATASETS):
+            raise ValueError("Expected the complete court citation family")
+        owners = {dataset: self.inputs.producing(dataset, tables[dataset]) for dataset in tables}
+        if {owner["family"] for owner in owners.values()} != {"court-citations"}:
+            raise ValueError("Court coverage family differs from the selected family")
+        if len({owner["artifactDigest"] for owner in owners.values()}) != 1:
+            # A current root can carry tables from distinct producing releases.
+            # Leave the cache empty; scan_table uses its ordinary guarded restore.
+            return
+        staged = {}
+        prepared = [self._request(dataset, owner, staged) for dataset, owner in owners.items()]
+        results = bridge(["--court-family"], request=[request for request, _ in prepared])
+        if not isinstance(results, list) or len(results) != len(prepared):
+            raise ValueError("Court family restoration omitted a selected table")
+        for (request, description), result in zip(prepared, results):
+            self._accept(owners[request["dataset"]], request, description, result)
+
+
 
     def parent(self, child_id, child, relation):
         if relation["mode"] == "same-generation":
@@ -367,13 +411,13 @@ def member_vote_source_observations(conn, restored, table, dim):
 
 
 def scan_table(dataset, table, policy, *, validate_members, validate_counts,
-               inputs=None, download=None):
+               inputs=None, download=None, adapter=None):
     revision = measurement_revision(policy)
     with tempfile.TemporaryDirectory(prefix="spicygov-additional-coverage-") as directory, duckdb.connect() as conn:
         conn.execute("SET TimeZone='UTC'")
         conn.execute("SET memory_limit='512MB'")
         conn.execute("SET threads=2")
-        adapter = AdditionalInputs(inputs or CoverageInputs(), directory, download)
+        adapter = adapter or AdditionalInputs(inputs or CoverageInputs(), directory, download)
         if table.get("kind") == "rulemaking" and table.get("rulemakingSnapshot"):
             restored = adapter.restore_snapshot(dataset, table)
         else:
@@ -430,3 +474,18 @@ def scan_table(dataset, table, policy, *, validate_members, validate_counts,
                     "subjects": [{k: v for k, v in m.items() if k != "path"} for m in facts["selection"]["subjects"]],
                     "receipts": {k: v for k, v in facts["selection"]["receipts"].items() if k != "path"},
                     "qualification": "Source values restored through the maintained reader for the exact selected receipts."}}
+
+
+
+def scan_court_family(items, *, validate_members, validate_counts, inputs=None, download=None):
+    """One private family restore; normal per-table measurement and result bindings."""
+    if len(items) != len(COURT_CITATION_DATASETS) or {item[0] for item in items} != set(COURT_CITATION_DATASETS):
+        raise ValueError("Expected the complete court citation family")
+    # Place grouped outputs under the outer scan's owned working directory so
+    # its timeout cleanup also removes them. No persistent success cache.
+    with tempfile.TemporaryDirectory(prefix="spicygov-court-family-", dir=Path.cwd()) as directory:
+        adapter = AdditionalInputs(inputs or CoverageInputs(), directory, download)
+        adapter.restore_court_family({dataset: table for dataset, table, _ in items})
+        return {dataset: scan_table(dataset, table, policy, adapter=adapter,
+                                   validate_members=validate_members, validate_counts=validate_counts)
+                for dataset, table, policy in items}

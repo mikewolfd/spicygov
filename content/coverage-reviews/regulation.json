@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 75,
+  "tableCount": 77,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -31173,6 +31173,350 @@
           "maximum": "2026-10-16"
         },
         "qualification": "Published source fields; period presence does not prove completeness."
+      }
+    },
+    {
+      "tableId": "ofac_snapshots",
+      "family": "ofac-sanctions",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "selected_list",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "data_as_of_raw",
+          "VARCHAR"
+        ],
+        [
+          "entity_count",
+          "BIGINT"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_metadata_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "ofac-list-data-as-of",
+          "kind": "date",
+          "fields": [
+            "data_as_of_raw"
+          ],
+          "label": "Source-stated list dates",
+          "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage."
+        },
+        {
+          "id": "ofac-selected-lists",
+          "kind": "category",
+          "fields": [
+            "selected_list"
+          ],
+          "label": "Selected OFAC lists",
+          "meaning": "Lists named by retained snapshots. Different selected lists may state different data-as-of dates."
+        },
+        {
+          "id": "ofac-observation-dates",
+          "kind": "date",
+          "fields": [
+            "observed_at"
+          ],
+          "label": "Observation dates",
+          "meaning": "When the source snapshot was observed. These are capture dates, separate from source-stated data-as-of dates and designation dates."
+        }
+      ],
+      "reviewedAt": "2026-10-31",
+      "evidence": {
+        "artifact": "https://data.spicygov.ai/generations/ofac-sanctions/30353c6e00d9a6d374b6862cc6c4774e9171eb95b5b3d921aba8f362315804d1/artifact.json",
+        "publicationMember": {
+          "sha256": "sha256:a0f62cba6f811877790317a03ad82888d7ec666d557ac10c0ed66fbce4f97618",
+          "byteSize": 58132,
+          "rows": 2
+        },
+        "codeRefs": [
+          {
+            "path": "spicy-regs/src/spicy_regs/transforms/build_ofac.py",
+            "sha256": "sha256:7bcfe5ad8990499d2f56894148416be18af1cd93e10145ae869e6ac72dd32e38",
+            "symbols": [
+              "_rows",
+              "_entity"
+            ]
+          }
+        ],
+        "retainedSourceReview": {
+          "path": "spicy-regs/src/spicy_regs/source_catalog/config/registry.v1.json",
+          "id": "source-inventory-review:ofac-sanctions:75fd06a786a5bfacc42c88f353e69ee02f71b61aa051fdc4dfee96b6211c0b5c",
+          "recordedAt": "2026-10-27T12:25:07.834206+00:00",
+          "publicationVersion": "sha256:30353c6e00d9a6d374b6862cc6c4774e9171eb95b5b3d921aba8f362315804d1",
+          "localValidation": {
+            "status": "reviewed-with-explicit-limits",
+            "recorded_at": "2026-10-27T12:25:07.834206+00:00",
+            "basis_catalog_generation": "sha256:a35d34d261fabc89d1eae6058308a101bd8e27001535c4acd9767926b8114b0f",
+            "evidence": {
+              "path": "private-evidence-locator:sha256:3af396b3f1a789d0f56f2aaee508e22f0dfd82ba9ca2e735fbeff2c0d45744d8",
+              "locator": "/family_coverage/14",
+              "pin": {
+                "sha256": "sha256:b59078a23e88c00f07e21a83547d825afcff8b17eaea1d4eacd9fbb0b301c157",
+                "bytes": 208303
+              }
+            },
+            "result": "Complete selected native XML members contain 19,457 SDN and 486 consolidated entities with no duplicate native IDs. ZIP original hashes match.",
+            "gap_dispositions": [],
+            "coverage_limit": "Finite native inputs and bounded samples are distinct from exact historical table membership and a complete changing publisher population.",
+            "new_capture": false,
+            "downloads": 0
+          }
+        },
+        "semantics": {
+          "data_as_of_raw": "Literal publicationInfo/dataAsOf from the selected XML list. This is a list snapshot date, not an entity designation date.",
+          "observed_at": "The selected capture observed_at; kept separate from the publisher data-as-of literal.",
+          "selected_list": "Exact source selection, sdn or consolidated. The two lists are separate observations.",
+          "snapshot_id": "The exact source release artifact digest. Entities inherit snapshot facts by both snapshot_id and selected_list."
+        },
+        "sourceSnapshots": [
+          {
+            "selectedList": "sdn",
+            "originalSha256": "sha256:b1a309ce7249d8fa64d3123b79add447efcb35fa569090c92b6f030b075cbc18",
+            "sourceStatedDataAsOf": "2026-10-15T00:00:00",
+            "observedAt": "2026-10-20T18:29:39.744249+00:00"
+          },
+          {
+            "selectedList": "consolidated",
+            "originalSha256": "sha256:e918fe525b61cee24b400cba1d07e32cba7bb4bd9c87555dca056e7c84767d22",
+            "sourceStatedDataAsOf": "2026-10-19T00:00:00-04:00",
+            "observedAt": "2026-10-20T18:29:03.841415+00:00"
+          }
+        ],
+        "limits": [
+          "Reuses the existing retained source review for the unchanged publication; no original was downloaded or reread for this metadata correction.",
+          "The snapshots do not establish complete historical sanctions coverage, additions, removals, designation dates, or identical list dates."
+        ]
+      }
+    },
+    {
+      "tableId": "ofac_entity_observations",
+      "family": "ofac-sanctions",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "selected_list",
+          "VARCHAR"
+        ],
+        [
+          "entity_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_id",
+          "VARCHAR"
+        ],
+        [
+          "entity_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "entity_type_ref_id",
+          "VARCHAR"
+        ],
+        [
+          "primary_names_json",
+          "VARCHAR"
+        ],
+        [
+          "names_json",
+          "VARCHAR"
+        ],
+        [
+          "list_memberships_json",
+          "VARCHAR"
+        ],
+        [
+          "programs_json",
+          "VARCHAR"
+        ],
+        [
+          "sanction_types_json",
+          "VARCHAR"
+        ],
+        [
+          "legal_authorities_json",
+          "VARCHAR"
+        ],
+        [
+          "addresses_json",
+          "VARCHAR"
+        ],
+        [
+          "identifiers_json",
+          "VARCHAR"
+        ],
+        [
+          "relationships_json",
+          "VARCHAR"
+        ],
+        [
+          "features_json",
+          "VARCHAR"
+        ],
+        [
+          "entity_content_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_entity_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "ofac-list-data-as-of",
+          "kind": "inherited",
+          "fields": [
+            "snapshot_id",
+            "selected_list"
+          ],
+          "label": "Source-stated list dates",
+          "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage.",
+          "parent": {
+            "table": "ofac_snapshots",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "snapshot_id",
+                "snapshot_id"
+              ],
+              [
+                "selected_list",
+                "selected_list"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "ofac-list-data-as-of",
+            "kind": "date",
+            "fields": [
+              "data_as_of_raw"
+            ],
+            "label": "Source-stated list dates",
+            "meaning": "The retained OFAC list metadata states this data-as-of date. It describes the selected snapshot, not entity designation dates, every list change or complete historical coverage."
+          }
+        },
+        {
+          "id": "ofac-selected-lists",
+          "kind": "category",
+          "fields": [
+            "selected_list"
+          ],
+          "label": "Selected OFAC lists",
+          "meaning": "Each entity observation belongs to the named retained list snapshot. Counts do not establish additions, removals or designation dates."
+        },
+        {
+          "id": "ofac-entity-types",
+          "kind": "category",
+          "fields": [
+            "entity_type_raw"
+          ],
+          "label": "Source-stated entity types",
+          "meaning": "Entity type labels retained from the selected source list, without interpreting dates within entity features."
+        }
+      ],
+      "reviewedAt": "2026-10-31",
+      "evidence": {
+        "artifact": "https://data.spicygov.ai/generations/ofac-sanctions/30353c6e00d9a6d374b6862cc6c4774e9171eb95b5b3d921aba8f362315804d1/artifact.json",
+        "publicationMember": {
+          "sha256": "sha256:d276dd2618a861c5e66e2398f4315e76b94a2055f4918a659269dc2621726a9b",
+          "byteSize": 33515411,
+          "rows": 19943
+        },
+        "codeRefs": [
+          {
+            "path": "spicy-regs/src/spicy_regs/transforms/build_ofac.py",
+            "sha256": "sha256:7bcfe5ad8990499d2f56894148416be18af1cd93e10145ae869e6ac72dd32e38",
+            "symbols": [
+              "_rows",
+              "_entity"
+            ]
+          }
+        ],
+        "retainedSourceReview": {
+          "path": "spicy-regs/src/spicy_regs/source_catalog/config/registry.v1.json",
+          "id": "source-inventory-review:ofac-sanctions:75fd06a786a5bfacc42c88f353e69ee02f71b61aa051fdc4dfee96b6211c0b5c",
+          "recordedAt": "2026-10-27T12:25:07.834206+00:00",
+          "publicationVersion": "sha256:30353c6e00d9a6d374b6862cc6c4774e9171eb95b5b3d921aba8f362315804d1",
+          "localValidation": {
+            "status": "reviewed-with-explicit-limits",
+            "recorded_at": "2026-10-27T12:25:07.834206+00:00",
+            "basis_catalog_generation": "sha256:a35d34d261fabc89d1eae6058308a101bd8e27001535c4acd9767926b8114b0f",
+            "evidence": {
+              "path": "private-evidence-locator:sha256:3af396b3f1a789d0f56f2aaee508e22f0dfd82ba9ca2e735fbeff2c0d45744d8",
+              "locator": "/family_coverage/14",
+              "pin": {
+                "sha256": "sha256:b59078a23e88c00f07e21a83547d825afcff8b17eaea1d4eacd9fbb0b301c157",
+                "bytes": 208303
+              }
+            },
+            "result": "Complete selected native XML members contain 19,457 SDN and 486 consolidated entities with no duplicate native IDs. ZIP original hashes match.",
+            "gap_dispositions": [],
+            "coverage_limit": "Finite native inputs and bounded samples are distinct from exact historical table membership and a complete changing publisher population.",
+            "new_capture": false,
+            "downloads": 0
+          }
+        },
+        "semantics": {
+          "data_as_of_raw": "Literal publicationInfo/dataAsOf from the selected XML list. This is a list snapshot date, not an entity designation date.",
+          "observed_at": "The selected capture observed_at; kept separate from the publisher data-as-of literal.",
+          "selected_list": "Exact source selection, sdn or consolidated. The two lists are separate observations.",
+          "snapshot_id": "The exact source release artifact digest. Entities inherit snapshot facts by both snapshot_id and selected_list."
+        },
+        "sourceSnapshots": [
+          {
+            "selectedList": "sdn",
+            "originalSha256": "sha256:b1a309ce7249d8fa64d3123b79add447efcb35fa569090c92b6f030b075cbc18",
+            "sourceStatedDataAsOf": "2026-10-15T00:00:00",
+            "observedAt": "2026-10-20T18:29:39.744249+00:00"
+          },
+          {
+            "selectedList": "consolidated",
+            "originalSha256": "sha256:e918fe525b61cee24b400cba1d07e32cba7bb4bd9c87555dca056e7c84767d22",
+            "sourceStatedDataAsOf": "2026-10-19T00:00:00-04:00",
+            "observedAt": "2026-10-20T18:29:03.841415+00:00"
+          }
+        ],
+        "limits": [
+          "Reuses the existing retained source review for the unchanged publication; no original was downloaded or reread for this metadata correction.",
+          "The snapshots do not establish complete historical sanctions coverage, additions, removals, designation dates, or identical list dates."
+        ]
       }
     }
   ],

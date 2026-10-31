@@ -60,3 +60,19 @@ test('verified issue metadata dates before 1994 remain source dates',()=>{
   assert.deepEqual(result.dateCoverage,{files:2,datedFiles:2,undatedFiles:0});
   assert.equal(parseRegisterSourcePeriods(result,generation).latestIndexedDate,'2026-10-09');
 });
+
+test('qualified publication context contributes dates while receipt and unsupported bases remain undated',()=>{
+  const collector=registerSourcePeriods();
+  const context=label=>({...date(label),basis:'Observed in pinned publication context'});
+  collector.addPage('family:federal-register','active',[
+    file([context('2024-07-15')]),
+    {...file([context('2025-07-11')]),sha256:'sha256:'+'c'.repeat(64)},
+    {...file([{...context('2030-01-01'),basis:'record.period; declared scope; completeness unknown; Observed in pinned publication context'}]),sha256:'sha256:'+'d'.repeat(64)},
+    {...file([{...context('2031-01-01'),basis:'Independent pinned publication_date'}]),sha256:'sha256:'+'e'.repeat(64)},
+    {...file([{...context('2032-01-01'),kind:'requested-publication-range'}]),sha256:'sha256:'+'f'.repeat(64)},
+  ]);
+  const result=collector.result(generation);
+  assert.deepEqual(result.months,['2024-07','2025-07']);
+  assert.equal(result.latestIndexedDate,'2025-07-11');
+  assert.deepEqual(result.dateCoverage,{files:5,datedFiles:2,undatedFiles:3});
+});

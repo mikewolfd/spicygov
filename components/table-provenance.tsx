@@ -8,6 +8,7 @@ export function TableProvenance({ table, catalog, compact = false }: { table: Da
     </span>) : <span>Not yet documented</span>}</p>
     {!compact && table.modelGenerated && <p className="model-label">Model-generated content · Check against the source records.</p>}
     {!compact && table.transformation && <p>{table.transformation}</p>}
+    {!compact && table.grain && table.grain !== table.summary && <p>{table.grain}</p>}
     {table.inputs.length > 0 && <p className="table-input-links"><strong>{compact ? 'Uses these tables' : 'Inputs'}</strong>{table.inputs.map(id => {
       const input = catalog.find(candidate => candidate.id === id);
       const separate = input?.recordsAvailable === false;
