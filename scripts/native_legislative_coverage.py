@@ -337,39 +337,83 @@ class ProcessingInputs:
                 ).encode()
             ).hexdigest()
         )
-        folder = self.shared / "restored" / cache_key[7:]
+        restored_root = self.shared / "restored"
+        if restored_root.is_symlink():
+            raise ValueError("Native coverage cache uses a symlink")
+        folder = restored_root / cache_key[7:]
+        if folder.is_symlink():
+            raise ValueError("Native coverage cache uses a symlink")
         folder.mkdir(parents=True, exist_ok=True)
+        def validate(result, destination=None):
+            if not isinstance(result, dict):
+                raise ValueError("Invalid cached restoration result")
+            members = result.get("processingMembers")
+            if (not isinstance(members, list) or not members
+                    or any(not isinstance(member, dict) or not isinstance(member.get("path"), str)
+                           for member in members)
+                    or result.get("urls") != [member["path"] for member in members]
+                    or len({member["path"] for member in members}) != len(members)):
+                raise ValueError("Cached restoration has no exact processing file identities")
+            if (result.get("selection") != {"subjects": request["subjects"], "receipts": request["receipts"]}
+                    or result.get("generationId") != request["generationId"]
+                    or result.get("dataset") != dataset
+                    or result.get("implementationSha256") != native_schema(dataset)["implementationSha256"]
+                    or result.get("policy") != policies[0]):
+                raise ValueError("Restoration result differs from selected coverage inputs")
+            if (type(result.get("rows")) is not int or result["rows"] < 0
+                    or (owner.get("rows") is not None and result["rows"] != owner["rows"])):
+                raise ValueError("Restored source rows differ from native subject count")
+            private = None
+            for member in members:
+                path = Path(member["path"])
+                try:
+                    relative = path.relative_to(folder)
+                except ValueError as error:
+                    raise ValueError("Restored coverage member escaped its private destination") from error
+                if (len(relative.parts) < 2 or not re.fullmatch(r"[a-f0-9]{32}", relative.parts[0])
+                        or ".." in relative.parts):
+                    raise ValueError("Restored coverage member escaped its private destination")
+                root = folder / relative.parts[0]
+                if private is None:
+                    private = root
+                if root != private or (destination is not None and root != destination):
+                    raise ValueError("Restored coverage members have different private destinations")
+                for ancestor in (root, *[root.joinpath(*relative.parts[1:i]) for i in range(2, len(relative.parts) + 1)]):
+                    if ancestor.is_symlink():
+                        raise ValueError("Restored coverage member uses a symlink")
+                try:
+                    verify_file(member)
+                except (KeyError, TypeError) as error:
+                    raise ValueError("Invalid native coverage cache file") from error
+
         with (folder / "restore.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             saved = folder / "manifest.json"
+            result = None
+            if saved.is_symlink():
+                raise ValueError("Invalid native coverage cache manifest")
             if saved.exists():
-                result = json.loads(saved.read_text())
-                if not result.get("processingMembers") or result.get("urls") != [
-                    member["path"] for member in result["processingMembers"]
-                ]:
-                    raise ValueError(
-                        "Cached restoration has no exact processing file identities"
-                    )
-                for member in result.get("processingMembers", []):
-                    verify_file(member)
-            else:
-                request["destination"] = str(folder / uuid4().hex)
+                if not saved.is_file():
+                    raise ValueError("Invalid native coverage cache manifest")
+                try:
+                    result = json.loads(saved.read_text())
+                    validate(result)
+                except (ValueError, KeyError, TypeError):
+                    # Preserve the exact rejected bytes for diagnosis. Never remove its inputs.
+                    rejected = folder / "rejected"
+                    if rejected.is_symlink():
+                        raise ValueError("Invalid native coverage diagnostics directory")
+                    rejected.mkdir(exist_ok=True)
+                    saved.replace(rejected / (uuid4().hex + ".json"))
+                    result = None
+            if result is None:
+                destination = folder / uuid4().hex
+                request["destination"] = str(destination)
                 result = bridge(request=request)
+                validate(result, destination)
                 temporary = folder / (uuid4().hex + ".json")
                 temporary.write_text(json.dumps(result))
                 temporary.replace(saved)
-        if (
-            result.get("selection")
-            != {"subjects": request["subjects"], "receipts": request["receipts"]}
-            or result.get("generationId") != request["generationId"]
-            or result.get("dataset") != dataset
-            or result.get("implementationSha256")
-            != native_schema(dataset)["implementationSha256"]
-            or result.get("policy") != policies[0]
-        ):
-            raise ValueError("Restoration result differs from selected coverage inputs")
-        if owner.get("rows") is not None and result["rows"] != owner["rows"]:
-            raise ValueError("Restored source rows differ from native subject count")
         value = {
             **owner,
             "urls": result["urls"],
