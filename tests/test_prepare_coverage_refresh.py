@@ -21,6 +21,11 @@ class PrepareTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        # Scanner bodies are mocked below; model capacity instead of depending on the host volume.
+        self.capacity = patch.object(prepare.shutil, 'disk_usage',
+                                     return_value=SimpleNamespace(total=100 * 2**30, used=60 * 2**30, free=40 * 2**30))
+        self.capacity.start()
+        self.addCleanup(self.capacity.stop)
         base = {'format': 'spicygov-coverage-maps', 'version': 1, 'partial': False,
                 'tables': {'unchanged': {'value': 'accepted'}, 'changed': {'value': 'earlier'},
                            'blocked': {'value': 'earlier blocked'}}}
@@ -33,6 +38,23 @@ class PrepareTests(unittest.TestCase):
             'directory': str(self.root), 'manifestSha256': prepare.sha(manifest)}))
         self.args = SimpleNamespace(run=self.root / 'run', base_selection=self.selection,
                                     reserve_gib=25, max_restoration_bytes=100)
+
+    def test_low_capacity_refuses_before_any_scanner(self):
+        tables = {'changed': {'id': 'changed', 'members': [], 'columns': []}}
+        policies = {'changed': {'dimensions': [], 'schema': []}}
+        with (patch.object(prepare, 'publication_snapshot', return_value=(tables, {})),
+              patch.object(prepare, 'census_digest', return_value='fixed'),
+              patch.object(prepare, 'publication_matches', return_value=False),
+              patch.object(prepare.builder, 'definitions', return_value=policies),
+              patch.object(prepare.builder, 'timed_scan', side_effect=AssertionError('scanner entered')) as scanner,
+              patch.object(prepare.shutil, 'disk_usage',
+                           return_value=SimpleNamespace(total=100 * 2**30, used=76 * 2**30, free=24 * 2**30))):
+            with self.assertRaisesRegex(ValueError, 'No current coverage measurements'):
+                prepare.prepare(self.args)
+            scanner.assert_not_called()
+        self.assertEqual(self.args.reserve_gib, 25)
+        report = json.loads((self.args.run/'report.json').read_text())
+        self.assertIn('Free space reached the configured reserve', report['tables']['changed']['reason'])
 
     def test_selected_base_rejects_content_changed_after_selection(self):
         self.assertIn(b'accepted', prepare.selected_base(self.selection))
@@ -103,7 +125,13 @@ class PrepareTests(unittest.TestCase):
         spec.loader.exec_module(refresh)
         args = SimpleNamespace(prepare_coverage=True, coverage_selection=self.selection,
                                finish_selected=True, candidate=None, full_rebuild=False)
+        self.args.run.mkdir()
         order = []
+        def native(argv, **kwargs):
+            order.append('native')
+            self.assertEqual(kwargs['env']['PYTHONPATH'], '/pinned/coverage-reader/src')
+            self.assertEqual(argv[1], '-c')
+            return '{"version":"selected-duckdb","path":"native"}'
         def command(argv, **kwargs):
             order.append('prepare')
             self.assertEqual(kwargs['env']['PYTHONPATH'], '/pinned/coverage-reader/src')
@@ -112,10 +140,11 @@ class PrepareTests(unittest.TestCase):
             order.append('finish')
             self.assertEqual(selected.coverage_selection, run / 'coverage/selection.json')
         with patch.dict(refresh.os.environ, {'SPICYGOV_COVERAGE_PYTHONPATH': '/pinned/coverage-reader/src'}), \
+             patch.object(refresh.subprocess, 'check_output', side_effect=native), \
              patch.object(refresh.subprocess, 'run', side_effect=command), \
              patch.object(refresh, 'finish_selected', side_effect=finish):
             refresh.run_refresh(args, ROOT, self.args.run, self.root / 'raw', None)
-        self.assertEqual(order, ['prepare', 'finish'])
+        self.assertEqual(order, ['native', 'prepare', 'finish'])
 
     def test_rulemaking_preflight_uses_exact_snapshot_subject_and_receipt_pins(self):
         subject = {'key': 'proceedings.parquet', 'byteSize': 12, 'sha256': 'subject'}
