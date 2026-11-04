@@ -113,13 +113,7 @@ function validateRow(row: Record<string, unknown>, context: CatalogShardContext)
   if (key !== undefined && receiptSha === undefined) fail('receipt key and fingerprint disagree');
   const kind = clean.receipt_kind as string | undefined;
   if (kind !== undefined && !['frozen-index','acquisition','retained-manifest'].includes(kind)) fail('receipt kind is invalid');
-  if (key && (!kind || !entry)) fail('receipt kind lacks its archive reference');
-  if (key) {
-    const expectedKind = key.startsWith('acquisitions/sha256/') ? 'acquisition' : key.endsWith('.jsonl.gz') ? 'frozen-index' : 'retained-manifest';
-    if (kind !== expectedKind) fail('receipt kind differs from archive key');
-    const hash = receiptSha!.slice(7);
-    if (kind === 'acquisition' && key !== `acquisitions/sha256/${hash.slice(0,2)}/${hash}`) fail('acquisition key differs from fingerprint');
-  }
+  // The normalized page's shared validator binds receipt keys, kinds and fingerprints below.
   const originalSha = clean.original_receipt_sha256 as string | undefined;
   if (originalKey !== undefined && originalSha === undefined) fail('original receipt reference is incomplete');
   for (const [objectKey,hash] of [[contentKey,clean.content_sha256],[originalKey,originalSha]]) {
