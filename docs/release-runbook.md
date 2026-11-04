@@ -213,7 +213,10 @@ or website refresh work, because export and native selection both use it. With
 `SPICYGOV_COVERAGE_PYTHONPATH` used by coverage preparation. This checks native
 module loading as well as package metadata, without reading source payloads.
 `runtime.json` records the admitted module paths and versions; `phase-costs.json`
-records a preflight refusal before catalog work begins.
+records a preflight refusal before catalog work begins. A combined
+`--finish-selected --prepare-coverage` recovery runs the same coverage-only native
+guard before preparation, recording `coverage-runtime.json` and a
+`coverage-preflight` phase. `--finish-selected` alone keeps its lighter recovery path.
 
 Use `--coverage-selection` for the retained base selection. Preparation freezes
 publication metadata under the run's `coverage/` directory, reuses valid table

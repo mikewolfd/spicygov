@@ -107,6 +107,15 @@ def coverage_environment():
     return environment
 
 
+def coverage_runtime(website):
+    """Load coverage's native engine in the exact environment its preparation uses."""
+    probe = ("import duckdb,_duckdb,hashlib,json,pathlib,sys; p=pathlib.Path(duckdb.__file__); "
+             "print(json.dumps({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),"
+             "'version':duckdb.__version__,'nativePath':_duckdb.__file__,'executable':sys.executable}))")
+    return json.loads(subprocess.check_output(
+        [sys.executable, '-c', probe], cwd=website, env=coverage_environment(), text=True))
+
+
 def preflight(website, run, catalog_only=False, prepare_coverage=False):
     """Import every required runtime owner before cloning or reading receipt bodies."""
     started = monotonic()
@@ -139,13 +148,7 @@ def preflight(website, run, catalog_only=False, prepare_coverage=False):
                    'modules':origins, 'dependencies':{name:importlib.metadata.version(name)
                        for name in ('spicy-docs','pyarrow','duckdb')}}
         if prepare_coverage:
-            # Coverage preparation loads DuckDB in a separately configurable Python path;
-            # ordinary catalog export/selection uses PyArrow and does not need DuckDB imports.
-            probe = ("import duckdb,_duckdb,hashlib,json,pathlib,sys; p=pathlib.Path(duckdb.__file__); "
-                     "print(json.dumps({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),"
-                     "'version':duckdb.__version__,'nativePath':_duckdb.__file__,'executable':sys.executable}))")
-            runtime['coverageRuntime'] = json.loads(subprocess.check_output(
-                [sys.executable, '-c', probe], cwd=website, env=coverage_environment(), text=True))
+            runtime['coverageRuntime'] = coverage_runtime(website)
         if not catalog_only and int(runtime['node'].removeprefix('v').split('.')[0]) < 22:
             raise ValueError('Catalog staging requires Node.js 22 or newer')
         save(run/'runtime.json',runtime)
@@ -383,6 +386,15 @@ def run_refresh(args, website, run, raw, parser):
             return
         preflight(website,run,getattr(args,'catalog_only',False),getattr(args,'prepare_coverage',False))
     if getattr(args, 'prepare_coverage', False):
+        if args.finish_selected:
+            # Recovery skips catalog preflight; newly requested coverage still needs its native runtime.
+            started = monotonic()
+            try:
+                save(run/'coverage-runtime.json', coverage_runtime(website))
+            except BaseException:
+                record_phase(run,'coverage-preflight',started,status='failed')
+                raise
+            record_phase(run,'coverage-preflight',started,status='passed')
         base = args.coverage_selection or website / 'content/coverage-release-selection.v1.json'
         subprocess.run([sys.executable, str(website / 'scripts/prepare-coverage-refresh.py'),
                         '--base-selection', str(base.resolve()), '--run', str(run / 'coverage')],

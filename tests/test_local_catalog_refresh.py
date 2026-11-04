@@ -133,6 +133,44 @@ class NativeRuntimePreflight(unittest.TestCase):
             self.assertEqual(json.loads((run/'phase-costs.json').read_text())[-1]['status'], 'failed')
 
 
+class FinishSelectedCoveragePreflight(unittest.TestCase):
+    def arguments(self, root):
+        return SimpleNamespace(finish_selected=True, candidate=None, full_rebuild=False,
+                               prepare_coverage=True, coverage_selection=None)
+
+    def test_failed_native_guard_precedes_finish_selected_coverage_preparation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            with (patch.object(refresh, 'preflight', side_effect=AssertionError('catalog preflight repeated')),
+                  patch.object(refresh.subprocess, 'check_output', side_effect=ImportError('broken DuckDB native extension')),
+                  patch.object(refresh.subprocess, 'run') as preparation,
+                  patch.object(refresh, 'finish_selected') as finish,
+                  patch.object(refresh, 'acknowledge_completion')):
+                with self.assertRaisesRegex(ImportError, 'broken DuckDB'):
+                    refresh.run_refresh(self.arguments(run), ROOT, run, run/'raw', None)
+                preparation.assert_not_called()
+                finish.assert_not_called()
+            self.assertFalse((run/'coverage-runtime.json').exists())
+            phase = json.loads((run/'phase-costs.json').read_text())[-1]
+            self.assertEqual((phase['phase'], phase['status']), ('coverage-preflight', 'failed'))
+
+    def test_finish_selected_coverage_keeps_the_lighter_guard_and_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            order = []
+            def native(*args, **kwargs):
+                order.append('native')
+                return '{"version":"selected-duckdb","path":"native"}'
+            with (patch.object(refresh, 'preflight', side_effect=AssertionError('catalog preflight repeated')),
+                  patch.object(refresh.subprocess, 'check_output', side_effect=native),
+                  patch.object(refresh.subprocess, 'run', side_effect=lambda *a, **kw: order.append('prepare')),
+                  patch.object(refresh, 'finish_selected', side_effect=lambda *a: order.append('finish')),
+                  patch.object(refresh, 'acknowledge_completion')):
+                refresh.run_refresh(self.arguments(run), ROOT, run, run/'raw', None)
+            self.assertEqual(order, ['native', 'prepare', 'finish'])
+            self.assertEqual(json.loads((run/'coverage-runtime.json').read_text())['version'], 'selected-duckdb')
+
+
 class CatalogOnlyPreflight(unittest.TestCase):
     def test_no_node_or_website_dependencies(self):
         with tempfile.TemporaryDirectory() as directory:
