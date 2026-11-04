@@ -100,6 +100,39 @@ class RuntimePreflight(unittest.TestCase):
             self.assertEqual(json.loads((run/'phase-costs.json').read_text())[-1]['status'],'passed')
 
 
+class NativeRuntimePreflight(unittest.TestCase):
+    def test_parquet_native_module_must_import_in_both_catalog_modes(self):
+        original = refresh.importlib.import_module
+        for catalog_only in (True, False):
+            with self.subTest(catalog_only=catalog_only), tempfile.TemporaryDirectory() as directory:
+                run = Path(directory)
+                def missing(name):
+                    if name == 'pyarrow.parquet':
+                        raise ImportError('native parquet extension unavailable')
+                    return original(name)
+                with (patch.object(refresh.importlib, 'import_module', side_effect=missing),
+                      patch.object(refresh.subprocess, 'check_output', return_value='v22.13.0\n')):
+                    with self.assertRaisesRegex(ImportError, 'native parquet extension'):
+                        refresh.preflight(ROOT, run, catalog_only=catalog_only)
+                self.assertFalse((run/'runtime.json').exists())
+                self.assertEqual(json.loads((run/'phase-costs.json').read_text())[-1]['status'], 'failed')
+
+    def test_coverage_dependency_uses_the_same_environment_as_its_caller(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            def command(argv, **kwargs):
+                if argv == ['node', '--version']:
+                    return 'v22.13.0\n'
+                self.assertEqual(kwargs['env']['PYTHONPATH'], '/selected/coverage/provider')
+                raise subprocess.CalledProcessError(1, argv, stderr='broken DuckDB native extension')
+            with (patch.dict(os.environ, {'SPICYGOV_COVERAGE_PYTHONPATH': '/selected/coverage/provider'}),
+                  patch.object(refresh.subprocess, 'check_output', side_effect=command)):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    refresh.preflight(ROOT, run, prepare_coverage=True)
+            self.assertFalse((run/'runtime.json').exists())
+            self.assertEqual(json.loads((run/'phase-costs.json').read_text())[-1]['status'], 'failed')
+
+
 class CatalogOnlyPreflight(unittest.TestCase):
     def test_no_node_or_website_dependencies(self):
         with tempfile.TemporaryDirectory() as directory:

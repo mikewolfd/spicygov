@@ -207,6 +207,14 @@ This check does not upload, deploy, publish, or prove hosted readback.
 
 Add `--prepare-coverage` to `scripts/refresh-local-catalog.py` to prepare the
 published-table measurements before its existing catalog and website finish.
+The runtime preflight imports PyArrow's Parquet module before either catalog-only
+or website refresh work, because export and native selection both use it. With
+`--prepare-coverage`, it also imports DuckDB in the same Python environment and
+`SPICYGOV_COVERAGE_PYTHONPATH` used by coverage preparation. This checks native
+module loading as well as package metadata, without reading source payloads.
+`runtime.json` records the admitted module paths and versions; `phase-costs.json`
+records a preflight refusal before catalog work begins.
+
 Use `--coverage-selection` for the retained base selection. Preparation freezes
 publication metadata under the run's `coverage/` directory, reuses valid table
 checkpoints and exact member caches, and measures changed dependencies with the

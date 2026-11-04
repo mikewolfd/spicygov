@@ -99,14 +99,22 @@ def record_phase(run, name, started, *, status, counters=None):
     save(path, records)
 
 
-def preflight(website, run, catalog_only=False):
+def coverage_environment():
+    """Use the selected coverage Python path for its smoke check and actual preparation."""
+    environment = dict(os.environ)
+    if environment.get('SPICYGOV_COVERAGE_PYTHONPATH'):
+        environment['PYTHONPATH'] = environment['SPICYGOV_COVERAGE_PYTHONPATH']
+    return environment
+
+
+def preflight(website, run, catalog_only=False, prepare_coverage=False):
     """Import every required runtime owner before cloning or reading receipt bodies."""
     started = monotonic()
     modules = ('spicy_regs.source_catalog.__main__', 'spicy_regs.source_catalog.maintenance',
                'spicy_regs.source_catalog.publication', 'spicy_regs.source_catalog.exporter',
                'spicy_regs.source_catalog.file_inventory', 'spicy_regs.source_catalog.selection',
                'spicy_regs.source_catalog.export_completion',
-               'spicy_docs.storage.raw_archive', 'spicy_regs.sources.publication')
+               'spicy_docs.storage.raw_archive', 'spicy_regs.sources.publication', 'pyarrow.parquet')
     try:
         origins = {}
         for name in modules:
@@ -130,6 +138,14 @@ def preflight(website, run, catalog_only=False):
                    'node':None if catalog_only else subprocess.check_output(['node','--version'],text=True).strip(),
                    'modules':origins, 'dependencies':{name:importlib.metadata.version(name)
                        for name in ('spicy-docs','pyarrow','duckdb')}}
+        if prepare_coverage:
+            # Coverage preparation loads DuckDB in a separately configurable Python path;
+            # ordinary catalog export/selection uses PyArrow and does not need DuckDB imports.
+            probe = ("import duckdb,_duckdb,hashlib,json,pathlib,sys; p=pathlib.Path(duckdb.__file__); "
+                     "print(json.dumps({'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),"
+                     "'version':duckdb.__version__,'nativePath':_duckdb.__file__,'executable':sys.executable}))")
+            runtime['coverageRuntime'] = json.loads(subprocess.check_output(
+                [sys.executable, '-c', probe], cwd=website, env=coverage_environment(), text=True))
         if not catalog_only and int(runtime['node'].removeprefix('v').split('.')[0]) < 22:
             raise ValueError('Catalog staging requires Node.js 22 or newer')
         save(run/'runtime.json',runtime)
@@ -365,15 +381,12 @@ def run_refresh(args, website, run, raw, parser):
         if args.completion_request and not admit_completion(args,run,raw):
             save(run/'complete.json',{'status':'no-pending-request','scope':'No catalogue refresh was started.'})
             return
-        preflight(website,run,getattr(args,'catalog_only',False))
+        preflight(website,run,getattr(args,'catalog_only',False),getattr(args,'prepare_coverage',False))
     if getattr(args, 'prepare_coverage', False):
         base = args.coverage_selection or website / 'content/coverage-release-selection.v1.json'
-        coverage_env = dict(os.environ)
-        if coverage_env.get('SPICYGOV_COVERAGE_PYTHONPATH'):
-            coverage_env['PYTHONPATH'] = coverage_env['SPICYGOV_COVERAGE_PYTHONPATH']
         subprocess.run([sys.executable, str(website / 'scripts/prepare-coverage-refresh.py'),
                         '--base-selection', str(base.resolve()), '--run', str(run / 'coverage')],
-                       cwd=website, env=coverage_env, check=True)
+                       cwd=website, env=coverage_environment(), check=True)
         args.coverage_selection = run / 'coverage/selection.json'
     if args.finish_selected:
         finish_selected(args, website, run)
