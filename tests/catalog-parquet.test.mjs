@@ -51,6 +51,8 @@ put('unavailable',[dict(base,receipt_key=None,receipt_kind=None,original_receipt
 for name,changes in {
  'private':{'source_id':'/Users/private/source'},'private-period':{'period_basis':'/mnt/private/source'},'unsafe-url':{'source_url':'https://example.gov/file?token=private'},
  'unsafe-key':{'receipt_key':'../receipt.json'},'wrong-key-hash':{'content_key':'objects/sha256/55/'+'5'*64},'wrong-receipt-kind':{'receipt_kind':'frozen-index'},
+ 'wrong-receipt-key-hash':{'receipt_key':'acquisitions/sha256/55/'+'5'*64},
+ 'wrong-retained-receipt-key-hash':{'receipt_key':'objects/sha256/55/'+'5'*64+'.gz','receipt_kind':'retained-manifest'},
  'wrong-row-scope':{'dataset_id':'other'},'large-integer':{'original_bytes':2**53},'duplicate-urls':{'source_url':None,'source_urls':['https://example.gov/file','https://example.gov/file']},
  'unqualified-time':{'provenance_basis':'provisional'},'overlapping-periods':{'periods':second['periods']},
 }.items():put(name,[dict(base,**changes)])

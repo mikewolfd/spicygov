@@ -191,8 +191,8 @@ function validateFileProvenance(raw: unknown) {
   if (value.receipt !== undefined) {
     const receipt = fields(value.receipt, ['sha256','entry','key','kind'], false); digest(receipt.sha256);
     if (receipt.entry !== undefined) { number(receipt.entry); if (!receipt.entry) throw Error('Invalid file receipt entry'); }
-    if (receipt.key != null) catalogArchiveKey(receipt.key);
     if (receipt.kind !== undefined && !['frozen-index','acquisition','retained-manifest'].includes(string(receipt.kind))) throw Error('Invalid file receipt kind');
+    validateCatalogReceiptReference(receipt as CatalogFileProvenance['receipt']);
   }
   if (value.originalReceiptSha256 !== undefined) digest(value.originalReceiptSha256);
   if (value.originalReceiptKey != null) catalogArchiveKey(value.originalReceiptKey);
@@ -232,6 +232,23 @@ export function catalogArchiveKey(raw: unknown): string {
   const key = string(raw);
   catalogPartitionUrl('https://archive.example/manifest.json',key);
   return key;
+}
+/** A receipt link must name the same content-addressed bytes as its recorded identity. */
+function validateCatalogReceiptReference(receipt: CatalogFileProvenance['receipt']): void {
+  if (!receipt || receipt.key == null) return;
+  const key = catalogArchiveKey(receipt.key);
+  if (!receipt.kind || !Number.isSafeInteger(receipt.entry) || (receipt.entry ?? 0) <= 0 || !/^sha256:[a-f0-9]{64}$/.test(receipt.sha256))
+    throw Error('Catalog receipt archive reference is incomplete');
+  const expectedKind = key.startsWith('acquisitions/sha256/') ? 'acquisition'
+    : key.endsWith('.jsonl.gz') ? 'frozen-index' : 'retained-manifest';
+  if (receipt.kind !== expectedKind) throw Error('Catalog receipt kind differs from archive key');
+  const hash = receipt.sha256.slice(7);
+  if (receipt.kind === 'acquisition' && key !== `acquisitions/sha256/${hash.slice(0,2)}/${hash}`)
+    throw Error('Catalog acquisition key differs from fingerprint');
+  if (key.startsWith('objects/sha256/')) {
+    const base = `objects/sha256/${hash.slice(0,2)}/${hash}`;
+    if (key !== base && key !== `${base}.gz`) throw Error('Catalog receipt object key differs from fingerprint');
+  }
 }
 export async function parseCatalogParquet(buffer: ArrayBuffer, context: CatalogShardContext): Promise<CatalogFilePage> {
   return (await import('./catalog-parquet')).decodeCatalogFileShard(buffer,context);
