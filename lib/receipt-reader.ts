@@ -58,7 +58,7 @@ export function receiptOnlyFields(table: Dataset): string[] {
   return [...new Set(Object.values(table.receiptContainers ?? {}).flat())].filter(name => !published.has(name));
 }
 // Receipts are written with identity_json bounds in the footer and a page index (spicy-regs standard layout,
-// 2026-11-09), so a lookup by identity reads only the pages that can hold it: ~1-3 MB measured on bill-family.
+// 2026-11-09), so a lookup by identity reads only the pages that can hold it: ~1.8 MB measured on bill-family.
 // A file written before that has no identity bounds; the browser then filters every receipt of the table, which past
 // this many receipts is too slow to offer (the same bound as the server's read_receipt_fields).
 export const IDENTITY_SCAN_ROWS = 2_000_000;
@@ -90,10 +90,16 @@ export async function receiptFields(table: Dataset, row: Row, fields: string[], 
   if (Number(footer.num_rows) !== pin.rows) throw new Error('The Parquet footer differs from the published row count.');
   const candidates = identityCandidates(footer.row_groups as FooterGroup[], table.id, identity.identity);
   if (candidates > IDENTITY_SCAN_ROWS) throw new Error(`These receipts were published before identity bounds: finding this record would check ${candidates.toLocaleString('en-US')} receipts. Lookups return with the next publication.`);
-  // Footer planning (maxScanRows) skips groups whose bounds exclude the identity; the page index skips pages.
-  const found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),
-    filters:[{column:'dataset',value:table.id},{column:'identity_json',value:identity.identity},{column:'record_id',value:identity.id},{column:'outcome',value:'accepted'}],
-    cursor:0,limit:2,maxScanRows:pin.rows},checked=>onProgress({step:'scan',checked,total:pin.rows}))).rows;
+  // Two reads, as a columnar engine materializes late. First the identity columns alone: footer planning
+  // (maxScanRows) skips row groups whose bounds exclude the identity and the page index skips pages. Then the one
+  // matching row, every column, by position: one page per column. Reading every column of the candidate pages
+  // instead cost ~57 MB per lookup on bill_sections' 3.7M receipts, whose rows are not in identity order; this
+  // costs ~1.8 MB (2026-11-09).
+  const located = await readPage({table:receiptTable,columns:['dataset','identity_json','outcome'],
+    filters:[{column:'dataset',value:table.id},{column:'identity_json',value:identity.identity},{column:'outcome',value:'accepted'}],
+    cursor:0,limit:2,maxScanRows:pin.rows},checked=>onProgress({step:'scan',checked,total:pin.rows}));
+  if (located.rows.length !== 1) throw new Error(located.rows.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
+  const found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[],cursor:located.positions[0],limit:1})).rows;
   if (found.length !== 1) throw new Error(found.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
   const receipt = found[0];
   if (receipt.dataset !== table.id || receipt.record_id !== identity.id || receipt.identity_json !== identity.identity || receipt.outcome !== 'accepted' || receipt.generation_id !== pin.generationId) throw new Error('The receipt identity or generation differs from this row.');
