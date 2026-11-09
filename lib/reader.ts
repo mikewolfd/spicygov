@@ -88,6 +88,11 @@ async function remoteFile(member: Dataset['members'][number]) {
   };
 }
 
+/** One member's Parquet footer, read through the same version-checked remote file as every record read. */
+export async function memberFooter(member: Dataset['members'][number]) {
+  return parquetMetadataAsync(await remoteFile(member), {parsers:exactParsers});
+}
+
 /** Renew the complete population, including members absent from a cached page. */
 export async function renewTableVersion(table: Dataset): Promise<void> {
   if (!versionBound(table)) throw new Error('This publication has no checked file version for cached records.');

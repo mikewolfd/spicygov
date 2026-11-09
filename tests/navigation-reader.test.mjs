@@ -4,10 +4,10 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['lib/receipt-reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {receiptFields,receiptLookup,receiptOnlyFields,recordIdentity,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {receiptFields,receiptLookup,receiptOnlyFields,recordIdentity,identityCandidates,IDENTITY_SCAN_ROWS,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const built=await build({entryPoints:['lib/reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {readPage}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
-const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys','detail-attempts','fcc-receipts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
+const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','detail-attempts','fcc-receipts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
 const server=createServer((req,res)=>{const name=req.url.slice(1),file=files[name];if(!file)return res.writeHead(404).end();const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');if(match){const start=Number(match[1]),end=Number(match[2]);res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${file.length}`,'Content-Length':end-start+1});res.end(file.subarray(start,end+1));}else{res.writeHead(200,{'Content-Length':file.length});res.end(file);}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
@@ -44,23 +44,18 @@ try {
   await assert.rejects(receiptFields({...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,generationId:'g2'}}},row,['record_package_id']),/generation differs/);
   const ambiguous={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,url:`${base}/ambiguous`,rows:2,bytes:files.ambiguous.length}}};
   await assert.rejects(receiptFields(ambiguous,row,['record_package_id']),/Ambiguous/);
-  for(const name of ['keys','wrong-keys']) {
-   const indexed={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,keyIndex:{url:`${base}/${name}`,bytes:files[name].length,sha256:'sha256:'+'c'.repeat(64)}}}};
-   if(name==='keys')assert.deepEqual(await receiptFields(indexed,row,['record_package_id']),{record_package_id:'CREC-2013-01-03'});
-   else await assert.rejects(receiptFields(indexed,row,['record_package_id']),/different receipt/);
-  }
-  // Without an index a large receipt file is refused before any request; with one, lookup goes index → one receipt row.
-  const missing={...table.publication.nativeReceipts,url:`${base}/never-requested`,rows:3_000_000};
-  assert.deepEqual(receiptLookup(missing),{path:'refused',reason:'This large receipt collection needs a published key index before browser lookup.'});
-  await assert.rejects(receiptFields({...table,publication:{...table.publication,nativeReceipts:missing}},row,['record_package_id']),/needs a published key index before browser lookup/);
-  assert.deepEqual(receiptLookup({...missing,keyIndex:{url:`${base}/keys`,bytes:1,sha256:'sha256:'+'c'.repeat(64)}}),{path:'index'});
-  assert.deepEqual(receiptLookup(table.publication.nativeReceipts),{path:'scan'});
-  const steps=[], indexed={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,keyIndex:{url:`${base}/keys`,bytes:files.keys.length,sha256:'sha256:'+'c'.repeat(64)}}}};
-  await receiptFields(indexed,row,['record_package_id'],p=>steps.push(p.step));
-  assert.ok(steps.includes('index')&&steps.at(-1)==='receipt'&&!steps.includes('scan'),steps.join());
+  // Any size of receipt file is offered: the lookup reads only the groups and pages whose bounds admit the identity.
+  assert.deepEqual(receiptLookup({...table.publication.nativeReceipts,rows:30_000_000}),{path:'identity'});
+  assert.deepEqual(receiptLookup(undefined),{path:'refused',reason:'Matching generation receipts are unavailable.'});
   const scanned=[];
   await receiptFields(table,row,['record_package_id'],p=>scanned.push(p));
   assert.ok(scanned.length&&scanned.every(p=>p.step==='scan'&&p.total===1));
+  // A file written before identity bounds counts every receipt of the table, and past the bound refuses unread.
+  const stat=(min,max)=>({min_value:min,max_value:max});
+  const group=(rows,dataset,identity)=>({num_rows:BigInt(rows),columns:[{meta_data:{path_in_schema:['dataset'],statistics:dataset}},{meta_data:{path_in_schema:['identity_json'],statistics:identity}}]});
+  const id='["list",[["list",[["str","n"],["str","5"]]]]]';
+  assert.equal(identityCandidates([group(10,stat('a','a'),stat(id,id)),group(20,stat('a','a'),stat('[z','[z')),group(30,stat('b','b'),undefined)],'a',id),10);
+  assert.equal(identityCandidates([group(IDENTITY_SCAN_ROWS+1,stat('a','a'),undefined)],'a',id),IDENTITY_SCAN_ROWS+1);
  });
  await test('receipt-only fields are declared container fields absent from published columns',()=>{
   const bills={...table,id:'congress_bills',columns:cols(['bill_id','title']),receiptContainers:{source_fields:['bill_id','title','url'],other:['url','source_xml']}};

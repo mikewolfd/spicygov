@@ -79,7 +79,7 @@ export function SourceConnections({table,catalog,row,joins,navigation,onOpen}: P
   </details>;
 }
 
-const STEP_LABEL: Record<ReceiptProgress['step'], string> = {index:'Finding this record in the key index', scan:'Checking receipts for this record', receipt:'Reading the matching receipt'};
+const STEP_LABEL: Record<ReceiptProgress['step'], string> = {scan:'Checking receipts for this record'};
 const preview = (fields: string[]) => fields.slice(0,6).map(pretty).join(', ')+(fields.length>6?`, and ${fields.length-6} more`:'');
 const missing = (asked: string[], found: Row) => {const absent=asked.filter(name=>!(name in found));return absent.length>0&&<small>Not stated in this receipt: {absent.map(pretty).join(', ')}.</small>;};
 const megabytes = (bytes: number) => `up to ${new Intl.NumberFormat('en-US',{maximumFractionDigits:bytes<1e7?1:0}).format(bytes/1e6)} MB`;
@@ -107,13 +107,12 @@ export function RetainedSourceDetails({table,row,fields}:{table:Dataset;row:Row;
   return <div className="source-reference receipt-lookup">
     <button disabled={plan.path==='refused'||lookup.state==='reading'} onClick={read}><span>Read retained source details<small>{preview(fields)}</small></span></button>
     {plan.path==='refused'?<small>{plan.reason}</small>
-      :plan.path==='index'?<small>Finds this record’s receipt through the published key index, then reads that one receipt. This downloads tens of megabytes and can take up to a minute on a slow connection.</small>
-      :<small>Checks up to {count(pin!.rows)} receipt rows ({megabytes(pin!.bytes)}) for this record’s exact identity and publication generation.</small>}
+      :<small>Finds this record’s receipt by its exact identity and publication generation, reading only the parts of the receipt file that can hold it: usually 1–2 MB, never more than {megabytes(pin!.bytes).replace('up to ','')}.</small>}
     {lookup.state==='reading'&&<div className="receipt-progress" role="status">
       <span className="loader"/>
-      <span>{reading?STEP_LABEL[reading.step]:'Starting the receipt reader'}{reading&&reading.step!=='receipt'?` · ${count(reading.checked)} of ${count(reading.total)} rows checked`:'…'}</span>
+      <span>{reading?STEP_LABEL[reading.step]:'Starting the receipt reader'}{reading?` · up to row ${count(reading.checked)} of ${count(reading.total)}`:'…'}</span>
       <button onClick={stop}>Stop</button>
-      {reading&&reading.step!=='receipt'&&<progress max={reading.total} value={reading.checked} aria-label="Receipt rows checked"/>}
+      {reading&&<progress max={reading.total} value={reading.checked} aria-label="Receipt file position"/>}
     </div>}
     {lookup.state==='stopped'&&<small role="status">Reading stopped. Nothing was kept; read again to retry.</small>}
     {lookup.state==='error'&&<p role="alert">{lookup.message}</p>}

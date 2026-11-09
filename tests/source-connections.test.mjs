@@ -93,15 +93,12 @@ test('retained source details are offered only for tables whose receipts hold un
   // No connections at all: the details section still renders for the receipt-only `url`.
   const html=render(bills,[],row);
   assert.match(html,/Read retained source details<small>Url<\/small>/);
-  assert.match(html,/Checks up to 1,000 receipt rows \(up to 450 MB\)/);
+  assert.match(html,/by its exact identity and publication generation, reading only the parts of the receipt file that can hold it: usually 1–2 MB, never more than 450 MB/);
   assert.doesNotMatch(html,/disabled=""/);
   assert.equal(render({...bills,columns:cols(['bill_id','title','url'])},[],row),'');
   assert.equal(render({...bills,publication:undefined},[],row),'');
-  const large={...bills,publication:{...bills.publication,nativeReceipts:{...receipts,rows:3_000_000}}};
-  const refused=render(large,[],row);
-  assert.match(refused,/<button disabled="">/);
-  assert.match(refused,/This large receipt collection needs a published key index before browser lookup\./);
-  const indexed=render({...large,publication:{...large.publication,nativeReceipts:{...large.publication.nativeReceipts,keyIndex:{url:'k',bytes:1,sha256:'sha256:'+'c'.repeat(64)}}}},[],row);
-  assert.doesNotMatch(indexed,/disabled=""/);
-  assert.match(indexed,/through the published key index/);
+  // Size no longer refuses before reading: a lookup by identity reads pages, whatever the file's size.
+  const large=render({...bills,publication:{...bills.publication,nativeReceipts:{...receipts,rows:30_000_000}}},[],row);
+  assert.doesNotMatch(large,/disabled=""/);
+  assert.doesNotMatch(large,/key index|tens of megabytes/);
 });
