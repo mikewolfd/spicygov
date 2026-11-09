@@ -1,6 +1,6 @@
 import { matchesConnection, type Connection, type Navigation } from './navigation';
 import type { Dataset, Row } from './catalog';
-import { memberFooter, readPage } from './reader';
+import { openMember, readPage } from './reader';
 import { parseExact } from './exact-json';
 import type { NativeReceipts } from './publication-evidence';
 export { parseExact } from './exact-json';
@@ -59,16 +59,25 @@ export function receiptOnlyFields(table: Dataset): string[] {
 }
 // Receipts are written with identity_json bounds in the footer and a page index (spicy-regs standard layout,
 // 2026-11-09), so a lookup by identity reads only the pages that can hold it: ~1.8 MB measured on bill-family.
-// A file written before that has no identity bounds; the browser then filters every receipt of the table, which past
-// this many receipts is too slow to offer (the same bound as the server's read_receipt_fields).
+// A row group whose bounds admit the identity is checked whole; past this many such receipts (a file whose rows are
+// not in identity order, so wide bounds admit most groups) a lookup is too slow to offer (the same bound as the
+// server's read_receipt_fields).
 export const IDENTITY_SCAN_ROWS = 2_000_000;
 export type ReceiptLookup = {path: 'identity'} | {path: 'refused'; reason: string};
 export function receiptLookup(pin: NativeReceipts | undefined): ReceiptLookup {
   return pin ? {path:'identity'} : {path:'refused', reason:'Matching generation receipts are unavailable.'};
 }
 type FooterGroup = {num_rows: bigint | number; columns: {meta_data?: {path_in_schema: string[]; statistics?: {min_value?: unknown; max_value?: unknown}}}[]};
+const utf8 = new TextEncoder();
+/** Parquet orders string statistics by UTF-8 bytes, as hyparquet 1.31.2 compares them; JS `<` orders UTF-16 units. */
+function compareUtf8(a: string, b: string): number {
+  const x = utf8.encode(a), y = utf8.encode(b);
+  for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return x[i] - y[i];
+  return x.length - y.length;
+}
 const within = (stats: {min_value?: unknown; max_value?: unknown} | undefined, value: string) =>
-  typeof stats?.min_value !== 'string' || typeof stats?.max_value !== 'string' || (stats.min_value <= value && value <= stats.max_value);
+  typeof stats?.min_value !== 'string' || typeof stats?.max_value !== 'string'
+  || (compareUtf8(stats.min_value, value) <= 0 && compareUtf8(value, stats.max_value) <= 0);
 /** Receipts a lookup must check: rows of the groups whose footer bounds admit the dataset and the identity. */
 export function identityCandidates(groups: FooterGroup[], dataset: string, identity: string): number {
   let rows = 0;
@@ -86,10 +95,11 @@ export async function receiptFields(table: Dataset, row: Row, fields: string[], 
   if (lookup.path === 'refused') throw new Error(lookup.reason);
   const identity = await recordIdentity(table,row);
   const receiptTable = receiptDataset(table);
-  const footer = await memberFooter(receiptTable.members[0]);
+  // One footer read per lookup: both reads below reuse it (an old-layout bill-family footer is ~30 MB).
+  const opened = await openMember(receiptTable.members[0]), footer = opened.metadata;
   if (Number(footer.num_rows) !== pin.rows) throw new Error('The Parquet footer differs from the published row count.');
   const candidates = identityCandidates(footer.row_groups as FooterGroup[], table.id, identity.identity);
-  if (candidates > IDENTITY_SCAN_ROWS) throw new Error(`These receipts were published before identity bounds: finding this record would check ${candidates.toLocaleString('en-US')} receipts. Lookups return with the next publication.`);
+  if (candidates > IDENTITY_SCAN_ROWS) throw new Error(`These receipts are not ordered by identity: finding this record would check ${candidates.toLocaleString('en-US')} receipts. Lookups return with the next publication.`);
   // Two reads, as a columnar engine materializes late. First the identity columns alone: footer planning
   // (maxScanRows) skips row groups whose bounds exclude the identity and the page index skips pages. Then the one
   // matching row, every column, by position: one page per column. Reading every column of the candidate pages
@@ -97,9 +107,9 @@ export async function receiptFields(table: Dataset, row: Row, fields: string[], 
   // costs ~1.8 MB (2026-11-09).
   const located = await readPage({table:receiptTable,columns:['dataset','identity_json','outcome'],
     filters:[{column:'dataset',value:table.id},{column:'identity_json',value:identity.identity},{column:'outcome',value:'accepted'}],
-    cursor:0,limit:2,maxScanRows:pin.rows},checked=>onProgress({step:'scan',checked,total:pin.rows}));
+    cursor:0,limit:2,maxScanRows:pin.rows,opened},checked=>onProgress({step:'scan',checked,total:pin.rows}));
   if (located.rows.length !== 1) throw new Error(located.rows.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
-  const found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[],cursor:located.positions[0],limit:1})).rows;
+  const found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[],cursor:located.positions[0],limit:1,opened})).rows;
   if (found.length !== 1) throw new Error(found.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
   const receipt = found[0];
   if (receipt.dataset !== table.id || receipt.record_id !== identity.id || receipt.identity_json !== identity.identity || receipt.outcome !== 'accepted' || receipt.generation_id !== pin.generationId) throw new Error('The receipt identity or generation differs from this row.');

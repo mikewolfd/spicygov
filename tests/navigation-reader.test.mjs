@@ -8,7 +8,8 @@ const {receiptFields,receiptLookup,receiptOnlyFields,recordIdentity,identityCand
 const built=await build({entryPoints:['lib/reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {readPage}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
 const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','detail-attempts','fcc-receipts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
-const server=createServer((req,res)=>{const name=req.url.slice(1),file=files[name];if(!file)return res.writeHead(404).end();const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');if(match){const start=Number(match[1]),end=Number(match[2]);res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${file.length}`,'Content-Length':end-start+1});res.end(file.subarray(start,end+1));}else{res.writeHead(200,{'Content-Length':file.length});res.end(file);}});
+const ranges=[];
+const server=createServer((req,res)=>{const name=req.url.slice(1),file=files[name];if(!file)return res.writeHead(404).end();const match=/bytes=(\d+)-(\d+)/.exec(req.headers.range??'');if(match){const start=Number(match[1]),end=Number(match[2]);ranges.push({name,start,end,length:file.length});res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${file.length}`,'Content-Length':end-start+1});res.end(file.subarray(start,end+1));}else{res.writeHead(200,{'Content-Length':file.length});res.end(file);}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;
 const member=(n,rows)=>({url:`${base}/${n}`,rows,byteSize:files[n].length});
@@ -50,12 +51,21 @@ try {
   const scanned=[];
   await receiptFields(table,row,['record_package_id'],p=>scanned.push(p));
   assert.ok(scanned.length&&scanned.every(p=>p.step==='scan'&&p.total===1));
-  // A file written before identity bounds counts every receipt of the table, and past the bound refuses unread.
+  // One lookup fetches the receipt footer once (an old-layout footer is ~30 MB): both reads reuse it.
+  ranges.length=0;
+  await receiptFields(table,row,['record_package_id']);
+  assert.equal(ranges.filter(r=>r.name==='receipts'&&r.end===r.length-1).length,1);
+  // Groups whose bounds admit the identity count whole; a file not in identity order admits most, and past the bound
+  // refuses unread.
   const stat=(min,max)=>({min_value:min,max_value:max});
   const group=(rows,dataset,identity)=>({num_rows:BigInt(rows),columns:[{meta_data:{path_in_schema:['dataset'],statistics:dataset}},{meta_data:{path_in_schema:['identity_json'],statistics:identity}}]});
   const id='["list",[["list",[["str","n"],["str","5"]]]]]';
   assert.equal(identityCandidates([group(10,stat('a','a'),stat(id,id)),group(20,stat('a','a'),stat('[z','[z')),group(30,stat('b','b'),undefined)],'a',id),10);
   assert.equal(identityCandidates([group(IDENTITY_SCAN_ROWS+1,stat('a','a'),undefined)],'a',id),IDENTITY_SCAN_ROWS+1);
+  // Bounds compare as UTF-8 bytes, as Parquet writes them: U+F000 lies between U+E000 and U+1F600 there, though a
+  // UTF-16 comparison puts the astral character's surrogates first.
+  assert.equal(identityCandidates([group(10,stat('a','a'),stat('\uE000','\u{1F600}'))],'a','\uF000'),10);
+  assert.equal(identityCandidates([group(10,stat('a','a'),stat('\u{1F600}','\u{1F600}'))],'a','\uF000'),0);
  });
  await test('receipt-only fields are declared container fields absent from published columns',()=>{
   const bills={...table,id:'congress_bills',columns:cols(['bill_id','title']),receiptContainers:{source_fields:['bill_id','title','url'],other:['url','source_xml']}};
