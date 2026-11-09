@@ -2,6 +2,7 @@ import { matchesConnection, type Connection, type Navigation } from './navigatio
 import type { Dataset, Row } from './catalog';
 import { readPage } from './reader';
 import { parseExact } from './exact-json';
+import type { NativeReceipts } from './publication-evidence';
 export { parseExact } from './exact-json';
 export function unpack(v: unknown): unknown {
   if (!Array.isArray(v) || v.length !== 2 || typeof v[0] !== 'string') throw new Error('Unsupported receipt encoding.');
@@ -51,24 +52,40 @@ function receiptDataset(table: Dataset): Dataset {
   const names = ['receipt_id','policy_version','dataset','generation_id','record_id','subject_version','identity_json','outcome','processing_json'];
   return {...table, id: 'etl_receipts', rows: receipt.rows, columns: names.map(name => ({name,type:'VARCHAR',description:''})), members:[{url:receipt.url,rows:receipt.rows,byteSize:receipt.bytes}]};
 }
-export async function receiptFields(table: Dataset, row: Row, fields: string[], onProgress: (n:number)=>void = () => {}): Promise<Row> {
-  const pin = table.publication?.nativeReceipts;
+/** Container fields kept only in receipts: the details a receipt lookup adds beyond the published row. */
+export function receiptOnlyFields(table: Dataset): string[] {
+  const published = new Set(table.columns.map(c => c.name));
+  return [...new Set(Object.values(table.receiptContainers ?? {}).flat())].filter(name => !published.has(name));
+}
+// Without a key index the browser filters the whole receipt file; past this size that is too slow to offer.
+const SCAN_ROWS = 2_000_000;
+export type ReceiptLookup = {path: 'index' | 'scan'} | {path: 'refused'; reason: string};
+export function receiptLookup(pin: NativeReceipts | undefined): ReceiptLookup {
+  if (!pin) return {path:'refused', reason:'Matching generation receipts are unavailable.'};
+  if (pin.keyIndex) return {path:'index'};
+  return pin.rows > SCAN_ROWS ? {path:'refused', reason:'This large receipt collection needs a published key index before browser lookup.'} : {path:'scan'};
+}
+/** `index` and `scan` count receipt rows checked; `receipt` reads the one located row and reports no count. */
+export type ReceiptProgress = {step: 'index' | 'scan' | 'receipt'; checked: number; total: number};
+export async function receiptFields(table: Dataset, row: Row, fields: string[], onProgress: (p: ReceiptProgress)=>void = () => {}): Promise<Row> {
+  const pin = table.publication?.nativeReceipts, lookup = receiptLookup(pin);
   if (!pin || !table.artifactDigest) throw new Error('Matching generation receipts are unavailable.');
+  if (lookup.path === 'refused') throw new Error(lookup.reason);
   const identity = await recordIdentity(table,row);
   const receiptTable = receiptDataset(table);
   let found: Row[], pointer: Row | undefined;
   if (pin.keyIndex) {
     // The admitted sidecar only locates rows. The selected receipt and full subject are checked below.
     const index = {...receiptTable, columns:[...receiptTable.columns,{name:'row_number',type:'BIGINT',description:''}], members:[{url:pin.keyIndex.url,byteSize:pin.keyIndex.bytes,rows:pin.rows}]};
-    const pointers = await readPage({table:index,columns:['record_id','receipt_id','subject_version','policy_version','row_number'],filters:[{column:'dataset',value:table.id},{column:'record_id',value:identity.id},{column:'outcome',value:'accepted'}],cursor:0,limit:2}, onProgress);
+    const pointers = await readPage({table:index,columns:['record_id','receipt_id','subject_version','policy_version','row_number'],filters:[{column:'dataset',value:table.id},{column:'record_id',value:identity.id},{column:'outcome',value:'accepted'}],cursor:0,limit:2}, checked=>onProgress({step:'index',checked,total:pin.rows}));
     if (pointers.rows.length !== 1) throw new Error(pointers.rows.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
     pointer = pointers.rows[0];
     const position = Number(pointer.row_number);
     if (!Number.isSafeInteger(position) || position < 0 || position >= pin.rows) throw new Error('Invalid receipt index position.');
+    onProgress({step:'receipt',checked:0,total:1});
     found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[],cursor:position,limit:1})).rows;
   } else {
-    if (pin.rows > 2_000_000) throw new Error('This large receipt collection needs a published key index before browser lookup.');
-    found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[{column:'dataset',value:table.id},{column:'record_id',value:identity.id},{column:'outcome',value:'accepted'}],cursor:0,limit:2},onProgress)).rows;
+    found = (await readPage({table:receiptTable,columns:receiptTable.columns.map(c=>c.name),filters:[{column:'dataset',value:table.id},{column:'record_id',value:identity.id},{column:'outcome',value:'accepted'}],cursor:0,limit:2},checked=>onProgress({step:'scan',checked,total:pin.rows}))).rows;
   }
   if (found.length !== 1) throw new Error(found.length ? 'Ambiguous accepted receipts; no receipt was chosen.' : 'No accepted receipt for this row in the selected generation.');
   const receipt = found[0];

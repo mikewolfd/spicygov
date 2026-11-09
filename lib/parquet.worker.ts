@@ -17,7 +17,7 @@ self.onmessage = async (event) => {
       self.postMessage({type:"source-evidence",...result,dataset:event.data.dataset,filters:event.data.filters}); return;
     }
     if (event.data.type === "receipt") {
-      const fields = await receiptFields(event.data.table,event.data.row,event.data.fields,(scanned)=>self.postMessage({type:"progress",scanned}));
+      const fields = await receiptFields(event.data.table,event.data.row,event.data.fields,(progress)=>self.postMessage({type:"progress",...progress}));
       self.postMessage({type:"receipt",fields}); return;
     }
     const result = await readPage(event.data, (scanned) =>

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['lib/receipt-reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const {receiptFields,recordIdentity,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
+const {receiptFields,receiptLookup,receiptOnlyFields,recordIdentity,exactJson,unpack,parseExact,readSourceEvidence}=await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`);
 const built=await build({entryPoints:['lib/reader.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const {readPage}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].contents).toString('base64')}`);
 const files=Object.fromEntries(['meetings','communications','receipts','ambiguous','keys','wrong-keys','detail-attempts','fcc-receipts'].map(n=>[n,readFileSync(new URL(`./fixtures/navigation/${n}.parquet`,import.meta.url))]));
@@ -49,6 +49,26 @@ try {
    if(name==='keys')assert.deepEqual(await receiptFields(indexed,row,['record_package_id']),{record_package_id:'CREC-2013-01-03'});
    else await assert.rejects(receiptFields(indexed,row,['record_package_id']),/different receipt/);
   }
+  // Without an index a large receipt file is refused before any request; with one, lookup goes index → one receipt row.
+  const missing={...table.publication.nativeReceipts,url:`${base}/never-requested`,rows:3_000_000};
+  assert.deepEqual(receiptLookup(missing),{path:'refused',reason:'This large receipt collection needs a published key index before browser lookup.'});
+  await assert.rejects(receiptFields({...table,publication:{...table.publication,nativeReceipts:missing}},row,['record_package_id']),/needs a published key index before browser lookup/);
+  assert.deepEqual(receiptLookup({...missing,keyIndex:{url:`${base}/keys`,bytes:1,sha256:'sha256:'+'c'.repeat(64)}}),{path:'index'});
+  assert.deepEqual(receiptLookup(table.publication.nativeReceipts),{path:'scan'});
+  const steps=[], indexed={...table,publication:{...table.publication,nativeReceipts:{...table.publication.nativeReceipts,keyIndex:{url:`${base}/keys`,bytes:files.keys.length,sha256:'sha256:'+'c'.repeat(64)}}}};
+  await receiptFields(indexed,row,['record_package_id'],p=>steps.push(p.step));
+  assert.ok(steps.includes('index')&&steps.at(-1)==='receipt'&&!steps.includes('scan'),steps.join());
+  const scanned=[];
+  await receiptFields(table,row,['record_package_id'],p=>scanned.push(p));
+  assert.ok(scanned.length&&scanned.every(p=>p.step==='scan'&&p.total===1));
+ });
+ await test('receipt-only fields are declared container fields absent from published columns',()=>{
+  const bills={...table,id:'congress_bills',columns:cols(['bill_id','title']),receiptContainers:{source_fields:['bill_id','title','url'],other:['url','source_xml']}};
+  assert.deepEqual(receiptOnlyFields(bills),['url','source_xml']);
+  assert.deepEqual(receiptOnlyFields({...bills,columns:cols(['bill_id','title','url','source_xml'])}),[]);
+  // Undeclared processing keys, such as build-machine witnesses, are never requested.
+  assert.ok(!receiptOnlyFields(bills).includes('witnesses'));
+  assert.deepEqual(receiptOnlyFields({...bills,receiptContainers:undefined}),[]);
  });
  await test('reverse source arrays read hidden reference fields and preserve paging and sort',async()=>{
   const part=(path,transform)=>({path:[path],from:'element',...(transform?{transform}:{})});
