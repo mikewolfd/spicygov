@@ -1,10 +1,11 @@
-"""Build a reviewed, receipt-bound coverage map for every Sources table.
+"""Build a reviewed coverage map for every Sources table from its public files.
 
-Missing definitions, schema drift, failed scans and unreconciled dimensions fail
-the build. A full release requires every table; an explicit refresh preserves
-unselected measurements unchanged. Presence never proves publisher completeness.
+Every table is measured from the published Parquet it serves; nothing is
+restored from receipts. Missing definitions, schema drift, failed scans and
+unreconciled dimensions fail the build. A full release requires every table; an
+explicit refresh preserves unselected measurements unchanged. Presence never
+proves publisher completeness.
 """
-from contextlib import nullcontext
 import argparse
 import concurrent.futures
 import datetime
@@ -15,22 +16,17 @@ import pathlib
 import subprocess
 import sys
 import tempfile
-import threading
 
 import duckdb
 
 import coverage_allowances as allowances
 from coverage_dimensions import binding, definition_digest, validate_definition
-import native_legislative_coverage as native
-from native_legislative_coverage import forward_restore_diagnostics, validate_native_implementations, variant
-import additional_native_coverage as additional
 from coverage_scan import check_mutable, measurement_revision, scan_table, validate_counts, validate_members
 from publication_census import census_digest, load, schema
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'public/coverage-maps.v1.json'
 CACHE = ROOT / '.cache/coverage-maps'
-HEAVY_NATIVE_SCAN_LOCK = threading.Lock()
 
 
 def definitions(folder=None):
@@ -47,6 +43,15 @@ def definitions(folder=None):
     return result
 
 
+def published_policy(id, table, policy):
+    """The reviewed rules measured against the exact schema this table publishes."""
+    if table.get('columns') in (None, policy['schema']):
+        return policy
+    if policy.get('publishedSchema') and table['columns'] == policy['publishedSchema']:
+        return {**policy, 'schema': policy['publishedSchema']}
+    raise ValueError('Published schema needs coverage review: ' + id)
+
+
 def validate_plan(tables, policies, available_tables=None):
     available_tables = tables if available_tables is None else available_tables
     missing = sorted(set(tables) - set(policies))
@@ -59,25 +64,11 @@ def validate_plan(tables, policies, available_tables=None):
             {**dim, **({'comparison': available_tables[dim['comparisonTable']]}
                       if dim.get('comparisonTable') else {})}
             for dim in policies[id]['dimensions']]}
-        policy = policies[id] = additional.variant(id, table, variant(id, table, definition))
+        policy = policies[id] = published_policy(id, table, definition)
         if policy.get('family') != table['family']: raise ValueError('Coverage family changed: ' + id)
         if not isinstance(policy.get('classification'), str) or not policy['classification'].strip():
             raise ValueError('Coverage classification is missing: ' + id)
-        expected = schema(policy.get('schema'))
-        if table.get('columns') and table['kind'] == 'generation' and expected != schema(table['columns']):
-            raise ValueError('Published schema needs coverage review: ' + id)
-        validate_definition(policy, schema(policy.get('processingSchema', expected)))
-
-
-def warm_native_readers(tables, policies):
-    """Prewarm only potential native scans; variants still own schema admission."""
-    needed = {id for id, table in tables.items() if id in policies and
-              (table.get('kind') == 'rulemaking' or not (
-                  table.get('columns') == policies[id]['schema'] or
-                  (policies[id].get('publishedSchema') and
-                   table.get('columns') == policies[id]['publishedSchema'])))}
-    native.describe_all(native.DATASETS & needed)
-    additional.describe_all((additional.FAMILIES.keys() | additional.RULEMAKING_DATASETS) & needed)
+        validate_definition(policy, schema(policy.get('schema')))
 
 
 def cached(table, policy, old):
@@ -103,10 +94,8 @@ def timed_scan(item):
     id, table, policy, old = item
     if old is not None and cached(table, policy, old):
         return id, old
-    request = {'id': id, 'table': table, 'policy': policy,
-               'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
-    return id, _run_scan(request, timeout_seconds=allowances.scan_seconds(id, policy.get('_additionalNativeProcessing')),
-                         serial=heavy_job([item]), label=id)
+    request = {'id': id, 'table': table, 'policy': policy}
+    return id, _run_scan(request, timeout_seconds=allowances.scan_seconds(id), label=id)
 
 
 
@@ -133,14 +122,7 @@ def main():
         raise ValueError('Completed releases require a full build')
     if args.scan:
         request = json.load(sys.stdin)
-        # A scan without descriptions (a direct probe) describes datasets on demand.
-        descriptions = request.get('descriptions', {})
-        native.seed(descriptions.get('legislative', {}))
-        additional.seed(descriptions.get('additional', {}))
-        result = (additional.scan_court_family(request['tables'], validate_members=validate_members,
-                                              validate_counts=validate_counts) if 'tables' in request else
-                  scan_table(request['id'], request['table'], request['policy']))
-        print(json.dumps(result))
+        print(json.dumps(scan_table(request['id'], request['table'], request['policy'])))
         return
     if args.only and args.output.resolve() == OUTPUT.resolve():
         raise ValueError('Partial scans require a separate output file')
@@ -156,8 +138,6 @@ def main():
     if args.only and set(args.only) != set(selected_tables):
         raise ValueError('Requested table is not currently published')
     policies = {id: policy for id, policy in reviewed_policies.items() if id in selected_tables}
-    # One reader call per native dataset, in parallel; validate_plan and every scan reuse it.
-    warm_native_readers(selected_tables, policies)
     validate_plan(selected_tables, policies, tables)
     previous = json.loads(args.output.read_text()).get('tables', {}) if args.output.exists() else {}
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -187,8 +167,6 @@ def main():
     if failures: raise ValueError('Coverage build failed; published maps kept unchanged:\n' + '\n'.join(failures))
     if definitions() != reviewed_policies:
         raise ValueError('Coverage definitions changed during the build; rerun the reviewed policies')
-    validate_native_implementations({id: policies[id] for id in selected})
-    additional.validate_native_implementations({id: policies[id] for id in selected})
     if any(measurement_revision(policies[id]) != revisions[id] or result.get('measurementRevision') != revisions[id] for id, result in results.items()):
         raise ValueError('Coverage implementation changed during the build; rerun the reviewed code')
     if set(results) != set(selected): raise ValueError('Coverage build omitted a published table')
@@ -227,8 +205,8 @@ def main():
 
 def _scan_process(*, input, cwd, timeout):
     command = [sys.executable, __file__, '--scan']
-    # Nested restoration/admission uses this same private temporary root and
-    # process group. A hard timeout must stop it before the owner removes files.
+    # The scan uses this private temporary root and its own process group; a
+    # hard timeout stops it before the owner removes files.
     with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE, text=True, cwd=cwd,
                           env={**os.environ, 'TMPDIR': cwd}, start_new_session=True) as process:
@@ -249,101 +227,24 @@ def _scan_process(*, input, cwd, timeout):
 
 
 
-def _run_scan(request, *, timeout_seconds, serial, label):
+def _run_scan(request, *, timeout_seconds, label):
     try:
-        # The owner bounds all private outputs, including a grouped court bridge.
-        with (HEAVY_NATIVE_SCAN_LOCK if serial else nullcontext()), tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
+        with tempfile.TemporaryDirectory(prefix='spicygov-coverage-') as workdir:
             process = _scan_process(input=json.dumps(request), timeout=timeout_seconds, cwd=workdir)
-        forward_restore_diagnostics(process.stderr)
         return json.loads(process.stdout.splitlines()[-1])
     except subprocess.CalledProcessError as error:
-        forward_restore_diagnostics(error.stderr)
         raise ValueError(label + ': ' + error.stderr[-1500:]) from error
     except subprocess.TimeoutExpired as error:
-        forward_restore_diagnostics(error.stderr)
         raise ValueError(f'{label}: coverage scan exceeded its {timeout_seconds}-second time limit') from error
 
 
 
-def heavy_job(items):
-    return any(id in ('court_opinions', 'court_citation_map', 'court_citations', 'court_parentheticals',
-                      'court_opinion_clusters', 'documents', 'federal_register', 'fr_docket_links',
-                      'comment_periods', 'rule_targets') and policy.get('_additionalNativeProcessing')
-               for id, _table, policy, _old in items)
-
-
-
-def scan_jobs(items, *, checkpoint=None):
-    """Batch only a complete, uncached citation family; never reread cached peers."""
-    items = list(items)
-    checkpoint = checkpoint or (lambda item: cached(item[1], item[2], item[3]))
-    court = [item for item in items if item[0] in additional.COURT_CITATION_DATASETS]
-    if (len(court) == len(additional.COURT_CITATION_DATASETS)
-            and all(item[1].get('family') == 'court-citations' and item[2].get('_additionalNativeProcessing')
-                    and not checkpoint(item) for item in court)
-            and len({item[1].get('artifactDigest') for item in court}) == 1):
-        return [court, *[[item] for item in items if item[0] not in additional.COURT_CITATION_DATASETS]]
-    return [[item] for item in items]
-
-
-
-def timed_job(items):
-    if len(items) == 1:
-        return dict([timed_scan(items[0])])
-    request = {'tables': [item[:3] for item in items],
-               'descriptions': {'legislative': native.SCHEMAS, 'additional': additional.SCHEMAS}}
-    result = _run_scan(request, serial=heavy_job(items), label='court-citations family',
-                       timeout_seconds=sum(allowances.scan_seconds(id, True) for id, *_ in items))
-    if not isinstance(result, dict) or set(result) != {item[0] for item in items}:
-        raise ValueError('Court coverage scan omitted a selected table')
-    return result
-
-
-
 def completed_jobs(items):
-    """Keep two workers useful without admitting a second heavy scan."""
-    checked = {}
-
-    def checkpoint(item):
-        id, table, policy, old = item
-        if id not in checked:
-            checked[id] = old is not None and cached(table, policy, old)
-        return checked[id]
-
-    pending = scan_jobs(items, checkpoint=checkpoint)
-    running = {}
+    """Two scans at a time; yield each (label, future) as it finishes."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        while pending or running:
-            for job in pending[:]:
-                if len(running) == 2:
-                    break
-                label = ', '.join(item[0] for item in job)
-                heavy = heavy_job(job)
-                ready = concurrent.futures.Future()
-                try:
-                    hit = heavy and len(job) == 1 and checkpoint(job[0])
-                except Exception as error:
-                    ready.set_exception(error)
-                    hit = True
-                if hit:
-                    pending.remove(job)
-                    if not ready.done():
-                        ready.set_result({job[0][0]: job[0][3]})
-                    yield label, ready
-                    continue
-                if heavy and any(active_heavy for _, active_heavy in running.values()):
-                    continue
-                pending.remove(job)
-                # Only heavy jobs need an early checkpoint check. Ordinary
-                # guards stay in workers; heavy guards must not run twice.
-                admitted = ([(id, table, policy, None) for id, table, policy, _old in job]
-                            if heavy else job)
-                running[pool.submit(timed_job, admitted)] = (label, heavy)
-            if running:
-                done, _ = concurrent.futures.wait(running, return_when=concurrent.futures.FIRST_COMPLETED)
-                for future in done:
-                    label, _ = running.pop(future)
-                    yield label, future
+        futures = {pool.submit(lambda item: dict([timed_scan(item)]), item): item[0] for item in items}
+        for future in concurrent.futures.as_completed(futures):
+            yield futures[future], future
 
 
 

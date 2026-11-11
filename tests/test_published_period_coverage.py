@@ -1,4 +1,4 @@
-"""Reviewed public date fields need no private processing restoration."""
+"""Reviewed public fields are measured from the published files alone."""
 import hashlib
 import importlib.util
 from pathlib import Path
@@ -11,9 +11,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'scripts'))
-import additional_native_coverage as additional
 import coverage_scan
-import native_legislative_coverage as native
 
 spec = importlib.util.spec_from_file_location('published_period_build', ROOT/'scripts/build-coverage-maps.py')
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
@@ -30,33 +28,30 @@ SAMPLES = {
 class PublishedPeriods(unittest.TestCase):
     def test_scorecard_geo_extension_keeps_exact_public_schema_and_recorded_parent_keys(self):
         policy = builder.definitions()['scorecard_member_links']
-        columns = policy['publishedSchema']
-        self.assertEqual(set(dict(columns)) - set(dict(policy['schema'])), {
-            'normalized_state', 'state_status', 'normalized_district',
-            'district_status', 'correction_evidence_json'})
+        columns = policy.get('publishedSchema', policy['schema'])
+        self.assertLessEqual({'normalized_state', 'state_status', 'normalized_district',
+                              'district_status', 'correction_evidence_json'}, set(dict(columns)))
         self.assertTrue(all(dict(columns)[field] == 'VARCHAR'
                             for field in ('scorecard_id', 'publisher_member_key')))
         self.assertTrue(all(d['kind'] == 'inherited' and d['parent']['mode'] == 'recorded-parent'
                             for d in policy['dimensions']))
         table = dict(kind='generation', family=policy['family'], columns=columns)
-        with patch.object(native, 'native_schema', side_effect=AssertionError('No processing reader')):
-            selected = {'scorecard_member_links': policy}
-            builder.validate_plan({'scorecard_member_links': table}, selected)
-            self.assertEqual(selected['scorecard_member_links']['schema'], columns)
-            self.assertNotIn('_nativeProcessing', selected['scorecard_member_links'])
-            for changed in (columns + [['unreviewed', 'VARCHAR']],
-                            [['scorecard_id', 'INTEGER']] + columns[1:]):
-                with self.assertRaisesRegex(ValueError, 'schema needs coverage review'):
-                    builder.validate_plan({'scorecard_member_links': {**table, 'columns': changed}},
-                                          {'scorecard_member_links': policy})
+        selected = {'scorecard_member_links': policy}
+        builder.validate_plan({'scorecard_member_links': table}, selected)
+        self.assertEqual(selected['scorecard_member_links']['schema'], columns)
+        self.assertNotIn('_nativeProcessing', selected['scorecard_member_links'])
+        for changed in (columns + [['unreviewed', 'VARCHAR']],
+                        [['scorecard_id', 'INTEGER']] + columns[1:]):
+            with self.assertRaisesRegex(ValueError, 'schema needs coverage review'):
+                builder.validate_plan({'scorecard_member_links': {**table, 'columns': changed}},
+                                      {'scorecard_member_links': policy})
 
     def test_all_four_measure_unchanged_public_fields_without_readers_or_receipts(self):
         for name, sample in SAMPLES.items():
             with self.subTest(table=name), tempfile.TemporaryDirectory() as folder:
                 policy = builder.definitions()[name]
-                columns = policy['publishedSchema']
-                # Names, types, and reviewed meanings stay unchanged. Extra native
-                # fields do not justify restoring unrelated private values.
+                columns = policy.get('publishedSchema', policy['schema'])
+                # Names, types, and reviewed meanings stay unchanged.
                 for dimension in policy['dimensions']:
                     for field in dimension['fields']:
                         self.assertEqual(dict(columns)[field], dict(policy['schema'])[field])
@@ -74,14 +69,12 @@ class PublishedPeriods(unittest.TestCase):
                              artifactDigest='sha256:'+'a'*64, publishedAt='2026-10-29T20:00:00Z',
                              members=[dict(key=name+'.parquet', sha256=digest, rows=2,
                                            byteSize=path.stat().st_size, url=str(path))])
-                with (patch.object(native, 'native_schema', side_effect=AssertionError('No processing reader')),
-                      patch.object(additional, 'native_schema', side_effect=AssertionError('No processing reader'))):
-                    selected = {name:policy}
-                    builder.validate_plan({name:table},selected)
-                    self.assertNotIn('_nativeProcessing',selected[name])
-                    self.assertNotIn('_additionalNativeProcessing',selected[name])
-                    with patch.object(coverage_scan, '_connect', side_effect=duckdb.connect):
-                        result = coverage_scan.scan_table(name,table,selected[name])
+                selected = {name:policy}
+                builder.validate_plan({name:table},selected)
+                self.assertNotIn('_nativeProcessing',selected[name])
+                self.assertNotIn('_additionalNativeProcessing',selected[name])
+                with patch.object(coverage_scan, '_connect', side_effect=duckdb.connect):
+                    result = coverage_scan.scan_table(name,table,selected[name])
                 self.assertEqual(result['rows'],2)
                 self.assertNotIn('processingEvidence',result)
                 self.assertEqual(result['fingerprint'],builder.binding(table,selected[name])['fingerprint'])
@@ -111,7 +104,7 @@ class DeferredPublishedPeriods(unittest.TestCase):
         for name, sample in DEFERRED_SAMPLES.items():
             with self.subTest(table=name), tempfile.TemporaryDirectory() as folder:
                 policy = builder.definitions()[name]
-                columns = policy['publishedSchema']
+                columns = policy.get('publishedSchema', policy['schema'])
                 path, parent_path = Path(folder)/'child.parquet', Path(folder)/'parent.parquet'
                 with duckdb.connect() as con:
                     con.execute('CREATE TABLE fixture ('+','.join('"'+field+'" '+kind for field,kind in columns)+')')
@@ -133,14 +126,10 @@ class DeferredPublishedPeriods(unittest.TestCase):
                                      (name, 'same-generation', 'congress_bills', [['bill_id','bill_id']]))
                     self.assertEqual(child['artifactDigest'], parent['artifactDigest'])
                     return parent
-                with (patch.object(native, 'native_schema', side_effect=AssertionError('No processing reader')),
-                      patch.object(additional, 'native_schema', side_effect=AssertionError('No processing reader')),
-                      patch.object(coverage_scan, 'CoverageInputs', return_value=SimpleNamespace(parent=selected_parent)),
+                with (patch.object(coverage_scan, 'CoverageInputs', return_value=SimpleNamespace(parent=selected_parent)),
                       patch.object(coverage_scan, '_connect', side_effect=duckdb.connect)):
                     selected = {name:policy}
                     builder.validate_plan({name:table}, selected)
-                    self.assertNotIn('_nativeProcessing', selected[name])
-                    self.assertNotIn('_additionalNativeProcessing', selected[name])
                     result = coverage_scan.scan_table(name, table, selected[name])
                 self.assertNotIn('processingEvidence', result)
                 for definition, dimension in zip(policy['dimensions'], result['dimensions']):
@@ -155,6 +144,33 @@ class DeferredPublishedPeriods(unittest.TestCase):
                 changed = {**table, 'columns': columns + [['unreviewed','VARCHAR']]}
                 with self.assertRaisesRegex(ValueError, 'schema needs coverage review'):
                     builder.validate_plan({name:changed}, {name:policy})
+
+
+class PublishedOnlyRoute(unittest.TestCase):
+    def test_policy_is_the_published_schema_or_its_reviewed_alias_and_nothing_else(self):
+        policy = {'schema': [['old', 'VARCHAR']], 'dimensions': []}
+        self.assertIs(builder.published_policy('t', {'columns': policy['schema']}, policy), policy)
+        # Rulemaking snapshots carry no census schema; the scan checks every member footer.
+        self.assertIs(builder.published_policy('t', {'columns': None}, policy), policy)
+        aliased = {**policy, 'publishedSchema': [['new', 'BIGINT']]}
+        self.assertEqual(builder.published_policy('t', {'columns': [['new', 'BIGINT']]}, aliased)['schema'], [['new', 'BIGINT']])
+        for changed, chosen in (([['new', 'VARCHAR']], policy), ([['new', 'VARCHAR']], aliased)):
+            with self.assertRaisesRegex(ValueError, 'Published schema needs coverage review'):
+                builder.published_policy('t', {'columns': changed}, chosen)
+
+    def test_every_reviewed_definition_validates_against_its_own_schema(self):
+        # A re-pointed schema must still carry every field its unchanged rules read.
+        from coverage_dimensions import validate_definition
+        for id, policy in builder.definitions().items():
+            with self.subTest(table=id):
+                validate_definition(policy, policy.get('publishedSchema', policy['schema']))
+
+    def test_receipt_based_dimensions_refuse_instead_of_reading_receipts(self):
+        import regulation_coverage
+        policy = builder.definitions()['gao_reports']
+        dim = next(d for d in policy['dimensions'] if d.get('special') == 'government-receipt-origins')
+        with self.assertRaisesRegex(ValueError, 'Receipt-based coverage dimension retired'):
+            regulation_coverage.scan_special(None, 'gao_reports', {}, dim, None)
 
 
 if __name__ == '__main__':

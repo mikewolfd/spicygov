@@ -728,10 +728,6 @@
         [
           "amended_amendment_id",
           "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
         ]
       ],
       "publication": {
@@ -1872,7 +1868,82 @@
         "proposed",
         "scope-congress-chamber",
         "latest-actions"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "amendment_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "amendment_type",
+          "VARCHAR"
+        ],
+        [
+          "amendment_number",
+          "VARCHAR"
+        ],
+        [
+          "purpose",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "proposed_date",
+          "VARCHAR"
+        ],
+        [
+          "submitted_date",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "latest_action_date",
+          "VARCHAR"
+        ],
+        [
+          "latest_action_text",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_full_name",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_party",
+          "VARCHAR"
+        ],
+        [
+          "amended_bill_id",
+          "VARCHAR"
+        ],
+        [
+          "amended_amendment_id",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "bill_actions",
@@ -3516,6 +3587,14 @@
         ],
         [
           "summary_chars",
+          "BIGINT"
+        ],
+        [
+          "last_summary_update_date",
+          "VARCHAR"
+        ],
+        [
+          "source_schema_version",
           "VARCHAR"
         ]
       ],
@@ -3789,7 +3868,38 @@
       "executableDimensions": [
         "summarized-actions",
         "inherited-congress-bills-congress"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "summary_version_code",
+          "VARCHAR"
+        ],
+        [
+          "action_date",
+          "VARCHAR"
+        ],
+        [
+          "action_desc",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "summary_html",
+          "VARCHAR"
+        ],
+        [
+          "summary_chars",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "bill_sections",
@@ -7502,11 +7612,31 @@
           "VARCHAR"
         ],
         [
-          "detected_at",
+          "title",
           "VARCHAR"
         ],
         [
-          "event_data_json",
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "from_stage",
+          "VARCHAR"
+        ],
+        [
+          "to_stage",
+          "VARCHAR"
+        ],
+        [
+          "version_code",
+          "VARCHAR"
+        ],
+        [
+          "kind",
           "VARCHAR"
         ]
       ],
@@ -8318,7 +8448,34 @@
         "printing-source-dates",
         "bill-congress",
         "qualified-bill-introduction-dates"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "event_type",
+          "VARCHAR"
+        ],
+        [
+          "subject_id",
+          "VARCHAR"
+        ],
+        [
+          "occurred_at",
+          "VARCHAR"
+        ],
+        [
+          "detected_at",
+          "VARCHAR"
+        ],
+        [
+          "event_data_json",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "section_classifications",
@@ -9750,11 +9907,11 @@
         ],
         [
           "committee_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "committees_json",
-          "VARCHAR"
+          "committees",
+          "STRUCT(\"name\" VARCHAR, systemCode VARCHAR, url VARCHAR)[]"
         ],
         [
           "hearing_jacket",
@@ -9762,62 +9919,62 @@
         ],
         [
           "hearing_jacket_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "hearing_jackets_json",
-          "VARCHAR"
+          "hearing_jackets",
+          "VARCHAR[]"
         ],
         [
           "bill_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "bill_ids_json",
-          "VARCHAR"
+          "bill_ids",
+          "VARCHAR[]"
         ],
         [
           "witness_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "witnesses_json",
-          "VARCHAR"
+          "witnesses",
+          "STRUCT(\"name\" VARCHAR, \"position\" VARCHAR, organization VARCHAR)[]"
         ],
         [
           "witness_document_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "witness_documents_json",
-          "VARCHAR"
+          "witness_documents",
+          "STRUCT(documentType VARCHAR, format VARCHAR, url VARCHAR)[]"
         ],
         [
           "meeting_document_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "meeting_documents_json",
-          "VARCHAR"
+          "meeting_documents",
+          "STRUCT(description VARCHAR, documentType VARCHAR, format VARCHAR, \"name\" VARCHAR, url VARCHAR)[]"
         ],
         [
-          "document_urls_json",
-          "VARCHAR"
+          "document_urls",
+          "VARCHAR[]"
         ],
         [
-          "videos_json",
-          "VARCHAR"
+          "videos",
+          "STRUCT(\"name\" VARCHAR, url VARCHAR)[]"
         ],
         [
           "update_date",
           "VARCHAR"
         ],
         [
-          "url",
+          "nomination_references_json",
           "VARCHAR"
         ],
         [
-          "detail_read",
+          "treaty_references_json",
           "VARCHAR"
         ]
       ],
@@ -10024,7 +10181,122 @@
         "congress",
         "scheduled-meeting-dates",
         "scope-congress-chamber"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "event_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "meeting_type",
+          "VARCHAR"
+        ],
+        [
+          "meeting_status",
+          "VARCHAR"
+        ],
+        [
+          "meeting_date",
+          "VARCHAR"
+        ],
+        [
+          "location_building",
+          "VARCHAR"
+        ],
+        [
+          "location_room",
+          "VARCHAR"
+        ],
+        [
+          "committee_system_code",
+          "VARCHAR"
+        ],
+        [
+          "committee_count",
+          "VARCHAR"
+        ],
+        [
+          "committees_json",
+          "VARCHAR"
+        ],
+        [
+          "hearing_jacket",
+          "VARCHAR"
+        ],
+        [
+          "hearing_jacket_count",
+          "VARCHAR"
+        ],
+        [
+          "hearing_jackets_json",
+          "VARCHAR"
+        ],
+        [
+          "bill_count",
+          "VARCHAR"
+        ],
+        [
+          "bill_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "witness_count",
+          "VARCHAR"
+        ],
+        [
+          "witnesses_json",
+          "VARCHAR"
+        ],
+        [
+          "witness_document_count",
+          "VARCHAR"
+        ],
+        [
+          "witness_documents_json",
+          "VARCHAR"
+        ],
+        [
+          "meeting_document_count",
+          "VARCHAR"
+        ],
+        [
+          "meeting_documents_json",
+          "VARCHAR"
+        ],
+        [
+          "document_urls_json",
+          "VARCHAR"
+        ],
+        [
+          "videos_json",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ],
+        [
+          "detail_read",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "committee_meetings_detail_reads",
@@ -14863,43 +15135,23 @@
         ],
         [
           "seq",
-          "VARCHAR"
-        ],
-        [
-          "agency_label",
-          "VARCHAR"
-        ],
-        [
-          "agency_key",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "body",
           "VARCHAR"
         ],
         [
-          "pattern",
-          "VARCHAR"
-        ],
-        [
           "char_start",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "char_end",
-          "VARCHAR"
-        ],
-        [
-          "page_start",
-          "VARCHAR"
-        ],
-        [
-          "page_end",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "body_chars",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "last_modified",
@@ -15397,7 +15649,66 @@
       "executableDimensions": [
         "inherited-committee-reports-congress",
         "inherited-committee-reports-date-issued"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "seq",
+          "VARCHAR"
+        ],
+        [
+          "agency_label",
+          "VARCHAR"
+        ],
+        [
+          "agency_key",
+          "VARCHAR"
+        ],
+        [
+          "body",
+          "VARCHAR"
+        ],
+        [
+          "pattern",
+          "VARCHAR"
+        ],
+        [
+          "char_start",
+          "VARCHAR"
+        ],
+        [
+          "char_end",
+          "VARCHAR"
+        ],
+        [
+          "page_start",
+          "VARCHAR"
+        ],
+        [
+          "page_end",
+          "VARCHAR"
+        ],
+        [
+          "body_chars",
+          "VARCHAR"
+        ],
+        [
+          "last_modified",
+          "VARCHAR"
+        ],
+        [
+          "heading",
+          "VARCHAR"
+        ],
+        [
+          "part_id",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "committee_assignments",
@@ -16068,6 +16379,42 @@
         [
           "version",
           "BIGINT"
+        ],
+        [
+          "summary",
+          "VARCHAR"
+        ],
+        [
+          "authors",
+          "STRUCT(author VARCHAR)[]"
+        ],
+        [
+          "topics",
+          "STRUCT(topic VARCHAR)[]"
+        ],
+        [
+          "formats",
+          "STRUCT(format VARCHAR, url VARCHAR)[]"
+        ],
+        [
+          "related_materials",
+          "STRUCT(url VARCHAR, congress BIGINT, number VARCHAR, title VARCHAR, \"type\" VARCHAR)[]"
+        ],
+        [
+          "detail_state",
+          "VARCHAR"
+        ],
+        [
+          "detail_attempt_state",
+          "VARCHAR"
+        ],
+        [
+          "detail_fields",
+          "STRUCT(\"name\" VARCHAR, state VARCHAR)[]"
+        ],
+        [
+          "detail_error",
+          "VARCHAR"
         ]
       ],
       "publication": {
@@ -16310,7 +16657,38 @@
       "executableDefinition": "content/coverage-definitions/congress.json#tables.crs_reports",
       "executableDimensions": [
         "crs-publication"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "status",
+          "VARCHAR"
+        ],
+        [
+          "published_date",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "update_date",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "version",
+          "BIGINT"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "house_communications",
@@ -17518,7 +17896,7 @@
         ],
         [
           "term_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "term_start",
@@ -17925,7 +18303,46 @@
       "executableDimensions": [
         "member-vote-dates",
         "service-term-matching"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "vote_id",
+          "VARCHAR"
+        ],
+        [
+          "member_key",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "vote_day",
+          "VARCHAR"
+        ],
+        [
+          "term_match",
+          "VARCHAR"
+        ],
+        [
+          "term_index",
+          "VARCHAR"
+        ],
+        [
+          "term_start",
+          "VARCHAR"
+        ],
+        [
+          "term_end",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "member_party_affiliations",
@@ -19008,7 +19425,7 @@
         ],
         [
           "term_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "term_type",
@@ -19032,14 +19449,6 @@
         ],
         [
           "term_district",
-          "VARCHAR"
-        ],
-        [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
-          "party_affiliations_state",
           "VARCHAR"
         ]
       ],
@@ -19316,7 +19725,50 @@
       "executableDefinition": "content/coverage-definitions/congress.json#tables.member_terms",
       "executableDimensions": [
         "service-term-periods"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "term_index",
+          "VARCHAR"
+        ],
+        [
+          "term_type",
+          "VARCHAR"
+        ],
+        [
+          "term_start",
+          "VARCHAR"
+        ],
+        [
+          "term_end",
+          "VARCHAR"
+        ],
+        [
+          "term_state",
+          "VARCHAR"
+        ],
+        [
+          "term_party",
+          "VARCHAR"
+        ],
+        [
+          "term_district",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "party_affiliations_state",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "members",
@@ -22924,6 +23376,10 @@
       "family": "nominations",
       "schema": [
         [
+          "nomination_id",
+          "VARCHAR"
+        ],
+        [
           "citation",
           "VARCHAR"
         ],
@@ -22953,11 +23409,11 @@
         ],
         [
           "is_civilian",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
-          "nomination_type_json",
-          "VARCHAR"
+          "is_military",
+          "BOOLEAN"
         ],
         [
           "latest_action_date",
@@ -22972,7 +23428,11 @@
           "VARCHAR"
         ],
         [
-          "url",
+          "committees_json",
+          "VARCHAR"
+        ],
+        [
+          "hearings_json",
           "VARCHAR"
         ]
       ],
@@ -23580,7 +24040,62 @@
         "congress",
         "nomination-receipt-dates",
         "latest-actions"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "citation",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "number",
+          "VARCHAR"
+        ],
+        [
+          "part_number",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "organization",
+          "VARCHAR"
+        ],
+        [
+          "received_date",
+          "VARCHAR"
+        ],
+        [
+          "is_civilian",
+          "VARCHAR"
+        ],
+        [
+          "nomination_type_json",
+          "VARCHAR"
+        ],
+        [
+          "latest_action_date",
+          "VARCHAR"
+        ],
+        [
+          "latest_action_text",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "nominations_detail_reads",
@@ -23857,54 +24372,6 @@
           "VARCHAR"
         ],
         [
-          "feed_url",
-          "VARCHAR"
-        ],
-        [
-          "channel_title",
-          "VARCHAR"
-        ],
-        [
-          "channel_link",
-          "VARCHAR"
-        ],
-        [
-          "channel_description",
-          "VARCHAR"
-        ],
-        [
-          "channel_language",
-          "VARCHAR"
-        ],
-        [
-          "channel_copyright",
-          "VARCHAR"
-        ],
-        [
-          "channel_docs",
-          "VARCHAR"
-        ],
-        [
-          "channel_last_build_date",
-          "VARCHAR"
-        ],
-        [
-          "channel_ttl",
-          "VARCHAR"
-        ],
-        [
-          "channel_skip_days",
-          "VARCHAR"
-        ],
-        [
-          "channel_skip_hours",
-          "VARCHAR"
-        ],
-        [
-          "item_index",
-          "VARCHAR"
-        ],
-        [
           "title",
           "VARCHAR"
         ],
@@ -23918,7 +24385,7 @@
         ],
         [
           "guid_is_permalink",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "description",
@@ -23930,7 +24397,7 @@
         ],
         [
           "description_chars",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "pub_date",
@@ -23949,8 +24416,8 @@
           "VARCHAR"
         ],
         [
-          "categories_json",
-          "VARCHAR"
+          "categories",
+          "VARCHAR[]"
         ],
         [
           "enclosure_url",
@@ -23958,30 +24425,14 @@
         ],
         [
           "enclosure_length",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "enclosure_type",
           "VARCHAR"
         ],
         [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
           "bill_id",
-          "VARCHAR"
-        ],
-        [
-          "match_rule",
-          "VARCHAR"
-        ],
-        [
-          "matched_field",
-          "VARCHAR"
-        ],
-        [
-          "matched_text",
           "VARCHAR"
         ]
       ],
@@ -24482,7 +24933,146 @@
       "executableDefinition": "content/coverage-definitions/congress.json#tables.press_releases",
       "executableDimensions": [
         "release-publication"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "release_id",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "feed_url",
+          "VARCHAR"
+        ],
+        [
+          "channel_title",
+          "VARCHAR"
+        ],
+        [
+          "channel_link",
+          "VARCHAR"
+        ],
+        [
+          "channel_description",
+          "VARCHAR"
+        ],
+        [
+          "channel_language",
+          "VARCHAR"
+        ],
+        [
+          "channel_copyright",
+          "VARCHAR"
+        ],
+        [
+          "channel_docs",
+          "VARCHAR"
+        ],
+        [
+          "channel_last_build_date",
+          "VARCHAR"
+        ],
+        [
+          "channel_ttl",
+          "VARCHAR"
+        ],
+        [
+          "channel_skip_days",
+          "VARCHAR"
+        ],
+        [
+          "channel_skip_hours",
+          "VARCHAR"
+        ],
+        [
+          "item_index",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "link",
+          "VARCHAR"
+        ],
+        [
+          "guid",
+          "VARCHAR"
+        ],
+        [
+          "guid_is_permalink",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "description_text",
+          "VARCHAR"
+        ],
+        [
+          "description_chars",
+          "VARCHAR"
+        ],
+        [
+          "pub_date",
+          "VARCHAR"
+        ],
+        [
+          "pub_date_instant",
+          "VARCHAR"
+        ],
+        [
+          "author",
+          "VARCHAR"
+        ],
+        [
+          "creator",
+          "VARCHAR"
+        ],
+        [
+          "categories_json",
+          "VARCHAR"
+        ],
+        [
+          "enclosure_url",
+          "VARCHAR"
+        ],
+        [
+          "enclosure_length",
+          "VARCHAR"
+        ],
+        [
+          "enclosure_type",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "match_rule",
+          "VARCHAR"
+        ],
+        [
+          "matched_field",
+          "VARCHAR"
+        ],
+        [
+          "matched_text",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "bill_committee_actions",
@@ -25836,15 +26426,11 @@
         ],
         [
           "span_start",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "span_end",
-          "VARCHAR"
-        ],
-        [
-          "evidence_page",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "matched_text",
@@ -25856,7 +26442,7 @@
         ],
         [
           "target_resolved",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "target_rule",
@@ -25864,26 +26450,10 @@
         ],
         [
           "stated_by_index",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
-          "rule_name",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "text_sha256",
+          "body_version_id",
           "VARCHAR"
         ]
       ],
@@ -27290,7 +27860,78 @@
         "citing-source-kinds",
         "historical-source-year",
         "historical-source-month"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "document_key",
+          "VARCHAR"
+        ],
+        [
+          "document_kind",
+          "VARCHAR"
+        ],
+        [
+          "cite_kind",
+          "VARCHAR"
+        ],
+        [
+          "target_key",
+          "VARCHAR"
+        ],
+        [
+          "span_start",
+          "VARCHAR"
+        ],
+        [
+          "span_end",
+          "VARCHAR"
+        ],
+        [
+          "evidence_page",
+          "VARCHAR"
+        ],
+        [
+          "matched_text",
+          "VARCHAR"
+        ],
+        [
+          "target_table",
+          "VARCHAR"
+        ],
+        [
+          "target_resolved",
+          "VARCHAR"
+        ],
+        [
+          "target_rule",
+          "VARCHAR"
+        ],
+        [
+          "stated_by_index",
+          "VARCHAR"
+        ],
+        [
+          "rule_name",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "body_rendition",
+          "VARCHAR"
+        ],
+        [
+          "body_derivation",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "house_activity_reports",
@@ -27334,118 +27975,86 @@
         ],
         [
           "committee_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "committees_json",
-          "VARCHAR"
+          "committees",
+          "STRUCT(chamber VARCHAR, congress BIGINT, \"name\" VARCHAR, system_code VARCHAR)[]"
         ],
         [
           "associated_bill_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_bills_json",
-          "VARCHAR"
+          "associated_bills",
+          "STRUCT(bill_id VARCHAR, context VARCHAR)[]"
         ],
         [
           "associated_law_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_laws_json",
-          "VARCHAR"
+          "associated_laws",
+          "VARCHAR[]"
         ],
         [
           "associated_usc_section_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_usc_sections_json",
-          "VARCHAR"
+          "associated_usc_sections",
+          "STRUCT(usc_key VARCHAR, detail VARCHAR)[]"
         ],
         [
           "related_report_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "related_reports_json",
-          "VARCHAR"
+          "related_reports",
+          "VARCHAR[]"
         ],
         [
           "distinct_bills",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_bills_beyond_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "bills_congress_mismatch",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_laws",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_laws_beyond_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_usc_sections",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_usc_sections_beyond_index",
-          "VARCHAR"
-        ],
-        [
-          "committees_resolved",
-          "VARCHAR"
-        ],
-        [
-          "committees_unresolved",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "citation_rows",
-          "VARCHAR"
-        ],
-        [
-          "pages_read",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "stated_page_count",
           "VARCHAR"
         ],
         [
-          "pages_capped",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "text_sha256",
-          "VARCHAR"
-        ],
-        [
-          "rule_set_version",
+          "body_version_id",
           "VARCHAR"
         ],
         [
           "covered_congress",
-          "VARCHAR"
-        ],
-        [
-          "covered_congress_source",
           "VARCHAR"
         ]
       ],
@@ -27788,7 +28397,162 @@
         "publication-congress",
         "report-issue-dates",
         "publication-congress-session"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "session",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "date_issued",
+          "VARCHAR"
+        ],
+        [
+          "last_modified",
+          "VARCHAR"
+        ],
+        [
+          "committee_system_code",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "submitted_by_bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_count",
+          "VARCHAR"
+        ],
+        [
+          "committees_json",
+          "VARCHAR"
+        ],
+        [
+          "associated_bill_count",
+          "VARCHAR"
+        ],
+        [
+          "associated_bills_json",
+          "VARCHAR"
+        ],
+        [
+          "associated_law_count",
+          "VARCHAR"
+        ],
+        [
+          "associated_laws_json",
+          "VARCHAR"
+        ],
+        [
+          "associated_usc_section_count",
+          "VARCHAR"
+        ],
+        [
+          "associated_usc_sections_json",
+          "VARCHAR"
+        ],
+        [
+          "related_report_count",
+          "VARCHAR"
+        ],
+        [
+          "related_reports_json",
+          "VARCHAR"
+        ],
+        [
+          "distinct_bills",
+          "VARCHAR"
+        ],
+        [
+          "distinct_bills_beyond_index",
+          "VARCHAR"
+        ],
+        [
+          "bills_congress_mismatch",
+          "VARCHAR"
+        ],
+        [
+          "distinct_laws",
+          "VARCHAR"
+        ],
+        [
+          "distinct_laws_beyond_index",
+          "VARCHAR"
+        ],
+        [
+          "distinct_usc_sections",
+          "VARCHAR"
+        ],
+        [
+          "distinct_usc_sections_beyond_index",
+          "VARCHAR"
+        ],
+        [
+          "committees_resolved",
+          "VARCHAR"
+        ],
+        [
+          "committees_unresolved",
+          "VARCHAR"
+        ],
+        [
+          "citation_rows",
+          "VARCHAR"
+        ],
+        [
+          "pages_read",
+          "VARCHAR"
+        ],
+        [
+          "stated_page_count",
+          "VARCHAR"
+        ],
+        [
+          "pages_capped",
+          "VARCHAR"
+        ],
+        [
+          "body_rendition",
+          "VARCHAR"
+        ],
+        [
+          "body_derivation",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ],
+        [
+          "rule_set_version",
+          "VARCHAR"
+        ],
+        [
+          "covered_congress",
+          "VARCHAR"
+        ],
+        [
+          "covered_congress_source",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "print_citations_document_file_outcomes",
@@ -28041,54 +28805,34 @@
         ],
         [
           "chambers",
-          "VARCHAR"
-        ],
-        [
-          "chambers_rule",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
           "section_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "section_names",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
-          "sections_json",
-          "VARCHAR"
+          "sections",
+          "STRUCT(endPage VARCHAR, \"name\" VARCHAR, startPage VARCHAR, \"text\" STRUCT(\"type\" VARCHAR, url VARCHAR, part VARCHAR)[])[]"
         ],
         [
-          "entire_issue_json",
-          "VARCHAR"
+          "entire_issue",
+          "STRUCT(part VARCHAR, \"type\" VARCHAR, url VARCHAR)[]"
         ],
         [
           "package_id",
           "VARCHAR"
         ],
         [
-          "package_id_rule",
-          "VARCHAR"
-        ],
-        [
           "article_count",
-          "VARCHAR"
-        ],
-        [
-          "articles_url",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "update_date",
-          "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
-        ],
-        [
-          "detail_read",
           "VARCHAR"
         ]
       ],
@@ -28323,7 +29067,82 @@
         "congress",
         "session",
         "record-issue-dates"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "volume",
+          "VARCHAR"
+        ],
+        [
+          "issue",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "session",
+          "VARCHAR"
+        ],
+        [
+          "issue_date",
+          "VARCHAR"
+        ],
+        [
+          "chambers",
+          "VARCHAR"
+        ],
+        [
+          "chambers_rule",
+          "VARCHAR"
+        ],
+        [
+          "section_count",
+          "VARCHAR"
+        ],
+        [
+          "section_names",
+          "VARCHAR"
+        ],
+        [
+          "sections_json",
+          "VARCHAR"
+        ],
+        [
+          "entire_issue_json",
+          "VARCHAR"
+        ],
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "package_id_rule",
+          "VARCHAR"
+        ],
+        [
+          "article_count",
+          "VARCHAR"
+        ],
+        [
+          "articles_url",
+          "VARCHAR"
+        ],
+        [
+          "update_date",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ],
+        [
+          "detail_read",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "member_votes",
@@ -31195,7 +32014,31 @@
           "VARCHAR"
         ],
         [
+          "normalized_state",
+          "VARCHAR"
+        ],
+        [
+          "state_status",
+          "VARCHAR"
+        ],
+        [
+          "normalized_district",
+          "VARCHAR"
+        ],
+        [
+          "district_status",
+          "VARCHAR"
+        ],
+        [
+          "correction_evidence_json",
+          "VARCHAR"
+        ],
+        [
           "term_candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_evidence_json",
           "VARCHAR"
         ],
         [
@@ -32146,7 +32989,78 @@
           ]
         ]
       },
-      "completionEvidenceNote": "2026-10-17: schema re-read from the live publication (added source_snapshot_id, capture_id, source_url, source_path, term_candidates_json, override_version, resolution_status, resolution_rule, rule_version, candidate_count, candidates_json, reason, source_context_json, input_pins_json). No dimension reads an added or retyped column, so the executable definition changes by schema only. Earlier raw probes describe earlier publications."
+      "completionEvidenceNote": "2026-10-17: schema re-read from the live publication (added source_snapshot_id, capture_id, source_url, source_path, term_candidates_json, override_version, resolution_status, resolution_rule, rule_version, candidate_count, candidates_json, reason, source_context_json, input_pins_json). No dimension reads an added or retyped column, so the executable definition changes by schema only. Earlier raw probes describe earlier publications.",
+      "previousSchema": [
+        [
+          "scorecard_id",
+          "VARCHAR"
+        ],
+        [
+          "publisher_member_key",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "source_snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ],
+        [
+          "term_candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "override_version",
+          "VARCHAR"
+        ],
+        [
+          "resolution_status",
+          "VARCHAR"
+        ],
+        [
+          "resolution_rule",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "candidate_count",
+          "INTEGER"
+        ],
+        [
+          "candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "source_context_json",
+          "VARCHAR"
+        ],
+        [
+          "input_pins_json",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "scorecard_items",
@@ -55920,18 +56834,18 @@
         ],
         [
           "page",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_ordinal",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "row_ordinal",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "text_sha256",
+          "body_version_id",
           "VARCHAR"
         ],
         [
@@ -55952,7 +56866,7 @@
         ],
         [
           "cells_ruled",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "office",
@@ -55979,12 +56893,12 @@
           "VARCHAR"
         ],
         [
-          "column_headers_json",
-          "VARCHAR"
+          "column_headers",
+          "VARCHAR[]"
         ],
         [
-          "cells_json",
-          "VARCHAR"
+          "cells",
+          "VARCHAR[]"
         ],
         [
           "account_title",
@@ -55995,60 +56909,20 @@
           "VARCHAR"
         ],
         [
-          "amounts_json",
-          "VARCHAR"
+          "amounts",
+          "STRUCT(amount DECIMAL(38,2), \"text\" VARCHAR)[][]"
         ],
         [
           "amount_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_row_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_column_count",
-          "VARCHAR"
-        ],
-        [
-          "bbox_x0",
-          "VARCHAR"
-        ],
-        [
-          "bbox_y0",
-          "VARCHAR"
-        ],
-        [
-          "bbox_x1",
-          "VARCHAR"
-        ],
-        [
-          "bbox_y1",
-          "VARCHAR"
-        ],
-        [
-          "page_count",
-          "VARCHAR"
-        ],
-        [
-          "pages_read",
-          "VARCHAR"
-        ],
-        [
-          "pages_capped",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "extraction_rule_version",
-          "VARCHAR"
+          "BIGINT"
         ]
       ],
       "publication": {
@@ -56440,7 +57314,150 @@
         "printed-report-periods",
         "appropriation-funding-years",
         "extracted-grid-type"
-      ]
+      ],
+      "previousSchema": [
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "file_name",
+          "VARCHAR"
+        ],
+        [
+          "page",
+          "VARCHAR"
+        ],
+        [
+          "table_ordinal",
+          "VARCHAR"
+        ],
+        [
+          "row_ordinal",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ],
+        [
+          "printed_page",
+          "VARCHAR"
+        ],
+        [
+          "section_heading",
+          "VARCHAR"
+        ],
+        [
+          "grid_kind",
+          "VARCHAR"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "cells_ruled",
+          "VARCHAR"
+        ],
+        [
+          "office",
+          "VARCHAR"
+        ],
+        [
+          "funding_year",
+          "VARCHAR"
+        ],
+        [
+          "funding_year_end",
+          "VARCHAR"
+        ],
+        [
+          "appropriation_title",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "column_headers_json",
+          "VARCHAR"
+        ],
+        [
+          "cells_json",
+          "VARCHAR"
+        ],
+        [
+          "account_title",
+          "VARCHAR"
+        ],
+        [
+          "account_number",
+          "VARCHAR"
+        ],
+        [
+          "amounts_json",
+          "VARCHAR"
+        ],
+        [
+          "amount_count",
+          "VARCHAR"
+        ],
+        [
+          "table_row_count",
+          "VARCHAR"
+        ],
+        [
+          "table_column_count",
+          "VARCHAR"
+        ],
+        [
+          "bbox_x0",
+          "VARCHAR"
+        ],
+        [
+          "bbox_y0",
+          "VARCHAR"
+        ],
+        [
+          "bbox_x1",
+          "VARCHAR"
+        ],
+        [
+          "bbox_y1",
+          "VARCHAR"
+        ],
+        [
+          "page_count",
+          "VARCHAR"
+        ],
+        [
+          "pages_read",
+          "VARCHAR"
+        ],
+        [
+          "pages_capped",
+          "VARCHAR"
+        ],
+        [
+          "body_rendition",
+          "VARCHAR"
+        ],
+        [
+          "body_derivation",
+          "VARCHAR"
+        ],
+        [
+          "extraction_rule_version",
+          "VARCHAR"
+        ]
+      ],
+      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
     },
     {
       "tableId": "senate_expenditures_document_file_outcomes",

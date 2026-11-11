@@ -255,10 +255,6 @@
         [
           "amended_amendment_id",
           "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -934,6 +930,14 @@
         ],
         [
           "summary_chars",
+          "BIGINT"
+        ],
+        [
+          "last_summary_update_date",
+          "VARCHAR"
+        ],
+        [
+          "source_schema_version",
           "VARCHAR"
         ]
       ],
@@ -979,36 +983,6 @@
             "syntax": "positive-integer"
           }
         }
-      ],
-      "publishedSchema": [
-        [
-          "bill_id",
-          "VARCHAR"
-        ],
-        [
-          "summary_version_code",
-          "VARCHAR"
-        ],
-        [
-          "action_date",
-          "VARCHAR"
-        ],
-        [
-          "action_desc",
-          "VARCHAR"
-        ],
-        [
-          "update_date",
-          "VARCHAR"
-        ],
-        [
-          "summary_html",
-          "VARCHAR"
-        ],
-        [
-          "summary_chars",
-          "BIGINT"
-        ]
       ]
     },
     "bill_sections": {
@@ -2535,11 +2509,31 @@
           "VARCHAR"
         ],
         [
-          "detected_at",
+          "title",
           "VARCHAR"
         ],
         [
-          "event_data_json",
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "from_stage",
+          "VARCHAR"
+        ],
+        [
+          "to_stage",
+          "VARCHAR"
+        ],
+        [
+          "version_code",
+          "VARCHAR"
+        ],
+        [
+          "kind",
           "VARCHAR"
         ]
       ],
@@ -3297,11 +3291,11 @@
         ],
         [
           "committee_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "committees_json",
-          "VARCHAR"
+          "committees",
+          "STRUCT(\"name\" VARCHAR, systemCode VARCHAR, url VARCHAR)[]"
         ],
         [
           "hearing_jacket",
@@ -3309,62 +3303,62 @@
         ],
         [
           "hearing_jacket_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "hearing_jackets_json",
-          "VARCHAR"
+          "hearing_jackets",
+          "VARCHAR[]"
         ],
         [
           "bill_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "bill_ids_json",
-          "VARCHAR"
+          "bill_ids",
+          "VARCHAR[]"
         ],
         [
           "witness_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "witnesses_json",
-          "VARCHAR"
+          "witnesses",
+          "STRUCT(\"name\" VARCHAR, \"position\" VARCHAR, organization VARCHAR)[]"
         ],
         [
           "witness_document_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "witness_documents_json",
-          "VARCHAR"
+          "witness_documents",
+          "STRUCT(documentType VARCHAR, format VARCHAR, url VARCHAR)[]"
         ],
         [
           "meeting_document_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "meeting_documents_json",
-          "VARCHAR"
+          "meeting_documents",
+          "STRUCT(description VARCHAR, documentType VARCHAR, format VARCHAR, \"name\" VARCHAR, url VARCHAR)[]"
         ],
         [
-          "document_urls_json",
-          "VARCHAR"
+          "document_urls",
+          "VARCHAR[]"
         ],
         [
-          "videos_json",
-          "VARCHAR"
+          "videos",
+          "STRUCT(\"name\" VARCHAR, url VARCHAR)[]"
         ],
         [
           "update_date",
           "VARCHAR"
         ],
         [
-          "url",
+          "nomination_references_json",
           "VARCHAR"
         ],
         [
-          "detail_read",
+          "treaty_references_json",
           "VARCHAR"
         ]
       ],
@@ -4113,43 +4107,23 @@
         ],
         [
           "seq",
-          "VARCHAR"
-        ],
-        [
-          "agency_label",
-          "VARCHAR"
-        ],
-        [
-          "agency_key",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "body",
           "VARCHAR"
         ],
         [
-          "pattern",
-          "VARCHAR"
-        ],
-        [
           "char_start",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "char_end",
-          "VARCHAR"
-        ],
-        [
-          "page_start",
-          "VARCHAR"
-        ],
-        [
-          "page_end",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "body_chars",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "last_modified",
@@ -4565,6 +4539,42 @@
         [
           "version",
           "BIGINT"
+        ],
+        [
+          "summary",
+          "VARCHAR"
+        ],
+        [
+          "authors",
+          "STRUCT(author VARCHAR)[]"
+        ],
+        [
+          "topics",
+          "STRUCT(topic VARCHAR)[]"
+        ],
+        [
+          "formats",
+          "STRUCT(format VARCHAR, url VARCHAR)[]"
+        ],
+        [
+          "related_materials",
+          "STRUCT(url VARCHAR, congress BIGINT, number VARCHAR, title VARCHAR, \"type\" VARCHAR)[]"
+        ],
+        [
+          "detail_state",
+          "VARCHAR"
+        ],
+        [
+          "detail_attempt_state",
+          "VARCHAR"
+        ],
+        [
+          "detail_fields",
+          "STRUCT(\"name\" VARCHAR, state VARCHAR)[]"
+        ],
+        [
+          "detail_error",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -5101,7 +5111,7 @@
         ],
         [
           "term_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "term_start",
@@ -5238,7 +5248,7 @@
         ],
         [
           "term_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "term_type",
@@ -5262,14 +5272,6 @@
         ],
         [
           "term_district",
-          "VARCHAR"
-        ],
-        [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
-          "party_affiliations_state",
           "VARCHAR"
         ]
       ],
@@ -5424,6 +5426,10 @@
       "family": "nominations",
       "schema": [
         [
+          "nomination_id",
+          "VARCHAR"
+        ],
+        [
           "citation",
           "VARCHAR"
         ],
@@ -5453,11 +5459,11 @@
         ],
         [
           "is_civilian",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
-          "nomination_type_json",
-          "VARCHAR"
+          "is_military",
+          "BOOLEAN"
         ],
         [
           "latest_action_date",
@@ -5472,7 +5478,11 @@
           "VARCHAR"
         ],
         [
-          "url",
+          "committees_json",
+          "VARCHAR"
+        ],
+        [
+          "hearings_json",
           "VARCHAR"
         ]
       ],
@@ -5633,54 +5643,6 @@
           "VARCHAR"
         ],
         [
-          "feed_url",
-          "VARCHAR"
-        ],
-        [
-          "channel_title",
-          "VARCHAR"
-        ],
-        [
-          "channel_link",
-          "VARCHAR"
-        ],
-        [
-          "channel_description",
-          "VARCHAR"
-        ],
-        [
-          "channel_language",
-          "VARCHAR"
-        ],
-        [
-          "channel_copyright",
-          "VARCHAR"
-        ],
-        [
-          "channel_docs",
-          "VARCHAR"
-        ],
-        [
-          "channel_last_build_date",
-          "VARCHAR"
-        ],
-        [
-          "channel_ttl",
-          "VARCHAR"
-        ],
-        [
-          "channel_skip_days",
-          "VARCHAR"
-        ],
-        [
-          "channel_skip_hours",
-          "VARCHAR"
-        ],
-        [
-          "item_index",
-          "VARCHAR"
-        ],
-        [
           "title",
           "VARCHAR"
         ],
@@ -5694,7 +5656,7 @@
         ],
         [
           "guid_is_permalink",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "description",
@@ -5706,7 +5668,7 @@
         ],
         [
           "description_chars",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "pub_date",
@@ -5725,8 +5687,8 @@
           "VARCHAR"
         ],
         [
-          "categories_json",
-          "VARCHAR"
+          "categories",
+          "VARCHAR[]"
         ],
         [
           "enclosure_url",
@@ -5734,30 +5696,14 @@
         ],
         [
           "enclosure_length",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "enclosure_type",
           "VARCHAR"
         ],
         [
-          "observed_at",
-          "VARCHAR"
-        ],
-        [
           "bill_id",
-          "VARCHAR"
-        ],
-        [
-          "match_rule",
-          "VARCHAR"
-        ],
-        [
-          "matched_field",
-          "VARCHAR"
-        ],
-        [
-          "matched_text",
           "VARCHAR"
         ]
       ],
@@ -6401,15 +6347,11 @@
         ],
         [
           "span_start",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "span_end",
-          "VARCHAR"
-        ],
-        [
-          "evidence_page",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "matched_text",
@@ -6421,7 +6363,7 @@
         ],
         [
           "target_resolved",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "target_rule",
@@ -6429,26 +6371,10 @@
         ],
         [
           "stated_by_index",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
-          "rule_name",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "text_sha256",
+          "body_version_id",
           "VARCHAR"
         ]
       ],
@@ -6527,118 +6453,86 @@
         ],
         [
           "committee_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "committees_json",
-          "VARCHAR"
+          "committees",
+          "STRUCT(chamber VARCHAR, congress BIGINT, \"name\" VARCHAR, system_code VARCHAR)[]"
         ],
         [
           "associated_bill_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_bills_json",
-          "VARCHAR"
+          "associated_bills",
+          "STRUCT(bill_id VARCHAR, context VARCHAR)[]"
         ],
         [
           "associated_law_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_laws_json",
-          "VARCHAR"
+          "associated_laws",
+          "VARCHAR[]"
         ],
         [
           "associated_usc_section_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "associated_usc_sections_json",
-          "VARCHAR"
+          "associated_usc_sections",
+          "STRUCT(usc_key VARCHAR, detail VARCHAR)[]"
         ],
         [
           "related_report_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "related_reports_json",
-          "VARCHAR"
+          "related_reports",
+          "VARCHAR[]"
         ],
         [
           "distinct_bills",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_bills_beyond_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "bills_congress_mismatch",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_laws",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_laws_beyond_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_usc_sections",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "distinct_usc_sections_beyond_index",
-          "VARCHAR"
-        ],
-        [
-          "committees_resolved",
-          "VARCHAR"
-        ],
-        [
-          "committees_unresolved",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "citation_rows",
-          "VARCHAR"
-        ],
-        [
-          "pages_read",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "stated_page_count",
           "VARCHAR"
         ],
         [
-          "pages_capped",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "text_sha256",
-          "VARCHAR"
-        ],
-        [
-          "rule_set_version",
+          "body_version_id",
           "VARCHAR"
         ],
         [
           "covered_congress",
-          "VARCHAR"
-        ],
-        [
-          "covered_congress_source",
           "VARCHAR"
         ]
       ],
@@ -6795,54 +6689,34 @@
         ],
         [
           "chambers",
-          "VARCHAR"
-        ],
-        [
-          "chambers_rule",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
           "section_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "section_names",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
-          "sections_json",
-          "VARCHAR"
+          "sections",
+          "STRUCT(endPage VARCHAR, \"name\" VARCHAR, startPage VARCHAR, \"text\" STRUCT(\"type\" VARCHAR, url VARCHAR, part VARCHAR)[])[]"
         ],
         [
-          "entire_issue_json",
-          "VARCHAR"
+          "entire_issue",
+          "STRUCT(part VARCHAR, \"type\" VARCHAR, url VARCHAR)[]"
         ],
         [
           "package_id",
           "VARCHAR"
         ],
         [
-          "package_id_rule",
-          "VARCHAR"
-        ],
-        [
           "article_count",
-          "VARCHAR"
-        ],
-        [
-          "articles_url",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "update_date",
-          "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
-        ],
-        [
-          "detail_read",
           "VARCHAR"
         ]
       ],
@@ -7963,7 +7837,31 @@
           "VARCHAR"
         ],
         [
+          "normalized_state",
+          "VARCHAR"
+        ],
+        [
+          "state_status",
+          "VARCHAR"
+        ],
+        [
+          "normalized_district",
+          "VARCHAR"
+        ],
+        [
+          "district_status",
+          "VARCHAR"
+        ],
+        [
+          "correction_evidence_json",
+          "VARCHAR"
+        ],
+        [
           "term_candidates_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_evidence_json",
           "VARCHAR"
         ],
         [
@@ -8212,96 +8110,6 @@
             "meaning": "Exact four-digit year labels. Prose, relative periods and lifetime labels stay in the separate source-label views."
           }
         }
-      ],
-      "publishedSchema": [
-        [
-          "scorecard_id",
-          "VARCHAR"
-        ],
-        [
-          "publisher_member_key",
-          "VARCHAR"
-        ],
-        [
-          "bioguide_id",
-          "VARCHAR"
-        ],
-        [
-          "source_snapshot_id",
-          "VARCHAR"
-        ],
-        [
-          "capture_id",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_path",
-          "VARCHAR"
-        ],
-        [
-          "normalized_state",
-          "VARCHAR"
-        ],
-        [
-          "state_status",
-          "VARCHAR"
-        ],
-        [
-          "normalized_district",
-          "VARCHAR"
-        ],
-        [
-          "district_status",
-          "VARCHAR"
-        ],
-        [
-          "correction_evidence_json",
-          "VARCHAR"
-        ],
-        [
-          "term_candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "override_version",
-          "VARCHAR"
-        ],
-        [
-          "resolution_status",
-          "VARCHAR"
-        ],
-        [
-          "resolution_rule",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "candidate_count",
-          "INTEGER"
-        ],
-        [
-          "candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "reason",
-          "VARCHAR"
-        ],
-        [
-          "source_context_json",
-          "VARCHAR"
-        ],
-        [
-          "input_pins_json",
-          "VARCHAR"
-        ]
       ]
     },
     "scorecard_items": {
@@ -10769,18 +10577,18 @@
         ],
         [
           "page",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_ordinal",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "row_ordinal",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
-          "text_sha256",
+          "body_version_id",
           "VARCHAR"
         ],
         [
@@ -10801,7 +10609,7 @@
         ],
         [
           "cells_ruled",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "office",
@@ -10828,12 +10636,12 @@
           "VARCHAR"
         ],
         [
-          "column_headers_json",
-          "VARCHAR"
+          "column_headers",
+          "VARCHAR[]"
         ],
         [
-          "cells_json",
-          "VARCHAR"
+          "cells",
+          "VARCHAR[]"
         ],
         [
           "account_title",
@@ -10844,60 +10652,20 @@
           "VARCHAR"
         ],
         [
-          "amounts_json",
-          "VARCHAR"
+          "amounts",
+          "STRUCT(amount DECIMAL(38,2), \"text\" VARCHAR)[][]"
         ],
         [
           "amount_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_row_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "table_column_count",
-          "VARCHAR"
-        ],
-        [
-          "bbox_x0",
-          "VARCHAR"
-        ],
-        [
-          "bbox_y0",
-          "VARCHAR"
-        ],
-        [
-          "bbox_x1",
-          "VARCHAR"
-        ],
-        [
-          "bbox_y1",
-          "VARCHAR"
-        ],
-        [
-          "page_count",
-          "VARCHAR"
-        ],
-        [
-          "pages_read",
-          "VARCHAR"
-        ],
-        [
-          "pages_capped",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "extraction_rule_version",
-          "VARCHAR"
+          "BIGINT"
         ]
       ],
       "classification": "source-scope-and-observed-records",

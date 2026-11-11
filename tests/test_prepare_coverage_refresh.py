@@ -37,7 +37,7 @@ class PrepareTests(unittest.TestCase):
         self.selection.write_text(json.dumps({'format': 'spicygov-coverage-release-selection', 'version': 1,
             'directory': str(self.root), 'manifestSha256': prepare.sha(manifest)}))
         self.args = SimpleNamespace(run=self.root / 'run', base_selection=self.selection,
-                                    reserve_gib=25, max_restoration_bytes=100)
+                                    reserve_gib=25)
 
     def test_low_capacity_refuses_before_any_scanner(self):
         tables = {'changed': {'id': 'changed', 'members': [], 'columns': []}}
@@ -67,8 +67,10 @@ class PrepareTests(unittest.TestCase):
         policies = {id: {'dimensions': [], 'schema': []} for id in tables}
         measured = {'value': 'new', 'measurementRevision': 'rev'}
         # An unchanged accepted checkpoint is reused without entering the scan;
-        # the blocked table's over-budget restore cannot enter it either.
+        # a table whose reviewed fields are not public cannot enter it either.
         def cached(table, policy, old): return table['id'] == 'unchanged'
+        def plan(tables, policies, available):
+            if 'blocked' in tables: raise ValueError('Coverage field is not published: blocked-axis')
         def scan(request):
             self.assertEqual(request[0], 'changed')
             return 'changed', measured
@@ -79,7 +81,7 @@ class PrepareTests(unittest.TestCase):
             self.assertEqual(document['tables']['changed'], measured)
             self.assertEqual(set(effective), {'unchanged', 'changed'})
             self.assertEqual(document['measurementStates'], {'blocked': 'unavailable'})
-            self.assertNotIn('101 bytes', raw.decode())
+            self.assertNotIn('not published', raw.decode())
             output.mkdir()
             (output / 'coverage-maps.v1.json').write_bytes(raw)
             return {'directory': str(output), 'manifestSha256': 'fixture'}
@@ -90,12 +92,9 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare, 'publication_snapshot', return_value=(tables, {})), \
              patch.object(prepare, 'census_digest', return_value='census'), \
              patch.object(prepare.builder, 'definitions', return_value=policies), \
-             patch.object(prepare.builder, 'validate_plan'), \
+             patch.object(prepare.builder, 'validate_plan', side_effect=plan), \
              patch.object(prepare.builder, 'cached', side_effect=cached), \
-             patch.object(prepare, 'restoration_inputs', side_effect=lambda id, *a: [{'byteSize': 101}] if id == 'blocked' else []), \
              patch.object(prepare.builder, 'timed_scan', side_effect=scan) as scans, \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'recover_release', return_value={'directory': 'fixture'}), \
@@ -103,7 +102,7 @@ class PrepareTests(unittest.TestCase):
             report = prepare.prepare(self.args)
             self.assertEqual(scans.call_count, 1)
             self.assertEqual((report['currentTables'], report['unresolvedTables']), (2, 1))
-            self.assertIn('101 bytes', report['tables']['blocked']['reason'])
+            self.assertIn('not published', report['tables']['blocked']['reason'])
             # A fresh invocation of a completed fixed run does not repeat scans.
             prepare.prepare(self.args)
             self.assertEqual(scans.call_count, 1)
@@ -146,40 +145,6 @@ class PrepareTests(unittest.TestCase):
             refresh.run_refresh(args, ROOT, self.args.run, self.root / 'raw', None)
         self.assertEqual(order, ['native', 'prepare', 'finish'])
 
-    def test_rulemaking_preflight_uses_exact_snapshot_subject_and_receipt_pins(self):
-        subject = {'key': 'proceedings.parquet', 'byteSize': 12, 'sha256': 'subject'}
-        receipt = {'key': 'etl_receipts.parquet', 'byteSize': 80, 'sha256': 'receipt'}
-        required = prepare.restoration_inputs('proceedings', {
-            'kind': 'rulemaking', 'recordUrl': 'pinned manifest',
-            'rulemakingSnapshot': {'subjects': [subject], 'receipts': receipt}},
-            {'_additionalNativeProcessing': True, 'dimensions': []}, {}, {})
-        self.assertEqual(required, [subject, receipt])
-
-    def test_recorded_parent_budget_follows_adapter_without_current_schema(self):
-        relation = {'mode': 'recorded-parent', 'table': 'laws'}
-        parent = {'family': 'laws', 'artifactDigest': 'historical', 'tableId': 'laws',
-                  'recordUrl': 'historical artifact', 'members': [{'key': 'laws.parquet', 'byteSize': 30}],
-                  'artifact': {'spec': {'etlReceipts': {'key': 'etl_receipts.parquet',
-                                                     'policies': [{'dataset': 'laws'}]}}}}
-        owner = {'family': 'child', 'artifactDigest': 'child-generation', 'recordUrl': 'child artifact',
-                 'members': [{'key': 'child.parquet', 'byteSize': 10}],
-                 'artifact': {'spec': {'etlReceipts': {'key': 'etl_receipts.parquet'}}}}
-        class Inputs:
-            def producing(self, *args): return owner
-            def parent(self, *args): return parent
-            def artifact(self, family, generation):
-                size = 20 if family == 'child' else 900
-                return '', {}, [{'role': 'table', 'objectKey': 'etl_receipts.parquet', 'byteSize': size, 'sha256': 'pin'}]
-        policy = {'_additionalNativeProcessing': True, 'dimensions': [{'kind': 'inherited', 'parent': relation}]}
-        with patch.object(prepare, 'CoverageInputs', Inputs), \
-             patch.object(prepare.builder, 'validate_plan', side_effect=AssertionError('Used a current parent schema')):
-            for current_schema in ([['new', 'STRUCT(different INTEGER)']], [['legacy', 'VARCHAR']]):
-                required = prepare.restoration_inputs('child', {'kind': 'generation'}, policy, {},
-                                                      {'laws': {'columns': current_schema}})
-                # AdditionalInputs recorded-parent route reads the pinned public
-                # parent directly; its 900-byte processing receipt is unrelated.
-                self.assertEqual(sum(member['byteSize'] for member in required), 60)
-
     def test_holds_apply_only_to_unchanged_publications_and_preserve_prior_records(self):
         tables = {id: {'id': id, 'members': []} for id in ('unchanged', 'changed')}
         self.args.hold_unchanged = ['unchanged', 'changed']
@@ -196,10 +161,7 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare.builder, 'definitions', return_value={id: {'schema': [], 'dimensions': []} for id in tables}), \
              patch.object(prepare.builder, 'validate_plan'), \
              patch.object(prepare.builder, 'cached', return_value=False), \
-             patch.object(prepare, 'restoration_inputs', return_value=[]), \
              patch.object(prepare.builder, 'timed_scan', return_value=('changed', measured)) as scan, \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'complete', side_effect=completion):
@@ -224,10 +186,7 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare.builder, 'definitions', return_value={'unchanged': {'schema': [], 'dimensions': []}}), \
              patch.object(prepare.builder, 'validate_plan'), \
              patch.object(prepare.builder, 'cached', return_value=True), \
-             patch.object(prepare, 'restoration_inputs', side_effect=AssertionError('Unneeded input/body lookup')), \
              patch.object(prepare.builder, 'timed_scan', side_effect=AssertionError('Repeated measurement')), \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'complete', side_effect=completion):
@@ -261,10 +220,7 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare.builder, 'definitions', return_value={id: {'schema': [], 'dimensions': []} for id in tables}), \
              patch.object(prepare.builder, 'validate_plan'), \
              patch.object(prepare.builder, 'cached', side_effect=lambda table, *args: table['id'] == 'unchanged'), \
-             patch.object(prepare, 'restoration_inputs', return_value=[]), \
              patch.object(prepare.builder, 'timed_scan', return_value=('changed', current)), \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'complete', side_effect=completion):
@@ -325,10 +281,7 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare.builder, 'definitions', return_value={'changed': {'schema': [], 'dimensions': []}}), \
              patch.object(prepare.builder, 'validate_plan'), \
              patch.object(prepare.builder, 'cached', return_value=True), \
-             patch.object(prepare, 'restoration_inputs', side_effect=AssertionError('no restore')), \
              patch.object(prepare.builder, 'timed_scan', side_effect=AssertionError('no scan')), \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'complete', side_effect=completion):
@@ -347,10 +300,7 @@ class PrepareTests(unittest.TestCase):
              patch.object(prepare.builder, 'definitions', return_value={id: {'schema': [], 'dimensions': []} for id in tables}), \
              patch.object(prepare.builder, 'validate_plan', side_effect=validate), \
              patch.object(prepare.builder, 'cached', return_value=False), \
-             patch.object(prepare, 'restoration_inputs', return_value=[]), \
              patch.object(prepare.builder, 'timed_scan', return_value=('changed', {'measurementRevision': 'rev'})) as scan, \
-             patch.object(prepare.builder, 'validate_native_implementations'), \
-             patch.object(prepare.builder.additional, 'validate_native_implementations'), \
              patch.object(prepare.builder, 'measurement_revision', return_value='rev'), \
              patch.object(prepare.builder, 'binding', return_value={}), \
              patch.object(prepare, 'complete', return_value={'directory': 'fixture', 'manifestSha256': 'fixture'}):

@@ -83,6 +83,10 @@
           "VARCHAR"
         ],
         [
+          "part_granule",
+          "BOOLEAN"
+        ],
+        [
           "package_id",
           "VARCHAR"
         ],
@@ -116,14 +120,6 @@
         ],
         [
           "last_modified",
-          "VARCHAR"
-        ],
-        [
-          "url",
-          "VARCHAR"
-        ],
-        [
-          "part_granule",
           "VARCHAR"
         ]
       ],
@@ -166,8 +162,8 @@
           "VARCHAR"
         ],
         [
-          "display_properties_json",
-          "VARCHAR"
+          "display_properties",
+          "STRUCT(\"name\" VARCHAR, \"label\" VARCHAR, tooltip VARCHAR)[]"
         ],
         [
           "doc_abstract",
@@ -182,8 +178,8 @@
           "VARCHAR"
         ],
         [
-          "file_formats_json",
-          "VARCHAR"
+          "file_formats",
+          "STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[]"
         ],
         [
           "gov_agency",
@@ -285,10 +281,14 @@
         ],
         [
           "depth",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "dump_date",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
           "VARCHAR"
         ]
       ],
@@ -344,6 +344,10 @@
         [
           "dump_date",
           "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
         ]
       ],
       "classification": "edition",
@@ -381,7 +385,7 @@
         ],
         [
           "score",
-          "VARCHAR"
+          "DOUBLE"
         ],
         [
           "group_id",
@@ -389,6 +393,10 @@
         ],
         [
           "dump_date",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
           "VARCHAR"
         ]
       ],
@@ -741,11 +749,19 @@
       "family": "court-opinion-pdf-extractions",
       "schema": [
         [
+          "opinion_body_id",
+          "VARCHAR"
+        ],
+        [
           "opinion_id",
           "VARCHAR"
         ],
         [
           "cluster_id",
+          "VARCHAR"
+        ],
+        [
+          "text_content",
           "VARCHAR"
         ],
         [
@@ -769,14 +785,6 @@
           "VARCHAR"
         ],
         [
-          "sha1_matches",
-          "VARCHAR"
-        ],
-        [
-          "text_content",
-          "VARCHAR"
-        ],
-        [
           "pdf_extraction_results_json",
           "VARCHAR"
         ],
@@ -795,6 +803,26 @@
         [
           "parent_opinion_publication_json",
           "VARCHAR"
+        ],
+        [
+          "sha1_matches",
+          "BOOLEAN"
+        ],
+        [
+          "parent_artifact_digest",
+          "VARCHAR"
+        ],
+        [
+          "parent_generation_id",
+          "VARCHAR"
+        ],
+        [
+          "parent_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "parent_member_byte_size",
+          "BIGINT"
         ]
       ],
       "classification": "inherited",
@@ -877,7 +905,7 @@
         ],
         [
           "per_curiam",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "joined_by_str",
@@ -885,7 +913,7 @@
         ],
         [
           "page_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "sha1",
@@ -901,7 +929,7 @@
         ],
         [
           "extracted_by_ocr",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "date_created",
@@ -913,6 +941,10 @@
         ],
         [
           "dump_date",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
           "VARCHAR"
         ]
       ],
@@ -998,31 +1030,31 @@
           "VARCHAR"
         ],
         [
-          "parties_json",
-          "VARCHAR"
+          "parties",
+          "VARCHAR[]"
         ],
         [
-          "attorneys_json",
-          "VARCHAR"
+          "attorneys",
+          "VARCHAR[]"
         ],
         [
-          "firms_json",
-          "VARCHAR"
+          "firms",
+          "VARCHAR[]"
         ],
         [
           "pacer_case_id",
           "VARCHAR"
         ],
         [
-          "date_created",
-          "VARCHAR"
-        ],
-        [
-          "absolute_url",
-          "VARCHAR"
-        ],
-        [
           "case_type",
+          "VARCHAR"
+        ],
+        [
+          "blocked",
+          "BOOLEAN"
+        ],
+        [
+          "date_blocked",
           "VARCHAR"
         ]
       ],
@@ -1107,8 +1139,8 @@
           "VARCHAR"
         ],
         [
-          "display_properties_json",
-          "VARCHAR"
+          "display_properties",
+          "STRUCT(\"name\" VARCHAR, \"label\" VARCHAR, tooltip VARCHAR)[]"
         ],
         [
           "effective_date",
@@ -1291,8 +1323,8 @@
           "VARCHAR"
         ],
         [
-          "display_properties_json",
-          "VARCHAR"
+          "display_properties",
+          "STRUCT(\"name\" VARCHAR, \"label\" VARCHAR, tooltip VARCHAR)[]"
         ],
         [
           "doc_abstract",
@@ -1548,12 +1580,12 @@
           "VARCHAR"
         ],
         [
-          "attachments_json",
-          "VARCHAR"
+          "attachments",
+          "STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[]"
         ],
         [
-          "attachment_records_json",
-          "VARCHAR"
+          "attachment_records",
+          "STRUCT(attachment_id VARCHAR, title VARCHAR, file_formats STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[], restrict_reason VARCHAR, restrict_reason_type VARCHAR)[]"
         ],
         [
           "fr_doc_num",
@@ -1561,7 +1593,7 @@
         ],
         [
           "withdrawn",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "reason_withdrawn",
@@ -1569,7 +1601,7 @@
         ],
         [
           "additional_rins",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
           "text_content",
@@ -1581,6 +1613,14 @@
         ],
         [
           "pdf_extraction_results_json",
+          "VARCHAR"
+        ],
+        [
+          "publisher_status",
+          "VARCHAR"
+        ],
+        [
+          "removed_observed_at",
           "VARCHAR"
         ]
       ],
@@ -1688,7 +1728,15 @@
         ],
         [
           "documents",
-          "STRUCT(filename VARCHAR, description VARCHAR)[]"
+          "STRUCT(filename VARCHAR, description VARCHAR, src VARCHAR)[]"
+        ],
+        [
+          "generation_id",
+          "VARCHAR"
+        ],
+        [
+          "extraction_results",
+          "STRUCT(attempt_ordinal BIGINT, url VARCHAR, offered_ordinals BIGINT[], url_status VARCHAR, source_sha256 VARCHAR, digest_status VARCHAR, status VARCHAR, page_count BIGINT, \"error\" VARCHAR, capture_status VARCHAR, text_access_status VARCHAR)[]"
         ]
       ],
       "classification": "record-dates",
@@ -1843,7 +1891,7 @@
     },
     "federal_register": {
       "family": "federal-register",
-      "publishedSchema": [
+      "schema": [
         [
           "document_number",
           "VARCHAR"
@@ -1961,6 +2009,18 @@
           "BOOLEAN"
         ],
         [
+          "president_json",
+          "VARCHAR"
+        ],
+        [
+          "disposition_notes",
+          "VARCHAR"
+        ],
+        [
+          "executive_order_notes",
+          "VARCHAR"
+        ],
+        [
           "regulations_dot_gov_agency_id",
           "VARCHAR"
         ],
@@ -1983,64 +2043,6 @@
         [
           "regulations_dot_gov_regulatory_plan_title",
           "VARCHAR"
-        ]
-      ],
-      "schema": [
-        [
-          "document_number",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "abstract",
-          "VARCHAR"
-        ],
-        [
-          "document_type",
-          "VARCHAR"
-        ],
-        [
-          "publication_date",
-          "VARCHAR"
-        ],
-        [
-          "effective_on",
-          "VARCHAR"
-        ],
-        [
-          "comments_close_on",
-          "VARCHAR"
-        ],
-        [
-          "signing_date",
-          "VARCHAR"
-        ],
-        [
-          "agencies_json",
-          "VARCHAR"
-        ],
-        [
-          "agency_slugs",
-          "VARCHAR"
-        ],
-        [
-          "docket_ids_json",
-          "VARCHAR"
-        ],
-        [
-          "regulation_id_numbers_json",
-          "VARCHAR"
-        ],
-        [
-          "cfr_references_json",
-          "VARCHAR"
-        ],
-        [
-          "topics_json",
-          "VARCHAR"
         ],
         [
           "html_url",
@@ -2055,67 +2057,11 @@
           "VARCHAR"
         ],
         [
-          "volume",
-          "VARCHAR"
-        ],
-        [
-          "start_page",
-          "VARCHAR"
-        ],
-        [
-          "end_page",
-          "VARCHAR"
-        ],
-        [
-          "subtype",
-          "VARCHAR"
-        ],
-        [
-          "executive_order_number",
-          "VARCHAR"
-        ],
-        [
-          "modify_date",
+          "source_sha256",
           "VARCHAR"
         ],
         [
           "regulations_dot_gov_info_json",
-          "VARCHAR"
-        ],
-        [
-          "regulations_dot_gov_docket_id",
-          "VARCHAR"
-        ],
-        [
-          "regulations_dot_gov_document_id",
-          "VARCHAR"
-        ],
-        [
-          "regulations_dot_gov_comments_count",
-          "VARCHAR"
-        ],
-        [
-          "regulations_dot_gov_checked_at",
-          "VARCHAR"
-        ],
-        [
-          "action",
-          "VARCHAR"
-        ],
-        [
-          "correction_of",
-          "VARCHAR"
-        ],
-        [
-          "corrections_json",
-          "VARCHAR"
-        ],
-        [
-          "significant",
-          "VARCHAR"
-        ],
-        [
-          "rin",
           "VARCHAR"
         ]
       ],
@@ -2253,14 +2199,6 @@
           "BIGINT"
         ],
         [
-          "normalized_docket_candidates_json",
-          "VARCHAR"
-        ],
-        [
-          "docket_normalization_rule",
-          "VARCHAR"
-        ],
-        [
           "document_number",
           "VARCHAR"
         ],
@@ -2298,23 +2236,15 @@
         ],
         [
           "agency_slugs",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
-          "docket_ids_json",
-          "VARCHAR"
+          "docket_ids",
+          "VARCHAR[]"
         ],
         [
-          "regulation_id_numbers_json",
-          "VARCHAR"
-        ],
-        [
-          "html_url",
-          "VARCHAR"
-        ],
-        [
-          "pdf_url",
-          "VARCHAR"
+          "regulation_id_numbers",
+          "VARCHAR[]"
         ],
         [
           "executive_order_number",
@@ -2323,6 +2253,10 @@
         [
           "link_source",
           "VARCHAR"
+        ],
+        [
+          "normalized_docket_candidates",
+          "VARCHAR[]"
         ]
       ],
       "classification": "record-dates",
@@ -3120,10 +3054,6 @@
           "VARCHAR"
         ],
         [
-          "url",
-          "VARCHAR"
-        ],
-        [
           "statutes_at_large_cite",
           "VARCHAR"
         ],
@@ -3144,31 +3074,15 @@
           "VARCHAR"
         ],
         [
-          "uslm_processed_date",
-          "VARCHAR"
-        ],
-        [
-          "uslm_sha256",
-          "VARCHAR"
-        ],
-        [
-          "uslm_observed_at",
-          "VARCHAR"
-        ],
-        [
           "uslm_outcome",
           "VARCHAR"
         ],
         [
-          "uslm_citable_as_json",
-          "VARCHAR"
+          "uslm_citable_as",
+          "VARCHAR[]"
         ],
         [
           "uslm_reason",
-          "VARCHAR"
-        ],
-        [
-          "uslm_reader_version",
           "VARCHAR"
         ],
         [
@@ -3176,23 +3090,11 @@
           "VARCHAR"
         ],
         [
-          "law_text_reader_version",
-          "VARCHAR"
-        ],
-        [
           "law_section_count",
-          "VARCHAR"
-        ],
-        [
-          "law_text_reason",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "law_body_remainder",
-          "VARCHAR"
-        ],
-        [
-          "law_text_issues_json",
           "VARCHAR"
         ],
         [
@@ -3664,6 +3566,66 @@
         [
           "government_entities",
           "STRUCT(id VARCHAR, \"name\" VARCHAR)[]"
+        ],
+        [
+          "filing_type_display",
+          "VARCHAR"
+        ],
+        [
+          "filing_period_display",
+          "VARCHAR"
+        ],
+        [
+          "filing_document_content_type",
+          "VARCHAR"
+        ],
+        [
+          "expenses_method",
+          "VARCHAR"
+        ],
+        [
+          "expenses_method_display",
+          "VARCHAR"
+        ],
+        [
+          "termination_date",
+          "DATE"
+        ],
+        [
+          "posted_by_name",
+          "VARCHAR"
+        ],
+        [
+          "registrant_address_1",
+          "VARCHAR"
+        ],
+        [
+          "registrant_address_2",
+          "VARCHAR"
+        ],
+        [
+          "registrant_city",
+          "VARCHAR"
+        ],
+        [
+          "registrant_state",
+          "VARCHAR"
+        ],
+        [
+          "registrant_zip",
+          "VARCHAR"
+        ],
+        [
+          "registrant_country",
+          "VARCHAR"
+        ],
+        [
+          "registrant_ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "registrant_different_address",
+          "BOOLEAN"
         ]
       ],
       "classification": "record-dates",
@@ -3799,7 +3761,7 @@
           "VARCHAR"
         ],
         [
-          "input_sha256",
+          "body_version_id",
           "VARCHAR"
         ],
         [
@@ -3808,7 +3770,7 @@
         ],
         [
           "occurrence_index",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "source_path",
@@ -3816,14 +3778,6 @@
         ],
         [
           "element_tag",
-          "VARCHAR"
-        ],
-        [
-          "attributes_json",
-          "VARCHAR"
-        ],
-        [
-          "ancestors_json",
           "VARCHAR"
         ],
         [
@@ -3839,8 +3793,8 @@
           "VARCHAR"
         ],
         [
-          "text_runs_json",
-          "VARCHAR"
+          "text_runs",
+          "VARCHAR[]"
         ],
         [
           "cfr_title",
@@ -3855,11 +3809,23 @@
           "VARCHAR"
         ],
         [
-          "target_candidates_json",
-          "VARCHAR"
+          "target_candidates",
+          "STRUCT(candidate_ordinal BIGINT, cite_kind VARCHAR, normalized_key VARCHAR, matched_text VARCHAR, span_start BIGINT, span_end BIGINT, target_kind VARCHAR, target_key VARCHAR, target_grain VARCHAR, candidate_keys STRUCT(target_key_ordinal BIGINT, bill_id VARCHAR, congress VARCHAR, law_type VARCHAR, number VARCHAR, \"session\" VARCHAR, seq VARCHAR, package_id VARCHAR, granule_id VARCHAR, document_number VARCHAR, publication_date VARCHAR, rin VARCHAR, agenda_edition VARCHAR, report_id VARCHAR, docket_id VARCHAR, system_code VARCHAR, cluster_id VARCHAR)[], derivation_rule VARCHAR, derivation_version VARCHAR, document_key VARCHAR, document_kind VARCHAR, expected_cardinality VARCHAR, match_count BIGINT, occurrence_key VARCHAR, reason VARCHAR, resolution_rule VARCHAR, source_record_key VARCHAR, source_status VARCHAR, target_resolved BOOLEAN, target_snapshot STRUCT(status VARCHAR, sha256 VARCHAR, \"family\" VARCHAR, artifact_digest VARCHAR, generation_id VARCHAR, receipt_sha256 VARCHAR), target_status VARCHAR, target_table_selected VARCHAR, text_sha256 VARCHAR, match_basis VARCHAR, error_type VARCHAR)[]"
         ],
         [
           "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "native_element_id",
+          "VARCHAR"
+        ],
+        [
+          "native_idref",
+          "VARCHAR"
+        ],
+        [
+          "native_class",
           "VARCHAR"
         ]
       ],
@@ -3894,18 +3860,6 @@
       "schema": [
         [
           "organization",
-          "VARCHAR"
-        ],
-        [
-          "organization_norm",
-          "VARCHAR"
-        ],
-        [
-          "organization_core",
-          "VARCHAR"
-        ],
-        [
-          "name_source",
           "VARCHAR"
         ],
         [
@@ -3957,16 +3911,12 @@
           "BIGINT"
         ],
         [
-          "agency_codes_json",
-          "VARCHAR"
-        ],
-        [
           "first_comment_date",
-          "VARCHAR"
+          "TIMESTAMP WITH TIME ZONE"
         ],
         [
           "last_comment_date",
-          "VARCHAR"
+          "TIMESTAMP WITH TIME ZONE"
         ],
         [
           "connected_organization_name",
@@ -3974,6 +3924,14 @@
         ],
         [
           "sponsor_name_match",
+          "VARCHAR"
+        ],
+        [
+          "agency_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "association_kind",
           "VARCHAR"
         ]
       ],
@@ -4361,26 +4319,6 @@
         [
           "censor_date",
           "DATE"
-        ],
-        [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
-          "VARCHAR"
         ]
       ],
       "classification": "edition",
@@ -4442,26 +4380,6 @@
         [
           "evidence_date",
           "VARCHAR"
-        ],
-        [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
-          "VARCHAR"
         ]
       ],
       "classification": "record-dates",
@@ -4496,16 +4414,16 @@
           "VARCHAR"
         ],
         [
-          "proceeding_ids_json",
-          "VARCHAR"
+          "proceeding_ids",
+          "VARCHAR[]"
         ],
         [
-          "rins_json",
-          "VARCHAR"
+          "rins",
+          "VARCHAR[]"
         ],
         [
-          "docket_ids_json",
-          "VARCHAR"
+          "docket_ids",
+          "VARCHAR[]"
         ],
         [
           "open_date",
@@ -4520,32 +4438,16 @@
           "VARCHAR"
         ],
         [
-          "opened_by_artifact_ids_json",
-          "VARCHAR"
+          "opened_by_artifact_ids",
+          "VARCHAR[]"
         ],
         [
-          "evidence_ids_json",
-          "VARCHAR"
+          "evidence_ids",
+          "VARCHAR[]"
         ],
         [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
-          "VARCHAR"
+          "evidence_occurrences",
+          "STRUCT(\"source\" VARCHAR, \"role\" VARCHAR, evidence_id VARCHAR, source_ordinal BIGINT, document_id VARCHAR, document_number VARCHAR, publication_date VARCHAR, open_date VARCHAR, close_date VARCHAR, rins VARCHAR[], rin_values_json VARCHAR)[]"
         ],
         [
           "unresolved_fr_references_json",
@@ -4620,6 +4522,10 @@
       "family": "rulemaking",
       "schema": [
         [
+          "lifecycle_event_id",
+          "VARCHAR"
+        ],
+        [
           "proceeding_id",
           "VARCHAR"
         ],
@@ -4657,26 +4563,6 @@
         ],
         [
           "anchor_role",
-          "VARCHAR"
-        ],
-        [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
           "VARCHAR"
         ]
       ],
@@ -4828,16 +4714,12 @@
           "VARCHAR"
         ],
         [
-          "scope_basis",
-          "VARCHAR"
-        ],
-        [
           "linked_proceeding_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "observation_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "latest_agenda_edition",
@@ -4849,26 +4731,6 @@
         ],
         [
           "last_seen",
-          "VARCHAR"
-        ],
-        [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
           "VARCHAR"
         ],
         [
@@ -4928,6 +4790,10 @@
       "family": "rulemaking",
       "schema": [
         [
+          "rule_target_id",
+          "VARCHAR"
+        ],
+        [
           "docket_id",
           "VARCHAR"
         ],
@@ -4968,28 +4834,12 @@
           "VARCHAR"
         ],
         [
-          "method",
-          "VARCHAR"
-        ],
-        [
-          "actor_id",
-          "VARCHAR"
-        ],
-        [
-          "run_id",
-          "VARCHAR"
-        ],
-        [
-          "asserted_at",
-          "VARCHAR"
-        ],
-        [
-          "supersedes_id",
-          "VARCHAR"
-        ],
-        [
           "fr_references_json",
           "VARCHAR"
+        ],
+        [
+          "fr_document_ids",
+          "VARCHAR[]"
         ]
       ],
       "classification": "record-dates",
@@ -7030,6 +6880,10 @@
         ],
         [
           "raw_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
           "VARCHAR"
         ]
       ],
