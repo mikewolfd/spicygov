@@ -41,8 +41,8 @@ select it with
 policy/schema/scanner changes, incomplete membership and expired measurement
 months fail the strict build. The release binds every file that
 `implementation_files()` in `scripts/coverage_release.py` lists (each
-`scripts/*coverage*.py`, `scripts/publication_census.py`,
-`scripts/gao_receipt_policy.py` and the coverage definitions), so editing any of
+`scripts/*coverage*.py`, `scripts/publication_census.py` and the coverage
+definitions), so editing any of
 them, even one no selected table uses, requires a new release. There is no source-restoration fallback.
 
 The independent consumer checks all retained members, effective policies,
@@ -51,12 +51,12 @@ documents. Browser runtime checks remain independent: a newer live publication
 marks retained coverage as previous or unavailable. A successful offline build
 proves agreement with the retained selection, not currentness of live sources.
 
-Create coverage data locally from a reviewed SpicyGov checkout. Record its exact
-revision and the reviewed 40-hex spicy-regs revision containing
-`spicy_regs/coverage_reader.py`. Select an existing backend environment that imports
-that exact reader through `SPICYGOV_COVERAGE_PYTHON`; an interpreter path alone
-does not establish its source revision. Keep the environment and source unchanged
-through completion.
+Create coverage data from a reviewed SpicyGov checkout and record its exact
+revision. Tables are measured from the published files, not from receipts. One
+path still needs a spicy-regs environment: the hearing-identity check in
+`scripts/congress_coverage.py` imports `rulespec_artifacts` through
+`SPICYGOV_COVERAGE_PYTHON`, and only the waiting `hearing_transcripts` table
+reaches it. Keep the checkout unchanged through completion.
 
 Use an existing builder environment with the dependencies pinned in
 `.github/workflows/coverage-data-release.yml` (duckdb, pyarrow, fsspec, aiohttp),
@@ -64,8 +64,7 @@ plus the repository's locked Node dependencies for the offline consumer. From
 the selected SpicyGov checkout, run:
 
 ```sh
-SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
-  /path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
+/path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
   --output /owned/run/coverage-maps.v1.json \
   --release-output /owned/run/completed-coverage-release
 ```
@@ -73,8 +72,8 @@ SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
 Choose a release directory that does not already exist. Keep the command, source
 and environment identities, exit status and log with the local run evidence.
 A successful full build emits the release. It retains the exact
-publication bytes used, effective policies, reader identities through policy and
-measurement revisions, map bytes, and implementation hashes. Standalone partial
+publication bytes used, effective policies, measurement revisions, map bytes, and
+implementation hashes. Standalone partial
 scans remain checkpoints; selected refreshes use the path below. The artifact is a candidate for separate
 review and selection.
 
@@ -84,8 +83,7 @@ To correct a specific table without a full inventory rescan, use the same builde
 with an explicitly selected prior map. Supply the retained map's reviewed SHA-256:
 
 ```sh
-SPICYGOV_COVERAGE_PYTHON=/path/to/backend-environment/bin/python \
-  /path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
+/path/to/builder-environment/bin/python scripts/build-coverage-maps.py \
   --only cfr_sections --refresh-from /owned/prior/coverage-maps.v1.json \
   --base-sha256 sha256:<reviewed-hash> \
   --output /owned/run/coverage-maps.v1.json \
@@ -101,27 +99,25 @@ unavailable labels for the others. Select its manifest through the same selectio
 file and `build:ui` command; the build status reports `refreshed`. A plain `--only`
 scan still cannot create a release, and full releases still require every table.
 
-There is one supported reader route: the packaged
-`spicy_regs.coverage_reader` and the two spicygov adapters that run on it
-(`restore_additional_coverage.py`, `restore_source_navigation_coverage.py`).
-Undeclared or null receipt policies and missing receipt fields or generation labels
-are refused. Carried receipts keep their original generation and may use a declared
-earlier policy version. The selected receipt-file size and SHA-256 bind the exact
-bytes; complete subject-to-receipt admission still proves every selected row. Flat published
-tables are measured directly by the published-table scanner; native tables must
-be the reviewed native subject and use receipts under the current or a declared
-earlier policy version.
-
 The checked-in `public/coverage-maps.v1.json`, the pre-2026-10-17 `.cache/coverage-maps`
 checkpoints and the archived fixture releases are retained evidence. They carry measurement
 revisions the current code does not issue.
 
-A full release requires every published table to pass its reviewed definition. On
-2026-11-11, 53 of 219 did not: 34 restore through spicygov adapters that import
-spicy-regs receipt helpers since deleted, 9 changed published schema as their
-families dropped receipts, and 10 have no definition. Until those are resolved,
-produce coverage with the refresh preparation below (`prepare-coverage-refresh.py`);
-it keeps each failed table's earlier map, labelled, and never shows it as current.
+A full release requires every published table to pass its reviewed definition
+against the schema it publishes. Since 2026-11-11 no table is restored from
+receipts. Tables whose reviewed fields their family does not publish yet, tables
+whose rules read receipts (`government-receipt-*` dimensions) and tables without a
+definition fail that check, so the hosted **Prepare coverage data release**
+workflow, which runs a full build, is not a release route today. Its two
+hearing-identity tests in `tests/test_congress_coverage_maps.py` also need that
+spicy-regs environment, and `tests/test_regulation_coverage_maps.py` already fails
+on `main` (`ofac_snapshots` counts a capture time). Until those are resolved,
+produce coverage with the refresh preparation below (`prepare-coverage-refresh.py`).
+A table it selects and cannot measure keeps its earlier map, labelled "Earlier
+measurement". With `--only`, an unselected table keeps its base measurement and
+state: if its publication is unchanged it still shows as current, measured by
+the scanner code that measured the base release, which may be older than the
+checkout's. Select every such table to make every current map the checkout's.
 
 The release may take several attempts. Each run checkpoints every table it completes
 under the selected checkout's `.cache/coverage-maps` directory.
@@ -135,18 +131,12 @@ Measurement revisions are per scanner:
   `coverage_release.py`, `coverage_allowances.py`) keep checkpoints.
 - An edit to `coverage_scan.py` or a shared helper re-measures every table.
 - An edit to one scanner module re-measures only that scanner's tables.
-- A new spicy-regs reader identity re-measures the native tables.
 
-Keep the reviewed backend revision fixed until the release completes. Resume an
-interrupted release with the same local command, checkout and checkpoint directory;
-a changed reader identity re-measures native tables. The builder rechecks every
+Resume an interrupted release with the same local command, checkout and checkpoint
+directory. The builder rechecks every
 checkpoint's bindings before reuse. Retain failed attempts and diagnose their
 specific failure before retrying; do not discard compatible checkpoints or repeat
 the producer merely to read back a completed release.
-
-`bill_subjects` and its `bill-subjects` family are already registered in
-`scripts/native_legislative_coverage.py`. The existing definition/schema gate
-checks their selected source; no registration step remains.
 
 **Completion run.** The final check refuses if any captured publication document
 changes during the run (`build-coverage-maps.py`). Coordinate with active source
@@ -168,7 +158,7 @@ the final byte-binding check remains authoritative.
    revision: `node scripts/consume-coverage-release.mjs --release <dir> --sha256 sha256:<hex>`.
    It checks the retained complete membership and Sources parsing, prints
    `"status":"accepted"`, and performs no source restorations or network requests.
-4. Retain the source/backend and environment identities, command, log, exit status,
+4. Retain the source and environment identities, command, log, exit status,
    completed directory, `manifestSha256` and consumer result. Selecting the release
    in `content/coverage-release-selection.v1.json` and deploying is a separate decision.
 
@@ -253,12 +243,9 @@ the retained table measurements remain unchanged. Changed bill-family and
 Federal Register publications run before unchanged work.
 New source captures and catalog selection remain owned by the normal refresh.
 
-Set `SPICYGOV_COVERAGE_PYTHON` to the exact reviewed reader interpreter. For a
-source checkout, also set `SPICYGOV_COVERAGE_PYTHONPATH` to its `src` directory;
-the source-catalog maintenance runtime can then use its own `PYTHONPATH`.
-`SPICYGOV_NATIVE_COVERAGE_CACHE` locates the existing hash-bound member cache.
-Preparation uses one scan at a time, the readers' existing memory/time/staging
-limits, and at least 25 GiB of free-space reserve. Input totals in its report are
+`SPICYGOV_NATIVE_COVERAGE_CACHE` locates the existing hash-bound cache of
+published members. Preparation uses one scan at a time and at least 25 GiB of
+free-space reserve. Input totals in its report are
 not transfer or scratch measurements.
 
 For independent preparation without selecting a catalog or building the site:
@@ -271,4 +258,4 @@ python scripts/prepare-coverage-refresh.py \
 
 Resume the same directory with identical code, base and resource settings.
 Completed scans survive interruption. A completed release is immutable; use a
-new run for a different publication snapshot, policy, reader or resource budget.
+new run for a different publication snapshot, policy or resource budget.

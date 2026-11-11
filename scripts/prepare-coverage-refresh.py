@@ -17,7 +17,6 @@ import sys
 import time
 
 from coverage_release import capture_load, complete, implementation_files, read_base, sha
-from coverage_inputs import CoverageInputs
 from publication_census import census_digest, load, path as publication_path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -156,60 +155,6 @@ def publication_snapshot(run):
     return tables, captured
 
 
-def restoration_inputs(id, table, policy, policies, tables):
-    """Bound known subject/receipt/parent bodies before invoking a native reader."""
-    inputs, required = CoverageInputs(), {}
-
-    def retain(owner, receipts=False):
-        for member in owner['members']:
-            required[(owner['recordUrl'], member['key'])] = member
-        if receipts:
-            receipt_spec = owner['artifact']['spec'].get('etlReceipts', {})
-            _, _, members = inputs.artifact(owner['family'], owner['artifactDigest'])
-            receipt = [m for m in members if m.get('role') == 'table' and m['objectKey'] == receipt_spec.get('key')]
-            if len(receipt) != 1:
-                raise ValueError('Exact selected processing receipt is unavailable')
-            member = receipt[0]
-            required[(owner['recordUrl'], member['objectKey'])] = {
-                'key': member['objectKey'], 'byteSize': member['byteSize'], 'sha256': member['sha256']}
-
-    native = policy.get('_nativeProcessing') or policy.get('_additionalNativeProcessing')
-    receipt_special = any(d.get('special', '').startswith('government-receipt-') for d in policy['dimensions'])
-    if native or receipt_special:
-        if table.get('kind') == 'rulemaking' and table.get('rulemakingSnapshot'):
-            selected = table['rulemakingSnapshot']
-            for member in [*selected['subjects'], selected['receipts']]:
-                required[(table['recordUrl'], member['key'])] = member
-        elif table.get('kind') == 'generation':
-            retain(inputs.producing(id, table), receipts=True)
-        else:
-            raise ValueError('Native snapshot restoration needs a separately reviewed input budget')
-    for dimension in policy['dimensions']:
-        if dimension['kind'] != 'inherited':
-            continue
-        relation = dimension['parent']
-        # Match the child adapter's route. A current census schema says nothing
-        # about an exact recorded historical parent. The maintained reader owns
-        # schema admission when it actually restores that pinned input.
-        restore_parent = bool(policy.get('_nativeProcessing') or (
-            policy.get('_additionalNativeProcessing') and relation['mode'] == 'same-generation'))
-        if policy.get('_nativeProcessing') and relation['mode'] == 'same-generation':
-            owner = inputs.producing(id, table)
-            descriptors = owner['artifact']['spec'].get('etlReceipts', {}).get('policies', [])
-            if any(p.get('dataset') == relation['table'] and p.get('receipt_only') for p in descriptors):
-                # ProcessingInputs.parent restores receipt-only parents from the
-                # already-budgeted owner receipt; no public parent file exists.
-                continue
-        parent = inputs.parent(id, table, dimension['parent'])
-        parent_id = parent['tableId']
-        descriptor = parent['artifact']['spec'].get('etlReceipts', {}).get('policies', [])
-        has_receipts = any(p.get('dataset') == parent_id for p in descriptor)
-        if policy.get('_nativeProcessing') and parent_id not in builder.native.DATASETS:
-            restore_parent = False
-        retain(parent, receipts=restore_parent and has_receipts)
-    return list(required.values())
-
-
 def recover_release(run, inputs, captured):
     """Reconcile an acknowledged or interrupted completion without new scans."""
     directory = run / 'release'
@@ -240,7 +185,7 @@ def prepare(args):
     tables, captured = publication_snapshot(run)
     held_unchanged = set(getattr(args, 'hold_unchanged', ()))
     inputs = {'baseSha256': sha(base_bytes), 'censusDigest': census_digest(tables),
-              'maxRestorationBytes': args.max_restoration_bytes, 'reserveGiB': args.reserve_gib,
+              'reserveGiB': args.reserve_gib,
               'onlyTables': sorted(getattr(args, 'only', None) or []),
               'heldUnchangedTables': sorted(held_unchanged),
               'implementation': {str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in implementation_files(ROOT)}}
@@ -299,21 +244,7 @@ def prepare(args):
                 raise
             if hold_candidate and not reused:
                 raise HeldMeasurement('Publication unchanged; remeasurement intentionally held. Earlier qualified measurement retained.')
-            required = [] if reused else restoration_inputs(id, table, policy, policies, tables)
-            required_bytes = sum(m['byteSize'] for m in required)
-            if args.max_restoration_bytes is not None and required_bytes > args.max_restoration_bytes:
-                raise ValueError(f'Exact subject/receipt/parent inputs total {required_bytes} bytes; '
-                                 f'exceeds this run\'s {args.max_restoration_bytes}-byte restoration budget')
-            native = policy.get('_nativeProcessing') or policy.get('_additionalNativeProcessing')
-            if native and any(member['byteSize'] > 16 * 2**30 for member in required):
-                raise ValueError('An exact native subject/receipt exceeds the existing reader\'s 16 GiB member staging limit')
-            # Existing maintained bulk readers cap their spill at 32 GiB. Input
-            # staging and restored outputs need additional room; this is a
-            # conservative admission check, not a measured scratch prediction.
-            working_allowance = required_bytes * 2 + (32 * 2**30 if native else 0)
-            if required_bytes and shutil.disk_usage(run).free < args.reserve_gib * 2**30 + working_allowance:
-                raise ValueError('Insufficient space above reserve for selected restoration and working files')
-            print(f'{id}: ' + ('reuse' if reused else f'measure; planned restoration inputs {required_bytes} bytes'), flush=True)
+            print(f'{id}: ' + ('reuse' if reused else 'measure'), flush=True)
             original_measurement = old if reused else builder.timed_scan((id, table, policy, old))[1]
             measured, omissions = (accepted, omissions) if reused else eligible_month_summary(original_measurement, table, policy)
             if omissions:
@@ -328,7 +259,7 @@ def prepare(args):
             if (old or {}).get('measurementRevision') != builder.measurement_revision(policy):
                 changed_fields.append('measurementRevision')
             outcomes[id] = {'status': 'current', 'action': 'reused' if reused else 'measured',
-                            'changedBindings': changed_fields, 'restorationInputBytes': required_bytes,
+                            'changedBindings': changed_fields,
                             **({'summaryOmissions': omissions} if omissions else {}),
                             'elapsedSeconds': time.monotonic() - started}
         except HeldMeasurement as error:
@@ -348,8 +279,6 @@ def prepare(args):
     if captured != final_capture or inputs['implementation'] != {
             str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in implementation_files(ROOT)}:
         raise ValueError('Coverage preparation inputs changed during measurement')
-    builder.validate_native_implementations(effective)
-    builder.additional.validate_native_implementations(effective)
     revisions = {id: builder.measurement_revision(policy) for id, policy in effective.items()}
     if any(results[id]['measurementRevision'] != revisions[id] for id in results):
         raise ValueError('Coverage measurement revision changed')
@@ -384,11 +313,9 @@ def main():
     parser.add_argument('--reserve-gib', type=int, default=25)
     parser.add_argument('--hold-unchanged', nargs='*', default=list(HELD_UNCHANGED),
                         help='Retain these unchanged-publication measurements as earlier checks; changed publications still run')
-    parser.add_argument('--max-restoration-bytes', type=int,
-                        help='Optional per-table input budget; existing native staging and free-space guards always apply')
     args = parser.parse_args()
-    if args.reserve_gib < 25 or (args.max_restoration_bytes is not None and args.max_restoration_bytes < 0):
-        parser.error('Keep at least 25 GiB free and a nonnegative restoration budget')
+    if args.reserve_gib < 25:
+        parser.error('Keep at least 25 GiB free')
     args.run.mkdir(parents=True, exist_ok=True)
     with (args.run / 'prepare.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

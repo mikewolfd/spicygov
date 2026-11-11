@@ -45,7 +45,6 @@ def capture_load():
 def implementation_files(root):
     # Release admission is conservative; scanner/definition edits require refresh.
     return sorted({*root.glob('scripts/*coverage*.py'), root / 'scripts/publication_census.py',
-                   root / 'scripts/gao_receipt_policy.py',
                    *root.glob('content/coverage-definitions/*.json')})
 
 

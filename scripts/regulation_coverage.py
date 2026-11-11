@@ -1,4 +1,4 @@
-"""Reviewed regulatory coverage scans, with receipt-bound supplementary inputs.
+"""Reviewed regulatory coverage scans over published files and their exact parents.
 
 Stored source dates, report periods and publication scopes stay separate. This
 module never substitutes a latest parent for a missing retained input.
@@ -13,13 +13,21 @@ from pathlib import Path
 
 from coverage_dimensions import definition_digest, scan_dimension, day
 from publication_census import BASE, digest, path, size
-from native_receipt_coverage import fetch_member, selected_records
 
-ORIGIN_LABELS = {'gao_rss': 'GAO feed', 'upstream_copy': 'Upstream copy',
-                 'gao_listing': 'GAO listings', 'gao_r_package': 'R package import',
-                 'gao_repair': 'GAO repairs', 'govinfo': 'GovInfo archive',
-                 'gao_major_rule_listing': 'GAO major-rule listing',
-                 'gao_major_rule_index': 'GAO older major-rule index'}
+
+def fetch_member(inputs, key, member, directory):
+    """Download one bounded published member and check it against its SHA-256."""
+    if (member.get('role') != 'table' or not isinstance(member.get('recordCount'), int)
+            or isinstance(member['recordCount'], bool) or not 0 <= member['recordCount'] <= 500000
+            or not isinstance(member.get('byteSize'), int) or isinstance(member['byteSize'], bool)
+            or not 0 <= member['byteSize'] <= 128 * 2**20):
+        raise ValueError('Unbounded or invalid coverage member')
+    data = inputs.fetch(key + '/' + member['objectKey'])
+    if (not isinstance(data, bytes) or len(data) != member['byteSize']
+            or 'sha256:' + hashlib.sha256(data).hexdigest() != member.get('sha256')):
+        raise ValueError('Coverage member bytes differ from their SHA-256')
+    file = Path(directory) / member['objectKey']; file.write_bytes(data)
+    return file
 
 
 def source_instant(value):
@@ -29,56 +37,6 @@ def source_instant(value):
     try: result = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
     except ValueError as exc: raise ValueError('Invalid source observation timestamp') from exc
     return result.astimezone(datetime.timezone.utc)
-
-
-def native_receipt_scope(table_id, table, dim, inputs):
-    marker = dim['special']
-    if ((marker == 'government-receipt-observation-dates' and table_id != 'usaspending_recipients')
-            or (marker == 'government-receipt-origins' and table_id not in ('gao_reports', 'gao_decisions'))):
-        raise ValueError('Native receipt dimension is not reviewed for this table')
-    expected_fields = ['recipient_id'] if table_id == 'usaspending_recipients' else ['report_id'] if table_id == 'gao_reports' else ['decision_number', 'url']
-    expected_kind = 'date' if marker == 'government-receipt-observation-dates' else 'category'
-    if dim['fields'] != expected_fields or dim['kind'] != expected_kind:
-        raise ValueError('Native receipt axis has different kind or identity fields')
-    buckets, years, origins = {}, {}, {}; total = placed = missing = 0
-    publication = source_instant(table['publishedAt']) if marker == 'government-receipt-observation-dates' else None
-    with selected_records(table_id, table, inputs) as (records, evidence):
-        for row, raw, witnesses in records:
-            total += 1
-            if marker == 'government-receipt-observation-dates':
-                observed, capture = raw.get('observed_at'), raw.get('source_capture_sha256')
-                if observed is None and capture is None:
-                    missing += 1; continue
-                if not observed or not digest(capture): raise ValueError('Recipient observation date and capture witness disagree')
-                if not any(w['source_id'] == 'usaspending:ranking-page' and w['sha256'] == capture for w in witnesses):
-                    raise ValueError('Recipient observation lacks its ranking-page witness')
-                stamp = source_instant(observed)
-                if stamp > publication: raise ValueError('Recipient source observation is after publication')
-                key = f'{stamp.year:04d}-{stamp.month:02d}'
-                year = f'{stamp.year:04d}'; years[year] = years.get(year, 0) + 1
-            else:
-                origin = raw.get('source')
-                if origin is None or origin == '':
-                    missing += 1; continue
-                if origin not in ORIGIN_LABELS: raise ValueError('Unreviewed saved report origin: ' + str(origin))
-                origins[origin] = origins.get(origin, 0) + 1
-                key = json.dumps([origin])
-            placed += 1; buckets[key] = buckets.get(key, 0) + 1
-    if total != table['rows'] or placed + missing != total: raise ValueError('Native coverage root counts do not reconcile')
-    evidence['rawField'] = 'raw_record.observed_at' if publication else 'raw_record.source'
-    if origins: evidence['recordedOrigins'] = origins
-    result = {**{k: dim[k] for k in ('id', 'kind', 'label', 'meaning', 'fields')},
-              'status': 'measured', 'rows': total, 'placedRows': placed, 'unplacedRows': missing,
-              'buckets': dict(sorted(buckets.items())), 'overlapping': False,
-              'granularity': 'month' if publication else 'category',
-              'unit': 'recipients' if publication else 'report rows' if table_id == 'gao_reports' else 'decision rows',
-              'definitionDigest': definition_digest(dim), 'evidence': evidence}
-    if publication:
-        result['yearBuckets'] = dict(sorted(years.items()))
-        result['notes'] = ['Each saved amount keeps its last ranking-read date. These are not award dates or every earlier observation. Missing legacy dates remain unplaced.']
-    else:
-        result['notes'] = ['This origin can remain unchanged when later updates add fields from other sources. It does not identify every field’s source or a collection date.']
-    return result
 
 
 def readable_utc(stamp):
@@ -453,7 +411,9 @@ def scan_special(conn, table_id, table, dim, inputs):
     marker = dim.get('special')
     if marker == 'saved-text-availability': return saved_text_availability(conn, table_id, table, dim)
     if marker in ('government-receipt-observation-dates', 'government-receipt-origins'):
-        return native_receipt_scope(table_id, table, dim, inputs)
+        # These read per-row receipts, which are retired (ss-xuht); the table keeps
+        # its earlier map until a reviewed rule measures a public field instead.
+        raise ValueError('Receipt-based coverage dimension retired; waits for a reviewed public-field rule: ' + dim['id'])
     if marker == 'discovery-snapshot-facts':
         if table_id != 'discovery_signals': raise ValueError('Discovery snapshot marker is not supported for this table')
         return discovery_snapshot(table, dim, inputs)

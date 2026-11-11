@@ -35,21 +35,17 @@ def fixture():
 
 class CoverageGateTest(unittest.TestCase):
     def test_federal_register_coverage_reads_reviewed_published_date_fields(self):
-        from native_legislative_coverage import variant
         policy = builder.definitions()['federal_register']
         dates = {'publication_date', 'effective_on', 'comments_close_on', 'signing_date'}
         self.assertEqual({field for dim in policy['dimensions'] for field in dim['fields']}, dates)
-        self.assertTrue(all(dict(policy['publishedSchema'])[field] == 'VARCHAR' for field in dates))
-        table = {'family':'federal-register', 'kind':'generation', 'columns':policy['publishedSchema']}
-        resolved = variant('federal_register', table, policy)
-        self.assertEqual(resolved['schema'], policy['publishedSchema'])
-        self.assertNotIn('_nativeProcessing', resolved)
-        with mock.patch.object(builder.native, 'bridge', side_effect=AssertionError('Unexpected native reader')), \
-             mock.patch.object(builder.additional, 'bridge', side_effect=AssertionError('Unexpected private restoration')):
-            builder.warm_native_readers({'federal_register':table},{'federal_register':policy})
-            builder.validate_plan({'federal_register':table},{'federal_register':policy})
+        self.assertTrue(dates <= set(dict(policy['schema'])))
+        table = {'family':'federal-register', 'kind':'generation', 'columns':policy['schema']}
+        selected = {'federal_register': dict(policy)}
+        builder.validate_plan({'federal_register':table}, selected)
+        self.assertEqual(selected['federal_register']['schema'], policy['schema'])
         with self.assertRaisesRegex(ValueError, 'Published schema needs coverage review'):
-            variant('federal_register', {**table, 'columns':table['columns'][:-1]}, policy)
+            builder.validate_plan({'federal_register':{**table, 'columns':table['columns'][:-1]}},
+                                  {'federal_register':dict(policy)})
 
     def test_latest_day_uses_the_same_eligible_rows_as_month_buckets(self):
         from coverage_dimensions import scan_dimension
@@ -73,7 +69,7 @@ class CoverageGateTest(unittest.TestCase):
             table.update(artifactDigest='sha256:'+'a'*64,members=[{'key':'records.parquet','url':'https://invalid.test/records.parquet','sha256':digest,'rows':2,'byteSize':len(raw)}])
             before=copy.deepcopy(table)
             with mock.patch.dict('os.environ',{'SPICYGOV_NATIVE_COVERAGE_CACHE':str(root)}), mock.patch.object(coverage_scan,'_connect',return_value=conn):
-                result=coverage_scan._scan_published_table('records',table,policy)
+                result=coverage_scan.scan_table('records',table,policy)
                 self.assertEqual(result['fingerprint'],builder.binding(table,policy)['fingerprint'])
                 self.assertEqual(result['dimensions'][0]['buckets'],{'2024-01':1})
                 self.assertEqual(result['dimensions'][0]['unplacedRows'],1)
@@ -142,8 +138,6 @@ class CoverageGateTest(unittest.TestCase):
                      mock.patch.object(builder,'definitions',return_value={'records':policy}), \
                      mock.patch.object(builder,'measurement_revision',return_value='fixed'), \
                      mock.patch.object(builder,'timed_scan',side_effect=ValueError('scan refused') if failure=='scan' else None,return_value=('records',result)), \
-                     mock.patch.object(builder,'validate_native_implementations'), \
-                     mock.patch.object(builder.additional,'validate_native_implementations'), \
                      mock.patch.object(builder.subprocess,'run'), \
                      mock.patch.object(coverage_release,'capture_load',side_effect=captures), \
                      mock.patch.object(coverage_release,'complete',return_value={'manifestSha256':'fixture'}) as complete:
@@ -343,53 +337,14 @@ class CoverageGateTest(unittest.TestCase):
             self.assertEqual(len(set(directories)), 2)
             self.assertTrue(all(not directory.exists() for directory in directories))
 
-    def test_heavy_native_readers_queue_without_blocking_cached_results(self):
-        for second_id in ('court_opinions', 'fr_docket_links', 'comment_periods', 'rule_targets'):
-            with self.subTest(second_id=second_id):
-                started, release, second_started = (threading.Event() for _ in range(3))
-                def reader(**options):
-                    id = json.loads(options['input'])['id']
-                    if id == 'federal_register':
-                        started.set()
-                        self.assertTrue(release.wait(timeout=5))
-                    else:
-                        second_started.set()
-                    return mock.Mock(stdout=json.dumps({'reader': id}), stderr='')
-                policy = {'_additionalNativeProcessing': True}
-                with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old == 'cached'), \
-                     mock.patch.object(builder, '_scan_process', side_effect=reader), \
-                     concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                    first = pool.submit(builder.timed_scan, ('federal_register', {}, policy, None))
-                    try:
-                        self.assertTrue(started.wait(timeout=5))
-                        second = pool.submit(builder.timed_scan, (second_id, {}, policy, None))
-                        self.assertFalse(second_started.wait(timeout=0.1))
-                        self.assertEqual(builder.timed_scan(('documents', {}, policy, 'cached')), ('documents', 'cached'))
-                        self.assertEqual(builder.timed_scan(('court_opinions', {}, policy, 'cached')), ('court_opinions', 'cached'))
-                    finally:
-                        release.set()
-                    self.assertEqual(first.result()[0], 'federal_register')
-                    self.assertEqual(second.result()[0], second_id)
-                    self.assertTrue(second_started.is_set())
-
-    def test_court_outer_allowance_is_limited_to_native_restoration(self):
-        cases = (
-            ('court_opinions', {'_additionalNativeProcessing': True}, 2700),
-            ('court_opinions', {}, 900),
-            ('court_dockets', {'_additionalNativeProcessing': True}, 900),
-            ('documents', {'_additionalNativeProcessing': True}, 1500),
-            ('federal_register', {'_additionalNativeProcessing': True}, 1500),
-            ('fr_docket_links', {'_additionalNativeProcessing': True}, 1500),
-            ('comment_periods', {'_additionalNativeProcessing': True}, 1500),
-            ('documents', {}, 900),
-            ('comments', {}, 7200),
-            ('fec_receipts', {}, 3600),
-        )
-        for id, policy, expected in cases:
-            with self.subTest(id=id, policy=policy), \
+    def test_large_published_tables_have_their_own_finite_allowance(self):
+        cases = (('court_opinions', 2700), ('documents', 1500), ('federal_register', 1500),
+                 ('comments', 7200), ('fec_receipts', 3600), ('court_dockets', 900), ('records', 900))
+        for id, expected in cases:
+            with self.subTest(id=id), \
                  mock.patch.object(builder, 'cached', return_value=False), \
                  mock.patch.object(builder, '_scan_process', return_value=mock.Mock(stdout='{}', stderr='')) as run:
-                self.assertEqual(builder.timed_scan((id, {}, policy, None)), (id, {}))
+                self.assertEqual(builder.timed_scan((id, {}, {}, None)), (id, {}))
                 self.assertEqual(run.call_args.kwargs['timeout'], expected)
 
     def test_clock_dependent_counts_expire_even_without_future_anomalies(self):
@@ -403,26 +358,12 @@ class CoverageGateTest(unittest.TestCase):
             self.assertTrue(builder.cached(table, policy, original))
             self.assertFalse(builder.cached({**table, '_coverageAsOfMonth': '2026-11'}, policy, original))
 
-    def test_scan_children_reuse_the_descriptions_the_build_made_once(self):
-        legislative, additional = {'bill_versions': {'implementationSha256': 'a'}}, {'documents': {'implementationSha256': 'b'}}
-        with mock.patch.dict(builder.native.SCHEMAS, legislative, clear=True), \
-             mock.patch.dict(builder.additional.SCHEMAS, additional, clear=True), \
-             mock.patch.object(builder, 'cached', return_value=False), \
+    def test_scan_child_receives_only_the_table_and_its_reviewed_policy(self):
+        with mock.patch.object(builder, 'cached', return_value=False), \
              mock.patch.object(builder, '_scan_process', return_value=mock.Mock(stdout='{}', stderr='')) as run:
-            builder.timed_scan(('records', {}, {}, None))
-        sent = json.loads(run.call_args.kwargs['input'])
-        self.assertEqual(sent['descriptions'], {'legislative': legislative, 'additional': additional})
-        # The child seeds both caches before it scans, and a direct probe may omit them.
-        seen = {}
-        def scan(id, table, policy):
-            seen.update(legislative=dict(builder.native.SCHEMAS), additional=dict(builder.additional.SCHEMAS))
-            return {'id': id}
-        for request, expected in ((sent, (legislative, additional)), ({k: v for k, v in sent.items() if k != 'descriptions'}, ({}, {}))):
-            with mock.patch.dict(builder.native.SCHEMAS, clear=True), mock.patch.dict(builder.additional.SCHEMAS, clear=True), \
-                 mock.patch.object(sys, 'argv', ['builder', '--scan']), mock.patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
-                 mock.patch.object(builder, 'scan_table', side_effect=scan), contextlib.redirect_stdout(io.StringIO()):
-                builder.main()
-            self.assertEqual((seen['legislative'], seen['additional']), expected)
+            builder.timed_scan(('records', {'rows': 1}, {'schema': []}, None))
+        self.assertEqual(json.loads(run.call_args.kwargs['input']),
+                         {'id': 'records', 'table': {'rows': 1}, 'policy': {'schema': []}})
 
     def test_timed_out_reader_cleans_up_its_private_spill_directory(self):
         directories = []
@@ -441,43 +382,7 @@ class CoverageGateTest(unittest.TestCase):
 
 
 
-class CourtFamilyJobsTests(unittest.TestCase):
-    def items(self):
-        return [(name, {'family': 'court-citations', 'artifactDigest': 'same'},
-                 {'_additionalNativeProcessing': True}, None)
-                for name in builder.additional.COURT_CITATION_DATASETS]
-
-    def test_only_complete_uncached_same_generation_family_is_grouped(self):
-        items = self.items()
-        with mock.patch.object(builder, 'cached', side_effect=lambda table, policy, old: old is not None):
-            self.assertEqual(builder.scan_jobs(items), [items])
-            for changed in (items[:-1], [(*items[0][:3], {'saved': True}), *items[1:]],
-                            [(items[0][0], {**items[0][1], 'artifactDigest': 'other'}, *items[0][2:]), *items[1:]],
-                            [(items[0][0], items[0][1], {}, None), *items[1:]]):
-                with self.subTest(changed=changed):
-                    self.assertTrue(all(len(job) == 1 for job in builder.scan_jobs(changed)))
-            cluster = ('court_opinion_clusters', {'family': 'court-opinion-clusters'}, {}, None)
-            self.assertEqual(builder.scan_jobs([*items, cluster]), [items, [cluster]])
-            cached_item = (*items[0][:3], {'saved': True})
-            with mock.patch.object(builder, '_scan_process', side_effect=AssertionError('cached peer reread')):
-                self.assertEqual(builder.timed_job([cached_item]), {items[0][0]: {'saved': True}})
-
-    def test_group_uses_finite_sum_allowance_and_removes_owned_scratch_on_timeout(self):
-        items, directories = self.items(), []
-
-        def run(**options):
-            self.assertEqual(options['timeout'], 27000)
-            self.assertEqual(json.loads(options['input'])['tables'], [list(item[:3]) for item in items])
-            directory = pathlib.Path(options['cwd'])
-            directories.append(directory)
-            (directory / 'partial').write_bytes(b'private')
-            raise builder.subprocess.TimeoutExpired(['scan'], options['timeout'])
-
-        with mock.patch.object(builder, '_scan_process', side_effect=run):
-            with self.assertRaisesRegex(ValueError, 'time limit'):
-                builder.timed_job(items)
-        self.assertTrue(all(not path.exists() for path in directories))
-
+class ScanOwnerTests(unittest.TestCase):
     def test_actual_scan_owner_bounds_nested_processes_and_private_temp(self):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)
@@ -517,10 +422,10 @@ class CourtFamilyJobsTests(unittest.TestCase):
                         with mock.patch.object(builder, '__file__', str(helper)):
                             if mode == 'success':
                                 self.assertEqual(builder._run_scan(
-                                    request, timeout_seconds=2, serial=False, label='tiny'), {'done': True})
+                                    request, timeout_seconds=2, label='tiny'), {'done': True})
                             else:
                                 with self.assertRaisesRegex(ValueError, 'source refused|time limit') as refused:
-                                    builder._run_scan(request, timeout_seconds=2, serial=False, label='tiny')
+                                    builder._run_scan(request, timeout_seconds=2, label='tiny')
                                 self.assertIn('source refused' if mode == 'failure' else 'nested reader diagnostic',
                                               refused.exception.__cause__.stderr)
                                 if mode == 'failure':
@@ -547,27 +452,6 @@ class CourtFamilyJobsTests(unittest.TestCase):
                                 os.killpg(json.loads(state_path.read_text())['group'], signal.SIGKILL)
                             except ProcessLookupError:
                                 pass
-
-    def test_missing_group_result_and_failed_group_do_not_return_partial_success(self):
-        with mock.patch.object(builder, '_run_scan', return_value={self.items()[0][0]: {}}):
-            with self.assertRaisesRegex(ValueError, 'omitted'):
-                builder.timed_job(self.items())
-        with mock.patch.object(builder, '_run_scan', side_effect=ValueError('last table failed')):
-            with self.assertRaisesRegex(ValueError, 'last table failed'):
-                builder.timed_job(self.items())
-
-    def test_child_dispatches_family_with_normal_member_and_count_checks(self):
-        request = {'tables': [item[:3] for item in self.items()], 'descriptions': {}}
-        expected = {item[0]: {'status': 'measured'} for item in self.items()}
-        with (mock.patch.object(sys, 'argv', ['builder', '--scan']),
-              mock.patch.object(sys, 'stdin', io.StringIO(json.dumps(request))),
-              mock.patch.object(builder.additional, 'scan_court_family', return_value=expected) as scan,
-              contextlib.redirect_stdout(io.StringIO()) as stdout):
-            builder.main()
-        self.assertEqual(json.loads(stdout.getvalue()), expected)
-        self.assertEqual(scan.call_args.args[0], json.loads(json.dumps(request['tables'])))
-        self.assertIs(scan.call_args.kwargs['validate_members'], builder.validate_members)
-        self.assertIs(scan.call_args.kwargs['validate_counts'], builder.validate_counts)
 
 
 if __name__ == '__main__':

@@ -36,27 +36,17 @@ class Conditions(unittest.TestCase):
         for operation in ('upload_only','deploy_forward','restore_prior'):self.assertIn(operation,retained)
         self.assertIn('preflight --binding',retained)
 
-    def test_coverage_data_release_selects_exactly_one_reviewed_backend(self):
+    def test_coverage_data_release_reads_only_published_files(self):
         refresh=(ROOT/'.github/workflows/coverage-data-release.yml').read_text()
-        self.assertEqual(refresh.count('repository: mikewolfd/spicy-regs'),1)
-        self.assertRegex(refresh,r'repository: mikewolfd/spicy-regs\n\s+ref: \$\{\{ inputs\.backend_revision \}\}\n')
-        declared=refresh.split('      backend_revision:\n',1)[1].split('\npermissions:',1)[0]
-        self.assertIn('required: true',declared);self.assertIn('type: string',declared)
-        self.assertIsNone(re.search(r'\b[0-9a-f]{40}\b',refresh))
+        # Coverage is measured from the public files alone: no backend checkout, reader or receipts.
+        self.assertNotIn('mikewolfd/spicy-regs',refresh)
+        self.assertNotIn('SPICYGOV_',refresh)
+        self.assertNotIn('backend_revision',refresh)
         self.assertNotIn('catalog-producer',refresh)
         self.assertEqual(refresh.count('actions/setup-python@v5'),1)
-        self.assertLess(refresh.index('actions/setup-python@v5'),refresh.index('Require an exact maintained backend revision'))
-        self.assertEqual(set(re.findall(r'SPICYGOV_[A-Z_]+',refresh)),{'SPICYGOV_COVERAGE_PYTHON'})
         self.assertIn('run: python scripts/build-coverage-maps.py --release-output',refresh)
         self.assertIn('run: pip install duckdb==1.4.4 pyarrow==21.0.0 fsspec==2026.9.0 aiohttp==3.11.14',refresh)
-        readers=['additional_native_coverage','court_extraction_coverage','bulk_court_coverage','source_navigation_coverage',
-                 'small_native_coverage','bulk_native_coverage','regulatory_native_coverage','rulemaking_native_coverage',
-                 'regulatory_coverage_restore','vote_coverage_receipt_scope']
-        self.assertEqual(re.findall(r'\$SPICYGOV_COVERAGE_PYTHON (tests/\w+\.py)',refresh),['tests/test_%s.py'%name for name in readers])
-        guard=re.search(r'^\s+run: python -c "(.*)"$',refresh,re.M).group(1)
-        for revision,accepted in (('a'*40,True),('main',False),('a'*39,False),('A'*40,False)):
-            result=subprocess.run([sys.executable,'-c',guard],env={'BACKEND_REVISION':revision},capture_output=True)
-            self.assertEqual(result.returncode==0,accepted,revision)
+        self.assertIsNone(re.search(r'\b[0-9a-f]{40}\b',refresh))
         for name in ('deploy-pages.yml','ci.yml'):
             workflow=(ROOT/'.github/workflows'/name).read_text()
             self.assertNotIn('mikewolfd/spicy-regs',workflow);self.assertNotIn('SPICYGOV_',workflow)

@@ -22,5 +22,14 @@ jobs:
           python -B tests/test_catalog_resume.py
           python -B tests/test_coverage_release.py
           python -B tests/test_release_workflows.py
+      - name: Check coverage gate and published-file scanner
+        run: |
+          # The scanner loads DuckDB's httpfs extension, as the builder installs it before scanning.
+          python -c "import duckdb; duckdb.connect().execute('INSTALL httpfs')"
+          python -B tests/test_coverage_gate.py
+          python -B tests/test_coverage_scan_identity.py
+          python -B tests/test_coverage_dimensions.py
+          python -B tests/test_published_period_coverage.py
+          python -B tests/test_prepare_coverage_refresh.py
       - run: npm test
       - run: npm run build
