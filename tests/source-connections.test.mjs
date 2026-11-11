@@ -85,20 +85,9 @@ test('array recipes stay alongside scalar references without changing their comp
   assert.doesNotMatch(html,/disabled=""/);
 });
 
-test('retained source details are offered only for tables whose receipts hold unpublished fields',()=>{
+test('a row of a table with receipts offers no receipt lookup (retired 2026-11-10)',()=>{
   const receipts={url:'https://data.spicygov.ai/generations/bill-family/g/etl_receipts.parquet',generationId:'g',rows:1000,bytes:450_000_000,sha256:'sha256:'+'b'.repeat(64)};
   const cols=names=>names.map(name=>({name,type:'VARCHAR',description:''}));
-  const bills={...table('congress_bills','Bills'),columns:cols(['bill_id','title']),receiptIdentity:['bill_id'],receiptContainers:{source_fields:['bill_id','title','url']},publication:{kind:'generation',recordUrl:'x',nativeReceipts:receipts}};
-  const row={bill_id:'119-hr-1',title:'A bill'};
-  // No connections at all: the details section still renders for the receipt-only `url`.
-  const html=render(bills,[],row);
-  assert.match(html,/Read retained source details<small>Url<\/small>/);
-  assert.match(html,/by its exact identity and publication generation, reading only the parts of the receipt file that can hold it: usually 1–2 MB, never more than 450 MB/);
-  assert.doesNotMatch(html,/disabled=""/);
-  assert.equal(render({...bills,columns:cols(['bill_id','title','url'])},[],row),'');
-  assert.equal(render({...bills,publication:undefined},[],row),'');
-  // Size no longer refuses before reading: a lookup by identity reads pages, whatever the file's size.
-  const large=render({...bills,publication:{...bills.publication,nativeReceipts:{...receipts,rows:30_000_000}}},[],row);
-  assert.doesNotMatch(large,/disabled=""/);
-  assert.doesNotMatch(large,/key index|tens of megabytes/);
+  const bills={...table('congress_bills','Bills'),columns:cols(['bill_id','title']),publication:{kind:'generation',recordUrl:'x',nativeReceipts:receipts}};
+  assert.equal(render(bills,[],{bill_id:'119-hr-1',title:'A bill'}),'');
 });

@@ -1,5 +1,4 @@
 import { decodeCatalogFileShard } from './catalog-parquet';
-import { receiptFields, readSourceEvidence } from "./receipt-reader";
 import { readPage } from "./reader";
 import {locateRecord} from './record-lookup';
 self.onmessage = async (event) => {
@@ -11,14 +10,6 @@ self.onmessage = async (event) => {
     if(event.data.type==='lookup') {
       const result=await locateRecord(event.data.table,event.data.filters,event.data.cursor,event.data.positions,(scanned)=>self.postMessage({type:'progress',scanned}));
       self.postMessage({type:'lookup',...result});return;
-    }
-    if (event.data.type === "source-evidence") {
-      const result = await readSourceEvidence(event.data.table,event.data.dataset,event.data.filters,(scanned)=>self.postMessage({type:"progress",scanned}),event.data.cursor);
-      self.postMessage({type:"source-evidence",...result,dataset:event.data.dataset,filters:event.data.filters}); return;
-    }
-    if (event.data.type === "receipt") {
-      const fields = await receiptFields(event.data.table,event.data.row,event.data.fields,(progress)=>self.postMessage({type:"progress",...progress}));
-      self.postMessage({type:"receipt",fields}); return;
     }
     const result = await readPage(event.data, (scanned) =>
       self.postMessage({ type: "progress", scanned }),
