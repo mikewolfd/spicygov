@@ -31,7 +31,10 @@ jobs:
           python -B tests/test_catalog_resume.py
           python -B tests/test_coverage_release.py
           python -B tests/test_release_workflows.py
-      # Coverage reads only the published files; no spicy-regs environment is needed.
+      # Not a release route today: a full build refuses while tables wait for public fields or
+      # definitions, the two hearing-identity tests in test_congress_coverage_maps need a
+      # spicy-regs environment (rulespec_artifacts), and test_regulation_coverage_maps fails on
+      # main. See docs/release-runbook.md; releases come from prepare-coverage-refresh.py.
       - run: python tests/test_time_coverage.py
       - run: python tests/test_collection_coverage.py
       - run: python tests/test_publication_census.py

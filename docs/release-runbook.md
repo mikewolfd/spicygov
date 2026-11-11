@@ -52,8 +52,11 @@ marks retained coverage as previous or unavailable. A successful offline build
 proves agreement with the retained selection, not currentness of live sources.
 
 Create coverage data from a reviewed SpicyGov checkout and record its exact
-revision. Coverage reads only the published files; it needs no spicy-regs
-environment and no receipts. Keep the checkout unchanged through completion.
+revision. Tables are measured from the published files, not from receipts. One
+path still needs a spicy-regs environment: the hearing-identity check in
+`scripts/congress_coverage.py` imports `rulespec_artifacts` through
+`SPICYGOV_COVERAGE_PYTHON`, and only the waiting `hearing_transcripts` table
+reaches it. Keep the checkout unchanged through completion.
 
 Use an existing builder environment with the dependencies pinned in
 `.github/workflows/coverage-data-release.yml` (duckdb, pyarrow, fsspec, aiohttp),
@@ -104,9 +107,17 @@ A full release requires every published table to pass its reviewed definition
 against the schema it publishes. Since 2026-11-11 no table is restored from
 receipts. Tables whose reviewed fields their family does not publish yet, tables
 whose rules read receipts (`government-receipt-*` dimensions) and tables without a
-definition fail that check. Until those are resolved, produce coverage with the
-refresh preparation below (`prepare-coverage-refresh.py`); it keeps each failed
-table's earlier map, labelled, and never shows it as current.
+definition fail that check, so the hosted **Prepare coverage data release**
+workflow, which runs a full build, is not a release route today. Its two
+hearing-identity tests in `tests/test_congress_coverage_maps.py` also need that
+spicy-regs environment, and `tests/test_regulation_coverage_maps.py` already fails
+on `main` (`ofac_snapshots` counts a capture time). Until those are resolved,
+produce coverage with the refresh preparation below (`prepare-coverage-refresh.py`).
+A table it selects and cannot measure keeps its earlier map, labelled "Earlier
+measurement". With `--only`, an unselected table keeps its base measurement and
+state: if its publication is unchanged it still shows as current, measured by
+the scanner code that measured the base release, which may be older than the
+checkout's. Select every such table to make every current map the checkout's.
 
 The release may take several attempts. Each run checkpoints every table it completes
 under the selected checkout's `.cache/coverage-maps` directory.
