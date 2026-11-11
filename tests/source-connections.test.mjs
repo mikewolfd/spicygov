@@ -32,7 +32,7 @@ test('GAO recommendations appear once in the open incoming-record group',()=>{
 });
 
 test('all bundled scalar declarations keep complete reverse keys, including composite joins',()=>{
-  const registry=JSON.parse(readFileSync(new URL('../lib/data/table_joins.json',import.meta.url),'utf8'));
+  const registry=JSON.parse(readFileSync(new URL('./fixtures/table_joins.json',import.meta.url),'utf8'));
   assert.ok(registry.joins.some(join=>join.child==='gao_recommendations'));
   assert.ok(registry.joins.some(join=>join.parent_columns.length>1));
   for(const join of registry.joins) {
