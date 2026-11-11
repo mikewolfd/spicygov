@@ -8,9 +8,15 @@ A deployable build needs two reviewed inputs: a coverage selection
 (`content/coverage-release-selection.v1.json`) whose release directory is in the
 checkout, and the source catalog at `public/source-catalog`. The ordinary
 **Deploy SpicyGov** run (`build_only=false`, `source_catalog=false`) stages
-neither, so it refuses (run 42626631325, 2026-11-09). The live site since
-2026-11-05 is a locally built candidate, with a refresh coverage release and
-the bundled catalog, deployed through **Retained T01 Pages artifact**.
+neither. Run 42626631325 (2026-11-09) refused at the missing selection; with a
+selection it would refuse at the missing catalog (`scripts/build-ui.mjs`). The
+live site since 2026-11-05 is a locally built candidate, with a refresh coverage
+release and the bundled catalog, deployed through **Retained T01 Pages
+artifact**. That route needs a new reviewed binding for every release: new prior
+and forward containers and member maps uploaded to `data.spicygov.ai`, a fresh
+`expires_at` and an updated `expected_current` in
+`.github/pages-retained-binding.json` (the committed one expired 2026-11-06);
+see "Catalog proposal and exact retained releases" below.
 
 ## UI builds and coverage data
 
@@ -29,12 +35,15 @@ The selection has the format shown in
 `content/coverage-release-selection.v1.example.json`. Review and supply the
 release directory and exact manifest SHA-256; never use a mutable latest pointer.
 For CI, commit the selected release directory outside the ignored `.cache/` (for
-example `content/coverage-release`) and select it with
+example a new `content/coverage-release`; a release may be up to 64 MiB) and
+select it with
 `content/coverage-release-selection.v1.json`. Missing selection, changed bytes,
 policy/schema/scanner changes, incomplete membership and expired measurement
-months fail the strict build. The release binds every `scripts/*coverage*.py`
-file and coverage definition, so editing any of them, even one no selected table
-uses, requires a new release. There is no source-restoration fallback.
+months fail the strict build. The release binds every file that
+`implementation_files()` in `scripts/coverage_release.py` lists (each
+`scripts/*coverage*.py`, `scripts/publication_census.py`,
+`scripts/gao_receipt_policy.py` and the coverage definitions), so editing any of
+them, even one no selected table uses, requires a new release. There is no source-restoration fallback.
 
 The independent consumer checks all retained members, effective policies,
 measurement revisions and the actual Sources parsers against captured publication
