@@ -1,10 +1,22 @@
 # Build, review and release SpicyGov
 
 Pushes to `main` and scheduled runs build and retain a Pages artifact. They do
-not deploy. The ordinary deployment route is a manual **Deploy SpicyGov** run
-with `build_only=false` and `source_catalog=false`. It requires an independently
-selected completed coverage release. The default local `npm run build` remains
-usable offline and explicitly serves coverage as unavailable.
+not deploy. The default local `npm run build` remains usable offline and
+explicitly serves coverage as unavailable.
+
+A deployable build needs two reviewed inputs: a coverage selection
+(`content/coverage-release-selection.v1.json`) whose release directory is in the
+checkout, and the source catalog at `public/source-catalog`. The ordinary
+**Deploy SpicyGov** run (`build_only=false`, `source_catalog=false`) stages
+neither. Run 42626631325 (2026-11-09) refused at the missing selection; with a
+selection it would refuse at the missing catalog (`scripts/build-ui.mjs`). The
+live site since 2026-11-05 is a locally built candidate, with a refresh coverage
+release and the bundled catalog, deployed through **Retained T01 Pages
+artifact**. That route needs a new reviewed binding for every release: new prior
+and forward containers and member maps uploaded to `data.spicygov.ai`, a fresh
+`expires_at` and an updated `expected_current` in
+`.github/pages-retained-binding.json` (the committed one expired 2026-11-06);
+see "Catalog proposal and exact retained releases" below.
 
 ## UI builds and coverage data
 
@@ -22,10 +34,16 @@ replace the bundled selection. Check the production preview before packaging.
 The selection has the format shown in
 `content/coverage-release-selection.v1.example.json`. Review and supply the
 release directory and exact manifest SHA-256; never use a mutable latest pointer.
-For CI, retain the selected release directory in the checkout and select it with
+For CI, commit the selected release directory outside the ignored `.cache/` (for
+example a new `content/coverage-release`; a release may be up to 64 MiB) and
+select it with
 `content/coverage-release-selection.v1.json`. Missing selection, changed bytes,
 policy/schema/scanner changes, incomplete membership and expired measurement
-months fail the strict build. There is no source-restoration fallback.
+months fail the strict build. The release binds every file that
+`implementation_files()` in `scripts/coverage_release.py` lists (each
+`scripts/*coverage*.py`, `scripts/publication_census.py`,
+`scripts/gao_receipt_policy.py` and the coverage definitions), so editing any of
+them, even one no selected table uses, requires a new release. There is no source-restoration fallback.
 
 The independent consumer checks all retained members, effective policies,
 measurement revisions and the actual Sources parsers against captured publication
@@ -96,11 +114,14 @@ earlier policy version.
 
 The checked-in `public/coverage-maps.v1.json`, the pre-2026-10-17 `.cache/coverage-maps`
 checkpoints and the archived fixture releases are retained evidence. They carry measurement
-revisions the current code does not issue, so the first coverage data release measures every
-published table again.
+revisions the current code does not issue.
 
-That includes the 73 tables whose generations have not changed since 2026-10-05: the owner
-chose a rescan over a one-time compatibility re-bind.
+A full release requires every published table to pass its reviewed definition. On
+2026-11-11, 53 of 219 did not: 34 restore through spicygov adapters that import
+spicy-regs receipt helpers since deleted, 9 changed published schema as their
+families dropped receipts, and 10 have no definition. Until those are resolved,
+produce coverage with the refresh preparation below (`prepare-coverage-refresh.py`);
+it keeps each failed table's earlier map, labelled, and never shows it as current.
 
 The release may take several attempts. Each run checkpoints every table it completes
 under the selected checkout's `.cache/coverage-maps` directory.
