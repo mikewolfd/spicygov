@@ -51,9 +51,7 @@ export type TableMetadata = {
   metadataStatus: 'documented' | 'unknown';
   sourceStatus: 'documented' | 'unknown';
   joinAudit?: { status: string; reason: string };
-  receiptIdentity?: string[];
   recordIdentity?: RecordIdentity;
-  receiptContainers?: Record<string, string[]>;
 };
 export type PublicationDescriptor = {
   kind: 'rulemaking' | 'comments'; family: string;
@@ -97,8 +95,6 @@ function parseTable(value: unknown): TableMetadata | undefined {
   const columns = Array.isArray(value.columns) ? value.columns.filter(isObject).filter(c => typeof c.column_name === 'string' && typeof c.description === 'string').map(c => ({ column_name: c.column_name as string, description: c.description as string })) : [];
   return {
     recordIdentity: isObject(value.recordIdentity) && value.recordIdentity.basis === 'declared_main_key' && value.recordIdentity.uniqueness === 'unknown' && Array.isArray(value.recordIdentity.columns) && value.recordIdentity.columns.length > 0 && value.recordIdentity.columns.every(v=>typeof v==='string' && (value.publicationSchema as unknown[]).some(c=>Array.isArray(c)&&c[0]===v)) ? value.recordIdentity as RecordIdentity : undefined,
-    receiptIdentity: Array.isArray(value.receiptIdentity) ? value.receiptIdentity.filter((v): v is string => typeof v === "string") : [],
-    receiptContainers: isObject(value.receiptContainers) ? Object.fromEntries(Object.entries(value.receiptContainers).filter((p): p is [string, string[]] => Array.isArray(p[1]) && p[1].every(v => typeof v === "string"))) : {},
     family: value.family, publicationSchema: value.publicationSchema as [string, string][],
     publicationIdentity: text(value.publicationIdentity),
     label: text(value.label), summary: text(value.summary), coverage: text(value.coverage), kind: text(value.kind), category: text(value.category), row_unit: text(value.row_unit), grain: text(value.grain), data_quality: text(value.data_quality), columns,

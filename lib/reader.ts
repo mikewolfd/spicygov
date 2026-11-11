@@ -2,7 +2,7 @@ import {fecReadColumns, enrichFecRows} from './fec-compatibility';
 import { matchesConnection, navigationColumns, validConnection, type Connection, type Navigation } from './navigation';
 import { matchesFilters, parquetFilter, validFilter } from './filter-values';
 import { exactParsers } from './exact-parquet';
-import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, parquetScan, rowIndex, type AsyncBuffer, type FileMetaData } from "hyparquet";
+import { asyncBufferFromUrl, parquetMetadataAsync, parquetReadObjects, parquetScan, rowIndex } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 import type { Dataset, Filter, Row } from "./catalog";
 import { compareEntries, retainEntry, sortValue, type RecordSort, type SortEntry } from "./record-sort";
@@ -18,8 +18,6 @@ export type ReadRequest = {
   sort?: RecordSort;
   connection?: Connection;
   navigation?: Navigation;
-  /** A member already opened by {@link openMember}: its footer and byte ranges are reused, not fetched again. */
-  opened?: OpenMember;
 };
 export type ReadResult = { rows: Row[]; positions: number[]; cursor: number; done: boolean };
 
@@ -89,16 +87,6 @@ async function remoteFile(member: Dataset['members'][number]) {
     },
   };
 }
-
-export type OpenMember = { url: string; byteSize: number; file: AsyncBuffer; metadata: FileMetaData };
-/** One member's version-checked remote file and parsed footer. Pass it as `opened` to read the member again
- * without fetching its footer again: an old-layout receipt footer is ~30 MB. */
-export async function openMember(member: Dataset['members'][number]): Promise<OpenMember> {
-  const file = await remoteFile(member);
-  return { url: member.url, byteSize: member.byteSize, file, metadata: await parquetMetadataAsync(file, {parsers:exactParsers}) };
-}
-const reopen = (member: Dataset['members'][number], opened?: OpenMember) =>
-  opened && opened.url === member.url && opened.byteSize === member.byteSize ? opened : openMember(member);
 
 /** Renew the complete population, including members absent from a cached page. */
 export async function renewTableVersion(table: Dataset): Promise<void> {
@@ -218,7 +206,7 @@ async function readSortedPage(request: ReadRequest & { sort: RecordSort; limit: 
   return { rows: heap.map(entry => records.get(entry.position)!), positions: heap.map(entry => entry.position), cursor: heap.length ? heap.at(-1)!.position + 1 : cursor, done: remaining <= limit };
 }
 export async function readPage(
-  { table, columns, filters, cursor, limit = 40, sort, connection, navigation, opened, maxScanRows = connection ? 250000 : undefined }: ReadRequest,
+  { table, columns, filters, cursor, limit = 40, sort, connection, navigation, maxScanRows = connection ? 250000 : undefined }: ReadRequest,
   onProgress: (n: number) => void = () => {},
 ): Promise<ReadResult> {
   if (table.recordsAvailable === false) throw new Error('Records are paused until the physical fields match this data release. Reload the catalog to try again.');
@@ -254,12 +242,13 @@ export async function readPage(
   const readColumns = fecReadColumns(table,[...new Set([...columns, ...filters.map(f=>f.column), ...connectionColumns])]);
   const planCandidates = filter && maxScanRows !== undefined;
   scan: for (const member of table.members) {
-    if(!member.rows){const {metadata}=await reopen(member,opened);if(Number(metadata.num_rows)!==0)throw new Error('The Parquet footer differs from the published row count.');continue;}
+    if(!member.rows){const file=await remoteFile(member);const metadata=await parquetMetadataAsync(file,{parsers:exactParsers});if(Number(metadata.num_rows)!==0)throw new Error('The Parquet footer differs from the published row count.');continue;}
     if (offset + member.rows <= position) {
       offset += member.rows;
       continue;
     }
-    const { file, metadata } = await reopen(member, opened);
+    const file = await remoteFile(member);
+    const metadata = await parquetMetadataAsync(file, {parsers:exactParsers});
     if(Number(metadata.num_rows)!==member.rows)throw new Error('The Parquet footer differs from the published row count.');
     const start = Math.max(0, position - offset);
     // Footer-only planning uses the reader's existing conservative pruning.

@@ -25,8 +25,8 @@ try {
   assert.ok([...duplicates.positions.values()].some(p=>p.length===2));
   assert.equal(await recordKeyCache({...bills,rows:500001,members:[{...member(3,500001)}]}),undefined);
  });
- await test('complete identity is a declared main key, never receipt identity or a scope',async()=>{
-  assert.equal(completeIdentity({...table,recordIdentity:undefined,receiptIdentity:['id']},[{column:'id',value:'10'}]),false);
+ await test('complete identity is a declared main key, never a scope',async()=>{
+  assert.equal(completeIdentity({...table,recordIdentity:undefined},[{column:'id',value:'10'}]),false);
   assert.equal(completeIdentity(table,[{column:'group',value:'x'}]),false);
   assert.equal(completeIdentity(table,[{column:'id',value:'10',values:['10','11']}]),false);
   assert.equal(completeIdentity({...table,recordIdentity:{columns:['id','id']}},[{column:'id',value:'1'},{column:'group',value:'a'}]),false);
