@@ -3626,6 +3626,10 @@
         [
           "registrant_different_address",
           "BOOLEAN"
+        ],
+        [
+          "url",
+          "VARCHAR"
         ]
       ],
       "classification": "record-dates",
