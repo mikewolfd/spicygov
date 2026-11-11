@@ -60,7 +60,7 @@ for (const spec of recipes) {
    console.log(`${spec.id}: complete (reused full measurement with matching file pins)`);
    continue;
   }
-  const columns=[...new Set([...navigationColumns(spec),...(spec.field?[spec.field]:[]),...(source.receiptIdentity??[])])];
+  const columns=[...new Set([...navigationColumns(spec),...(spec.field?[spec.field]:[])])];
   if(!spec.available || columns.some(column=>!source.columns.some(c=>c.name===column)) || spec.candidates&&spec.receiptFields.length&&!spec.field) {
    result.reason='Required references live in receipts or source fields that this scan cannot read. No empty-population claim.';
   } else {
@@ -77,7 +77,7 @@ for (const spec of recipes) {
    const counts=resume?structuredClone(previous.counts):emptyCounts();
    const sourceKey=JSON.stringify([source.id,start]);
    if(!sourcePopulations.has(sourceKey)) {
-    const needed=[...new Set(recipes.filter(recipe=>recipe.source===source.id).flatMap(recipe=>[...navigationColumns(recipe),...(recipe.field?[recipe.field]:[]),...(source.receiptIdentity??[])]))].filter(column=>source.columns.some(c=>c.name===column));
+    const needed=[...new Set(recipes.filter(recipe=>recipe.source===source.id).flatMap(recipe=>[...navigationColumns(recipe),...(recipe.field?[recipe.field]:[])]))].filter(column=>source.columns.some(c=>c.name===column));
     const rows=[];
     const complete=await readRows(source,needed,sourceLimit,batch=>rows.push(...batch),start);
     sourcePopulations.set(sourceKey,{rows,complete});

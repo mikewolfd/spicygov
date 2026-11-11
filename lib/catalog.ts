@@ -49,9 +49,7 @@ export type Dataset = {
   emptyReason?: string;
   joinAudit?: { status: string; reason: string };
   connectionNotes: string[];
-  receiptIdentity?: string[];
   recordIdentity?: import('./metadata').RecordIdentity;
-  receiptContainers?: Record<string, string[]>;
   group: string;
   family: string;
 };
@@ -186,7 +184,7 @@ export function applyMetadata(tables: Dataset[], bundle: MetadataBundle, compati
     return {
       ...table, label: tableTitle(table.id, metadata.label || table.label), summary: tablePurpose(table.id) ?? metadata.summary ?? "", coverage: metadata.coverage ?? "",
       kind: metadata.kind ?? "published", category: metadata.category, rowUnit: metadata.row_unit, grain: metadata.grain, quality: metadata.data_quality, sources: metadata.sources, inputs: metadata.inputs,
-      receiptIdentity: metadata.receiptIdentity, recordIdentity: metadata.recordIdentity, receiptContainers: metadata.receiptContainers,
+      recordIdentity: metadata.recordIdentity,
       transformation: metadata.transformation, modelGenerated: metadata.modelGenerated, emptyReason: metadata.emptyReason, joinAudit: metadata.joinAudit,
       metadataState: older ? "older-publication" : undocumented ? "undocumented" : "current",
       columns: table.columns.map(column => ({ ...column, description: metadata.columns?.find(c => c.column_name === column.name)?.description ?? "" })),
