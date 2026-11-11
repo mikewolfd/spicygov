@@ -10439,6 +10439,10 @@
         [
           "registrant_different_address",
           "BOOLEAN"
+        ],
+        [
+          "url",
+          "VARCHAR"
         ]
       ],
       "dimensions": [
