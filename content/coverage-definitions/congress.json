@@ -2509,31 +2509,11 @@
           "VARCHAR"
         ],
         [
-          "title",
+          "detected_at",
           "VARCHAR"
         ],
         [
-          "stage",
-          "VARCHAR"
-        ],
-        [
-          "sponsor_bioguide_id",
-          "VARCHAR"
-        ],
-        [
-          "from_stage",
-          "VARCHAR"
-        ],
-        [
-          "to_stage",
-          "VARCHAR"
-        ],
-        [
-          "version_code",
-          "VARCHAR"
-        ],
-        [
-          "kind",
+          "event_data_json",
           "VARCHAR"
         ]
       ],
@@ -5111,7 +5091,7 @@
         ],
         [
           "term_index",
-          "BIGINT"
+          "VARCHAR"
         ],
         [
           "term_start",
@@ -6347,11 +6327,15 @@
         ],
         [
           "span_start",
-          "BIGINT"
+          "VARCHAR"
         ],
         [
           "span_end",
-          "BIGINT"
+          "VARCHAR"
+        ],
+        [
+          "evidence_page",
+          "VARCHAR"
         ],
         [
           "matched_text",
@@ -6363,7 +6347,7 @@
         ],
         [
           "target_resolved",
-          "BOOLEAN"
+          "VARCHAR"
         ],
         [
           "target_rule",
@@ -6371,10 +6355,26 @@
         ],
         [
           "stated_by_index",
-          "BOOLEAN"
+          "VARCHAR"
         ],
         [
-          "body_version_id",
+          "rule_name",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "body_rendition",
+          "VARCHAR"
+        ],
+        [
+          "body_derivation",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
           "VARCHAR"
         ]
       ],

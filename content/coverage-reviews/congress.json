@@ -7612,31 +7612,11 @@
           "VARCHAR"
         ],
         [
-          "title",
+          "detected_at",
           "VARCHAR"
         ],
         [
-          "stage",
-          "VARCHAR"
-        ],
-        [
-          "sponsor_bioguide_id",
-          "VARCHAR"
-        ],
-        [
-          "from_stage",
-          "VARCHAR"
-        ],
-        [
-          "to_stage",
-          "VARCHAR"
-        ],
-        [
-          "version_code",
-          "VARCHAR"
-        ],
-        [
-          "kind",
+          "event_data_json",
           "VARCHAR"
         ]
       ],
@@ -8448,34 +8428,7 @@
         "printing-source-dates",
         "bill-congress",
         "qualified-bill-introduction-dates"
-      ],
-      "previousSchema": [
-        [
-          "bill_id",
-          "VARCHAR"
-        ],
-        [
-          "event_type",
-          "VARCHAR"
-        ],
-        [
-          "subject_id",
-          "VARCHAR"
-        ],
-        [
-          "occurred_at",
-          "VARCHAR"
-        ],
-        [
-          "detected_at",
-          "VARCHAR"
-        ],
-        [
-          "event_data_json",
-          "VARCHAR"
-        ]
-      ],
-      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
+      ]
     },
     {
       "tableId": "section_classifications",
@@ -17896,7 +17849,7 @@
         ],
         [
           "term_index",
-          "BIGINT"
+          "VARCHAR"
         ],
         [
           "term_start",
@@ -18303,46 +18256,7 @@
       "executableDimensions": [
         "member-vote-dates",
         "service-term-matching"
-      ],
-      "previousSchema": [
-        [
-          "vote_id",
-          "VARCHAR"
-        ],
-        [
-          "member_key",
-          "VARCHAR"
-        ],
-        [
-          "chamber",
-          "VARCHAR"
-        ],
-        [
-          "bioguide_id",
-          "VARCHAR"
-        ],
-        [
-          "vote_day",
-          "VARCHAR"
-        ],
-        [
-          "term_match",
-          "VARCHAR"
-        ],
-        [
-          "term_index",
-          "VARCHAR"
-        ],
-        [
-          "term_start",
-          "VARCHAR"
-        ],
-        [
-          "term_end",
-          "VARCHAR"
-        ]
-      ],
-      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
+      ]
     },
     {
       "tableId": "member_party_affiliations",
@@ -26426,11 +26340,15 @@
         ],
         [
           "span_start",
-          "BIGINT"
+          "VARCHAR"
         ],
         [
           "span_end",
-          "BIGINT"
+          "VARCHAR"
+        ],
+        [
+          "evidence_page",
+          "VARCHAR"
         ],
         [
           "matched_text",
@@ -26442,7 +26360,7 @@
         ],
         [
           "target_resolved",
-          "BOOLEAN"
+          "VARCHAR"
         ],
         [
           "target_rule",
@@ -26450,10 +26368,26 @@
         ],
         [
           "stated_by_index",
-          "BOOLEAN"
+          "VARCHAR"
         ],
         [
-          "body_version_id",
+          "rule_name",
+          "VARCHAR"
+        ],
+        [
+          "rule_version",
+          "VARCHAR"
+        ],
+        [
+          "body_rendition",
+          "VARCHAR"
+        ],
+        [
+          "body_derivation",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
           "VARCHAR"
         ]
       ],
@@ -27860,78 +27794,7 @@
         "citing-source-kinds",
         "historical-source-year",
         "historical-source-month"
-      ],
-      "previousSchema": [
-        [
-          "document_key",
-          "VARCHAR"
-        ],
-        [
-          "document_kind",
-          "VARCHAR"
-        ],
-        [
-          "cite_kind",
-          "VARCHAR"
-        ],
-        [
-          "target_key",
-          "VARCHAR"
-        ],
-        [
-          "span_start",
-          "VARCHAR"
-        ],
-        [
-          "span_end",
-          "VARCHAR"
-        ],
-        [
-          "evidence_page",
-          "VARCHAR"
-        ],
-        [
-          "matched_text",
-          "VARCHAR"
-        ],
-        [
-          "target_table",
-          "VARCHAR"
-        ],
-        [
-          "target_resolved",
-          "VARCHAR"
-        ],
-        [
-          "target_rule",
-          "VARCHAR"
-        ],
-        [
-          "stated_by_index",
-          "VARCHAR"
-        ],
-        [
-          "rule_name",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "body_rendition",
-          "VARCHAR"
-        ],
-        [
-          "body_derivation",
-          "VARCHAR"
-        ],
-        [
-          "text_sha256",
-          "VARCHAR"
-        ]
-      ],
-      "schemaChange": "2026-11-11 (ss-xuht): the receipt-based measurement route was retired; this table is measured from the columns it publishes. Dimensions and rules are unchanged; previousSchema is the schema they were reviewed against."
+      ]
     },
     {
       "tableId": "house_activity_reports",
