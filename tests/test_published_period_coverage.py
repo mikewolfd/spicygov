@@ -167,10 +167,120 @@ class PublishedOnlyRoute(unittest.TestCase):
 
     def test_receipt_based_dimensions_refuse_instead_of_reading_receipts(self):
         import regulation_coverage
-        policy = builder.definitions()['gao_reports']
-        dim = next(d for d in policy['dimensions'] if d.get('special') == 'government-receipt-origins')
+        policy = builder.definitions()['usaspending_recipients']
+        dim = next(d for d in policy['dimensions'] if d.get('special') == 'government-receipt-observation-dates')
         with self.assertRaisesRegex(ValueError, 'Receipt-based coverage dimension retired'):
-            regulation_coverage.scan_special(None, 'gao_reports', {}, dim, None)
+            regulation_coverage.scan_special(None, 'usaspending_recipients', {}, dim, None)
+        with self.assertRaisesRegex(ValueError, 'Receipt-based coverage dimension retired'):
+            regulation_coverage.scan_special(
+                None, 'gao_reports', {}, {'id': 'retained-origins', 'special': 'government-receipt-origins'}, None
+            )
+
+    def test_gao_origins_and_new_published_definitions_measure_public_columns(self):
+        import duckdb, json, pathlib, tempfile
+        import coverage_scan
+        root = pathlib.Path(__file__).resolve().parents[1]
+        defs = builder.definitions()
+        expected_new = {
+            'committee_directory_entries', 'committee_report_cbo_letters',
+            'house_disbursements', 'house_disbursements_summary',
+            'lobbying_affiliated_organizations', 'lobbying_clients',
+            'lobbying_conviction_disclosures', 'lobbying_foreign_entities',
+            'lobbying_registrants', 'treasury_statement_classification_cells',
+        }
+        self.assertTrue(expected_new <= set(defs))
+        legacy_raw_probe = {'scorecard_item_links', 'scorecard_member_links'}
+        for review_name in ('congress.json', 'regulation.json', 'fec.json'):
+            review_doc = json.loads((root / 'content/coverage-reviews' / review_name).read_text())
+            if review_name == 'regulation.json':
+                self.assertNotIn('assignedFamilies', review_doc)
+            for entry in review_doc['tables']:
+                tid = entry['tableId']
+                self.assertEqual(defs[tid]['schema'], entry['schema'], tid)
+                if tid in legacy_raw_probe:
+                    continue
+                for member in (entry.get('publication') or {}).get('members') or []:
+                    if 'columns' in member:
+                        self.assertEqual(defs[tid]['schema'], member['columns'], tid)
+
+        for table_id in ('gao_reports', 'gao_decisions'):
+            policy = defs[table_id]
+            dim = next(d for d in policy['dimensions'] if d['id'] == 'retained-origins')
+            self.assertEqual(dim['fields'], ['source'])
+            self.assertNotIn('special', dim)
+            with tempfile.TemporaryDirectory() as folder:
+                path = pathlib.Path(folder) / f'{table_id}.parquet'
+                cols = ', '.join(f'"{name}" {dtype}' for name, dtype in policy['schema'])
+                with duckdb.connect() as conn:
+                    conn.execute(f'CREATE TABLE t ({cols})')
+                    conn.execute("INSERT INTO t (source) VALUES ('search'), ('search'), ('archive'), (NULL)")
+                    conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+                raw = path.read_bytes()
+                table = {
+                    'family': 'gao-reports',
+                    'kind': 'generation',
+                    'columns': policy['schema'],
+                    'rows': 4,
+                    'publishedAt': '2026-11-11T00:00:00Z',
+                    'members': [{'key': path.name, 'url': str(path), 'rows': 4, 'byteSize': len(raw)}],
+                    '_coverageAsOfMonth': '2026-11',
+                }
+                result = coverage_scan.scan_table(table_id, table, policy)
+                origins = next(d for d in result['dimensions'] if d['id'] == 'retained-origins')
+                self.assertEqual(origins['buckets'], {'["archive"]': 1, '["search"]': 2})
+                self.assertEqual((origins['placedRows'], origins['unplacedRows']), (3, 1))
+
+        with tempfile.TemporaryDirectory() as folder:
+            folder_path = pathlib.Path(folder)
+            # Verify lobbying_clients flags pre-1900 zero-date sentinels via source-date-literals
+            lc_policy = defs['lobbying_clients']
+            lc_path = folder_path / 'lobbying_clients.parquet'
+            lc_cols = ', '.join(f'"{name}" {dtype}' for name, dtype in lc_policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE lc ({lc_cols})')
+                conn.execute("INSERT INTO lc (effective_date, url) VALUES (DATE '1899-12-30', 'https://x'), (DATE '2025-03-15', 'https://y'), (NULL, NULL)")
+                conn.execute('COPY lc TO ? (FORMAT PARQUET)', [str(lc_path)])
+            lc_res = coverage_scan.scan_table('lobbying_clients', {
+                'family': 'lobbying-filings', 'kind': 'generation', 'columns': lc_policy['schema'], 'rows': 3,
+                'publishedAt': '2026-11-11T00:00:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': lc_path.name, 'url': str(lc_path), 'rows': 3, 'byteSize': lc_path.stat().st_size}],
+            }, lc_policy)
+            lc_dim = lc_res['dimensions'][0]
+            self.assertEqual(lc_dim['anomalies']['sourceLiteralReviewBuckets'], {'1899-12': 1})
+            self.assertEqual((lc_dim['placedRows'], lc_dim['unplacedRows']), (2, 1))
+
+            # Verify committee_report_cbo_letters inherits congress & date_issued from committee_reports
+            cbo_policy = defs['committee_report_cbo_letters']
+            cr_policy = defs['committee_reports']
+            cbo_path = folder_path / 'committee_report_cbo_letters.parquet'
+            cr_path = folder_path / 'committee_reports.parquet'
+            with duckdb.connect() as conn:
+                conn.execute('CREATE TABLE cbo (' + ', '.join(f'"{n}" {t}' for n, t in cbo_policy['schema']) + ')')
+                conn.execute("INSERT INTO cbo (package_id, part_id, letter_date) VALUES ('CRPT-119hrpt1', '1', NULL), ('CRPT-108hrpt2', '1', '2003-05-22')")
+                conn.execute('COPY cbo TO ? (FORMAT PARQUET)', [str(cbo_path)])
+                conn.execute('CREATE TABLE cr (' + ', '.join(f'"{n}" {t}' for n, t in cr_policy['schema']) + ')')
+                conn.execute("INSERT INTO cr (package_id, part_id, congress, date_issued) VALUES ('CRPT-119hrpt1', '1', 119, '2026-10-29'), ('CRPT-108hrpt2', '1', 108, '2003-06-01')")
+                conn.execute('COPY cr TO ? (FORMAT PARQUET)', [str(cr_path)])
+
+            class LocalParentInputs:
+                def parent(self, child_id, child, relation):
+                    return {
+                        'family': 'committee-reports', 'artifactDigest': 'sha256:' + 'a' * 64,
+                        'tableId': relation['table'], 'recordUrl': 'local://artifact.json',
+                        'members': [{'key': cr_path.name, 'rows': 2, 'byteSize': cr_path.stat().st_size}],
+                        'urls': [str(cr_path)], 'rows': 2,
+                    }
+
+            with duckdb.connect() as conn:
+                measured = coverage_scan._measure(
+                    conn, 'committee_report_cbo_letters',
+                    {'family': 'committee-reports', 'rows': 2, 'members': [{'url': str(cbo_path), 'rows': 2}], '_coverageAsOfMonth': '2026-11'},
+                    [str(cbo_path)], cbo_policy, LocalParentInputs(),
+                )
+                cbo_dims = {d['id']: d for d in measured}
+            self.assertEqual(cbo_dims['inherited-committee-reports-congress']['buckets'], {'["108"]': 1, '["119"]': 1})
+            self.assertEqual(cbo_dims['inherited-committee-reports-date-issued']['placedRows'], 2)
+            self.assertEqual((cbo_dims['letter-dates']['placedRows'], cbo_dims['letter-dates']['unplacedRows']), (1, 1))
 
 
 if __name__ == '__main__':

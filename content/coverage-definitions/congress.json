@@ -11021,6 +11021,500 @@
           "VARCHAR"
         ]
       ]
+    },
+    "committee_directory_entries": {
+      "family": "committee-rosters",
+      "schema": [
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "congress_basis",
+          "VARCHAR"
+        ],
+        [
+          "source_granule",
+          "VARCHAR"
+        ],
+        [
+          "source_line",
+          "VARCHAR"
+        ],
+        [
+          "side",
+          "VARCHAR"
+        ],
+        [
+          "edition_date",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "subcommittee_name",
+          "VARCHAR"
+        ],
+        [
+          "printed_text",
+          "VARCHAR"
+        ],
+        [
+          "note",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers of the printed Directory editions.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "edition-dates",
+          "kind": "category",
+          "label": "Directory edition dates",
+          "meaning": "Edition dates as printed; not dates of the entries themselves.",
+          "fields": [
+            "edition_date"
+          ]
+        },
+        {
+          "id": "entry-kind",
+          "kind": "category",
+          "label": "Entry kind",
+          "meaning": "Kind of non-seat entry (vacancy, party organization, ...).",
+          "fields": [
+            "kind"
+          ]
+        }
+      ]
+    },
+    "committee_report_cbo_letters": {
+      "family": "committee-reports",
+      "schema": [
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "part_id",
+          "VARCHAR"
+        ],
+        [
+          "letter_seq",
+          "BIGINT"
+        ],
+        [
+          "estimate_heading",
+          "VARCHAR"
+        ],
+        [
+          "letter_span_start",
+          "BIGINT"
+        ],
+        [
+          "letter_span_end",
+          "BIGINT"
+        ],
+        [
+          "letter_signatory",
+          "VARCHAR"
+        ],
+        [
+          "letter_date",
+          "VARCHAR"
+        ],
+        [
+          "last_modified",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "inherited-committee-reports-congress",
+          "kind": "inherited",
+          "fields": [
+            "package_id",
+            "part_id"
+          ],
+          "label": "Report Congress",
+          "meaning": "Congress of the exact report revision containing the CBO letter.",
+          "parent": {
+            "table": "committee_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "package_id",
+                "package_id"
+              ],
+              [
+                "part_id",
+                "part_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "congress",
+            "kind": "category",
+            "fields": [
+              "congress"
+            ],
+            "label": "Report publication scope · congress",
+            "meaning": "Publication context only from the report revision containing the CBO letter.",
+            "syntax": "positive-integer"
+          }
+        },
+        {
+          "id": "inherited-committee-reports-date-issued",
+          "kind": "inherited",
+          "fields": [
+            "package_id",
+            "part_id"
+          ],
+          "label": "Report issue dates",
+          "meaning": "Issue date of the exact report revision containing the CBO letter.",
+          "parent": {
+            "table": "committee_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "package_id",
+                "package_id"
+              ],
+              [
+                "part_id",
+                "part_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "date_issued",
+            "kind": "date",
+            "fields": [
+              "date_issued"
+            ],
+            "label": "Report publication scope · date issued",
+            "meaning": "Publication context only from the report revision containing the CBO letter."
+          }
+        },
+        {
+          "id": "letter-dates",
+          "kind": "date",
+          "label": "CBO letter dates",
+          "meaning": "Dates printed on CBO letters inside committee reports when extracted; missing printed dates remain unplaced.",
+          "fields": [
+            "letter_date"
+          ],
+          "syntax": "iso"
+        }
+      ]
+    },
+    "house_disbursements": {
+      "family": "house-disbursements",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_number",
+          "BIGINT"
+        ],
+        [
+          "source_line_start",
+          "BIGINT"
+        ],
+        [
+          "source_line_end",
+          "BIGINT"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_quarter",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "correction_rules",
+          "VARCHAR[]"
+        ],
+        [
+          "correction_confidence",
+          "VARCHAR[]"
+        ],
+        [
+          "source_encoding",
+          "VARCHAR"
+        ],
+        [
+          "source_layout",
+          "VARCHAR"
+        ],
+        [
+          "normalization_version",
+          "VARCHAR"
+        ],
+        [
+          "normalization_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "audit_json",
+          "VARCHAR"
+        ],
+        [
+          "organization",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_or_legislative_year",
+          "VARCHAR"
+        ],
+        [
+          "organization_code",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "program_code",
+          "VARCHAR"
+        ],
+        [
+          "cost_category",
+          "VARCHAR"
+        ],
+        [
+          "budget_object_class",
+          "VARCHAR"
+        ],
+        [
+          "sort_sequence",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "data_source",
+          "VARCHAR"
+        ],
+        [
+          "document",
+          "VARCHAR"
+        ],
+        [
+          "vendor_name",
+          "VARCHAR"
+        ],
+        [
+          "vendor_id",
+          "VARCHAR"
+        ],
+        [
+          "service_start_date",
+          "DATE"
+        ],
+        [
+          "service_end_date",
+          "DATE"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "budget_object_code",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,2)"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods of the House Statement of Disbursements file each row came from.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        },
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Transaction dates as the statement prints them; many rows have none.",
+          "fields": [
+            "transaction_date"
+          ]
+        }
+      ]
+    },
+    "house_disbursements_summary": {
+      "family": "house-disbursements",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_number",
+          "BIGINT"
+        ],
+        [
+          "source_line_start",
+          "BIGINT"
+        ],
+        [
+          "source_line_end",
+          "BIGINT"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_quarter",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "correction_rules",
+          "VARCHAR[]"
+        ],
+        [
+          "correction_confidence",
+          "VARCHAR[]"
+        ],
+        [
+          "source_encoding",
+          "VARCHAR"
+        ],
+        [
+          "source_layout",
+          "VARCHAR"
+        ],
+        [
+          "normalization_version",
+          "VARCHAR"
+        ],
+        [
+          "normalization_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "audit_json",
+          "VARCHAR"
+        ],
+        [
+          "organization",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "ytd_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "qtd_amount",
+          "DECIMAL(38,2)"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods of the House Statement of Disbursements summary rows.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        }
+      ]
     }
   }
 }
