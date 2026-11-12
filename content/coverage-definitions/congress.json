@@ -11147,10 +11147,77 @@
       "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
       "dimensions": [
         {
+          "id": "inherited-committee-reports-congress",
+          "kind": "inherited",
+          "fields": [
+            "package_id",
+            "part_id"
+          ],
+          "label": "Report Congress",
+          "meaning": "Congress of the exact report revision containing the CBO letter.",
+          "parent": {
+            "table": "committee_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "package_id",
+                "package_id"
+              ],
+              [
+                "part_id",
+                "part_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "congress",
+            "kind": "category",
+            "fields": [
+              "congress"
+            ],
+            "label": "Report publication scope · congress",
+            "meaning": "Publication context only from the report revision containing the CBO letter.",
+            "syntax": "positive-integer"
+          }
+        },
+        {
+          "id": "inherited-committee-reports-date-issued",
+          "kind": "inherited",
+          "fields": [
+            "package_id",
+            "part_id"
+          ],
+          "label": "Report issue dates",
+          "meaning": "Issue date of the exact report revision containing the CBO letter.",
+          "parent": {
+            "table": "committee_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "package_id",
+                "package_id"
+              ],
+              [
+                "part_id",
+                "part_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "date_issued",
+            "kind": "date",
+            "fields": [
+              "date_issued"
+            ],
+            "label": "Report publication scope · date issued",
+            "meaning": "Publication context only from the report revision containing the CBO letter."
+          }
+        },
+        {
           "id": "letter-dates",
           "kind": "date",
           "label": "CBO letter dates",
-          "meaning": "Dates printed on CBO letters inside committee reports.",
+          "meaning": "Dates printed on CBO letters inside committee reports when extracted; missing printed dates remain unplaced.",
           "fields": [
             "letter_date"
           ],

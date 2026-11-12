@@ -33732,6 +33732,34 @@
             "label": "Reporting periods",
             "meaning": "Each affiliated organization inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these affiliated-organization rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
         }
       ],
       "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
@@ -33810,6 +33838,10 @@
         ],
         [
           "captured_filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "url",
           "VARCHAR"
         ]
       ],
@@ -33911,9 +33943,14 @@
           "id": "client-effective-dates",
           "kind": "date",
           "label": "Client effective dates",
-          "meaning": "Effective dates the Senate LDA record states for each client.",
+          "meaning": "Effective dates the Senate LDA record states for each client, rather than registration or collection dates. Missing dates remain unplaced; questionable source dates are preserved and flagged for review.",
           "fields": [
             "effective_date"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2100
           ]
         }
       ],
@@ -34058,6 +34095,48 @@
             "label": "Reporting periods",
             "meaning": "Each conviction disclosure inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these conviction-disclosure rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
+        },
+        {
+          "id": "stated-conviction-dates",
+          "kind": "date",
+          "label": "Stated conviction dates",
+          "meaning": "Conviction dates stated in lobbying disclosures, separate from filing reporting periods and posting dates. Missing dates remain unplaced; questionable source dates are preserved and flagged for review.",
+          "fields": [
+            "date"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2100
+          ]
         }
       ],
       "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
@@ -34241,6 +34320,34 @@
             "label": "Reporting periods",
             "meaning": "Each foreign entity inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these foreign-entity rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
         }
       ],
       "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
@@ -34327,6 +34434,10 @@
         ],
         [
           "captured_filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "url",
           "VARCHAR"
         ]
       ],
@@ -34435,11 +34546,12 @@
         {
           "id": "registrant-update-dates",
           "kind": "date",
-          "label": "Registrant record update dates",
-          "meaning": "When the Senate LDA last updated each registrant record; not registration dates.",
+          "label": "Source update date (freshness)",
+          "meaning": "When the Senate LDA last updated each registrant record; not registration dates. Missing dates remain unplaced.",
           "fields": [
             "dt_updated"
-          ]
+          ],
+          "special": "literal-date-anomalies"
         }
       ],
       "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
@@ -34758,9 +34870,5 @@
       "Native-reference text is intentionally NULL on native references; evidence-class scope distinguishes references from source notes and does not imply target resolution.",
       "Nonblank saved text does not establish complete content or publisher attachment availability."
     ]
-  },
-  "assignedFamilies": [
-    "lobbying-filings",
-    "treasury-fiscal"
-  ]
+  }
 }

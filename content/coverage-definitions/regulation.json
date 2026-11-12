@@ -741,7 +741,7 @@
             "ingest_source"
           ],
           "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row’s origin, not a complete collection history."
+          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
         }
       ]
     },
@@ -2321,7 +2321,7 @@
             "link_source"
           ],
           "label": "Docket link evidence",
-          "meaning": "Whether a link appears in the Federal Register’s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
+          "meaning": "Whether a link appears in the Federal Register\u2019s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
         }
       ]
     },
@@ -2520,7 +2520,7 @@
             "source"
           ],
           "label": "Saved decision origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
         }
       ]
     },
@@ -2636,7 +2636,7 @@
             "source"
           ],
           "label": "Saved report origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
         }
       ]
     },
@@ -4389,7 +4389,7 @@
         {
           "id": "agenda-proceeding-link-evidence-dates",
           "kind": "date",
-          "label": "Agenda–proceeding link evidence dates",
+          "label": "Agenda\u2013proceeding link evidence dates",
           "meaning": "Dates of source evidence linking an agenda regulation identifier to a proceeding. Undated evidence remains unplaced; no collection date or agenda edition is substituted.",
           "fields": [
             "evidence_date"
@@ -6054,7 +6054,7 @@
           "id": "archive-inspectors",
           "kind": "category",
           "label": "Archive inspector labels",
-          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office’s reports are saved.",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
           "fields": [
             "archive_inspector"
           ]
@@ -6063,7 +6063,7 @@
           "id": "selection-scopes",
           "kind": "category",
           "label": "Selection scope",
-          "meaning": "The scope recorded when each report was selected. Metadata only means the report’s links and files are declared, not saved.",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
           "fields": [
             "selected_scope"
           ]
@@ -7920,6 +7920,34 @@
             "label": "Reporting periods",
             "meaning": "Each affiliated organization inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these affiliated-organization rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
         }
       ]
     },
@@ -7997,6 +8025,10 @@
         [
           "captured_filing_uuid",
           "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -8006,9 +8038,14 @@
           "id": "client-effective-dates",
           "kind": "date",
           "label": "Client effective dates",
-          "meaning": "Effective dates the Senate LDA record states for each client.",
+          "meaning": "Effective dates the Senate LDA record states for each client, rather than registration or collection dates. Missing dates remain unplaced; questionable source dates are preserved and flagged for review.",
           "fields": [
             "effective_date"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2100
           ]
         }
       ]
@@ -8061,7 +8098,7 @@
           "VARCHAR"
         ]
       ],
-      "classification": "inherited",
+      "classification": "source-scope-and-observed-records",
       "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
       "dimensions": [
         {
@@ -8092,6 +8129,48 @@
             "label": "Reporting periods",
             "meaning": "Each conviction disclosure inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these conviction-disclosure rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
+        },
+        {
+          "id": "stated-conviction-dates",
+          "kind": "date",
+          "label": "Stated conviction dates",
+          "meaning": "Conviction dates stated in lobbying disclosures, separate from filing reporting periods and posting dates. Missing dates remain unplaced; questionable source dates are preserved and flagged for review.",
+          "fields": [
+            "date"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2100
+          ]
         }
       ]
     },
@@ -8194,6 +8273,34 @@
             "label": "Reporting periods",
             "meaning": "Each foreign entity inherits year/period from its unique same-family filing row."
           }
+        },
+        {
+          "id": "filing-posting-dates",
+          "kind": "inherited",
+          "fields": [
+            "filing_uuid"
+          ],
+          "label": "Filing posting dates",
+          "meaning": "Posting dates of the saved filings represented by these foreign-entity rows. Posting and reporting periods are separate.",
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "filing-posting-dates",
+            "kind": "date",
+            "fields": [
+              "dt_posted"
+            ],
+            "label": "Filing posting dates",
+            "meaning": "Posting dates of exact same-generation filings represented by these child rows. Posting dates are separate from the reported filing year and period."
+          }
         }
       ]
     },
@@ -8279,6 +8386,10 @@
         [
           "captured_filing_uuid",
           "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
         ]
       ],
       "classification": "source-scope-and-observed-records",
@@ -8287,11 +8398,12 @@
         {
           "id": "registrant-update-dates",
           "kind": "date",
-          "label": "Registrant record update dates",
-          "meaning": "When the Senate LDA last updated each registrant record; not registration dates.",
+          "label": "Source update date (freshness)",
+          "meaning": "When the Senate LDA last updated each registrant record; not registration dates. Missing dates remain unplaced.",
           "fields": [
             "dt_updated"
-          ]
+          ],
+          "special": "literal-date-anomalies"
         }
       ]
     },
