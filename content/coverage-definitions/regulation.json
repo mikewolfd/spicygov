@@ -741,7 +741,7 @@
             "ingest_source"
           ],
           "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
+          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row’s origin, not a complete collection history."
         }
       ]
     },
@@ -2321,7 +2321,7 @@
             "link_source"
           ],
           "label": "Docket link evidence",
-          "meaning": "Whether a link appears in the Federal Register\u2019s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
+          "meaning": "Whether a link appears in the Federal Register’s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
         }
       ]
     },
@@ -2517,12 +2517,10 @@
           "id": "retained-origins",
           "kind": "category",
           "fields": [
-            "decision_number",
-            "url"
+            "source"
           ],
-          "special": "government-receipt-origins",
           "label": "Saved decision origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -2635,11 +2633,10 @@
           "id": "retained-origins",
           "kind": "category",
           "fields": [
-            "report_id"
+            "source"
           ],
-          "special": "government-receipt-origins",
           "label": "Saved report origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -4392,7 +4389,7 @@
         {
           "id": "agenda-proceeding-link-evidence-dates",
           "kind": "date",
-          "label": "Agenda\u2013proceeding link evidence dates",
+          "label": "Agenda–proceeding link evidence dates",
           "meaning": "Dates of source evidence linking an agenda regulation identifier to a proceeding. Undated evidence remains unplaced; no collection date or agenda edition is substituted.",
           "fields": [
             "evidence_date"
@@ -6057,7 +6054,7 @@
           "id": "archive-inspectors",
           "kind": "category",
           "label": "Archive inspector labels",
-          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office’s reports are saved.",
           "fields": [
             "archive_inspector"
           ]
@@ -6066,7 +6063,7 @@
           "id": "selection-scopes",
           "kind": "category",
           "label": "Selection scope",
-          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report’s links and files are declared, not saved.",
           "fields": [
             "selected_scope"
           ]
@@ -7809,6 +7806,632 @@
           ],
           "label": "Source-stated entity types",
           "meaning": "Entity type labels retained from the selected source list, without interpreting dates within entity features."
+        }
+      ]
+    },
+    "lobbying_affiliated_organizations": {
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_organization_index",
+          "BIGINT"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ],
+        [
+          "address_1",
+          "VARCHAR"
+        ],
+        [
+          "address_2",
+          "VARCHAR"
+        ],
+        [
+          "address_3",
+          "VARCHAR"
+        ],
+        [
+          "address_4",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_city",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "inherited",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "affiliated-organization-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each affiliated organization.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "affiliated-organization-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each affiliated organization inherits year/period from its unique same-family filing row."
+          }
+        }
+      ]
+    },
+    "lobbying_clients": {
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "client_id",
+          "VARCHAR"
+        ],
+        [
+          "registrant_client_number",
+          "VARCHAR"
+        ],
+        [
+          "registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "general_description",
+          "VARCHAR"
+        ],
+        [
+          "client_government_entity",
+          "BOOLEAN"
+        ],
+        [
+          "client_self_select",
+          "BOOLEAN"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ],
+        [
+          "effective_date",
+          "DATE"
+        ],
+        [
+          "captured_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_filing_uuid",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "client-effective-dates",
+          "kind": "date",
+          "label": "Client effective dates",
+          "meaning": "Effective dates the Senate LDA record states for each client.",
+          "fields": [
+            "effective_date"
+          ]
+        }
+      ]
+    },
+    "lobbying_conviction_disclosures": {
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "conviction_disclosure_index",
+          "BIGINT"
+        ],
+        [
+          "lobbyist_id",
+          "VARCHAR"
+        ],
+        [
+          "prefix",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "nickname",
+          "VARCHAR"
+        ],
+        [
+          "middle_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "suffix",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "DATE"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "inherited",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "conviction-disclosure-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each conviction disclosure.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "conviction-disclosure-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each conviction disclosure inherits year/period from its unique same-family filing row."
+          }
+        }
+      ]
+    },
+    "lobbying_foreign_entities": {
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "foreign_entity_index",
+          "BIGINT"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "contribution",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "ownership_percentage",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "address",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_city",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "inherited",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "foreign-entity-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each foreign entity.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "foreign-entity-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each foreign entity inherits year/period from its unique same-family filing row."
+          }
+        }
+      ]
+    },
+    "lobbying_registrants": {
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "house_registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "address_1",
+          "VARCHAR"
+        ],
+        [
+          "address_2",
+          "VARCHAR"
+        ],
+        [
+          "address_3",
+          "VARCHAR"
+        ],
+        [
+          "address_4",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ],
+        [
+          "contact_telephone",
+          "VARCHAR"
+        ],
+        [
+          "dt_updated",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_filing_uuid",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "registrant-update-dates",
+          "kind": "date",
+          "label": "Registrant record update dates",
+          "meaning": "When the Senate LDA last updated each registrant record; not registration dates.",
+          "fields": [
+            "dt_updated"
+          ]
+        }
+      ]
+    },
+    "treasury_statement_classification_cells": {
+      "family": "treasury-fiscal",
+      "schema": [
+        [
+          "report_date",
+          "DATE"
+        ],
+        [
+          "src_line_nbr",
+          "INTEGER"
+        ],
+        [
+          "parent_src_line_nbr",
+          "INTEGER"
+        ],
+        [
+          "print_order_nbr",
+          "INTEGER"
+        ],
+        [
+          "sequence_level_nbr",
+          "INTEGER"
+        ],
+        [
+          "sequence_number_cd_literal",
+          "VARCHAR"
+        ],
+        [
+          "classification_id",
+          "VARCHAR"
+        ],
+        [
+          "parent_id_literal",
+          "VARCHAR"
+        ],
+        [
+          "classification_desc",
+          "VARCHAR"
+        ],
+        [
+          "data_type_cd",
+          "VARCHAR"
+        ],
+        [
+          "record_type_cd",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "measure_fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "amount_literal",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "amount_unit",
+          "VARCHAR"
+        ],
+        [
+          "amount_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "marker_kind",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_url",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_page_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "field_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "report-dates",
+          "kind": "date",
+          "label": "Statement report dates",
+          "meaning": "Report dates of the Monthly Treasury Statement issues recorded here.",
+          "fields": [
+            "report_date"
+          ]
+        },
+        {
+          "id": "measure-fiscal-years",
+          "kind": "category",
+          "label": "Measure fiscal years",
+          "meaning": "Fiscal years the amounts refer to, separate from the report date.",
+          "fields": [
+            "measure_fiscal_year"
+          ],
+          "syntax": "positive-integer"
         }
       ]
     }

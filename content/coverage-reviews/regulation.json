@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 77,
+  "tableCount": 83,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -5562,10 +5562,8 @@
           "id": "retained-origins",
           "kind": "category",
           "fields": [
-            "decision_number",
-            "url"
+            "source"
           ],
-          "special": "government-receipt-origins",
           "label": "Saved decision origins",
           "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
@@ -6241,7 +6239,8 @@
         "source": "src/spicy_regs/transforms/government_receipts.py",
         "meaning": "listing_page and source are native subject values; existing date and receipt-origin measurements keep their definitions, and the origin is still read from each receipt’s original row.",
         "evidence": "scripts/gao_receipt_policy.py reviews the exact subject schema"
-      }
+      },
+      "originRuleChange": "2026-11-12 (ss-xuht): owner-approved rule update; retained-origins counts the public source column directly instead of retired per-row receipts."
     },
     {
       "tableId": "gao_reports",
@@ -6351,9 +6350,8 @@
           "id": "retained-origins",
           "kind": "category",
           "fields": [
-            "report_id"
+            "source"
           ],
-          "special": "government-receipt-origins",
           "label": "Saved report origins",
           "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
@@ -7411,7 +7409,8 @@
         "source": "src/spicy_regs/transforms/government_receipts.py",
         "meaning": "url, source and citation_product_id are native subject values; existing date and receipt-origin measurements keep their definitions, and the origin is still read from each receipt’s original row.",
         "evidence": "scripts/gao_receipt_policy.py reviews the exact subject schema"
-      }
+      },
+      "originRuleChange": "2026-11-12 (ss-xuht): owner-approved rule update; retained-origins counts the public source column directly instead of retired per-row receipts."
     },
     {
       "tableId": "law_code_sections",
@@ -33529,6 +33528,1190 @@
           "The snapshots do not establish complete historical sanctions coverage, additions, removals, designation dates, or identical list dates."
         ]
       }
+    },
+    {
+      "tableId": "lobbying_affiliated_organizations",
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_organization_index",
+          "BIGINT"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ],
+        [
+          "address_1",
+          "VARCHAR"
+        ],
+        [
+          "address_2",
+          "VARCHAR"
+        ],
+        [
+          "address_3",
+          "VARCHAR"
+        ],
+        [
+          "address_4",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_city",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580",
+        "publishedAt": "2026-11-11T19:18:11Z",
+        "rows": 30082,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "lobbying_affiliated_organizations.parquet",
+            "byteSize": 935138,
+            "columns": [
+              [
+                "filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "affiliated_organization_index",
+                "BIGINT"
+              ],
+              [
+                "name",
+                "VARCHAR"
+              ],
+              [
+                "url",
+                "VARCHAR"
+              ],
+              [
+                "address_1",
+                "VARCHAR"
+              ],
+              [
+                "address_2",
+                "VARCHAR"
+              ],
+              [
+                "address_3",
+                "VARCHAR"
+              ],
+              [
+                "address_4",
+                "VARCHAR"
+              ],
+              [
+                "city",
+                "VARCHAR"
+              ],
+              [
+                "state",
+                "VARCHAR"
+              ],
+              [
+                "state_display",
+                "VARCHAR"
+              ],
+              [
+                "zip",
+                "VARCHAR"
+              ],
+              [
+                "country",
+                "VARCHAR"
+              ],
+              [
+                "country_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_city",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country_display",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 30082,
+            "sha256": "sha256:eb05723287f81fde521fd7e83c0dfdcf0db06be78b8437fbbdfee658a3992502",
+            "url": "https://data.spicygov.ai/generations/lobbying-filings/4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580/lobbying_affiliated_organizations.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "affiliated-organization-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each affiliated organization.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "affiliated-organization-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each affiliated organization inherits year/period from its unique same-family filing row."
+          }
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
+    },
+    {
+      "tableId": "lobbying_clients",
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "client_id",
+          "VARCHAR"
+        ],
+        [
+          "registrant_client_number",
+          "VARCHAR"
+        ],
+        [
+          "registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "general_description",
+          "VARCHAR"
+        ],
+        [
+          "client_government_entity",
+          "BOOLEAN"
+        ],
+        [
+          "client_self_select",
+          "BOOLEAN"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ],
+        [
+          "effective_date",
+          "DATE"
+        ],
+        [
+          "captured_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_filing_uuid",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580",
+        "publishedAt": "2026-11-11T19:18:11Z",
+        "rows": 130096,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "lobbying_clients.parquet",
+            "byteSize": 7586854,
+            "columns": [
+              [
+                "client_id",
+                "VARCHAR"
+              ],
+              [
+                "registrant_client_number",
+                "VARCHAR"
+              ],
+              [
+                "registrant_id",
+                "VARCHAR"
+              ],
+              [
+                "name",
+                "VARCHAR"
+              ],
+              [
+                "general_description",
+                "VARCHAR"
+              ],
+              [
+                "client_government_entity",
+                "BOOLEAN"
+              ],
+              [
+                "client_self_select",
+                "BOOLEAN"
+              ],
+              [
+                "state",
+                "VARCHAR"
+              ],
+              [
+                "state_display",
+                "VARCHAR"
+              ],
+              [
+                "country",
+                "VARCHAR"
+              ],
+              [
+                "country_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country_display",
+                "VARCHAR"
+              ],
+              [
+                "effective_date",
+                "DATE"
+              ],
+              [
+                "captured_at",
+                "TIMESTAMP WITH TIME ZONE"
+              ],
+              [
+                "captured_filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "url",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 130096,
+            "sha256": "sha256:8d3a62615e768c202542778677e1e4efcd87e146f74832a3d9aeaf0bf891cb9d",
+            "url": "https://data.spicygov.ai/generations/lobbying-filings/4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580/lobbying_clients.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "client-effective-dates",
+          "kind": "date",
+          "label": "Client effective dates",
+          "meaning": "Effective dates the Senate LDA record states for each client.",
+          "fields": [
+            "effective_date"
+          ]
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
+    },
+    {
+      "tableId": "lobbying_conviction_disclosures",
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "conviction_disclosure_index",
+          "BIGINT"
+        ],
+        [
+          "lobbyist_id",
+          "VARCHAR"
+        ],
+        [
+          "prefix",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "nickname",
+          "VARCHAR"
+        ],
+        [
+          "middle_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "suffix",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "DATE"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580",
+        "publishedAt": "2026-11-11T19:18:11Z",
+        "rows": 1606,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "lobbying_conviction_disclosures.parquet",
+            "byteSize": 38795,
+            "columns": [
+              [
+                "filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "conviction_disclosure_index",
+                "BIGINT"
+              ],
+              [
+                "lobbyist_id",
+                "VARCHAR"
+              ],
+              [
+                "prefix",
+                "VARCHAR"
+              ],
+              [
+                "first_name",
+                "VARCHAR"
+              ],
+              [
+                "nickname",
+                "VARCHAR"
+              ],
+              [
+                "middle_name",
+                "VARCHAR"
+              ],
+              [
+                "last_name",
+                "VARCHAR"
+              ],
+              [
+                "suffix",
+                "VARCHAR"
+              ],
+              [
+                "date",
+                "DATE"
+              ],
+              [
+                "description",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 1606,
+            "sha256": "sha256:c7d7fce4f35fb66b1ed073c883878460bade1aa8f22174d793bb344c6c30143e",
+            "url": "https://data.spicygov.ai/generations/lobbying-filings/4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580/lobbying_conviction_disclosures.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "conviction-disclosure-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each conviction disclosure.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "conviction-disclosure-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each conviction disclosure inherits year/period from its unique same-family filing row."
+          }
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
+    },
+    {
+      "tableId": "lobbying_foreign_entities",
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "foreign_entity_index",
+          "BIGINT"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "contribution",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "ownership_percentage",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "address",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_city",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state",
+          "VARCHAR"
+        ],
+        [
+          "ppb_state_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580",
+        "publishedAt": "2026-11-11T19:18:11Z",
+        "rows": 16188,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "lobbying_foreign_entities.parquet",
+            "byteSize": 657158,
+            "columns": [
+              [
+                "filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "foreign_entity_index",
+                "BIGINT"
+              ],
+              [
+                "name",
+                "VARCHAR"
+              ],
+              [
+                "contribution",
+                "DECIMAL(38,6)"
+              ],
+              [
+                "ownership_percentage",
+                "DECIMAL(38,6)"
+              ],
+              [
+                "address",
+                "VARCHAR"
+              ],
+              [
+                "city",
+                "VARCHAR"
+              ],
+              [
+                "state",
+                "VARCHAR"
+              ],
+              [
+                "state_display",
+                "VARCHAR"
+              ],
+              [
+                "country",
+                "VARCHAR"
+              ],
+              [
+                "country_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_city",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state",
+                "VARCHAR"
+              ],
+              [
+                "ppb_state_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country_display",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 16188,
+            "sha256": "sha256:fa62c39597fad04125d71565675bf7c02282aabc06344b4d5219e380b9d92324",
+            "url": "https://data.spicygov.ai/generations/lobbying-filings/4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580/lobbying_foreign_entities.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "foreign-entity-reporting-periods",
+          "kind": "inherited",
+          "label": "Reporting periods",
+          "meaning": "Reporting year and period of the saved filing that lists each foreign entity.",
+          "fields": [
+            "filing_uuid"
+          ],
+          "parent": {
+            "table": "lobbying_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_uuid",
+                "filing_uuid"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "foreign-entity-reporting-periods",
+            "kind": "category",
+            "fields": [
+              "filing_year",
+              "filing_period"
+            ],
+            "label": "Reporting periods",
+            "meaning": "Each foreign entity inherits year/period from its unique same-family filing row."
+          }
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
+    },
+    {
+      "tableId": "lobbying_registrants",
+      "family": "lobbying-filings",
+      "schema": [
+        [
+          "registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "house_registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "address_1",
+          "VARCHAR"
+        ],
+        [
+          "address_2",
+          "VARCHAR"
+        ],
+        [
+          "address_3",
+          "VARCHAR"
+        ],
+        [
+          "address_4",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_display",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "country",
+          "VARCHAR"
+        ],
+        [
+          "country_display",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country",
+          "VARCHAR"
+        ],
+        [
+          "ppb_country_display",
+          "VARCHAR"
+        ],
+        [
+          "contact_telephone",
+          "VARCHAR"
+        ],
+        [
+          "dt_updated",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "captured_filing_uuid",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580",
+        "publishedAt": "2026-11-11T19:18:11Z",
+        "rows": 14924,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "lobbying_registrants.parquet",
+            "byteSize": 1368441,
+            "columns": [
+              [
+                "registrant_id",
+                "VARCHAR"
+              ],
+              [
+                "house_registrant_id",
+                "VARCHAR"
+              ],
+              [
+                "name",
+                "VARCHAR"
+              ],
+              [
+                "description",
+                "VARCHAR"
+              ],
+              [
+                "address_1",
+                "VARCHAR"
+              ],
+              [
+                "address_2",
+                "VARCHAR"
+              ],
+              [
+                "address_3",
+                "VARCHAR"
+              ],
+              [
+                "address_4",
+                "VARCHAR"
+              ],
+              [
+                "city",
+                "VARCHAR"
+              ],
+              [
+                "state",
+                "VARCHAR"
+              ],
+              [
+                "state_display",
+                "VARCHAR"
+              ],
+              [
+                "zip",
+                "VARCHAR"
+              ],
+              [
+                "country",
+                "VARCHAR"
+              ],
+              [
+                "country_display",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country",
+                "VARCHAR"
+              ],
+              [
+                "ppb_country_display",
+                "VARCHAR"
+              ],
+              [
+                "contact_telephone",
+                "VARCHAR"
+              ],
+              [
+                "dt_updated",
+                "TIMESTAMP WITH TIME ZONE"
+              ],
+              [
+                "captured_at",
+                "TIMESTAMP WITH TIME ZONE"
+              ],
+              [
+                "captured_filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "url",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 14924,
+            "sha256": "sha256:627075b9c31ff9468895520d299714c4dbb9067c8406462e661ffbed50935058",
+            "url": "https://data.spicygov.ai/generations/lobbying-filings/4f5cb4fa9805f0913578b9bfa316dc0cc3447e2a4cc2aea0095b1cdbcbde5580/lobbying_registrants.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "registrant-update-dates",
+          "kind": "date",
+          "label": "Registrant record update dates",
+          "meaning": "When the Senate LDA last updated each registrant record; not registration dates.",
+          "fields": [
+            "dt_updated"
+          ]
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
+    },
+    {
+      "tableId": "treasury_statement_classification_cells",
+      "family": "treasury-fiscal",
+      "schema": [
+        [
+          "report_date",
+          "DATE"
+        ],
+        [
+          "src_line_nbr",
+          "INTEGER"
+        ],
+        [
+          "parent_src_line_nbr",
+          "INTEGER"
+        ],
+        [
+          "print_order_nbr",
+          "INTEGER"
+        ],
+        [
+          "sequence_level_nbr",
+          "INTEGER"
+        ],
+        [
+          "sequence_number_cd_literal",
+          "VARCHAR"
+        ],
+        [
+          "classification_id",
+          "VARCHAR"
+        ],
+        [
+          "parent_id_literal",
+          "VARCHAR"
+        ],
+        [
+          "classification_desc",
+          "VARCHAR"
+        ],
+        [
+          "data_type_cd",
+          "VARCHAR"
+        ],
+        [
+          "record_type_cd",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "measure_fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "amount_literal",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "amount_unit",
+          "VARCHAR"
+        ],
+        [
+          "amount_usd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "marker_kind",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "qualification_report_url",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_page_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "field_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:af071c22c1bd954eb9638ecee2ac14eb4229422431a1bfcc10a3fcc5ee618126",
+        "publishedAt": "2026-11-10T21:43:38Z",
+        "rows": 375,
+        "memberCount": 1,
+        "members": [
+          {
+            "key": "treasury_statement_classification_cells.parquet",
+            "byteSize": 41292,
+            "columns": [
+              [
+                "report_date",
+                "DATE"
+              ],
+              [
+                "src_line_nbr",
+                "INTEGER"
+              ],
+              [
+                "parent_src_line_nbr",
+                "INTEGER"
+              ],
+              [
+                "print_order_nbr",
+                "INTEGER"
+              ],
+              [
+                "sequence_level_nbr",
+                "INTEGER"
+              ],
+              [
+                "sequence_number_cd_literal",
+                "VARCHAR"
+              ],
+              [
+                "classification_id",
+                "VARCHAR"
+              ],
+              [
+                "parent_id_literal",
+                "VARCHAR"
+              ],
+              [
+                "classification_desc",
+                "VARCHAR"
+              ],
+              [
+                "data_type_cd",
+                "VARCHAR"
+              ],
+              [
+                "record_type_cd",
+                "VARCHAR"
+              ],
+              [
+                "measure",
+                "VARCHAR"
+              ],
+              [
+                "measure_fiscal_year",
+                "INTEGER"
+              ],
+              [
+                "amount_literal",
+                "VARCHAR"
+              ],
+              [
+                "amount",
+                "DECIMAL(38,2)"
+              ],
+              [
+                "amount_unit",
+                "VARCHAR"
+              ],
+              [
+                "amount_usd",
+                "DECIMAL(38,2)"
+              ],
+              [
+                "marker_kind",
+                "VARCHAR"
+              ],
+              [
+                "qualification_report_sha256",
+                "VARCHAR"
+              ],
+              [
+                "qualification_report_url",
+                "VARCHAR"
+              ],
+              [
+                "source_record_id",
+                "VARCHAR"
+              ],
+              [
+                "source_release_logical_id",
+                "VARCHAR"
+              ],
+              [
+                "source_release_digest",
+                "VARCHAR"
+              ],
+              [
+                "source_page_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_locator_json",
+                "VARCHAR"
+              ],
+              [
+                "source_selection_json",
+                "VARCHAR"
+              ],
+              [
+                "field_metadata_json",
+                "VARCHAR"
+              ],
+              [
+                "raw_row_json",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 375,
+            "sha256": "sha256:ca3a9fa4368620e149dda49282b86c4f4d10f16a53901323b5786441f25a7c1d",
+            "url": "https://data.spicygov.ai/generations/treasury-fiscal/af071c22c1bd954eb9638ecee2ac14eb4229422431a1bfcc10a3fcc5ee618126/treasury_statement_classification_cells.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "report-dates",
+          "kind": "date",
+          "label": "Statement report dates",
+          "meaning": "Report dates of the Monthly Treasury Statement issues recorded here.",
+          "fields": [
+            "report_date"
+          ]
+        },
+        {
+          "id": "measure-fiscal-years",
+          "kind": "category",
+          "label": "Measure fiscal years",
+          "meaning": "Fiscal years the amounts refer to, separate from the report date.",
+          "fields": [
+            "measure_fiscal_year"
+          ],
+          "syntax": "positive-integer"
+        }
+      ],
+      "reviewNote": "2026-11-12 (ss-xuht): owner-approved draft definition added against live published columns."
     }
   ],
   "scannerRequirements": [
@@ -33575,5 +34758,9 @@
       "Native-reference text is intentionally NULL on native references; evidence-class scope distinguishes references from source notes and does not imply target resolution.",
       "Nonblank saved text does not establish complete content or publisher attachment availability."
     ]
-  }
+  },
+  "assignedFamilies": [
+    "lobbying-filings",
+    "treasury-fiscal"
+  ]
 }

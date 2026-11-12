@@ -167,10 +167,53 @@ class PublishedOnlyRoute(unittest.TestCase):
 
     def test_receipt_based_dimensions_refuse_instead_of_reading_receipts(self):
         import regulation_coverage
-        policy = builder.definitions()['gao_reports']
-        dim = next(d for d in policy['dimensions'] if d.get('special') == 'government-receipt-origins')
+        policy = builder.definitions()['usaspending_recipients']
+        dim = next(d for d in policy['dimensions'] if d.get('special') == 'government-receipt-observation-dates')
         with self.assertRaisesRegex(ValueError, 'Receipt-based coverage dimension retired'):
-            regulation_coverage.scan_special(None, 'gao_reports', {}, dim, None)
+            regulation_coverage.scan_special(None, 'usaspending_recipients', {}, dim, None)
+        with self.assertRaisesRegex(ValueError, 'Receipt-based coverage dimension retired'):
+            regulation_coverage.scan_special(
+                None, 'gao_reports', {}, {'id': 'retained-origins', 'special': 'government-receipt-origins'}, None
+            )
+
+    def test_gao_origins_and_new_published_definitions_measure_public_columns(self):
+        import duckdb, pathlib, tempfile
+        import coverage_scan
+        defs = builder.definitions()
+        expected_new = {
+            'committee_directory_entries', 'committee_report_cbo_letters',
+            'house_disbursements', 'house_disbursements_summary',
+            'lobbying_affiliated_organizations', 'lobbying_clients',
+            'lobbying_conviction_disclosures', 'lobbying_foreign_entities',
+            'lobbying_registrants', 'treasury_statement_classification_cells',
+        }
+        self.assertTrue(expected_new <= set(defs))
+        for table_id in ('gao_reports', 'gao_decisions'):
+            policy = defs[table_id]
+            dim = next(d for d in policy['dimensions'] if d['id'] == 'retained-origins')
+            self.assertEqual(dim['fields'], ['source'])
+            self.assertNotIn('special', dim)
+            with tempfile.TemporaryDirectory() as folder:
+                path = pathlib.Path(folder) / f'{table_id}.parquet'
+                cols = ', '.join(f'"{name}" {dtype}' for name, dtype in policy['schema'])
+                with duckdb.connect() as conn:
+                    conn.execute(f'CREATE TABLE t ({cols})')
+                    conn.execute("INSERT INTO t (source) VALUES ('search'), ('search'), ('archive'), (NULL)")
+                    conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+                raw = path.read_bytes()
+                table = {
+                    'family': 'gao-reports',
+                    'kind': 'generation',
+                    'columns': policy['schema'],
+                    'rows': 4,
+                    'publishedAt': '2026-11-11T00:00:00Z',
+                    'members': [{'key': path.name, 'url': str(path), 'rows': 4, 'byteSize': len(raw)}],
+                    '_coverageAsOfMonth': '2026-11',
+                }
+                result = coverage_scan.scan_table(table_id, table, policy)
+                origins = next(d for d in result['dimensions'] if d['id'] == 'retained-origins')
+                self.assertEqual(origins['buckets'], {'["archive"]': 1, '["search"]': 2})
+                self.assertEqual((origins['placedRows'], origins['unplacedRows']), (3, 1))
 
 
 if __name__ == '__main__':
