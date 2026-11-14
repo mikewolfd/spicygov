@@ -36,3 +36,26 @@ test('file parser refuses private fields, unsafe origins and unqualified capture
     { ...provenance, availability: 'remote-maybe' },
   ]) assert.throws(() => parse(bad));
 });
+
+test('recovered Google Books PDF sources retain their public volume identifiers', () => {
+  const urls = [
+    'https://books.google.com/books/download/Report_of_the_Secretary_of_the_Senate.pdf?id=OoyNNdJYIw8C&output=pdf',
+    'https://books.google.com/books/download/Report_of_the_Secretary_of_the_Senate_Ap.pdf?id=_JqMqHqpkc0C&output=pdf',
+    'https://books.google.com/books/download/Report_of_the_Secretary_of_the_Senate.pdf?output=pdf&id=OoyNNdJYIw8C',
+  ];
+  assert.deepEqual(parse({...provenance,sourceUrls:urls}).files[0].provenance.sourceUrls,urls);
+});
+
+test('Google Books support refuses signed, ambiguous and unrelated query URLs', () => {
+  const url = 'https://books.google.com/books/download/Report.pdf?id=OoyNNdJYIw8C&output=pdf';
+  for (const bad of [
+    `${url}&sig=private`, `${url}&token=private`, `${url}&download=1`,
+    `${url}&id=WHF6CogHDB4C`, `${url}&output=pdf`, `${url}#private`,
+    url.replace('OoyNNdJYIw8C',''), url.replace('OoyNNdJYIw8C','bad/id'),
+    url.replace('&output=pdf',''), url.replace('output=pdf','output=epub'),
+    url.replace('https:','http:'), url.replace('books.google.com','books.google.com.example.org'),
+    url.replace('books.google.com','books.google.com:8443'),
+    url.replace('books.google.com','user:password@books.google.com'),
+    url.replace('/books/download/','/books/'), url.replace('.pdf?','.html?'),
+  ]) assert.throws(() => parse({...provenance,sourceUrls:[url,bad]}),undefined,bad);
+});
