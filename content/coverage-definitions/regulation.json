@@ -741,7 +741,7 @@
             "ingest_source"
           ],
           "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
+          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row’s origin, not a complete collection history."
         }
       ]
     },
@@ -2321,7 +2321,7 @@
             "link_source"
           ],
           "label": "Docket link evidence",
-          "meaning": "Whether a link appears in the Federal Register\u2019s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
+          "meaning": "Whether a link appears in the Federal Register’s printed docket labels, its Regulations.gov link, or both. These are stated links, not proof that the notice legally applies to the docket."
         }
       ]
     },
@@ -2520,7 +2520,7 @@
             "source"
           ],
           "label": "Saved decision origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -2636,7 +2636,7 @@
             "source"
           ],
           "label": "Saved report origins",
-          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field\u2019s source or the complete collection history."
+          "meaning": "Recorded origin of each saved row. Later updates can add fields from other sources while keeping this origin; it is not every field’s source or the complete collection history."
         }
       ]
     },
@@ -2977,6 +2977,52 @@
             "meaning": "Congress of the exact captured law body that produced each section. Approval dates, Congress scope and section availability are separate."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "law_id",
+          "VARCHAR"
+        ],
+        [
+          "seq",
+          "BIGINT"
+        ],
+        [
+          "publisher_id",
+          "VARCHAR"
+        ],
+        [
+          "publisher_identifier",
+          "VARCHAR"
+        ],
+        [
+          "section_number",
+          "VARCHAR"
+        ],
+        [
+          "section_number_value",
+          "VARCHAR"
+        ],
+        [
+          "heading",
+          "VARCHAR"
+        ],
+        [
+          "parent_seq",
+          "BIGINT"
+        ],
+        [
+          "hierarchy",
+          "STRUCT(element VARCHAR, publisher_id VARCHAR, publisher_identifier VARCHAR, number VARCHAR, heading VARCHAR)[]"
+        ],
+        [
+          "body",
+          "VARCHAR"
+        ],
+        [
+          "is_quoted",
+          "BOOLEAN"
+        ]
       ]
     },
     "laws": {
@@ -4389,7 +4435,7 @@
         {
           "id": "agenda-proceeding-link-evidence-dates",
           "kind": "date",
-          "label": "Agenda\u2013proceeding link evidence dates",
+          "label": "Agenda–proceeding link evidence dates",
           "meaning": "Dates of source evidence linking an agenda regulation identifier to a proceeding. Undated evidence remains unplaced; no collection date or agenda edition is substituted.",
           "fields": [
             "evidence_date"
@@ -6054,7 +6100,7 @@
           "id": "archive-inspectors",
           "kind": "category",
           "label": "Archive inspector labels",
-          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office\u2019s reports are saved.",
+          "meaning": "Inspector labels taken from the archive paths of the saved reports. A label listed here does not show that all of that office’s reports are saved.",
           "fields": [
             "archive_inspector"
           ]
@@ -6063,7 +6109,7 @@
           "id": "selection-scopes",
           "kind": "category",
           "label": "Selection scope",
-          "meaning": "The scope recorded when each report was selected. Metadata only means the report\u2019s links and files are declared, not saved.",
+          "meaning": "The scope recorded when each report was selected. Metadata only means the report’s links and files are declared, not saved.",
           "fields": [
             "selected_scope"
           ]
@@ -7657,15 +7703,6 @@
           ],
           "label": "Selected OFAC lists",
           "meaning": "Lists named by retained snapshots. Different selected lists may state different data-as-of dates."
-        },
-        {
-          "id": "ofac-observation-dates",
-          "kind": "date",
-          "fields": [
-            "observed_at"
-          ],
-          "label": "Observation dates",
-          "meaning": "When the source snapshot was observed. These are capture dates, separate from source-stated data-as-of dates and designation dates."
         }
       ]
     },

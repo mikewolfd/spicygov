@@ -33244,15 +33244,6 @@
           ],
           "label": "Selected OFAC lists",
           "meaning": "Lists named by retained snapshots. Different selected lists may state different data-as-of dates."
-        },
-        {
-          "id": "ofac-observation-dates",
-          "kind": "date",
-          "fields": [
-            "observed_at"
-          ],
-          "label": "Observation dates",
-          "meaning": "When the source snapshot was observed. These are capture dates, separate from source-stated data-as-of dates and designation dates."
         }
       ],
       "reviewedAt": "2026-10-31",

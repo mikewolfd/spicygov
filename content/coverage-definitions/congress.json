@@ -458,6 +458,30 @@
         [
           "stage",
           "VARCHAR"
+        ],
+        [
+          "action_committees",
+          "STRUCT(system_code VARCHAR, \"name\" VARCHAR, url VARCHAR)[]"
+        ],
+        [
+          "action_calendar_numbers",
+          "STRUCT(calendar VARCHAR, number VARCHAR)[]"
+        ],
+        [
+          "action_recorded_votes",
+          "STRUCT(chamber VARCHAR, congress VARCHAR, date VARCHAR, full_action_name VARCHAR, roll_number VARCHAR, session_number VARCHAR, url VARCHAR)[]"
+        ],
+        [
+          "source_page_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_page_observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_page_row_index",
+          "BIGINT"
         ]
       ]
     },
@@ -1298,6 +1322,36 @@
             "meaning": "Publisher date of the exact retained printing; enrolled/unstated dates remain unplaced."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "version_code",
+          "VARCHAR"
+        ],
+        [
+          "printing_id",
+          "VARCHAR"
+        ],
+        [
+          "summary",
+          "VARCHAR"
+        ],
+        [
+          "audience",
+          "VARCHAR"
+        ],
+        [
+          "top_provisions",
+          "VARCHAR[]"
+        ],
+        [
+          "money_bill_kind",
+          "VARCHAR"
+        ]
       ]
     },
     "bill_versions": {
@@ -1771,6 +1825,200 @@
           ],
           "label": "Congress and bill type",
           "meaning": "Congress and bill type recorded together. Rows missing any of these values stay unplaced."
+        }
+      ]
+    },
+    "cbo_estimate_cards": {
+      "family": "bill-family",
+      "schema": [
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "publication_date",
+          "VARCHAR"
+        ],
+        [
+          "publication_title",
+          "VARCHAR"
+        ],
+        [
+          "publication_context",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "subtitle",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "source_unit",
+          "VARCHAR"
+        ],
+        [
+          "reported_measures",
+          "STRUCT(source_field VARCHAR, \"label\" VARCHAR, source_unit VARCHAR, literals VARCHAR[], millions BIGINT[])[]"
+        ],
+        [
+          "notes",
+          "VARCHAR[]"
+        ],
+        [
+          "windows",
+          "STRUCT(period VARCHAR, direct_spending_outlays_literal VARCHAR, direct_spending_outlays_millions BIGINT, revenues_literal VARCHAR, revenues_millions BIGINT, increase_or_decrease_in_the_deficit_literal VARCHAR, increase_or_decrease_in_the_deficit_millions BIGINT, spending_subject_to_appropriation_outlays_literal VARCHAR, spending_subject_to_appropriation_outlays_millions BIGINT)[]"
+        ],
+        [
+          "answers",
+          "STRUCT(pay_go VARCHAR, increase_net_spending VARCHAR, increase_budget_deficits VARCHAR, mandate_effect_intergovernmental VARCHAR, mandate_effect_private_sector VARCHAR)"
+        ],
+        [
+          "flags",
+          "STRUCT(pay_go BOOLEAN, increase_net_spending BOOLEAN, increase_budget_deficits BOOLEAN, mandate_effect_intergovernmental BOOLEAN, mandate_effect_private_sector BOOLEAN)"
+        ],
+        [
+          "footnotes",
+          "VARCHAR[]"
+        ],
+        [
+          "pdf_urls",
+          "VARCHAR[]"
+        ],
+        [
+          "card_source",
+          "VARCHAR"
+        ],
+        [
+          "markup",
+          "VARCHAR"
+        ],
+        [
+          "schema_version",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "receipt_object",
+          "VARCHAR"
+        ],
+        [
+          "authority",
+          "VARCHAR"
+        ],
+        [
+          "archive_operator",
+          "VARCHAR"
+        ],
+        [
+          "original_publisher_url",
+          "VARCHAR"
+        ],
+        [
+          "archive_timestamp",
+          "VARCHAR"
+        ],
+        [
+          "earliest_timestamp",
+          "VARCHAR"
+        ],
+        [
+          "index_sha256",
+          "VARCHAR"
+        ],
+        [
+          "index_digest",
+          "VARCHAR"
+        ],
+        [
+          "crawl_id",
+          "VARCHAR"
+        ],
+        [
+          "warc_filename",
+          "VARCHAR"
+        ],
+        [
+          "extraction_method",
+          "VARCHAR"
+        ],
+        [
+          "model_id",
+          "VARCHAR"
+        ],
+        [
+          "request_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_rule",
+          "VARCHAR"
+        ],
+        [
+          "captures",
+          "BIGINT"
+        ],
+        [
+          "warc_offset",
+          "BIGINT"
+        ],
+        [
+          "warc_length",
+          "BIGINT"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved structured CBO cost-estimate summary cards. Empty tables or periods do not prove absence in the publisher record.",
+      "dimensions": [
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers represented by saved estimate cards.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "estimate-card-publication",
+          "kind": "date",
+          "label": "Estimate card publication",
+          "meaning": "Publication date recorded on each retained CBO cost-estimate summary card.",
+          "fields": [
+            "publication_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "card-source",
+          "kind": "category",
+          "label": "Card source",
+          "meaning": "Origin category recorded on retained CBO cost-estimate summary cards.",
+          "fields": [
+            "card_source"
+          ]
         }
       ]
     },
@@ -2325,6 +2573,48 @@
             "meaning": "Publisher date of the exact retained printing; enrolled/unstated dates remain unplaced."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "from_version_code",
+          "VARCHAR"
+        ],
+        [
+          "from_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "to_version_code",
+          "VARCHAR"
+        ],
+        [
+          "to_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "headline",
+          "VARCHAR"
+        ],
+        [
+          "key_changes",
+          "VARCHAR[]"
+        ],
+        [
+          "sections_added",
+          "VARCHAR[]"
+        ],
+        [
+          "sections_removed",
+          "VARCHAR[]"
+        ],
+        [
+          "dollar_changes",
+          "VARCHAR[]"
+        ]
       ]
     },
     "financial_changes": {
@@ -2487,6 +2777,56 @@
             "meaning": "Publisher date of the exact retained printing; enrolled/unstated dates remain unplaced."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "from_version_code",
+          "VARCHAR"
+        ],
+        [
+          "from_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "to_version_code",
+          "VARCHAR"
+        ],
+        [
+          "to_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "seq",
+          "BIGINT"
+        ],
+        [
+          "amount_index",
+          "BIGINT"
+        ],
+        [
+          "label",
+          "VARCHAR"
+        ],
+        [
+          "from_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "to_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "delta",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "pairing_claim",
+          "VARCHAR"
+        ]
       ]
     },
     "public_activity_events": {
@@ -2595,6 +2935,52 @@
             "meaning": "Source bill introduction, not update or capture time."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "event_type",
+          "VARCHAR"
+        ],
+        [
+          "subject_id",
+          "VARCHAR"
+        ],
+        [
+          "occurred_at",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "from_stage",
+          "VARCHAR"
+        ],
+        [
+          "to_stage",
+          "VARCHAR"
+        ],
+        [
+          "version_code",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ]
       ]
     },
     "section_classifications": {
@@ -2731,6 +3117,36 @@
             "meaning": "Publisher date of the exact retained printing; enrolled/unstated dates remain unplaced."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "version_code",
+          "VARCHAR"
+        ],
+        [
+          "printing_id",
+          "VARCHAR"
+        ],
+        [
+          "seq",
+          "BIGINT"
+        ],
+        [
+          "match_path",
+          "VARCHAR[]"
+        ],
+        [
+          "body_index",
+          "BIGINT"
+        ],
+        [
+          "label",
+          "VARCHAR"
+        ]
       ]
     },
     "section_diff_items": {
@@ -2981,6 +3397,108 @@
             "meaning": "Two separate printing endpoints, not the model computation date."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "from_version_code",
+          "VARCHAR"
+        ],
+        [
+          "from_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "to_version_code",
+          "VARCHAR"
+        ],
+        [
+          "to_printing_id",
+          "VARCHAR"
+        ],
+        [
+          "seq",
+          "BIGINT"
+        ],
+        [
+          "op",
+          "VARCHAR"
+        ],
+        [
+          "moved",
+          "BOOLEAN"
+        ],
+        [
+          "match_path",
+          "VARCHAR[]"
+        ],
+        [
+          "display_path_old",
+          "VARCHAR[]"
+        ],
+        [
+          "display_path_new",
+          "VARCHAR[]"
+        ],
+        [
+          "section_number",
+          "VARCHAR"
+        ],
+        [
+          "heading",
+          "VARCHAR"
+        ],
+        [
+          "from_element_id",
+          "VARCHAR"
+        ],
+        [
+          "to_element_id",
+          "VARCHAR"
+        ],
+        [
+          "from_text_chars",
+          "BIGINT"
+        ],
+        [
+          "to_text_chars",
+          "BIGINT"
+        ],
+        [
+          "text_diff",
+          "VARCHAR[]"
+        ],
+        [
+          "text_diff_truncated",
+          "BOOLEAN"
+        ],
+        [
+          "financial_from_amounts",
+          "DECIMAL(38,2)[]"
+        ],
+        [
+          "financial_to_amounts",
+          "DECIMAL(38,2)[]"
+        ],
+        [
+          "financial_amounts_changed",
+          "BOOLEAN"
+        ],
+        [
+          "financial_has_amendment_annotations",
+          "BOOLEAN"
+        ],
+        [
+          "from_body_version_id",
+          "VARCHAR"
+        ],
+        [
+          "to_body_version_id",
+          "VARCHAR"
+        ]
       ]
     },
     "section_diffs": {
@@ -5131,6 +5649,44 @@
           "label": "Member vote source observations",
           "meaning": "All restored source observations, with every receipt-only vote-day and matching-status group preserved. Published assignments alone form the chart counts. Conversion-refused rows are not restored observations."
         }
+      ],
+      "publishedSchema": [
+        [
+          "vote_id",
+          "VARCHAR"
+        ],
+        [
+          "member_key",
+          "VARCHAR"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "vote_day",
+          "VARCHAR"
+        ],
+        [
+          "term_match",
+          "VARCHAR"
+        ],
+        [
+          "term_index",
+          "BIGINT"
+        ],
+        [
+          "term_start",
+          "VARCHAR"
+        ],
+        [
+          "term_end",
+          "VARCHAR"
+        ]
       ]
     },
     "member_party_affiliations": {
@@ -5217,6 +5773,64 @@
             }
           ]
         }
+      ],
+      "publishedSchema": [
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "term_index",
+          "BIGINT"
+        ],
+        [
+          "affiliation_index",
+          "BIGINT"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "affiliation_start",
+          "VARCHAR"
+        ],
+        [
+          "affiliation_end",
+          "VARCHAR"
+        ],
+        [
+          "term_party",
+          "VARCHAR"
+        ],
+        [
+          "caucus",
+          "VARCHAR"
+        ],
+        [
+          "input_sha256",
+          "VARCHAR"
+        ],
+        [
+          "start_status",
+          "VARCHAR"
+        ],
+        [
+          "end_status",
+          "VARCHAR"
+        ],
+        [
+          "source_path",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_json",
+          "VARCHAR"
+        ]
       ]
     },
     "member_terms": {
@@ -5268,6 +5882,48 @@
             "term_end"
           ]
         }
+      ],
+      "publishedSchema": [
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "term_index",
+          "BIGINT"
+        ],
+        [
+          "term_type",
+          "VARCHAR"
+        ],
+        [
+          "term_start",
+          "VARCHAR"
+        ],
+        [
+          "term_end",
+          "VARCHAR"
+        ],
+        [
+          "term_state",
+          "VARCHAR"
+        ],
+        [
+          "term_party",
+          "VARCHAR"
+        ],
+        [
+          "term_district",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "party_affiliations_state",
+          "VARCHAR"
+        ]
       ]
     },
     "members": {
@@ -5400,6 +6056,112 @@
             "meaning": "Individual source-stated terms."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "bioguide_id",
+          "VARCHAR"
+        ],
+        [
+          "bioguide_previous",
+          "VARCHAR[]"
+        ],
+        [
+          "lis_id",
+          "VARCHAR"
+        ],
+        [
+          "fec_ids",
+          "VARCHAR[]"
+        ],
+        [
+          "icpsr_id",
+          "VARCHAR"
+        ],
+        [
+          "govtrack_id",
+          "VARCHAR"
+        ],
+        [
+          "votesmart_id",
+          "VARCHAR"
+        ],
+        [
+          "opensecrets_id",
+          "VARCHAR"
+        ],
+        [
+          "wikidata_id",
+          "VARCHAR"
+        ],
+        [
+          "name_first",
+          "VARCHAR"
+        ],
+        [
+          "name_last",
+          "VARCHAR"
+        ],
+        [
+          "other_names",
+          "STRUCT(\"first\" VARCHAR, middle VARCHAR, \"last\" VARCHAR, nickname VARCHAR, suffix VARCHAR, official_full VARCHAR, \"start\" VARCHAR, \"end\" VARCHAR)[]"
+        ],
+        [
+          "term_count",
+          "BIGINT"
+        ],
+        [
+          "first_term_start",
+          "VARCHAR"
+        ],
+        [
+          "last_term_end",
+          "VARCHAR"
+        ],
+        [
+          "current_term_type",
+          "VARCHAR"
+        ],
+        [
+          "current_term_state",
+          "VARCHAR"
+        ],
+        [
+          "current_term_party",
+          "VARCHAR"
+        ],
+        [
+          "current_term_district",
+          "VARCHAR"
+        ],
+        [
+          "name_nickname",
+          "VARCHAR"
+        ],
+        [
+          "name_middle",
+          "VARCHAR"
+        ],
+        [
+          "name_suffix",
+          "VARCHAR"
+        ],
+        [
+          "name_official_full",
+          "VARCHAR"
+        ],
+        [
+          "roster",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "other_names_json",
+          "VARCHAR"
+        ]
       ]
     },
     "nominations": {
@@ -5927,6 +6689,80 @@
             "meaning": "Publication Congress/session of the exact report/text version containing each passage."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "document_key",
+          "VARCHAR"
+        ],
+        [
+          "document_kind",
+          "VARCHAR"
+        ],
+        [
+          "bill_id",
+          "VARCHAR"
+        ],
+        [
+          "print_phrasing",
+          "VARCHAR"
+        ],
+        [
+          "span_start",
+          "BIGINT"
+        ],
+        [
+          "span_end",
+          "BIGINT"
+        ],
+        [
+          "matched_text",
+          "VARCHAR"
+        ],
+        [
+          "mention_span_start",
+          "BIGINT"
+        ],
+        [
+          "mention_span_end",
+          "BIGINT"
+        ],
+        [
+          "sentence_start",
+          "BIGINT"
+        ],
+        [
+          "sentence_end",
+          "BIGINT"
+        ],
+        [
+          "bills_in_sentence",
+          "BIGINT"
+        ],
+        [
+          "sealed_stage",
+          "VARCHAR"
+        ],
+        [
+          "billstatus_action_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "stated_date",
+          "VARCHAR"
+        ],
+        [
+          "stated_date_count",
+          "BIGINT"
+        ],
+        [
+          "body_version_id",
+          "VARCHAR"
+        ]
       ]
     },
     "budget_volumes": {
@@ -6410,6 +7246,56 @@
           "label": "Citing document months",
           "meaning": "Issue, filing or printing dates for the exact saved text. Lobbying periods have year precision; court dates come from the original saved context."
         }
+      ],
+      "publishedSchema": [
+        [
+          "document_key",
+          "VARCHAR"
+        ],
+        [
+          "document_kind",
+          "VARCHAR"
+        ],
+        [
+          "cite_kind",
+          "VARCHAR"
+        ],
+        [
+          "target_key",
+          "VARCHAR"
+        ],
+        [
+          "span_start",
+          "BIGINT"
+        ],
+        [
+          "span_end",
+          "BIGINT"
+        ],
+        [
+          "matched_text",
+          "VARCHAR"
+        ],
+        [
+          "target_table",
+          "VARCHAR"
+        ],
+        [
+          "target_resolved",
+          "BOOLEAN"
+        ],
+        [
+          "target_rule",
+          "VARCHAR"
+        ],
+        [
+          "stated_by_index",
+          "BOOLEAN"
+        ],
+        [
+          "body_version_id",
+          "VARCHAR"
+        ]
       ]
     },
     "house_activity_reports": {
@@ -7200,6 +8086,26 @@
         [
           "party_totals",
           "STRUCT(party VARCHAR, \"yea-total\" BIGINT, \"nay-total\" BIGINT, \"present-total\" BIGINT, \"not-voting-total\" BIGINT)[]"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "match_rule",
+          "VARCHAR"
+        ],
+        [
+          "match_action_index",
+          "BIGINT"
+        ],
+        [
+          "match_url",
+          "VARCHAR"
+        ],
+        [
+          "conflict_count",
+          "BIGINT"
         ]
       ]
     },

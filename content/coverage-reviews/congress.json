@@ -25,7 +25,7 @@
     "senate-expenditures",
     "treaties"
   ],
-  "tableCount": 74,
+  "tableCount": 75,
   "everyAssignedTableEnumerated": true,
   "fullCountsReconciled": true,
   "claimBoundary": "This review measures retained presence and source scope, not the completeness of publisher acquisition.",
@@ -5947,6 +5947,212 @@
         "acquisition-route",
         "scope-congress-bill_type"
       ]
+    },
+    {
+      "tableId": "cbo_estimate_cards",
+      "family": "bill-family",
+      "schema": [
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "BIGINT"
+        ],
+        [
+          "publication_date",
+          "VARCHAR"
+        ],
+        [
+          "publication_title",
+          "VARCHAR"
+        ],
+        [
+          "publication_context",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "subtitle",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "source_unit",
+          "VARCHAR"
+        ],
+        [
+          "reported_measures",
+          "STRUCT(source_field VARCHAR, \"label\" VARCHAR, source_unit VARCHAR, literals VARCHAR[], millions BIGINT[])[]"
+        ],
+        [
+          "notes",
+          "VARCHAR[]"
+        ],
+        [
+          "windows",
+          "STRUCT(period VARCHAR, direct_spending_outlays_literal VARCHAR, direct_spending_outlays_millions BIGINT, revenues_literal VARCHAR, revenues_millions BIGINT, increase_or_decrease_in_the_deficit_literal VARCHAR, increase_or_decrease_in_the_deficit_millions BIGINT, spending_subject_to_appropriation_outlays_literal VARCHAR, spending_subject_to_appropriation_outlays_millions BIGINT)[]"
+        ],
+        [
+          "answers",
+          "STRUCT(pay_go VARCHAR, increase_net_spending VARCHAR, increase_budget_deficits VARCHAR, mandate_effect_intergovernmental VARCHAR, mandate_effect_private_sector VARCHAR)"
+        ],
+        [
+          "flags",
+          "STRUCT(pay_go BOOLEAN, increase_net_spending BOOLEAN, increase_budget_deficits BOOLEAN, mandate_effect_intergovernmental BOOLEAN, mandate_effect_private_sector BOOLEAN)"
+        ],
+        [
+          "footnotes",
+          "VARCHAR[]"
+        ],
+        [
+          "pdf_urls",
+          "VARCHAR[]"
+        ],
+        [
+          "card_source",
+          "VARCHAR"
+        ],
+        [
+          "markup",
+          "VARCHAR"
+        ],
+        [
+          "schema_version",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "receipt_object",
+          "VARCHAR"
+        ],
+        [
+          "authority",
+          "VARCHAR"
+        ],
+        [
+          "archive_operator",
+          "VARCHAR"
+        ],
+        [
+          "original_publisher_url",
+          "VARCHAR"
+        ],
+        [
+          "archive_timestamp",
+          "VARCHAR"
+        ],
+        [
+          "earliest_timestamp",
+          "VARCHAR"
+        ],
+        [
+          "index_sha256",
+          "VARCHAR"
+        ],
+        [
+          "index_digest",
+          "VARCHAR"
+        ],
+        [
+          "crawl_id",
+          "VARCHAR"
+        ],
+        [
+          "warc_filename",
+          "VARCHAR"
+        ],
+        [
+          "extraction_method",
+          "VARCHAR"
+        ],
+        [
+          "model_id",
+          "VARCHAR"
+        ],
+        [
+          "request_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_rule",
+          "VARCHAR"
+        ],
+        [
+          "captures",
+          "BIGINT"
+        ],
+        [
+          "warc_offset",
+          "BIGINT"
+        ],
+        [
+          "warc_length",
+          "BIGINT"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/bill-family/082232ac08183e0fcd7a7af4be9c892c9cd4abcc516c76537f27fa11f8f2db8d/artifact.json",
+        "artifactDigest": "sha256:082232ac08183e0fcd7a7af4be9c892c9cd4abcc516c76537f27fa11f8f2db8d",
+        "sha256": "sha256:98e25fb458069fa6bd53e59d0d41b8e6d944dc25a01bace5fef30bd2c39f1cdb",
+        "publishedAt": "2026-11-14T03:56:52Z",
+        "members": [
+          {
+            "url": "https://data.spicygov.ai/generations/bill-family/082232ac08183e0fcd7a7af4be9c892c9cd4abcc516c76537f27fa11f8f2db8d/cbo_estimate_cards.parquet",
+            "rows": 0,
+            "sha256": "sha256:98e25fb458069fa6bd53e59d0d41b8e6d944dc25a01bace5fef30bd2c39f1cdb",
+            "byteSize": 7391
+          }
+        ],
+        "rows": 0,
+        "byteSize": 7391,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "kind": "category",
+          "fields": [
+            "congress"
+          ],
+          "label": "Congress",
+          "meaning": "Congress numbers represented by retained estimate card rows."
+        },
+        {
+          "kind": "date",
+          "fields": [
+            "publication_date"
+          ],
+          "label": "Estimate card publication",
+          "meaning": "Publication date recorded on each retained CBO cost-estimate summary card."
+        },
+        {
+          "kind": "category",
+          "fields": [
+            "card_source"
+          ],
+          "label": "Card source",
+          "meaning": "Origin category recorded on retained CBO cost-estimate summary cards."
+        }
+      ],
+      "reviewedAt": "2026-11-24"
     },
     {
       "tableId": "cbo_feed_items",
