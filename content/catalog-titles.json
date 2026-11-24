@@ -21,6 +21,7 @@
     "bill_vote_references": "Roll-call votes cited in bill actions",
     "budget_volumes": "President’s budget volumes",
     "cbo_cost_estimates": "Congressional Budget Office cost estimates by bill",
+    "cbo_estimate_cards": "Structured Congressional Budget Office cost-estimate summary cards",
     "cbo_feed_items": "Publications in Congressional Budget Office cost estimate feeds",
     "cfr_sections": "Annual federal regulation section index",
     "cftc_comment_files": "Selected Commodity Futures Trading Commission comment files",

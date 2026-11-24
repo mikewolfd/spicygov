@@ -3,7 +3,7 @@ description: Use the same pinned Python producer for verification and deployment
 inputs:
   producer-revision:
     description: Exact available backend commit; advance only after the reviewed producer is published.
-    default: e908397e3e24dae96e632987e2812073af738fb6
+    default: 5dff86bf3896f32ef28fc18be2ae9a19651045a4
 runs:
   using: composite
   steps:
