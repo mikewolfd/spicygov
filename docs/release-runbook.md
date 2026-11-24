@@ -58,9 +58,10 @@ path still needs a spicy-regs environment: the hearing-identity check in
 `SPICYGOV_COVERAGE_PYTHON`, and only the waiting `hearing_transcripts` table
 reaches it. Keep the checkout unchanged through completion.
 
-Use an existing builder environment with the dependencies pinned in
-`.github/workflows/coverage-data-release.yml` (duckdb, pyarrow, fsspec, aiohttp),
-plus the repository's locked Node dependencies for the offline consumer. From
+Use an existing builder environment with `duckdb`, `pyarrow`, `fsspec`, and
+`aiohttp` (the obsolete `.github/workflows/coverage-data-release.yml` workflow
+was retired), plus the repository's locked Node dependencies for the offline
+consumer. From
 the selected SpicyGov checkout, run:
 
 ```sh
@@ -107,12 +108,13 @@ A full release requires every published table to pass its reviewed definition
 against the schema it publishes. Since 2026-11-11 no table is restored from
 receipts. Tables whose reviewed fields their family does not publish yet, tables
 whose rules read receipts (`government-receipt-*` dimensions) and tables without a
-definition fail that check, so the hosted **Prepare coverage data release**
-workflow, which runs a full build, is not a release route today. Its two
-hearing-identity tests in `tests/test_congress_coverage_maps.py` also need that
-spicy-regs environment, and `tests/test_regulation_coverage_maps.py` already fails
-on `main` (`ofac_snapshots` counts a capture time). Until those are resolved,
-produce coverage with the refresh preparation below (`prepare-coverage-refresh.py`).
+definition fail that check, so the former hosted **Prepare coverage data
+release** workflow (`.github/workflows/coverage-data-release.yml`), which ran a
+full build, was retired as obsolete. Its two hearing-identity tests in
+`tests/test_congress_coverage_maps.py` also need that spicy-regs environment,
+and `tests/test_regulation_coverage_maps.py` previously failed on `main`
+(`ofac_snapshots` counted a capture time). Produce coverage with the refresh
+preparation below (`prepare-coverage-refresh.py`).
 A table it selects and cannot measure keeps its earlier map, labelled "Earlier
 measurement". With `--only`, an unselected table keeps its base measurement and
 state: if its publication is unchanged it still shows as current, measured by
