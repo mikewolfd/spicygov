@@ -106,12 +106,30 @@ jobs:
           overwrite: false
           retention-days: 14
           compression-level: 6
+      - name: Wait for uploaded Pages artifact readiness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.same_run_upload.outputs.artifact-id }}
+        run: |
+          for attempt in $(seq 1 18); do
+            meta=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}" || true)
+            expired=$(python3 -c 'import json,sys; d=json.loads(sys.argv[1] or "{}"); print(d.get("expired"))' "$meta" 2>/dev/null || echo "")
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" || echo "000")
+            echo "Attempt $attempt: expired=$expired zip_code=$code"
+            if [ "$expired" = "False" ] && [ "$code" = "302" ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Uploaded artifact $ARTIFACT_ID did not become downloadable in time" >&2
+          exit 1
       - name: Download the exact new upload for complete member verification
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           artifact-ids: ${{ steps.same_run_upload.outputs.artifact-id }}
           path: ${{ runner.temp }}/pages-downloaded
           merge-multiple: true
+          github-token: ${{ github.token }}
       - name: Verify the downloaded tar and current writer before deployment
         env:
           GH_TOKEN: ${{ github.token }}
