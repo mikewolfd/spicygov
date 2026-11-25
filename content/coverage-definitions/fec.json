@@ -17773,6 +17773,337 @@
           "syntax": "year"
         }
       ]
+    },
+    "lobbying_issue_financial_observations": {
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "issue_code",
+          "VARCHAR"
+        ],
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "income",
+          "VARCHAR"
+        ],
+        [
+          "expenses",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "overlap_note",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe issue-keyed views of selected LD-2 quarterly profiles. Whole-filing amounts are not allocated by issue; issue views overlap and must not be summed across issues.",
+      "dimensions": [
+        {
+          "id": "reporting-periods",
+          "kind": "interval",
+          "label": "Quarterly reporting periods",
+          "meaning": "Calendar quarter start and end dates of the underlying selected LD-2 quarterly profile. Whole-filing amounts are not allocated by issue and cannot be summed across issues.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "issue-code",
+          "kind": "category",
+          "label": "LDA general issue code",
+          "meaning": "Literal LDA general issue code on the selected filing. Issue-filtered views overlap and do not represent allocated spending.",
+          "fields": [
+            "issue_code"
+          ]
+        }
+      ]
+    },
+    "sector_classification_evidence": {
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "native_entity_id",
+          "VARCHAR"
+        ],
+        [
+          "sector_codes_json",
+          "VARCHAR"
+        ],
+        [
+          "classification_status",
+          "VARCHAR"
+        ],
+        [
+          "classification_scheme",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "method",
+          "VARCHAR"
+        ],
+        [
+          "applicable_start",
+          "VARCHAR"
+        ],
+        [
+          "applicable_end",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "uncertainty",
+          "VARCHAR"
+        ],
+        [
+          "association_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe curated broad NAICS-2022 context assignments and separately retained unresolved cross-source identity associations for the declared window, not publisher-assigned NAICS.",
+      "dimensions": [
+        {
+          "id": "applicable-periods",
+          "kind": "interval",
+          "label": "Applicable classification periods",
+          "meaning": "Declared reporting window for which each curated NAICS-2022 sector assignment or unresolved cross-source association entry applies.",
+          "fields": [
+            "applicable_start",
+            "applicable_end"
+          ]
+        },
+        {
+          "id": "source-namespace",
+          "kind": "category",
+          "label": "Source entity namespace",
+          "meaning": "Source-local entity namespace (fec_committee, lda_client, or cross_source_association).",
+          "fields": [
+            "source_namespace"
+          ]
+        },
+        {
+          "id": "classification-status",
+          "kind": "category",
+          "label": "Classification status and method",
+          "meaning": "Whether the row is supported curated business-evidence context or an unresolved identity association excluded from money.",
+          "fields": [
+            "classification_status",
+            "method"
+          ]
+        },
+        {
+          "id": "sector-codes",
+          "kind": "list",
+          "label": "Assigned NAICS sector codes",
+          "meaning": "Distinct curated NAICS-2022 sector codes per evidence row; unresolved cross-source associations carry an empty list.",
+          "fields": [
+            "sector_codes_json"
+          ],
+          "syntax": "literal"
+        }
+      ]
+    },
+    "sector_financial_comparisons": {
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "sector_code",
+          "VARCHAR"
+        ],
+        [
+          "sector_label",
+          "VARCHAR"
+        ],
+        [
+          "classification_scheme",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "source_family",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "known_reported_amount",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "source_table_sha256",
+          "VARCHAR"
+        ],
+        [
+          "cutoff",
+          "VARCHAR"
+        ],
+        [
+          "population_json",
+          "VARCHAR"
+        ],
+        [
+          "evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "population_profiles",
+          "INTEGER"
+        ],
+        [
+          "group_profiles",
+          "INTEGER"
+        ],
+        [
+          "qualified_measure_profiles",
+          "INTEGER"
+        ],
+        [
+          "unresolved_measure_profiles",
+          "INTEGER"
+        ],
+        [
+          "classified_population_profiles",
+          "INTEGER"
+        ],
+        [
+          "unclassified_population_profiles",
+          "INTEGER"
+        ],
+        [
+          "uncertain_population_profiles",
+          "INTEGER"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe sector/source/measure summary cells across bounded FEC committee and LDA quarterly populations. Known amounts are not complete annual totals and must never be added across sources or measures.",
+      "dimensions": [
+        {
+          "id": "comparison-periods",
+          "kind": "interval",
+          "label": "Declared comparison window",
+          "meaning": "Aligned calendar comparison window declared for FEC committee profiles and LDA quarterly profiles. Known reported amounts are not complete annual totals.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "source-measure",
+          "kind": "category",
+          "label": "Source family and financial measure",
+          "meaning": "Separate FEC and LDA financial measures (receipts, disbursements, income, expenses); amounts are never added across sources or measures.",
+          "fields": [
+            "source_family",
+            "measure"
+          ]
+        },
+        {
+          "id": "sector-code",
+          "kind": "category",
+          "label": "Broad industry classification",
+          "meaning": "Curated NAICS-2022 sector code, unclassified, or uncertain category as observed at mapping time.",
+          "fields": [
+            "sector_code"
+          ]
+        },
+        {
+          "id": "amount-status",
+          "kind": "category",
+          "label": "Measure qualification status",
+          "meaning": "Whether a sector/source/measure group has qualified selected observations or no qualified measure.",
+          "fields": [
+            "amount_status"
+          ]
+        }
+      ]
     }
   }
 }

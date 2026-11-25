@@ -201,4 +201,67 @@ class FecCoverageTest(unittest.TestCase):
         dim['special']='typo'
         with self.assertRaisesRegex(ValueError,'Unknown FEC'):scan_special(self.conn,'fec_test',{'rows':2,'url':[child]},dim,inputs)
 
+    def test_batch_c_sector_comparisons_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        repo = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', repo / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid in ('sector_financial_comparisons', 'sector_classification_evidence', 'lobbying_issue_financial_observations'):
+            self.assertEqual(defs[tid]['family'], 'sector-comparisons')
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': 'sector-comparisons', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-25T17:00:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        sfc_pol, sfc_tbl = make_tbl(
+            'sector_financial_comparisons',
+            "INSERT INTO t (record_id, sector_code, source_family, measure, amount_status, period_start, period_end) VALUES "
+            "('r1', '62', 'fec', 'receipts', 'known_selected_observations', '2025-01-01', '2025-12-31'), "
+            "('r2', 'unclassified', 'lda', 'expenses', 'no_qualified_measure', '2025-01-01', '2025-12-31')"
+        )
+        builder.validate_plan({'sector_financial_comparisons': sfc_tbl}, {'sector_financial_comparisons': dict(sfc_pol)})
+        sfc_dims = {d['id']: d for d in coverage_scan.scan_table('sector_financial_comparisons', sfc_tbl, sfc_pol)['dimensions']}
+        self.assertEqual((sfc_dims['comparison-periods']['placedRows'], sfc_dims['comparison-periods']['unplacedRows']), (2, 0))
+        self.assertEqual(sfc_dims['comparison-periods']['yearBuckets'], {'2025': 2})
+        self.assertEqual(sfc_dims['source-measure']['buckets'], {'["fec","receipts"]': 1, '["lda","expenses"]': 1})
+        self.assertEqual(sfc_dims['sector-code']['buckets'], {'["62"]': 1, '["unclassified"]': 1})
+
+        sce_pol, sce_tbl = make_tbl(
+            'sector_classification_evidence',
+            "INSERT INTO t (record_id, source_namespace, sector_codes_json, classification_status, method, applicable_start, applicable_end) VALUES "
+            "('e1', 'fec_committee', '[\"62\"]', 'supported_context', 'curated_disclosed_organization_and_primary_business_description', '2025-01-01', '2025-12-31'), "
+            "('e2', 'cross_source_association', '[]', 'unresolved_identity', 'not_used_for_money', '2025-01-01', '2025-12-31')"
+        )
+        builder.validate_plan({'sector_classification_evidence': sce_tbl}, {'sector_classification_evidence': dict(sce_pol)})
+        sce_dims = {d['id']: d for d in coverage_scan.scan_table('sector_classification_evidence', sce_tbl, sce_pol)['dimensions']}
+        self.assertEqual(sce_dims['applicable-periods']['yearBuckets'], {'2025': 2})
+        self.assertEqual(sce_dims['sector-codes']['buckets'], {'"62"': 1})
+        self.assertEqual((sce_dims['sector-codes']['placedRows'], sce_dims['sector-codes']['unplacedRows']), (1, 1))
+
+        lifo_pol, lifo_tbl = make_tbl(
+            'lobbying_issue_financial_observations',
+            "INSERT INTO t (record_id, issue_code, period_start, period_end) VALUES "
+            "('i1', 'DEF', '2025-01-01', '2025-03-31'), "
+            "('i2', 'TAX', '2025-04-01', '2025-06-30')"
+        )
+        builder.validate_plan({'lobbying_issue_financial_observations': lifo_tbl}, {'lobbying_issue_financial_observations': dict(lifo_pol)})
+        lifo_dims = {d['id']: d for d in coverage_scan.scan_table('lobbying_issue_financial_observations', lifo_tbl, lifo_pol)['dimensions']}
+        self.assertEqual((lifo_dims['reporting-periods']['placedRows'], lifo_dims['reporting-periods']['unplacedRows']), (2, 0))
+        self.assertEqual(lifo_dims['reporting-periods']['yearBuckets'], {'2025': 2})
+        self.assertEqual(lifo_dims['issue-code']['buckets'], {'["DEF"]': 1, '["TAX"]': 1})
+
 if __name__=='__main__':unittest.main()
