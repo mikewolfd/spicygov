@@ -282,6 +282,73 @@ class PublishedOnlyRoute(unittest.TestCase):
             self.assertEqual(cbo_dims['inherited-committee-reports-date-issued']['placedRows'], 2)
             self.assertEqual((cbo_dims['letter-dates']['placedRows'], cbo_dims['letter-dates']['unplacedRows']), (1, 1))
 
+    def test_house_disbursement_pages_definitions_measure_pdf_pages_and_rows(self):
+        import duckdb, pathlib, tempfile
+        import coverage_scan
+        defs = builder.definitions()
+        for tid in ('house_disbursement_pdf_pages', 'house_disbursement_pdf_rows'):
+            self.assertIn(tid, defs)
+            self.assertEqual(defs[tid]['family'], 'house-disbursement-pages')
+            self.assertIn('sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da', defs[tid]['note'])
+            self.assertIn('house_disbursements', defs[tid]['note'])
+            self.assertIn('72,525', defs[tid]['note'])
+            self.assertIn('2,491', defs[tid]['note'])
+            self.assertIn('52', defs[tid]['note'])
+
+        with tempfile.TemporaryDirectory() as folder:
+            folder_path = pathlib.Path(folder)
+            pages_policy = defs['house_disbursement_pdf_pages']
+            pages_path = folder_path / 'house_disbursement_pdf_pages.parquet'
+            pages_cols = ', '.join(f'"{n}" {t}' for n, t in pages_policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE p ({pages_cols})')
+                conn.execute(
+                    "INSERT INTO p (report_period_start, report_period_end, page_status, reading_method) VALUES "
+                    "(DATE '2009-07-01', DATE '2009-09-30', 'ledger_read', 'native_pdf'), "
+                    "(DATE '2012-01-01', DATE '2012-03-31', 'non_ledger_content_pending', 'native_pdf'), "
+                    "(DATE '2015-10-01', DATE '2015-12-31', 'image_content_pending', 'native_pdf')"
+                )
+                conn.execute('COPY p TO ? (FORMAT PARQUET)', [str(pages_path)])
+            pages_table = {
+                'family': 'house-disbursement-pages', 'kind': 'generation',
+                'columns': pages_policy['schema'], 'rows': 3,
+                'publishedAt': '2026-11-25T13:04:42Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': pages_path.name, 'url': str(pages_path), 'rows': 3, 'byteSize': pages_path.stat().st_size}],
+            }
+            builder.validate_plan({'house_disbursement_pdf_pages': pages_table}, {'house_disbursement_pdf_pages': dict(pages_policy)})
+            pages_res = coverage_scan.scan_table('house_disbursement_pdf_pages', pages_table, pages_policy)
+            pages_dims = {d['id']: d for d in pages_res['dimensions']}
+            self.assertEqual((pages_dims['report-periods']['placedRows'], pages_dims['report-periods']['unplacedRows']), (3, 0))
+            self.assertEqual(pages_dims['page-status']['buckets'], {
+                '["image_content_pending"]': 1, '["ledger_read"]': 1, '["non_ledger_content_pending"]': 1,
+            })
+            self.assertEqual(pages_dims['reading-method']['buckets'], {'["native_pdf"]': 3})
+
+            rows_policy = defs['house_disbursement_pdf_rows']
+            rows_path = folder_path / 'house_disbursement_pdf_rows.parquet'
+            rows_cols = ', '.join(f'"{n}" {t}' for n, t in rows_policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE r ({rows_cols})')
+                conn.execute(
+                    "INSERT INTO r (report_period_start, report_period_end, transaction_date, row_kind) VALUES "
+                    "(DATE '2009-07-01', DATE '2009-09-30', DATE '2009-08-15', 'transaction'), "
+                    "(DATE '2015-10-01', DATE '2015-12-31', NULL, 'subtotal')"
+                )
+                conn.execute('COPY r TO ? (FORMAT PARQUET)', [str(rows_path)])
+            rows_table = {
+                'family': 'house-disbursement-pages', 'kind': 'generation',
+                'columns': rows_policy['schema'], 'rows': 2,
+                'publishedAt': '2026-11-25T13:04:42Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': rows_path.name, 'url': str(rows_path), 'rows': 2, 'byteSize': rows_path.stat().st_size}],
+            }
+            builder.validate_plan({'house_disbursement_pdf_rows': rows_table}, {'house_disbursement_pdf_rows': dict(rows_policy)})
+            rows_res = coverage_scan.scan_table('house_disbursement_pdf_rows', rows_table, rows_policy)
+            rows_dims = {d['id']: d for d in rows_res['dimensions']}
+            self.assertEqual((rows_dims['report-periods']['placedRows'], rows_dims['report-periods']['unplacedRows']), (2, 0))
+            self.assertEqual(rows_dims['transaction-dates']['buckets'], {'2009-08': 1})
+            self.assertEqual((rows_dims['transaction-dates']['placedRows'], rows_dims['transaction-dates']['unplacedRows']), (1, 1))
+            self.assertEqual(rows_dims['row-kind']['buckets'], {'["subtotal"]': 1, '["transaction"]': 1})
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,6 +13,7 @@
     "crs-reports",
     "historical-vetoes",
     "house-communications",
+    "house-disbursement-pages",
     "house-disbursements",
     "member-vote-terms",
     "members",
@@ -26,7 +27,7 @@
     "senate-expenditures",
     "treaties"
   ],
-  "tableCount": 77,
+  "tableCount": 79,
   "everyAssignedTableEnumerated": true,
   "fullCountsReconciled": true,
   "claimBoundary": "This review measures retained presence and source scope, not the completeness of publisher acquisition.",
@@ -19232,6 +19233,926 @@
         "communication-types",
         "communication-key-status"
       ]
+    },
+    {
+      "tableId": "house_disbursement_pdf_pages",
+      "family": "house-disbursement-pages",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "source_page",
+          "BIGINT"
+        ],
+        [
+          "printed_page",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_start_month",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "reading_sha256",
+          "VARCHAR"
+        ],
+        [
+          "reading_method",
+          "VARCHAR"
+        ],
+        [
+          "page_status",
+          "VARCHAR"
+        ],
+        [
+          "native_text",
+          "VARCHAR"
+        ],
+        [
+          "native_word_count",
+          "BIGINT"
+        ],
+        [
+          "image_count",
+          "BIGINT"
+        ],
+        [
+          "record_count",
+          "BIGINT"
+        ],
+        [
+          "unassigned_line_count",
+          "BIGINT"
+        ],
+        [
+          "unassigned_lines_json",
+          "VARCHAR"
+        ],
+        [
+          "outside_ledger_word_indices",
+          "BIGINT[]"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "header_basis",
+          "VARCHAR"
+        ],
+        [
+          "header_json",
+          "VARCHAR"
+        ],
+        [
+          "structured_provenance_json",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da",
+        "publishedAt": "2026-11-25T13:04:42Z",
+        "rows": 75068,
+        "byteSize": 60316882,
+        "memberCount": 26,
+        "members": [
+          {
+            "byteSize": 2604373,
+            "key": "house_disbursement_pdf_pages/report_year=2009/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2009"
+            },
+            "rows": 3175,
+            "sha256": "sha256:d76fe309dd8563fd6e3a503f87237c0e548fe81e3cf58e0dabbbf67c5e543c97",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2009/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2799330,
+            "key": "house_disbursement_pdf_pages/report_year=2009/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2009"
+            },
+            "rows": 3404,
+            "sha256": "sha256:3a96eb4e7b74c62f9a604c8b258483d590a2ea62f2eecd57cf9b53ffe01f51d9",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2009/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2964957,
+            "key": "house_disbursement_pdf_pages/report_year=2010/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2010"
+            },
+            "rows": 3696,
+            "sha256": "sha256:a953449c31e7e37ab186047e5f9136fa885dc7453540fdce967ffed9edbad904",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2010/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 2184590,
+            "key": "house_disbursement_pdf_pages/report_year=2010/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2010"
+            },
+            "rows": 2723,
+            "sha256": "sha256:71d0bc74d9e08cdf24ff479e1a2236a6343ece77cf77cca62571266152dbc83e",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2010/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2838350,
+            "key": "house_disbursement_pdf_pages/report_year=2010/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2010"
+            },
+            "rows": 3464,
+            "sha256": "sha256:53881aca5f93e4bf2f313a79ba87eafd104af86a7f294de5bc150b43e4a175e6",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2010/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2750830,
+            "key": "house_disbursement_pdf_pages/report_year=2010/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2010"
+            },
+            "rows": 3395,
+            "sha256": "sha256:53606f0648653a4b56e97b74d6fb6d6145113ef7d1d6b12360274ba90549315a",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2010/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2640224,
+            "key": "house_disbursement_pdf_pages/report_year=2011/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2011"
+            },
+            "rows": 3293,
+            "sha256": "sha256:b0b1e6d6667fdd65f3638e5339e7e77acaa268553d6d20139718fb0d1dcdb9c9",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2011/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 2270722,
+            "key": "house_disbursement_pdf_pages/report_year=2011/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2011"
+            },
+            "rows": 2801,
+            "sha256": "sha256:660208443090a17e15fe834091c704a70cdc180c871d48d5a7f73c8d665b9404",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2011/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2457453,
+            "key": "house_disbursement_pdf_pages/report_year=2011/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2011"
+            },
+            "rows": 3061,
+            "sha256": "sha256:1648ace469be9d40ba4c70c3afab0bc4825523c8152fb804bafb111ee9abf5fc",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2011/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2300475,
+            "key": "house_disbursement_pdf_pages/report_year=2011/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2011"
+            },
+            "rows": 2856,
+            "sha256": "sha256:4ac39001ca30d91b6a6155d4dee3ee859d7f09a73d47ced1b93cfa1feb2b0a07",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2011/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2592720,
+            "key": "house_disbursement_pdf_pages/report_year=2012/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2012"
+            },
+            "rows": 3295,
+            "sha256": "sha256:62704a9740628d647a8e3f96c1b53502ddc1efe15e3274269ec4e3d1cc8298b7",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2012/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 2003666,
+            "key": "house_disbursement_pdf_pages/report_year=2012/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2012"
+            },
+            "rows": 2477,
+            "sha256": "sha256:1bb71bb2d72895ddd3c37657f6796f71d932fd9d317f713027815bbd384afa30",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2012/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2233610,
+            "key": "house_disbursement_pdf_pages/report_year=2012/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2012"
+            },
+            "rows": 2838,
+            "sha256": "sha256:536150c64a4912d3e45881ce0cfa5a25f48fd9bd128c3b75278e349eb616eaec",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2012/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2051712,
+            "key": "house_disbursement_pdf_pages/report_year=2012/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2012"
+            },
+            "rows": 2583,
+            "sha256": "sha256:98b928be25c629fcb7593177c7955923187a170d26a9623adbd56dd43092e741",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2012/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2436224,
+            "key": "house_disbursement_pdf_pages/report_year=2013/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2013"
+            },
+            "rows": 3041,
+            "sha256": "sha256:e6c5ffb0f9c8534917684753eb59b27b0f9eb799ab7c72502b0e92c44da24130",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2013/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 1971600,
+            "key": "house_disbursement_pdf_pages/report_year=2013/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2013"
+            },
+            "rows": 2434,
+            "sha256": "sha256:7a1bca5ee2d0d99a63c54ba2b75d2f82d19d48c928fb1e25d61a8d8cf517472a",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2013/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2128209,
+            "key": "house_disbursement_pdf_pages/report_year=2013/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2013"
+            },
+            "rows": 2665,
+            "sha256": "sha256:ea041a728f30e573948d6d087398f4ebff76a9fdb55df3cfadc1acf85cb3305f",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2013/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2117312,
+            "key": "house_disbursement_pdf_pages/report_year=2013/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2013"
+            },
+            "rows": 2643,
+            "sha256": "sha256:a0d8355090f2dfff7e532b027dc6223942f2263bb3817ea31da9a17d6c6f1a0a",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2013/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2278434,
+            "key": "house_disbursement_pdf_pages/report_year=2014/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2014"
+            },
+            "rows": 2910,
+            "sha256": "sha256:0af533f6649228ff235288e1c950786d487229d73479008cd7fe17e8cdb6c1d3",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2014/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 2004537,
+            "key": "house_disbursement_pdf_pages/report_year=2014/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2014"
+            },
+            "rows": 2488,
+            "sha256": "sha256:6897ef0d98dc5a650e6ba3e4026b9c2e7dd24834fdb3407c64fe83dd9e2c80ae",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2014/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2100604,
+            "key": "house_disbursement_pdf_pages/report_year=2014/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2014"
+            },
+            "rows": 2626,
+            "sha256": "sha256:f1fb92896aa98b1a3c505dcd9c9443fb26eadf18b56f276ef12e4951ece56f80",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2014/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2008698,
+            "key": "house_disbursement_pdf_pages/report_year=2014/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2014"
+            },
+            "rows": 2503,
+            "sha256": "sha256:33cf0eb77364a6b50fcfe6568a897fd790ddb05ba19fc3c02ee0072fcb3c3ebf",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2014/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 2314754,
+            "key": "house_disbursement_pdf_pages/report_year=2015/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2015"
+            },
+            "rows": 2923,
+            "sha256": "sha256:9d5e94ff186c6cee74371371270896becc33b0e7712d567713efa3e6fc3f6a3f",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2015/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 2113001,
+            "key": "house_disbursement_pdf_pages/report_year=2015/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2015"
+            },
+            "rows": 2592,
+            "sha256": "sha256:1ddbb97c5a189dab991a985e74c3d6118810640e93d1e73460def03e59a9fef0",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2015/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 2120098,
+            "key": "house_disbursement_pdf_pages/report_year=2015/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2015"
+            },
+            "rows": 2658,
+            "sha256": "sha256:767d8f959a7795f81524945565952b018a6e853a8939f449a2759211486f7c70",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2015/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 2030399,
+            "key": "house_disbursement_pdf_pages/report_year=2015/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2015"
+            },
+            "rows": 2524,
+            "sha256": "sha256:e39ba322e3bf31b39ede3a8b3a62e1a84f50e99bda7ee1394fe19a04e26393e9",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_pages/report_year=2015/report_start_month=7/part-000000.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods (2009 Q3\u20132015 Q4) of the House Statement of Disbursements PDF volume each page came from.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        },
+        {
+          "id": "page-status",
+          "kind": "category",
+          "label": "Page reading status",
+          "meaning": "Reading disposition of each PDF page: ledger_read (72,525 native ledger pages read), non_ledger_content_pending (2,491 non-ledger pages), or image_content_pending (52 image-only pages awaiting OCR).",
+          "fields": [
+            "page_status"
+          ]
+        },
+        {
+          "id": "reading-method",
+          "kind": "category",
+          "label": "Reading method",
+          "meaning": "Extraction method recorded for each PDF page (native_pdf; image-only pages remain pending un-OCR'd).",
+          "fields": [
+            "reading_method"
+          ]
+        }
+      ],
+      "reviewNote": "2026-11-25: reviewed coverage definitions added against live R2 generation house-disbursement-pages (sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da), covering 2009 Q3\u20132015 Q4 historical House Statement of Disbursements PDFs, separate from modern 2016 Q1+ CSV house_disbursements. 72,525 native ledger pages read; 2,491 non-ledger pages and 52 image-only pages explicitly pending (un-OCR'd)."
+    },
+    {
+      "tableId": "house_disbursement_pdf_rows",
+      "family": "house-disbursement-pages",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "source_page",
+          "BIGINT"
+        ],
+        [
+          "printed_page",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_start_month",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "reading_sha256",
+          "VARCHAR"
+        ],
+        [
+          "reading_method",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_line",
+          "BIGINT"
+        ],
+        [
+          "source_role",
+          "VARCHAR"
+        ],
+        [
+          "source_origin_json",
+          "VARCHAR"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "organizational_group",
+          "VARCHAR"
+        ],
+        [
+          "organization",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_or_legislative_year",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "cost_category",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "data_source",
+          "VARCHAR"
+        ],
+        [
+          "document",
+          "VARCHAR"
+        ],
+        [
+          "vendor_name",
+          "VARCHAR"
+        ],
+        [
+          "service_start_date",
+          "DATE"
+        ],
+        [
+          "service_end_date",
+          "DATE"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "ytd_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "qtd_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "office_origin_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "word_indices",
+          "BIGINT[]"
+        ],
+        [
+          "normalizations_json",
+          "VARCHAR"
+        ],
+        [
+          "repairs_json",
+          "VARCHAR"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ]
+      ],
+      "publication": {
+        "artifactDigest": "sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da",
+        "publishedAt": "2026-11-25T13:04:42Z",
+        "rows": 3084645,
+        "byteSize": 156878471,
+        "memberCount": 26,
+        "members": [
+          {
+            "byteSize": 6913471,
+            "key": "house_disbursement_pdf_rows/report_year=2009/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2009"
+            },
+            "rows": 133191,
+            "sha256": "sha256:b4a90bd8b4e2d2ee3211d36e98835dade445da4da90984a8ea15b7ac3ddc7d49",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2009/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 7474229,
+            "key": "house_disbursement_pdf_rows/report_year=2009/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2009"
+            },
+            "rows": 142533,
+            "sha256": "sha256:cd8c9ef44deb47494527250bebfd5945cb8750a8f7b461ef0356cc4440f50207",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2009/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 8024855,
+            "key": "house_disbursement_pdf_rows/report_year=2010/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2010"
+            },
+            "rows": 153275,
+            "sha256": "sha256:6bd093e74e2f58f5a8123076f833f4536c40169ae64f289b5f4968f534d24f48",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2010/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5651666,
+            "key": "house_disbursement_pdf_rows/report_year=2010/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2010"
+            },
+            "rows": 113155,
+            "sha256": "sha256:182b696396615c89a128b7c6af452d9f97c13c8d4e9cac579cdb8c505b1515a0",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2010/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 7592145,
+            "key": "house_disbursement_pdf_rows/report_year=2010/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2010"
+            },
+            "rows": 144722,
+            "sha256": "sha256:0873a0447bd4259f10f4dc7e68dc994bd3300af26ca9a71c0a92e310cc7340a4",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2010/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 7394012,
+            "key": "house_disbursement_pdf_rows/report_year=2010/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2010"
+            },
+            "rows": 142579,
+            "sha256": "sha256:ff10da560359043f97d25a393aeca8a2b161f94f7e090f83aac672ef3bbea86d",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2010/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 6859254,
+            "key": "house_disbursement_pdf_rows/report_year=2011/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2011"
+            },
+            "rows": 134651,
+            "sha256": "sha256:a74783786fb143bc3c09ef4de0ee0b0e4d1dc21ee28196a55fcf0013015bdc21",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2011/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5869984,
+            "key": "house_disbursement_pdf_rows/report_year=2011/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2011"
+            },
+            "rows": 115375,
+            "sha256": "sha256:6fcdd4f159405ec5cf4efa108ed1065ca6e22c452a02295372d57939c6c4a8a3",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2011/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 6420197,
+            "key": "house_disbursement_pdf_rows/report_year=2011/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2011"
+            },
+            "rows": 126010,
+            "sha256": "sha256:295a1fabd98c87ed1713af639960a96986f659a4b4fd68b16feef01d8fd26bde",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2011/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 5948227,
+            "key": "house_disbursement_pdf_rows/report_year=2011/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2011"
+            },
+            "rows": 117952,
+            "sha256": "sha256:fb2b0d678abf6a01dce6b414664467342b53c95d4ffeb7d5c28894dd16139a03",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2011/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 6804271,
+            "key": "house_disbursement_pdf_rows/report_year=2012/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2012"
+            },
+            "rows": 134455,
+            "sha256": "sha256:84cbe1f479feb7e9ab08f1dd11485af14f2b1f2073813a3e7caaf33caa021736",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2012/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5152403,
+            "key": "house_disbursement_pdf_rows/report_year=2012/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2012"
+            },
+            "rows": 101433,
+            "sha256": "sha256:da1bfee8d62f1d021488a8c3ef5a6f621f3866672631caceee85084d1499151c",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2012/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 5790767,
+            "key": "house_disbursement_pdf_rows/report_year=2012/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2012"
+            },
+            "rows": 115769,
+            "sha256": "sha256:489909e60b527f0b75e939cfc2bb91540c7be0a6fac699924376cb0d26e3aed8",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2012/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 5273880,
+            "key": "house_disbursement_pdf_rows/report_year=2012/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2012"
+            },
+            "rows": 105329,
+            "sha256": "sha256:4bf1c806474168df62197964829b8b936a0de0119239080432602e961e708477",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2012/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 6302608,
+            "key": "house_disbursement_pdf_rows/report_year=2013/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2013"
+            },
+            "rows": 123011,
+            "sha256": "sha256:44c442824e80922c5a409c539567f5b99e1da61bb838bdbd0ba3769a372ad26c",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2013/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5015736,
+            "key": "house_disbursement_pdf_rows/report_year=2013/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2013"
+            },
+            "rows": 99765,
+            "sha256": "sha256:8822857f2a12bdb9ef9fe355e0531680d40bd4e7e8c3def1f008543b0c1c1bb7",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2013/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 5485342,
+            "key": "house_disbursement_pdf_rows/report_year=2013/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2013"
+            },
+            "rows": 108329,
+            "sha256": "sha256:880b328151c1643e5d23c5ff12e973b3a8528c600b603260898b89679c20808c",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2013/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 5470402,
+            "key": "house_disbursement_pdf_rows/report_year=2013/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2013"
+            },
+            "rows": 108476,
+            "sha256": "sha256:1ca6affc6f6e789bb44c709737d47bcab7625283742781315e61491de3c9eb48",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2013/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 5880348,
+            "key": "house_disbursement_pdf_rows/report_year=2014/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2014"
+            },
+            "rows": 117417,
+            "sha256": "sha256:8aabade021b44f7404dc79c296178f2247dc02532e06bf083bd77c04f0bff073",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2014/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5155343,
+            "key": "house_disbursement_pdf_rows/report_year=2014/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2014"
+            },
+            "rows": 102262,
+            "sha256": "sha256:e5066ff2b864bbbcffaf6081a5482ba12b0587bfcf1052eab349b4fb71e695e2",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2014/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 5363245,
+            "key": "house_disbursement_pdf_rows/report_year=2014/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2014"
+            },
+            "rows": 106859,
+            "sha256": "sha256:fd8c494dfdd47fd981ca0435021e185f80a28fa3ac606b8a3c44db77c0a35704",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2014/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 5118440,
+            "key": "house_disbursement_pdf_rows/report_year=2014/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2014"
+            },
+            "rows": 101960,
+            "sha256": "sha256:72accc600a640df5eb102560bfd4132beeddfb6030cb27baf1e8498e599df78c",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2014/report_start_month=7/part-000000.parquet"
+          },
+          {
+            "byteSize": 5925202,
+            "key": "house_disbursement_pdf_rows/report_year=2015/report_start_month=1/part-000000.parquet",
+            "partition": {
+              "report_start_month": "1",
+              "report_year": "2015"
+            },
+            "rows": 117766,
+            "sha256": "sha256:3ff8586fc84df0a0df8fe1177239d6e066bcd424aa4248f49888d297a751704f",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2015/report_start_month=1/part-000000.parquet"
+          },
+          {
+            "byteSize": 5395789,
+            "key": "house_disbursement_pdf_rows/report_year=2015/report_start_month=10/part-000000.parquet",
+            "partition": {
+              "report_start_month": "10",
+              "report_year": "2015"
+            },
+            "rows": 107049,
+            "sha256": "sha256:29b24e29a883da1527d3512c530a32041b7511c83dd117334078cf32dc33a07f",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2015/report_start_month=10/part-000000.parquet"
+          },
+          {
+            "byteSize": 5426421,
+            "key": "house_disbursement_pdf_rows/report_year=2015/report_start_month=4/part-000000.parquet",
+            "partition": {
+              "report_start_month": "4",
+              "report_year": "2015"
+            },
+            "rows": 108127,
+            "sha256": "sha256:b312cbe7bf9dfee105a19afe3c4d26aa30d6724c5a383c7da400d0be779b6acc",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2015/report_start_month=4/part-000000.parquet"
+          },
+          {
+            "byteSize": 5170234,
+            "key": "house_disbursement_pdf_rows/report_year=2015/report_start_month=7/part-000000.parquet",
+            "partition": {
+              "report_start_month": "7",
+              "report_year": "2015"
+            },
+            "rows": 103195,
+            "sha256": "sha256:068dce8ff7d6ba6044ff4424a4884608640ba4c46005b7968b0afbcf3ae0ca03",
+            "url": "https://data.spicygov.ai/generations/house-disbursement-pages/f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da/house_disbursement_pdf_rows/report_year=2015/report_start_month=7/part-000000.parquet"
+          }
+        ]
+      },
+      "recommendedDimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods (2009 Q3\u20132015 Q4) of the House Statement of Disbursements PDF volume each row came from.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        },
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Transaction dates as printed on native PDF ledger rows; subtotal, summary, organization_total, and some transaction rows have none.",
+          "fields": [
+            "transaction_date"
+          ]
+        },
+        {
+          "id": "row-kind",
+          "kind": "category",
+          "label": "Row kind",
+          "meaning": "Ledger row role extracted from native PDF pages (transaction, subtotal, summary, or organization_total).",
+          "fields": [
+            "row_kind"
+          ]
+        }
+      ],
+      "reviewNote": "2026-11-25: reviewed coverage definitions added against live R2 generation house-disbursement-pages (sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da), covering 2009 Q3\u20132015 Q4 historical House Statement of Disbursements PDFs, separate from modern 2016 Q1+ CSV house_disbursements. 72,525 native ledger pages read; 2,491 non-ledger pages and 52 image-only pages explicitly pending (un-OCR'd)."
     },
     {
       "tableId": "house_disbursements",

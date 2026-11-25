@@ -5825,6 +5825,336 @@
         }
       ]
     },
+    "house_disbursement_pdf_pages": {
+      "family": "house-disbursement-pages",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "source_page",
+          "BIGINT"
+        ],
+        [
+          "printed_page",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_start_month",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "reading_sha256",
+          "VARCHAR"
+        ],
+        [
+          "reading_method",
+          "VARCHAR"
+        ],
+        [
+          "page_status",
+          "VARCHAR"
+        ],
+        [
+          "native_text",
+          "VARCHAR"
+        ],
+        [
+          "native_word_count",
+          "BIGINT"
+        ],
+        [
+          "image_count",
+          "BIGINT"
+        ],
+        [
+          "record_count",
+          "BIGINT"
+        ],
+        [
+          "unassigned_line_count",
+          "BIGINT"
+        ],
+        [
+          "unassigned_lines_json",
+          "VARCHAR"
+        ],
+        [
+          "outside_ledger_word_indices",
+          "BIGINT[]"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ],
+        [
+          "header_basis",
+          "VARCHAR"
+        ],
+        [
+          "header_json",
+          "VARCHAR"
+        ],
+        [
+          "structured_provenance_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records from the 2009 Q3\u20132015 Q4 historical House Statement of Disbursements PDF archive (live R2 generation house-disbursement-pages sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da), separate from the modern 2016 Q1+ CSV house_disbursements generation. Of 75,068 pages across 26 quarterly volumes, 72,525 native ledger pages are read (ledger_read), while 2,491 non-ledger pages (non_ledger_content_pending) and 52 image-only pages (image_content_pending) are explicitly pending (un-OCR'd). Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods (2009 Q3\u20132015 Q4) of the House Statement of Disbursements PDF volume each page came from.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        },
+        {
+          "id": "page-status",
+          "kind": "category",
+          "label": "Page reading status",
+          "meaning": "Reading disposition of each PDF page: ledger_read (72,525 native ledger pages read), non_ledger_content_pending (2,491 non-ledger pages), or image_content_pending (52 image-only pages awaiting OCR).",
+          "fields": [
+            "page_status"
+          ]
+        },
+        {
+          "id": "reading-method",
+          "kind": "category",
+          "label": "Reading method",
+          "meaning": "Extraction method recorded for each PDF page (native_pdf; image-only pages remain pending un-OCR'd).",
+          "fields": [
+            "reading_method"
+          ]
+        }
+      ]
+    },
+    "house_disbursement_pdf_rows": {
+      "family": "house-disbursement-pages",
+      "schema": [
+        [
+          "source_file_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "package_id",
+          "VARCHAR"
+        ],
+        [
+          "source_page",
+          "BIGINT"
+        ],
+        [
+          "printed_page",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "report_start_month",
+          "INTEGER"
+        ],
+        [
+          "report_period_start",
+          "DATE"
+        ],
+        [
+          "report_period_end",
+          "DATE"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "reading_sha256",
+          "VARCHAR"
+        ],
+        [
+          "reading_method",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_line",
+          "BIGINT"
+        ],
+        [
+          "source_role",
+          "VARCHAR"
+        ],
+        [
+          "source_origin_json",
+          "VARCHAR"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "organizational_group",
+          "VARCHAR"
+        ],
+        [
+          "organization",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_or_legislative_year",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "cost_category",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "data_source",
+          "VARCHAR"
+        ],
+        [
+          "document",
+          "VARCHAR"
+        ],
+        [
+          "vendor_name",
+          "VARCHAR"
+        ],
+        [
+          "service_start_date",
+          "DATE"
+        ],
+        [
+          "service_end_date",
+          "DATE"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "ytd_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "qtd_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "office_origin_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "word_indices",
+          "BIGINT[]"
+        ],
+        [
+          "normalizations_json",
+          "VARCHAR"
+        ],
+        [
+          "repairs_json",
+          "VARCHAR"
+        ],
+        [
+          "issue_codes",
+          "VARCHAR[]"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe saved records extracted from native ledger pages of the 2009 Q3\u20132015 Q4 historical House Statement of Disbursements PDF archive (live R2 generation house-disbursement-pages sha256:f14a07f4c922043e47532d70a5a79378c2f36e4412a4eeb1e387fc3ba312a5da), separate from the modern 2016 Q1+ CSV house_disbursements generation. The 3,084,645 rows reflect the 72,525 native ledger pages read; 2,491 non-ledger pages and 52 image-only pages remain explicitly pending (un-OCR'd) and contribute no parsed rows here. Empty periods do not prove the publisher has no records.",
+      "dimensions": [
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Statement report periods",
+          "meaning": "Quarterly reporting periods (2009 Q3\u20132015 Q4) of the House Statement of Disbursements PDF volume each row came from.",
+          "fields": [
+            "report_period_start",
+            "report_period_end"
+          ]
+        },
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Transaction dates as printed on native PDF ledger rows; subtotal, summary, organization_total, and some transaction rows have none.",
+          "fields": [
+            "transaction_date"
+          ]
+        },
+        {
+          "id": "row-kind",
+          "kind": "category",
+          "label": "Row kind",
+          "meaning": "Ledger row role extracted from native PDF pages (transaction, subtotal, summary, or organization_total).",
+          "fields": [
+            "row_kind"
+          ]
+        }
+      ]
+    },
     "house_disbursements": {
       "family": "house-disbursements",
       "schema": [
