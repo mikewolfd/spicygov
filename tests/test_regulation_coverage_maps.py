@@ -633,4 +633,45 @@ class RegulationCoverageTests(unittest.TestCase):
         usa_mem_dims = {d['id']: d for d in usa_mem_res['dimensions']}
         self.assertEqual(usa_mem_dims['archive-version']['buckets'], {'2026-11': 1})
 
+    def test_batch_c_lobbying_quarterly_profiles_measures_candidate_schema(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        policy = defs['lobbying_quarterly_profiles']
+        self.assertEqual(policy['family'], 'lobbying-quarterly-profiles')
+        path = self.root / 'lobbying_quarterly_profiles.parquet'
+        cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+        with duckdb.connect() as conn:
+            conn.execute(f'CREATE TABLE t ({cols})')
+            conn.execute(
+                "INSERT INTO t (profile_id, filing_year, filing_period, selection_status, selection_reason, termination_date, period_start, period_end) VALUES "
+                "('p1', 2025, 'first_quarter', 'selected', 'unique_original', NULL, DATE '2025-01-01', DATE '2025-03-31'), "
+                "('p2', 2025, 'second_quarter', 'selected', 'unique_amendment_restatement', '2025-05-01', DATE '2025-04-01', DATE '2025-06-30'), "
+                "('p3', 2025, 'third_quarter', 'unresolved', 'competing_originals', NULL, DATE '2025-07-01', DATE '2025-09-30')"
+            )
+            conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+        raw = path.read_bytes()
+        tbl = {
+            'family': 'lobbying-quarterly-profiles', 'kind': 'generation', 'columns': policy['schema'],
+            'rows': 3, 'publishedAt': '2026-11-25T17:00:00Z', '_coverageAsOfMonth': '2026-11',
+            'members': [{'key': path.name, 'url': str(path), 'rows': 3, 'byteSize': len(raw)}],
+        }
+        builder.validate_plan({'lobbying_quarterly_profiles': tbl}, {'lobbying_quarterly_profiles': dict(policy)})
+        res = coverage_scan.scan_table('lobbying_quarterly_profiles', tbl, policy)
+        dims = {d['id']: d for d in res['dimensions']}
+        self.assertEqual((dims['quarterly-periods']['placedRows'], dims['quarterly-periods']['unplacedRows']), (3, 0))
+        self.assertEqual(dims['quarterly-periods']['yearBuckets'], {'2025': 3})
+        self.assertEqual(dims['lobbying-reporting-periods']['buckets'], {
+            '["2025","first_quarter"]': 1, '["2025","second_quarter"]': 1, '["2025","third_quarter"]': 1,
+        })
+        self.assertEqual(dims['selection-status']['buckets'], {
+            '["selected","unique_amendment_restatement"]': 1,
+            '["selected","unique_original"]': 1,
+            '["unresolved","competing_originals"]': 1,
+        })
+        self.assertEqual(dims['termination-dates']['buckets'], {'2025-05': 1})
+        self.assertEqual((dims['termination-dates']['placedRows'], dims['termination-dates']['unplacedRows']), (1, 2))
+
 if __name__ == '__main__': unittest.main()

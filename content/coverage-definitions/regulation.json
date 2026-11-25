@@ -7929,6 +7929,203 @@
         }
       ]
     },
+    "lobbying_quarterly_profiles": {
+      "family": "lobbying-quarterly-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "scope_id",
+          "VARCHAR"
+        ],
+        [
+          "registrant_id",
+          "VARCHAR"
+        ],
+        [
+          "client_id",
+          "VARCHAR"
+        ],
+        [
+          "registrant_name",
+          "VARCHAR"
+        ],
+        [
+          "client_name",
+          "VARCHAR"
+        ],
+        [
+          "filing_period",
+          "VARCHAR"
+        ],
+        [
+          "selection_status",
+          "VARCHAR"
+        ],
+        [
+          "selection_reason",
+          "VARCHAR"
+        ],
+        [
+          "selected_filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "selected_filing_type",
+          "VARCHAR"
+        ],
+        [
+          "selected_source_url",
+          "VARCHAR"
+        ],
+        [
+          "income",
+          "VARCHAR"
+        ],
+        [
+          "income_status",
+          "VARCHAR"
+        ],
+        [
+          "expenses",
+          "VARCHAR"
+        ],
+        [
+          "expenses_status",
+          "VARCHAR"
+        ],
+        [
+          "expenses_method",
+          "VARCHAR"
+        ],
+        [
+          "termination_date",
+          "VARCHAR"
+        ],
+        [
+          "original_income",
+          "VARCHAR"
+        ],
+        [
+          "original_expenses",
+          "VARCHAR"
+        ],
+        [
+          "income_amendment_change",
+          "VARCHAR"
+        ],
+        [
+          "expenses_amendment_change",
+          "VARCHAR"
+        ],
+        [
+          "witnesses_json",
+          "VARCHAR"
+        ],
+        [
+          "excluded_filing_uuids_json",
+          "VARCHAR"
+        ],
+        [
+          "cutoff",
+          "VARCHAR"
+        ],
+        [
+          "source_table_generation",
+          "VARCHAR"
+        ],
+        [
+          "source_table_sha256",
+          "VARCHAR"
+        ],
+        [
+          "coverage_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "overlap_policy",
+          "VARCHAR"
+        ],
+        [
+          "selection_policy",
+          "VARCHAR"
+        ],
+        [
+          "selection_sha256",
+          "VARCHAR"
+        ],
+        [
+          "filing_year",
+          "INTEGER"
+        ],
+        [
+          "filing_count",
+          "INTEGER"
+        ],
+        [
+          "amendment_count",
+          "INTEGER"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe derived LD-2 quarterly profiles for an explicit filing year, registrant selection, and posting cutoff, not complete national lobbying coverage. Income and expenses remain separate and absent quarters are not zero.",
+      "dimensions": [
+        {
+          "id": "quarterly-periods",
+          "kind": "interval",
+          "label": "Quarterly reporting periods",
+          "meaning": "Calendar quarter start and end dates for each registrant/client pair in the selected LD-2 scope. Every row remains labeled incomplete_retained_population; absent quarters are not zero.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "lobbying-reporting-periods",
+          "kind": "category",
+          "label": "Lobbying reporting periods",
+          "meaning": "Declared LD-2 filing year and native quarterly period for each registrant/client profile.",
+          "fields": [
+            "filing_year",
+            "filing_period"
+          ]
+        },
+        {
+          "id": "selection-status",
+          "kind": "category",
+          "label": "Selection status and reason",
+          "meaning": "Whether a unique original or single later amendment was selected, or competing/missing filings remain unresolved.",
+          "fields": [
+            "selection_status",
+            "selection_reason"
+          ]
+        },
+        {
+          "id": "termination-dates",
+          "kind": "date",
+          "label": "Reported termination dates",
+          "meaning": "Literal termination date from the selected LD-2 termination report; non-termination filings remain unplaced.",
+          "fields": [
+            "termination_date"
+          ],
+          "syntax": "iso"
+        }
+      ]
+    },
     "lobbying_registrants": {
       "family": "lobbying-filings",
       "schema": [

@@ -41796,6 +41796,463 @@
         },
         "qualification": "Published source fields; period presence does not prove completeness."
       }
+    },
+    {
+      "tableId": "lobbying_issue_financial_observations",
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "issue_code",
+          "VARCHAR"
+        ],
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_uuid",
+          "VARCHAR"
+        ],
+        [
+          "income",
+          "VARCHAR"
+        ],
+        [
+          "expenses",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "overlap_note",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "reporting-periods",
+          "kind": "interval",
+          "label": "Quarterly reporting periods",
+          "meaning": "Calendar quarter start and end dates of the underlying selected LD-2 quarterly profile. Whole-filing amounts are not allocated by issue and cannot be summed across issues.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "issue-code",
+          "kind": "category",
+          "label": "LDA general issue code",
+          "meaning": "Literal LDA general issue code on the selected filing. Issue-filtered views overlap and do not represent allocated spending.",
+          "fields": [
+            "issue_code"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "reporting-periods",
+          "kind": "interval",
+          "label": "Quarterly reporting periods",
+          "meaning": "Calendar quarter start and end dates of the underlying selected LD-2 quarterly profile. Whole-filing amounts are not allocated by issue and cannot be summed across issues.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "issue-code",
+          "kind": "category",
+          "label": "LDA general issue code",
+          "meaning": "Literal LDA general issue code on the selected filing. Issue-filtered views overlap and do not represent allocated spending.",
+          "fields": [
+            "issue_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d4a614186bc5af5513b977e903517126a9379322edbfc1a2f89b36c7cef9b5c4",
+        "rows": 39,
+        "byteSize": 8497,
+        "memberSha256": "sha256:6a2499ef6d0fcbf46bc82b633710b7a4372246ad96b5e564e07db3fac8843479",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Batch C): Pre-publication coverage definition and review added against verified local candidate generation Parquet."
+    },
+    {
+      "tableId": "sector_classification_evidence",
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "native_entity_id",
+          "VARCHAR"
+        ],
+        [
+          "sector_codes_json",
+          "VARCHAR"
+        ],
+        [
+          "classification_status",
+          "VARCHAR"
+        ],
+        [
+          "classification_scheme",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "method",
+          "VARCHAR"
+        ],
+        [
+          "applicable_start",
+          "VARCHAR"
+        ],
+        [
+          "applicable_end",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "uncertainty",
+          "VARCHAR"
+        ],
+        [
+          "association_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "applicable-periods",
+          "kind": "interval",
+          "label": "Applicable classification periods",
+          "meaning": "Declared reporting window for which each curated NAICS-2022 sector assignment or unresolved cross-source association entry applies.",
+          "fields": [
+            "applicable_start",
+            "applicable_end"
+          ]
+        },
+        {
+          "id": "source-namespace",
+          "kind": "category",
+          "label": "Source entity namespace",
+          "meaning": "Source-local entity namespace (fec_committee, lda_client, or cross_source_association).",
+          "fields": [
+            "source_namespace"
+          ]
+        },
+        {
+          "id": "classification-status",
+          "kind": "category",
+          "label": "Classification status and method",
+          "meaning": "Whether the row is supported curated business-evidence context or an unresolved identity association excluded from money.",
+          "fields": [
+            "classification_status",
+            "method"
+          ]
+        },
+        {
+          "id": "sector-codes",
+          "kind": "list",
+          "label": "Assigned NAICS sector codes",
+          "meaning": "Distinct curated NAICS-2022 sector codes per evidence row; unresolved cross-source associations carry an empty list.",
+          "fields": [
+            "sector_codes_json"
+          ],
+          "syntax": "literal"
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "applicable-periods",
+          "kind": "interval",
+          "label": "Applicable classification periods",
+          "meaning": "Declared reporting window for which each curated NAICS-2022 sector assignment or unresolved cross-source association entry applies.",
+          "fields": [
+            "applicable_start",
+            "applicable_end"
+          ]
+        },
+        {
+          "id": "source-namespace",
+          "kind": "category",
+          "label": "Source entity namespace",
+          "meaning": "Source-local entity namespace (fec_committee, lda_client, or cross_source_association).",
+          "fields": [
+            "source_namespace"
+          ]
+        },
+        {
+          "id": "classification-status",
+          "kind": "category",
+          "label": "Classification status and method",
+          "meaning": "Whether the row is supported curated business-evidence context or an unresolved identity association excluded from money.",
+          "fields": [
+            "classification_status",
+            "method"
+          ]
+        },
+        {
+          "id": "sector-codes",
+          "kind": "list",
+          "label": "Assigned NAICS sector codes",
+          "meaning": "Distinct curated NAICS-2022 sector codes per evidence row; unresolved cross-source associations carry an empty list.",
+          "fields": [
+            "sector_codes_json"
+          ],
+          "syntax": "literal"
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d4a614186bc5af5513b977e903517126a9379322edbfc1a2f89b36c7cef9b5c4",
+        "rows": 5,
+        "byteSize": 9459,
+        "memberSha256": "sha256:5cebf31b89b978189857ca8c0a7f445cf5e2b1c760009cf0a4d721435b4d5376",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Batch C): Pre-publication coverage definition and review added against verified local candidate generation Parquet."
+    },
+    {
+      "tableId": "sector_financial_comparisons",
+      "family": "sector-comparisons",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "sector_code",
+          "VARCHAR"
+        ],
+        [
+          "sector_label",
+          "VARCHAR"
+        ],
+        [
+          "classification_scheme",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "source_family",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "known_reported_amount",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "source_table_sha256",
+          "VARCHAR"
+        ],
+        [
+          "cutoff",
+          "VARCHAR"
+        ],
+        [
+          "population_json",
+          "VARCHAR"
+        ],
+        [
+          "evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "population_profiles",
+          "INTEGER"
+        ],
+        [
+          "group_profiles",
+          "INTEGER"
+        ],
+        [
+          "qualified_measure_profiles",
+          "INTEGER"
+        ],
+        [
+          "unresolved_measure_profiles",
+          "INTEGER"
+        ],
+        [
+          "classified_population_profiles",
+          "INTEGER"
+        ],
+        [
+          "unclassified_population_profiles",
+          "INTEGER"
+        ],
+        [
+          "uncertain_population_profiles",
+          "INTEGER"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "comparison-periods",
+          "kind": "interval",
+          "label": "Declared comparison window",
+          "meaning": "Aligned calendar comparison window declared for FEC committee profiles and LDA quarterly profiles. Known reported amounts are not complete annual totals.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "source-measure",
+          "kind": "category",
+          "label": "Source family and financial measure",
+          "meaning": "Separate FEC and LDA financial measures (receipts, disbursements, income, expenses); amounts are never added across sources or measures.",
+          "fields": [
+            "source_family",
+            "measure"
+          ]
+        },
+        {
+          "id": "sector-code",
+          "kind": "category",
+          "label": "Broad industry classification",
+          "meaning": "Curated NAICS-2022 sector code, unclassified, or uncertain category as observed at mapping time.",
+          "fields": [
+            "sector_code"
+          ]
+        },
+        {
+          "id": "amount-status",
+          "kind": "category",
+          "label": "Measure qualification status",
+          "meaning": "Whether a sector/source/measure group has qualified selected observations or no qualified measure.",
+          "fields": [
+            "amount_status"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "comparison-periods",
+          "kind": "interval",
+          "label": "Declared comparison window",
+          "meaning": "Aligned calendar comparison window declared for FEC committee profiles and LDA quarterly profiles. Known reported amounts are not complete annual totals.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ]
+        },
+        {
+          "id": "source-measure",
+          "kind": "category",
+          "label": "Source family and financial measure",
+          "meaning": "Separate FEC and LDA financial measures (receipts, disbursements, income, expenses); amounts are never added across sources or measures.",
+          "fields": [
+            "source_family",
+            "measure"
+          ]
+        },
+        {
+          "id": "sector-code",
+          "kind": "category",
+          "label": "Broad industry classification",
+          "meaning": "Curated NAICS-2022 sector code, unclassified, or uncertain category as observed at mapping time.",
+          "fields": [
+            "sector_code"
+          ]
+        },
+        {
+          "id": "amount-status",
+          "kind": "category",
+          "label": "Measure qualification status",
+          "meaning": "Whether a sector/source/measure group has qualified selected observations or no qualified measure.",
+          "fields": [
+            "amount_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d4a614186bc5af5513b977e903517126a9379322edbfc1a2f89b36c7cef9b5c4",
+        "rows": 16,
+        "byteSize": 16354,
+        "memberSha256": "sha256:0bc8017bd984af1105dca859ed42bb15fdc6b61137bdb19a64f10c4bdf958173",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Batch C): Pre-publication coverage definition and review added against verified local candidate generation Parquet."
     }
   ],
   "completenessFollowup": {
