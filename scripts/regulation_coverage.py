@@ -11,7 +11,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from coverage_dimensions import definition_digest, scan_dimension, day
+from coverage_dimensions import definition_digest, quote, scan_dimension, day
 from publication_census import BASE, digest, path, size
 
 
@@ -246,8 +246,13 @@ def timetable_value(value):
 
 def timetable(conn, table, dim):
     """Count every stored milestone, distinct agenda rows per month and year."""
-    groups = conn.execute('SELECT timetable_json, count(*) FROM read_parquet(?, hive_partitioning=false) GROUP BY 1',
-                          [[m['url'] for m in table['members']]]).fetchall()
+    field = dim['fields'][0]
+    if field not in ('timetable', 'timetable_json'):
+        raise ValueError('Timetable coverage requires a reviewed timetable field')
+    urls = [m['url'] for m in table['members']]
+    col_type = dict((r[0], r[1]) for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?, hive_partitioning=false)', [urls]).fetchall()).get(field)
+    expr = quote(field) if col_type == 'VARCHAR' else f'cast(to_json({quote(field)}) AS VARCHAR)'
+    groups = conn.execute(f'SELECT {expr}, count(*) FROM read_parquet(?, hive_partitioning=false) GROUP BY 1', [urls]).fetchall()
     total = placed = partial = review_rows = 0
     buckets, years, entry_counts, examples, review_buckets = {}, {}, {}, [], {}
     marker = dim['special']

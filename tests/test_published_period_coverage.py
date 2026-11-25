@@ -256,10 +256,10 @@ class PublishedOnlyRoute(unittest.TestCase):
             cr_path = folder_path / 'committee_reports.parquet'
             with duckdb.connect() as conn:
                 conn.execute('CREATE TABLE cbo (' + ', '.join(f'"{n}" {t}' for n, t in cbo_policy['schema']) + ')')
-                conn.execute("INSERT INTO cbo (package_id, part_id, letter_date) VALUES ('CRPT-119hrpt1', '1', NULL), ('CRPT-108hrpt2', '1', '2003-05-22')")
+                conn.execute("INSERT INTO cbo (package_id, part_id, last_modified, letter_date) VALUES ('CRPT-119hrpt1', '1', '2026-10-29T12:00:00Z', NULL), ('CRPT-108hrpt2', '1', '2003-06-01T12:00:00Z', '2003-05-22')")
                 conn.execute('COPY cbo TO ? (FORMAT PARQUET)', [str(cbo_path)])
                 conn.execute('CREATE TABLE cr (' + ', '.join(f'"{n}" {t}' for n, t in cr_policy['schema']) + ')')
-                conn.execute("INSERT INTO cr (package_id, part_id, congress, date_issued) VALUES ('CRPT-119hrpt1', '1', 119, '2026-10-29'), ('CRPT-108hrpt2', '1', 108, '2003-06-01')")
+                conn.execute("INSERT INTO cr (package_id, part_id, last_modified, congress, date_issued) VALUES ('CRPT-119hrpt1', '1', '2026-10-29T12:00:00Z', 119, '2026-10-29'), ('CRPT-119hrpt1', '1', '2026-11-01T12:00:00Z', 119, '2026-10-29'), ('CRPT-108hrpt2', '1', '2003-06-01T12:00:00Z', 108, '2003-06-01')")
                 conn.execute('COPY cr TO ? (FORMAT PARQUET)', [str(cr_path)])
 
             class LocalParentInputs:
@@ -267,8 +267,8 @@ class PublishedOnlyRoute(unittest.TestCase):
                     return {
                         'family': 'committee-reports', 'artifactDigest': 'sha256:' + 'a' * 64,
                         'tableId': relation['table'], 'recordUrl': 'local://artifact.json',
-                        'members': [{'key': cr_path.name, 'rows': 2, 'byteSize': cr_path.stat().st_size}],
-                        'urls': [str(cr_path)], 'rows': 2,
+                        'members': [{'key': cr_path.name, 'rows': 3, 'byteSize': cr_path.stat().st_size}],
+                        'urls': [str(cr_path)], 'rows': 3,
                     }
 
             with duckdb.connect() as conn:

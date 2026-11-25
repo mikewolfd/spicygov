@@ -1720,32 +1720,11 @@
         [
           "group_size",
           "BIGINT"
-        ],
-        [
-          "edition",
-          "VARCHAR"
-        ],
-        [
-          "rule_version",
-          "VARCHAR"
-        ],
-        [
-          "match_basis",
-          "VARCHAR"
         ]
       ],
       "classification": "inherited",
       "note": "Counts show saved rows, not complete source coverage. An empty period means no placed rows in this file.",
       "dimensions": [
-        {
-          "id": "grouping-input-editions",
-          "kind": "category",
-          "label": "Docket input editions",
-          "meaning": "Date of the saved docket export used to group related cases.",
-          "fields": [
-            "edition"
-          ]
-        },
         {
           "id": "grouped-docket-filing-dates",
           "kind": "inherited",
@@ -1984,7 +1963,7 @@
         ],
         [
           "court_is_federal",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "case_name",
@@ -2004,7 +1983,7 @@
         ],
         [
           "date_filed_is_approximate",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "judges",
@@ -2020,7 +1999,7 @@
         ],
         [
           "citation_count",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "scdb_id",
@@ -2032,15 +2011,11 @@
         ],
         [
           "scdb_votes_majority",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "scdb_votes_minority",
-          "VARCHAR"
-        ],
-        [
-          "source",
-          "VARCHAR"
+          "BIGINT"
         ],
         [
           "procedural_history",
@@ -2048,7 +2023,7 @@
         ],
         [
           "attorneys",
-          "VARCHAR"
+          "VARCHAR[]"
         ],
         [
           "posture",
@@ -2096,30 +2071,10 @@
         ],
         [
           "blocked",
-          "VARCHAR"
+          "BOOLEAN"
         ],
         [
           "date_blocked",
-          "VARCHAR"
-        ],
-        [
-          "slug",
-          "VARCHAR"
-        ],
-        [
-          "absolute_url",
-          "VARCHAR"
-        ],
-        [
-          "date_created",
-          "VARCHAR"
-        ],
-        [
-          "date_modified",
-          "VARCHAR"
-        ],
-        [
-          "ingest_source",
           "VARCHAR"
         ]
       ],
@@ -2152,15 +2107,6 @@
           ],
           "label": "Filing date precision",
           "meaning": "CourtListener's recorded approximation flags. Only explicitly exact dates enter the decision calendar."
-        },
-        {
-          "id": "retained-origins",
-          "kind": "category",
-          "fields": [
-            "ingest_source"
-          ],
-          "label": "Saved record origin",
-          "meaning": "Whether each saved decision group came from a CourtListener bulk export or search result. The routes provide different fields; this view shows the selected row\u2019s origin, not a complete collection history."
         }
       ]
     },
@@ -3800,23 +3746,19 @@
           "VARCHAR"
         ],
         [
-          "comment_start_date",
-          "VARCHAR"
-        ],
-        [
-          "comment_end_date",
-          "VARCHAR"
-        ],
-        [
-          "reply_comment_start_date",
-          "VARCHAR"
-        ],
-        [
-          "reply_comment_end_date",
-          "VARCHAR"
-        ],
-        [
           "filed_by",
+          "VARCHAR"
+        ],
+        [
+          "date_nprm",
+          "VARCHAR"
+        ],
+        [
+          "date_reporting_and_order",
+          "VARCHAR"
+        ],
+        [
+          "rule_section",
           "VARCHAR"
         ]
       ],
@@ -3844,24 +3786,24 @@
           "special": "literal-date-anomalies"
         },
         {
-          "id": "comment-windows",
-          "kind": "interval",
+          "id": "nprm-dates",
+          "kind": "date",
           "fields": [
-            "comment_start_date",
-            "comment_end_date"
+            "date_nprm"
           ],
-          "label": "Comment windows",
-          "meaning": "Comment windows reported for saved FCC proceedings. These dates do not establish that comments were collected or that the window was legally valid."
+          "label": "Notice of Proposed Rulemaking dates",
+          "meaning": "Dates recorded for Notices of Proposed Rulemaking in saved FCC proceedings. Proceedings without an NPRM date remain unplaced.",
+          "special": "literal-date-anomalies"
         },
         {
-          "id": "reply-comment-windows",
-          "kind": "interval",
+          "id": "report-and-order-dates",
+          "kind": "date",
           "fields": [
-            "reply_comment_start_date",
-            "reply_comment_end_date"
+            "date_reporting_and_order"
           ],
-          "label": "Reply comment windows",
-          "meaning": "Reply-comment windows reported for saved FCC proceedings. These dates do not establish that replies were collected or that the window was legally valid."
+          "label": "Report and Order dates",
+          "meaning": "Dates recorded for Reports and Orders in saved FCC proceedings. Proceedings without a Report and Order date remain unplaced.",
+          "special": "literal-date-anomalies"
         }
       ]
     },
@@ -9874,16 +9816,16 @@
           "VARCHAR"
         ],
         [
-          "timetable_json",
-          "VARCHAR"
+          "timetable",
+          "STRUCT(\"action\" VARCHAR, date VARCHAR, fr_citation VARCHAR)[]"
         ],
         [
-          "cfr_references_json",
-          "VARCHAR"
+          "cfr_references",
+          "VARCHAR[]"
         ],
         [
-          "legal_authority_json",
-          "VARCHAR"
+          "legal_authority",
+          "VARCHAR[]"
         ],
         [
           "first_action_date",
@@ -9894,8 +9836,8 @@
           "VARCHAR"
         ],
         [
-          "url",
-          "VARCHAR"
+          "related_rins",
+          "STRUCT(rin VARCHAR, rin_relation VARCHAR)[]"
         ]
       ],
       "classification": "record-dates",
@@ -9905,7 +9847,7 @@
           "id": "timetable-milestone-months",
           "kind": "list",
           "fields": [
-            "timetable_json"
+            "timetable"
           ],
           "label": "All timetable milestone months",
           "meaning": "All dated source timetable milestones, counted once per agenda row in each month. Month-only dates keep that precision. Past actions and future plans remain source statements.",
@@ -9945,7 +9887,7 @@
           "id": "timetable-date-precision",
           "kind": "category",
           "fields": [
-            "timetable_json"
+            "timetable"
           ],
           "label": "Timetable date precision",
           "meaning": "Agenda rows with day-dated, month-dated, undated or invalid milestones. One row can belong to several categories; undated actions receive no invented date.",
@@ -9955,7 +9897,7 @@
           "id": "timetable-unresolved-milestones",
           "kind": "category",
           "fields": [
-            "timetable_json"
+            "timetable"
           ],
           "label": "Undated and invalid milestones",
           "meaning": "Source wording for undated or invalid milestone dates, with their actions and Federal Register citations. No dates are guessed or corrected.",
