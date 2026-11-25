@@ -1579,7 +1579,7 @@
       "summary": "Collects semiannual plans for agency regulatory actions from RegInfo.gov\u2019s structured edition files, combining the latest edition with earlier editions.",
       "scope": "Covers readable editions from fall 1995 through the latest collected edition.",
       "gaps": [
-        "No editions are held for 2004 or spring 2012.",
+        "No editions are held for spring 2012.",
         "A rule appears once per edition that lists it; repeated rows are observations over time, not additional rules."
       ]
     },

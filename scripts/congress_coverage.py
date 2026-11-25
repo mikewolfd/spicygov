@@ -133,12 +133,18 @@ def hearing_dates(table_id, table, inputs, package_ids):
 
 
 def _hearing_sessions(conn, table_id, table, dim, inputs):
-    rows = conn.execute('SELECT package_id,held_date FROM read_parquet(?, hive_partitioning=false)', [_urls(table)]).fetchall()
-    if len(rows) != table['rows'] or len({r[0] for r in rows}) != len(rows):
-        raise ValueError('Hearing coverage package identity does not reconcile')
+    schema = {r[0] for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?, hive_partitioning=false)', [_urls(table)]).fetchall()}
+    if 'last_modified' in schema:
+        rows = conn.execute('SELECT package_id,held_date,last_modified FROM read_parquet(?, hive_partitioning=false)', [_urls(table)]).fetchall()
+        if len(rows) != table['rows'] or len({(r[0], r[2]) for r in rows}) != len(rows):
+            raise ValueError('Hearing coverage package identity does not reconcile')
+    else:
+        rows = conn.execute('SELECT package_id,held_date FROM read_parquet(?, hive_partitioning=false)', [_urls(table)]).fetchall()
+        if len(rows) != table['rows'] or len({r[0] for r in rows}) != len(rows):
+            raise ValueError('Hearing coverage package identity does not reconcile')
     found, evidence = hearing_dates(table_id, table, inputs, {r[0] for r in rows})
     buckets, years, placed, occurrences = defaultdict(int), defaultdict(int), 0, 0
-    for package, first in rows:
+    for package, first, *_ in rows:
         dates = found[package]['dates']
         if (dates and first != dates[0]) or (not dates and first not in (None, '')):
             raise ValueError('Retained MODS dates differ from the published first hearing date')
@@ -259,13 +265,24 @@ def _bill_subject_availability(conn, table, dim):
     # subject terms must never increase either the numerator or denominator.
     conn.execute("CREATE OR REPLACE TEMP TABLE availability_denominator AS SELECT DISTINCT bill_id, nullif(trim(congress),'') AS congress FROM availability_bills")
     flags = {}
-    rows = conn.execute('SELECT bill_id, policy_area, subjects_json FROM availability_subjects').fetchall()
+    subject_col = next((f for f in dim.get('fields', []) if f in ('subjects', 'subjects_json')), None)
+    if subject_col is None:
+        cols = {r[0] for r in conn.execute('DESCRIBE availability_subjects').fetchall()}
+        subject_col = 'subjects' if 'subjects' in cols else 'subjects_json'
+    rows = conn.execute(f'SELECT bill_id, policy_area, {quote(subject_col)} FROM availability_subjects').fetchall()
     if len(rows) != table['rows']:
         raise ValueError('Subject availability row count does not reconcile')
     for bill_id, policy_area, raw_subjects in rows:
         if not isinstance(bill_id, str) or not bill_id.strip():
             raise ValueError('Subject availability has a missing bill identifier')
-        subjects = json.loads(raw_subjects) if raw_subjects else []
+        if isinstance(raw_subjects, list):
+            subjects = raw_subjects
+        elif raw_subjects is None:
+            subjects = []
+        elif isinstance(raw_subjects, str):
+            subjects = json.loads(raw_subjects) if raw_subjects else []
+        else:
+            raise ValueError('Subject availability requires a list of subject names')
         if not isinstance(subjects, list) or any(not isinstance(value, str) for value in subjects):
             raise ValueError('Subject availability requires a list of subject names')
         area, subject = flags.get(bill_id, (False, False))
@@ -295,13 +312,21 @@ def _bill_subject_availability(conn, table, dim):
 
 def _committee_history(conn, table, dim):
     """Native name/history periods count each published committee once per cell."""
-    groups=conn.execute('SELECT history_json,count(*) FROM read_parquet(?,hive_partitioning=false) GROUP BY 1',[_urls(table)]).fetchall()
-    buckets,years=defaultdict(int),defaultdict(int)
-    total=placed=partial=occurrences=open_ends=invalid_occurrences=0
-    for raw,n in groups:
-        total+=n
-        history=json.loads(raw) if raw else []
-        if not isinstance(history,list) or any(not isinstance(item,dict) for item in history):
+    field = dim['fields'][0]
+    if field not in ('history', 'history_json'):
+        raise ValueError('Committee history requires the published history field')
+    urls = _urls(table)
+    col_type = dict((r[0], r[1]) for r in conn.execute('DESCRIBE SELECT * FROM read_parquet(?,hive_partitioning=false)', [urls]).fetchall()).get(field)
+    expr = quote(field) if col_type == 'VARCHAR' else f'cast(to_json({quote(field)}) AS VARCHAR)'
+    groups = conn.execute(f'SELECT {expr},count(*) FROM read_parquet(?,hive_partitioning=false) GROUP BY 1', [urls]).fetchall()
+    buckets, years = defaultdict(int), defaultdict(int)
+    total = placed = partial = occurrences = open_ends = invalid_occurrences = 0
+    for raw, n in groups:
+        total += n
+        history = json.loads(raw) if raw else []
+        if history is None:
+            history = []
+        if not isinstance(history, list) or any(not isinstance(item, dict) for item in history):
             raise ValueError('Committee native history must be an array of objects')
         keys=set();unresolved=False
         for item in history:
@@ -441,7 +466,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             values=json.loads(key) if isinstance(key,str) and key.startswith('[') else [key]
             if not isinstance(values,list):raise ValueError('Citation source key is not the declared composite shape')
             if kind=='bill_section':keys=['bill_id','version_code','source' if 'source' in columns else 'printing_id','seq'];body='body'
-            elif kind=='report_section':keys=['package_id','part_id','seq'];body='body'
+            elif kind=='report_section':keys=['package_id','part_id','seq','last_modified'] if len(values)==4 else ['package_id','part_id','seq'];body='body'
             elif kind=='lobbying_activity':keys=['filing_uuid','activity_index'];body='description'
             elif kind.startswith('communication_'):keys=['congress','communication_type','number'];body={'communication_authority':'legal_authority','communication_report_nature':'report_nature','communication_record_entry':'record_entry_text'}[kind]
             else:keys=['opinion_id','source_sha256'] if len(values)==2 else ['opinion_body_id'];body='text_content'
@@ -454,7 +479,7 @@ def _citation_scope(conn, table_id, table, dim, inputs):
             if kind=='bill_section':result['date']=one(source,keys,values,['version_date'])[0]
             elif kind.startswith('communication_'):result['date']=one(source,keys,values,['congressional_record_date'])[0]
             elif kind=='report_section':
-                package,part,modified=one(source,keys,values,['package_id','part_id','last_modified']);report=retained(family,generation,'committee_reports');date,parent_modified=one(report,['package_id','part_id'],[package,part],['date_issued','last_modified'])
+                package,part,modified=one(source,keys,values,['package_id','part_id','last_modified']);report=retained(family,generation,'committee_reports');report_cols={r[0] for r in conn.execute('DESCRIBE '+view(report)).fetchall()};report_keys=['package_id','part_id','last_modified'] if 'last_modified' in report_cols else ['package_id','part_id'];report_vals=[package,part,modified] if 'last_modified' in report_cols else [package,part];date,parent_modified=one(report,report_keys,report_vals,['date_issued','last_modified'])
                 if modified!=parent_modified:raise ValueError('Citation report section version differs from its report input')
                 result['date']=date
             elif kind=='lobbying_activity':
@@ -539,22 +564,27 @@ def _committee_read_dates(conn, table_id, table, dim, inputs):
 
 def _roster_file_dates(conn,table,dim):
     import datetime
-    groups=conn.execute('SELECT file_date,count(*) FROM read_parquet(?,hive_partitioning=false) GROUP BY 1',[_urls(table)]).fetchall()
+    field = dim['fields'][0]
+    if field not in ('file_date', 'edition_date'):
+        raise ValueError('Roster snapshot dates require a reviewed roster date field')
+    groups=conn.execute(f'SELECT {quote(field)},count(*) FROM read_parquet(?,hive_partitioning=false) GROUP BY 1',[_urls(table)]).fetchall()
     buckets,years,placed,total=defaultdict(int),defaultdict(int),0,0
     for value,n in groups:
         total+=n;parsed=None
         if isinstance(value,str):
-            for form in ('%B %d, %Y','%A, %B %d, %Y'):
-                try:
-                    stamp=datetime.datetime.strptime(value,form)
-                    # strptime accepts a mismatched weekday; preserve that as unresolved.
-                    if form.startswith('%A') and value.split(',')[0]!=stamp.strftime('%A'):continue
-                    parsed=stamp;break
-                except ValueError:pass
+            parsed=day(value)
+            if parsed is None:
+                for form in ('%B %d, %Y','%A, %B %d, %Y'):
+                    try:
+                        stamp=datetime.datetime.strptime(value,form)
+                        # strptime accepts a mismatched weekday; preserve that as unresolved.
+                        if form.startswith('%A') and value.split(',')[0]!=stamp.strftime('%A'):continue
+                        parsed=stamp;break
+                    except ValueError:pass
         if parsed:placed+=n;buckets[parsed.strftime('%Y-%m')]+=n;years[parsed.strftime('%Y')]+=n
     if total!=table['rows']:raise ValueError('Roster file-date rows differ from publication')
     return _result(table,dim,'month',buckets,placed,yearBuckets=dict(sorted(years.items())),
-        notes=['These dates locate the retained roster snapshot, not a complete record of assignment tenure. Supported source syntax is full month/day/year, optionally prefixed by its matching weekday.'])
+        notes=['These dates locate the retained roster snapshot, not a complete record of assignment tenure. Supported source syntax is ISO YYYY-MM-DD or full month/day/year, optionally prefixed by its matching weekday.'])
 
 
 def _metric_periods(conn,table_id,table,dim,inputs):

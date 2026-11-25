@@ -389,26 +389,21 @@ class CongressCoverageTests(unittest.TestCase):
         from coverage_dimensions import scan_dimension
         definitions=json.loads((pathlib.Path(__file__).resolve().parents[1]/'content/coverage-definitions/congress.json').read_text())['tables']
         dimensions={d['id']:d for d in definitions['bill_versions']['dimensions']}
-        child=self.file('body_states',"SELECT * FROM (VALUES ('govinfo','kind_uncertain'),('govinfo','full_text'),('congress','full_text'),('govinfo',NULL)) t(source,kind)")
-        source=scan_dimension(self.conn,[child],4,dimensions['printing-acquisition-source'])
-        self.assertEqual(source['buckets'],{'["govinfo"]':3,'["congress"]':1})
-        self.assertEqual(source['unplacedRows'],0)
+        child=self.file('body_states',"SELECT * FROM (VALUES ('kind_uncertain','recorded'),('full_text','missing'),('full_text',NULL),(NULL,'recorded')) t(kind,publication_evidence_status)")
         kinds=scan_dimension(self.conn,[child],4,dimensions['printing-body-kind'])
         self.assertEqual(kinds['buckets'],{'["kind_uncertain"]':1,'["full_text"]':2})
         self.assertEqual(kinds['unplacedRows'],1)
-        joint=scan_dimension(self.conn,[child],4,dimensions['printing-source-body-kind'])
-        self.assertEqual({tuple(json.loads(key)):n for key,n in joint['buckets'].items()},
-                         {('govinfo','kind_uncertain'):1,('govinfo','full_text'):1,('congress','full_text'):1})
-        self.assertEqual(joint['unplacedRows'],1)
+        evidence=scan_dimension(self.conn,[child],4,dimensions['publication-evidence-status'])
+        self.assertEqual(evidence['buckets'],{'["recorded"]':2,'["missing"]':1})
+        self.assertEqual(evidence['unplacedRows'],1)
 
     def test_communication_detail_view_preserves_unread_and_unstated_flags(self):
         from coverage_dimensions import scan_dimension
         definitions=json.loads((pathlib.Path(__file__).resolve().parents[1]/'content/coverage-definitions/congress.json').read_text())['tables']
         dim=next(d for d in definitions['house_communications']['dimensions'] if d['id']=='communication-source-detail')
-        child=self.file('detail_states',"SELECT * FROM (VALUES ('congress-gov-detail','true'),('congress-gov-detail','false'),('congress-gov-detail',NULL)) t(source_route,detail_read)")
+        child=self.file('detail_states',"SELECT * FROM (VALUES ('congress-gov-detail'),('congress-gov-list'),(NULL)) t(source_route)")
         result=scan_dimension(self.conn,[child],3,dim)
-        self.assertEqual({tuple(json.loads(key)):n for key,n in result['buckets'].items()},
-                         {('congress-gov-detail','true'):1,('congress-gov-detail','false'):1})
+        self.assertEqual(result['buckets'],{'["congress-gov-detail"]':1,'["congress-gov-list"]':1})
         self.assertEqual((result['placedRows'],result['unplacedRows']),(2,1))
 
     def test_committee_history_keeps_open_ends_and_counts_root_once(self):
@@ -441,6 +436,59 @@ class CongressCoverageTests(unittest.TestCase):
         dim={'id':'source-date','kind':'inherited','fields':[],'label':'Source report issue','meaning':'Exact retained text context.','parent':{'table':'house_activity_reports','mode':'same-generation','keys':[['document_key','package_id'],['text_sha256','text_sha256']]},'dimension':{'id':'issue','kind':'date','fields':['date_issued'],'label':'Source issue','meaning':'Exact retained report issue.'}}
         d=inherit_unique(self.conn,[child],table['rows'],self.parent(parent,1,'house_activity_reports'),dim['parent'],dim['dimension'])
         self.assertEqual(d['buckets'],{'2002-02':1});self.assertEqual((d['matchedRows'],d['unmatchedRows']),(1,1))
+
+    def test_hearing_sessions_accepts_multiple_revisions_and_rejects_duplicate_revision(self):
+        child=self.file('hearing_rev',"""SELECT * FROM (VALUES
+            ('CHRG-A','2020-01-01','2026-10-01T00:00:00Z'),
+            ('CHRG-A','2020-01-01','2026-11-01T00:00:00Z'),
+            ('CHRG-B','2020-02-01','2026-10-01T00:00:00Z')) t(package_id,held_date,last_modified)""")
+        dim=self.dim('hearing-sessions','list',['package_id'])
+        found={'CHRG-A':{'dates':['2020-01-01','2020-02-01']},'CHRG-B':{'dates':['2020-02-01']}}
+        with patch.object(coverage,'hearing_dates',return_value=(found,[])):
+            d=coverage.scan_special(self.conn,'hearing_transcripts',self.table(child,3),dim,None)
+        self.assertEqual(d['buckets'],{'2020-01':2,'2020-02':3})
+        self.assertEqual(d['yearBuckets'],{'2020':3})
+        self.assertEqual((d['placedRows'],d['unplacedRows']),(3,0))
+        dup=self.file('hearing_dup',"""SELECT * FROM (VALUES
+            ('CHRG-A','2020-01-01','2026-10-01T00:00:00Z'),
+            ('CHRG-A','2020-01-01','2026-10-01T00:00:00Z')) t(package_id,held_date,last_modified)""")
+        with self.assertRaisesRegex(ValueError,'does not reconcile'):
+            coverage.scan_special(self.conn,'hearing_transcripts',self.table(dup,2),dim,None)
+
+    def test_native_arrow_subjects_history_edition_date_and_report_revision(self):
+        # Native VARCHAR[] subjects
+        subj_file=self.file('native_subjects',"""SELECT * FROM (VALUES
+            ('a','Health',['Care','Care']),
+            ('b','  ',[' ']),
+            ('c',NULL,['Tax'])) t(bill_id,policy_area,subjects)""")
+        bills_file=self.file('native_bills',"SELECT * FROM (VALUES ('a','118'),('b','118'),('c','119')) t(bill_id,congress)")
+        comparison=self.table(bills_file,3,'bill-family')
+        comparison['columns']=[['bill_id','VARCHAR'],['congress','VARCHAR']]
+        comparison['members'][0].update(rows=3,byteSize=pathlib.Path(bills_file).stat().st_size)
+        sdim={**self.dim('bill-subject-availability','snapshot',['bill_id','policy_area','subjects']),'comparisonTable':'congress_bills','comparison':comparison}
+        sres=coverage.scan_special(self.conn,'bill_subjects',self.table(subj_file,3),sdim,None)
+        self.assertEqual((sres['billCoverage']['total'],sres['billCoverage']['policyAreas'],sres['billCoverage']['subjects']),(3,1,2))
+        # Native STRUCT[] history
+        hist_file=self.file('native_history',"""SELECT [{'startDate':'2020-01-01T05:00:00Z','endDate':'2020-02-28T04:59:00Z'},{'startDate':'2022-04-01','endDate':NULL}] history UNION ALL SELECT []""")
+        hres=coverage.scan_special(self.conn,'committees',self.table(hist_file,2),self.dim('committee-history-starts','list',['history']),None)
+        self.assertEqual(hres['buckets'],{'2020-01':1,'2022-04':1})
+        # ISO edition_date
+        roster_file=self.file('edition_roster',"SELECT * FROM (VALUES ('2022-10-26'),('2024-04-25'),(NULL)) t(edition_date)")
+        rres=coverage.scan_special(self.conn,'committee_assignments',self.table(roster_file,3),self.dim('roster-file-date','date',['edition_date']),None)
+        self.assertEqual(rres['buckets'],{'2022-10':1,'2024-04':1});self.assertEqual((rres['placedRows'],rres['unplacedRows']),(2,1))
+        # Revision-qualified report_section citation lookup across multi-revision committee_reports
+        text='section body';text_sha='sha256:'+hashlib.sha256(text.encode()).hexdigest();generation='sha256:'+'b'*64;input_sha='sha256:'+'c'*64
+        sections=self.file('rep_sections',"SELECT 'CRPT-1' package_id,'CRPT-1' part_id,0::BIGINT seq,'2026-10-01T00:00:00Z' last_modified,'section body' body")
+        reports=self.file('rep_reports',"SELECT * FROM (VALUES ('CRPT-1','CRPT-1','2026-09-15','2026-10-01T00:00:00Z'),('CRPT-1','CRPT-1','2026-09-15','2026-11-01T00:00:00Z')) t(package_id,part_id,date_issued,last_modified)")
+        read_path=self.root/'rep_reads.parquet';self.conn.execute("CREATE TABLE rep_reads(document_kind VARCHAR,document_key VARCHAR,text_sha256 VARCHAR,input_family VARCHAR,input_generation VARCHAR,input_sha256 VARCHAR)")
+        self.conn.execute('INSERT INTO rep_reads VALUES (?,?,?,?,?,?)',['report_section',json.dumps(['CRPT-1','CRPT-1','0'],separators=(',',':')),text_sha,'committee-reports',generation,input_sha])
+        self.conn.execute("COPY rep_reads TO '"+str(read_path)+"' (FORMAT PARQUET)")
+        sources={'report_sections':self.parent(sections,1,'report_sections'),'committee_reports':self.parent(reports,2,'committee_reports')}
+        for src in sources.values():src.update(family='committee-reports',artifactDigest=generation,members=[{'sha256':input_sha}])
+        class RepInputs(Inputs):
+            def table(inner,family,pin,name):return sources[name]
+        cres=coverage.scan_special(self.conn,'document_citation_read_outcomes',self.table(str(read_path),1,'print-citations'),self.dim('cited-read-source-year','year',['document_key']),RepInputs(None))
+        self.assertEqual(cres['buckets'],{'2026':1});self.assertEqual(cres['placedRows'],1)
 
 
 if __name__=='__main__':unittest.main()

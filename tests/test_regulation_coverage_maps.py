@@ -133,6 +133,16 @@ class RegulationCoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'publication'):
             scan_special(self.conn, 'unified_agenda', {**table, 'rows': 6},
                          self.dimension('agenda-timetable-months', ['timetable_json'], 'list'), Inputs({}))
+        # Native STRUCT[] timetable column
+        self.conn.execute("""CREATE TABLE agenda_native AS SELECT [
+            {'action': 'NPRM', 'date': '01/01/2020', 'fr_citation': NULL},
+            {'action': 'Planned', 'date': '07/00/2027', 'fr_citation': NULL}] AS timetable
+            UNION ALL SELECT [{'action': 'Later', 'date': 'TBD', 'fr_citation': '90 FR 42'}]""")
+        native_file = self.root / 'agenda_native.parquet'; self.conn.execute(f"COPY agenda_native TO '{native_file}' (FORMAT PARQUET)")
+        native_res = scan_special(self.conn, 'unified_agenda', {'rows': 2, 'members': [{'url': str(native_file)}]},
+                                  self.dimension('agenda-timetable-months', ['timetable'], 'list'), Inputs({}))
+        self.assertEqual(native_res['buckets'], {'2020-01': 1, '2027-07': 1})
+        self.assertEqual((native_res['placedRows'], native_res['unplacedRows']), (1, 1))
 
     def test_questionable_literal_years_are_disclosed_without_removing_schedules(self):
         file = self.parquet('schedules.parquet', "SELECT * FROM (VALUES ('1753-01-01'),('2032-10-10'),('3017-11-13')) t(closing)")
@@ -375,13 +385,11 @@ class RegulationCoverageTests(unittest.TestCase):
             scan_special(self.conn,'discovery_signals',table,dim,inputs)
 
     def test_saved_court_origin_keeps_routes_and_missing_origin_separate(self):
+        # retained-origins on court_opinion_clusters returns when ingest_source is re-promoted (Track 3A-2 ss-vse3).
         definitions=json.loads((ROOT/'content/coverage-definitions/regulation.json').read_text())['tables']
-        dim=next(d for d in definitions['court_opinion_clusters']['dimensions'] if d['id']=='retained-origins')
-        self.assertEqual(dim['fields'], ['ingest_source'])
-        file=self.parquet('origins.parquet', "SELECT * FROM (VALUES ('bulk'),('bulk'),('search'),(NULL)) t(ingest_source)")
-        result=scan_dimension(self.conn,[file],4,dim)
-        self.assertEqual(result['buckets'], {'["bulk"]':2,'["search"]':1})
-        self.assertEqual((result['placedRows'],result['unplacedRows']), (3,1))
+        cluster=definitions['court_opinion_clusters']
+        self.assertFalse(any(d['id']=='retained-origins' for d in cluster['dimensions']))
+        validate_definition(cluster, cluster['schema'])
 
     def test_saved_text_counts_null_blank_and_nonblank_across_every_group(self):
         file=self.root/'texts.parquet'
