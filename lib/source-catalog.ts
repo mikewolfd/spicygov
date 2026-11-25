@@ -184,7 +184,13 @@ function validateFileProvenance(raw: unknown) {
     const url = new URL(string(raw));
     const publicListing = url.host === 'com-courtlistener-storage.s3-us-west-2.amazonaws.com'
       && url.pathname === '/list.html' && url.search === '?prefix=bulk-data/';
-    if (!['http:','https:'].includes(url.protocol) || url.username || url.password || (url.search && !publicListing) || url.hash) throw Error('Unsafe file source URL');
+    // Public book identifiers are needed to distinguish recovered report originals.
+    const publicBookDownload = url.origin === 'https://books.google.com'
+      && /^\/books\/download\/[A-Za-z0-9_-]+\.pdf$/.test(url.pathname)
+      && [...url.searchParams].length === 2
+      && /^[A-Za-z0-9_-]{12}$/.test(url.searchParams.get('id') ?? '')
+      && url.searchParams.get('output') === 'pdf';
+    if (!['http:','https:'].includes(url.protocol) || url.username || url.password || (url.search && !publicListing && !publicBookDownload) || url.hash) throw Error('Unsafe file source URL');
   });
   if (new Set(urls).size !== urls.length) throw Error('Duplicate file source URL');
   const digest = (raw: unknown) => { if (!/^sha256:[a-f0-9]{64}$/.test(string(raw))) throw Error('Invalid file receipt digest'); };
