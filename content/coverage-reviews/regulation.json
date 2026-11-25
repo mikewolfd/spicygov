@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 99,
+  "tableCount": 107,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -26399,6 +26399,352 @@
       "reviewNote": "2026-11-24 (A4): T10 coverage definition added against live published columns."
     },
     {
+      "tableId": "hospital_cost_report_cells",
+      "family": "hospital-cost-reports",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "cell_kind",
+          "VARCHAR"
+        ],
+        [
+          "worksheet",
+          "VARCHAR"
+        ],
+        [
+          "line",
+          "VARCHAR"
+        ],
+        [
+          "column",
+          "VARCHAR"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "source_archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_number",
+          "BIGINT"
+        ],
+        [
+          "source_byte_offset",
+          "BIGINT"
+        ],
+        [
+          "source_byte_length",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "fiscal-periods",
+          "kind": "inherited",
+          "label": "Hospital fiscal reporting periods",
+          "meaning": "Cost-reporting fiscal begin and end dates inherited from matching hospital_cost_reports rows in the same generation.",
+          "fields": [
+            "report_id"
+          ],
+          "parent": {
+            "table": "hospital_cost_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "fiscal-periods",
+            "kind": "interval",
+            "label": "Hospital fiscal reporting periods",
+            "meaning": "Cost-reporting fiscal begin and end dates inherited from matching hospital_cost_reports rows in the same generation.",
+            "fields": [
+              "fiscal_begin",
+              "fiscal_end"
+            ]
+          }
+        },
+        {
+          "id": "cell-kind",
+          "kind": "category",
+          "label": "Worksheet cell kind",
+          "meaning": "Whether each worksheet cell came from the numeric (nmrc) or alphanumeric (alphnmrc) CMS-2552-10 extract file.",
+          "fields": [
+            "cell_kind"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:647851c265e35472a84cdcdb8815ef93999660c8f45de3b397fd47165cdd2425",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:9f7d894db686d3e2fc20499de6d2f0c24e83bf776d20f047a8f570f39382e0d1",
+        "rows": 8984627,
+        "byteSize": 106084687,
+        "memberSha256": "sha256:0b57059d26c034854973a2ad173186a8fc9377ef47516151d5a12312af4442dd",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
+      "tableId": "hospital_cost_report_measures",
+      "family": "hospital-cost-reports",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "ccn",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_begin",
+          "DATE"
+        ],
+        [
+          "fiscal_end",
+          "DATE"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "provider_scope",
+          "VARCHAR"
+        ],
+        [
+          "worksheet",
+          "VARCHAR"
+        ],
+        [
+          "line",
+          "VARCHAR"
+        ],
+        [
+          "column",
+          "VARCHAR"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DECIMAL(38,12)"
+        ],
+        [
+          "value_status",
+          "VARCHAR"
+        ],
+        [
+          "source_archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_number",
+          "BIGINT"
+        ],
+        [
+          "source_byte_offset",
+          "BIGINT"
+        ],
+        [
+          "source_byte_length",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "fiscal-periods",
+          "kind": "interval",
+          "label": "Hospital fiscal reporting periods",
+          "meaning": "Cost-reporting fiscal begin and end dates of the CMS-2552-10 report associated with each extracted measure.",
+          "fields": [
+            "fiscal_begin",
+            "fiscal_end"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Selected cost report measures",
+          "meaning": "Explicitly selected worksheet measures extracted from saved CMS-2552-10 filings.",
+          "fields": [
+            "measure"
+          ]
+        },
+        {
+          "id": "value-status",
+          "kind": "category",
+          "label": "Measure value status",
+          "meaning": "Whether the target worksheet cell carried a numeric value or was absent in the source extract.",
+          "fields": [
+            "value_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:647851c265e35472a84cdcdb8815ef93999660c8f45de3b397fd47165cdd2425",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:9f7d894db686d3e2fc20499de6d2f0c24e83bf776d20f047a8f570f39382e0d1",
+        "rows": 9300,
+        "byteSize": 259209,
+        "memberSha256": "sha256:488372bb3c663b6285c129b9ac0eb6e3aaa8633516ced5a9f54af379b457de6a",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
+      "tableId": "hospital_cost_reports",
+      "family": "hospital-cost-reports",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "ccn",
+          "VARCHAR"
+        ],
+        [
+          "form",
+          "VARCHAR"
+        ],
+        [
+          "cohort_year",
+          "INTEGER"
+        ],
+        [
+          "report_status_raw",
+          "VARCHAR"
+        ],
+        [
+          "transmittal_raw",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_begin",
+          "DATE"
+        ],
+        [
+          "fiscal_end",
+          "DATE"
+        ],
+        [
+          "period_days",
+          "INTEGER"
+        ],
+        [
+          "period_status",
+          "VARCHAR"
+        ],
+        [
+          "cohort_status",
+          "VARCHAR"
+        ],
+        [
+          "selected_report_policy",
+          "VARCHAR"
+        ],
+        [
+          "raw_report_json",
+          "VARCHAR"
+        ],
+        [
+          "source_archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_record_number",
+          "BIGINT"
+        ],
+        [
+          "source_byte_offset",
+          "BIGINT"
+        ],
+        [
+          "source_byte_length",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "fiscal-periods",
+          "kind": "interval",
+          "label": "Hospital fiscal reporting periods",
+          "meaning": "Cost-reporting fiscal begin and end dates stated on each saved CMS-2552-10 hospital cost report.",
+          "fields": [
+            "fiscal_begin",
+            "fiscal_end"
+          ]
+        },
+        {
+          "id": "cohort-year",
+          "kind": "year",
+          "label": "Cohort years",
+          "meaning": "CMS hospital cost report cohort years represented in the pinned extract.",
+          "fields": [
+            "cohort_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "period-status",
+          "kind": "category",
+          "label": "Reporting period status",
+          "meaning": "Period length classification (annual, short, long, or unknown) derived from each report's fiscal begin and end dates.",
+          "fields": [
+            "period_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:647851c265e35472a84cdcdb8815ef93999660c8f45de3b397fd47165cdd2425",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:9f7d894db686d3e2fc20499de6d2f0c24e83bf776d20f047a8f570f39382e0d1",
+        "rows": 2325,
+        "byteSize": 108280,
+        "memberSha256": "sha256:51852df1b59f4f004544c678460fb63d4126c19c073c45ab3edafa1a72f9984a",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
       "tableId": "inspectors_general_report_metadata",
       "family": "retained-inspectors-general",
       "schema": [
@@ -34624,6 +34970,327 @@
       }
     },
     {
+      "tableId": "sam_exclusion_observations",
+      "family": "sam-exclusions",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "native_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_date",
+          "VARCHAR"
+        ],
+        [
+          "text_encoding",
+          "VARCHAR"
+        ],
+        [
+          "text_interpretation_status",
+          "VARCHAR"
+        ],
+        [
+          "unqualified_text_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "record_content_sha256",
+          "VARCHAR"
+        ],
+        [
+          "classification_raw",
+          "VARCHAR"
+        ],
+        [
+          "name_raw",
+          "VARCHAR"
+        ],
+        [
+          "prefix_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_name_raw",
+          "VARCHAR"
+        ],
+        [
+          "middle_name_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_name_raw",
+          "VARCHAR"
+        ],
+        [
+          "suffix_raw",
+          "VARCHAR"
+        ],
+        [
+          "uei",
+          "VARCHAR"
+        ],
+        [
+          "cage_code",
+          "VARCHAR"
+        ],
+        [
+          "npi",
+          "VARCHAR"
+        ],
+        [
+          "exclusion_program_raw",
+          "VARCHAR"
+        ],
+        [
+          "excluding_agency_raw",
+          "VARCHAR"
+        ],
+        [
+          "ct_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "exclusion_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "additional_comments_raw",
+          "VARCHAR"
+        ],
+        [
+          "active_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "termination_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "record_status_raw",
+          "VARCHAR"
+        ],
+        [
+          "cross_reference_raw",
+          "VARCHAR"
+        ],
+        [
+          "creation_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "source_line_start",
+          "BIGINT"
+        ],
+        [
+          "source_line_end",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot-dates",
+          "kind": "date",
+          "label": "Extract snapshot dates",
+          "meaning": "Publisher extract dates of the retained SAM.gov public active-exclusions files.",
+          "fields": [
+            "snapshot_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "creation-dates",
+          "kind": "date",
+          "label": "Exclusion creation dates",
+          "meaning": "Creation dates stated in the source SAM.gov exclusion rows.",
+          "fields": [
+            "creation_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "active-dates",
+          "kind": "date",
+          "label": "Exclusion active dates",
+          "meaning": "Active dates stated in the source SAM.gov exclusion rows. Blank values and literal dates after the publication month remain separate from historical active counts.",
+          "fields": [
+            "active_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "termination-dates",
+          "kind": "date",
+          "label": "Exclusion termination dates",
+          "meaning": "Scheduled termination dates stated in the source SAM.gov exclusion rows; Indefinite entries remain unplaced on calendar months.",
+          "fields": [
+            "termination_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "source-date-literals"
+        },
+        {
+          "id": "classification",
+          "kind": "category",
+          "label": "Entity classification",
+          "meaning": "Source-stated SAM.gov exclusion classification (Individual, Firm, Vessel, or Special Entity Designation).",
+          "fields": [
+            "classification_raw"
+          ]
+        },
+        {
+          "id": "exclusion-program",
+          "kind": "category",
+          "label": "Exclusion program",
+          "meaning": "Source-stated SAM.gov exclusion program (Reciprocal, NonProcurement, or Procurement).",
+          "fields": [
+            "exclusion_program_raw"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:ff5e3e33412a69b49d13abf9df58f304552d08c6d34a7a11fbccb46ea4a18810",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d500dd2e9933cfa251f27b3dcfcd6b4e1b2c3f9bcd79922964f5c0e1ef572197",
+        "rows": 169188,
+        "byteSize": 30370423,
+        "memberSha256": "sha256:12ef0b9f21e9636fc9a2b06a7d7026c98ea86ccb03da8ab30e6694679c77c9ce",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
+      "tableId": "sam_exclusion_snapshots",
+      "family": "sam-exclusions",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "source_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_date",
+          "VARCHAR"
+        ],
+        [
+          "selection_json",
+          "VARCHAR"
+        ],
+        [
+          "coverage_limit",
+          "VARCHAR"
+        ],
+        [
+          "text_encoding",
+          "VARCHAR"
+        ],
+        [
+          "source_rows",
+          "BIGINT"
+        ],
+        [
+          "selected_rows",
+          "BIGINT"
+        ],
+        [
+          "distinct_native_ids",
+          "BIGINT"
+        ],
+        [
+          "unqualified_text_rows",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot-dates",
+          "kind": "date",
+          "label": "Extract snapshot dates",
+          "meaning": "Publisher extract dates of the retained SAM.gov public active-exclusions files.",
+          "fields": [
+            "snapshot_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "source-kind",
+          "kind": "category",
+          "label": "SAM source kind",
+          "meaning": "SAM.gov bulk extract kind accounted for by each snapshot row.",
+          "fields": [
+            "source_kind"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Reconciled row and distinct native-ID counts for each selected SAM.gov public active-exclusions extract.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:ff5e3e33412a69b49d13abf9df58f304552d08c6d34a7a11fbccb46ea4a18810",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d500dd2e9933cfa251f27b3dcfcd6b4e1b2c3f9bcd79922964f5c0e1ef572197",
+        "rows": 1,
+        "byteSize": 6181,
+        "memberSha256": "sha256:531fd1ccb101fcf60fba36662b067f833ba808a2e88ead20f3fe28f877f80fe3",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
       "tableId": "sec_comment_files",
       "family": "retained-sec-comments",
       "schema": [
@@ -37029,6 +37696,226 @@
       }
     },
     {
+      "tableId": "usaspending_archive_members",
+      "family": "usaspending-awards",
+      "schema": [
+        [
+          "archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "archive_url",
+          "VARCHAR"
+        ],
+        [
+          "archive_version",
+          "VARCHAR"
+        ],
+        [
+          "award_family",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "awarding_agency_code",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "header_json",
+          "VARCHAR"
+        ],
+        [
+          "added_columns_json",
+          "VARCHAR"
+        ],
+        [
+          "missing_columns_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "archive-version",
+          "kind": "date",
+          "label": "Archive version dates",
+          "meaning": "Publisher archive release dates stated in each selected USAspending archive filename.",
+          "fields": [
+            "archive_version"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "fiscal-year",
+          "kind": "year",
+          "label": "Selected fiscal years",
+          "meaning": "Federal fiscal years of the selected USAspending award archive cohorts.",
+          "fields": [
+            "fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "award-family",
+          "kind": "category",
+          "label": "Award family",
+          "meaning": "USAspending award category (such as assistance or contracts) in the selected archive cohort.",
+          "fields": [
+            "award_family"
+          ]
+        },
+        {
+          "id": "awarding-agency",
+          "kind": "category",
+          "label": "Awarding agency code",
+          "meaning": "Top-tier awarding agency codes selected from USAspending award archives.",
+          "fields": [
+            "awarding_agency_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:750886ca69ccd5c0eef7c63c2af92522d2b0e7d67346eaf5eaf943a519dc3f47",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:56ecef80612a6ac48cd69a488c50fabd9e31b448d191da666b43e6e558655952",
+        "rows": 1,
+        "byteSize": 21142,
+        "memberSha256": "sha256:42a033c994362cd0abd3f983d31fd673e1aa38378b1e774687483d929640df52",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
+      "tableId": "usaspending_awards",
+      "family": "usaspending-awards",
+      "schema": [
+        [
+          "archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "archive_url",
+          "VARCHAR"
+        ],
+        [
+          "archive_version",
+          "VARCHAR"
+        ],
+        [
+          "award_family",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "awarding_agency_code",
+          "VARCHAR"
+        ],
+        [
+          "award_key",
+          "VARCHAR"
+        ],
+        [
+          "selected_transaction_count",
+          "BIGINT"
+        ],
+        [
+          "selected_fy_obligations",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "publisher_overall_award_obligated_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "publisher_overall_award_outlayed_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "first_selected_action_date",
+          "DATE"
+        ],
+        [
+          "last_selected_action_date",
+          "DATE"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "first-selected-action-dates",
+          "kind": "date",
+          "label": "First selected action dates",
+          "meaning": "Earliest selected transaction action date observed for each award in the chosen archive cohort.",
+          "fields": [
+            "first_selected_action_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "last-selected-action-dates",
+          "kind": "date",
+          "label": "Last selected action dates",
+          "meaning": "Latest selected transaction action date observed for each award in the chosen archive cohort.",
+          "fields": [
+            "last_selected_action_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "fiscal-year",
+          "kind": "year",
+          "label": "Selected fiscal years",
+          "meaning": "Federal fiscal years of the selected USAspending award archive cohorts.",
+          "fields": [
+            "fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "award-family",
+          "kind": "category",
+          "label": "Award family",
+          "meaning": "USAspending award category (such as assistance or contracts) in the selected archive cohort.",
+          "fields": [
+            "award_family"
+          ]
+        },
+        {
+          "id": "awarding-agency",
+          "kind": "category",
+          "label": "Awarding agency code",
+          "meaning": "Top-tier awarding agency codes selected from USAspending award archives.",
+          "fields": [
+            "awarding_agency_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:750886ca69ccd5c0eef7c63c2af92522d2b0e7d67346eaf5eaf943a519dc3f47",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:56ecef80612a6ac48cd69a488c50fabd9e31b448d191da666b43e6e558655952",
+        "rows": 227,
+        "byteSize": 9906,
+        "memberSha256": "sha256:1f7992bceffd2a7abb61780174de789402ea4f456603e35d1e51a22f749b2f98",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
       "tableId": "usaspending_recipients",
       "family": "usaspending-recipients",
       "schema": [
@@ -37129,6 +38016,169 @@
           "liveCurrentPolicyDigestsMatch": true
         }
       }
+    },
+    {
+      "tableId": "usaspending_transactions",
+      "family": "usaspending-awards",
+      "schema": [
+        [
+          "archive_sha256",
+          "VARCHAR"
+        ],
+        [
+          "archive_url",
+          "VARCHAR"
+        ],
+        [
+          "archive_version",
+          "VARCHAR"
+        ],
+        [
+          "award_family",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "awarding_agency_code",
+          "VARCHAR"
+        ],
+        [
+          "transaction_key",
+          "VARCHAR"
+        ],
+        [
+          "award_key",
+          "VARCHAR"
+        ],
+        [
+          "action_date",
+          "DATE"
+        ],
+        [
+          "federal_action_obligation",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "publisher_overall_award_obligated_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "publisher_overall_award_outlayed_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "recipient_uei",
+          "VARCHAR"
+        ],
+        [
+          "recipient_name",
+          "VARCHAR"
+        ],
+        [
+          "recipient_state_code",
+          "VARCHAR"
+        ],
+        [
+          "place_of_performance_state_name",
+          "VARCHAR"
+        ],
+        [
+          "funding_agency_code",
+          "VARCHAR"
+        ],
+        [
+          "award_type_code",
+          "VARCHAR"
+        ],
+        [
+          "modification_number",
+          "VARCHAR"
+        ],
+        [
+          "last_modified_date",
+          "VARCHAR"
+        ],
+        [
+          "correction_delete_indicator_code",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "record_number",
+          "BIGINT"
+        ],
+        [
+          "line_start",
+          "BIGINT"
+        ],
+        [
+          "line_end",
+          "BIGINT"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "action-dates",
+          "kind": "date",
+          "label": "Transaction action dates",
+          "meaning": "Action dates recorded on saved USAspending award transactions.",
+          "fields": [
+            "action_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "fiscal-year",
+          "kind": "year",
+          "label": "Selected fiscal years",
+          "meaning": "Federal fiscal years of the selected USAspending award archive cohorts.",
+          "fields": [
+            "fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "award-family",
+          "kind": "category",
+          "label": "Award family",
+          "meaning": "USAspending award category (such as assistance or contracts) in the selected archive cohort.",
+          "fields": [
+            "award_family"
+          ]
+        },
+        {
+          "id": "awarding-agency",
+          "kind": "category",
+          "label": "Awarding agency code",
+          "meaning": "Top-tier awarding agency codes selected from USAspending award archives.",
+          "fields": [
+            "awarding_agency_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:750886ca69ccd5c0eef7c63c2af92522d2b0e7d67346eaf5eaf943a519dc3f47",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:56ecef80612a6ac48cd69a488c50fabd9e31b448d191da666b43e6e558655952",
+        "rows": 242,
+        "byteSize": 91113,
+        "memberSha256": "sha256:cecab437c10bbd632aea2c85cf47218bb979961efb6252261621285895fd77f5",
+        "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
     },
     {
       "tableId": "uscode_edition_sections",
