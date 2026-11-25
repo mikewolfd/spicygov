@@ -487,9 +487,150 @@ class RegulationCoverageTests(unittest.TestCase):
         # Extrema locate observed endpoints; they cannot fill an intervening month.
         for id, fields in [('org_committee_links', ['first_comment_date', 'last_comment_date']),
                            ('gao_recommendations', ['first_seen', 'last_seen']),
-                           ('rule_targets', ['first_seen', 'last_seen'])]:
+                           ('rule_targets', ['first_seen', 'last_seen']),
+                           ('usaspending_awards', ['first_selected_action_date', 'last_selected_action_date'])]:
             axes = definitions[id]['dimensions']
             self.assertFalse(any(d['kind'] == 'interval' for d in axes))
             self.assertTrue(all(any(d['kind'] == 'date' and d['fields'] == [f] for d in axes) for f in fields))
+
+    def test_wave2c_local_family_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        expected = {
+            'hospital_cost_reports': 'hospital-cost-reports',
+            'hospital_cost_report_measures': 'hospital-cost-reports',
+            'hospital_cost_report_cells': 'hospital-cost-reports',
+            'sam_exclusion_observations': 'sam-exclusions',
+            'sam_exclusion_snapshots': 'sam-exclusions',
+            'usaspending_transactions': 'usaspending-awards',
+            'usaspending_awards': 'usaspending-awards',
+            'usaspending_archive_members': 'usaspending-awards',
+        }
+        for tid, fam in expected.items():
+            self.assertIn(tid, defs)
+            self.assertEqual(defs[tid]['family'], fam)
+
+        def write_table(name, schema, insert_sql):
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in schema)
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            return path, {
+                'family': expected[name], 'kind': 'generation', 'columns': schema,
+                'rows': int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0]),
+                'publishedAt': '2026-11-25T16:55:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': None, 'byteSize': len(raw)}],
+            }
+
+        hcr_path, hcr_tbl = write_table(
+            'hospital_cost_reports', defs['hospital_cost_reports']['schema'],
+            "INSERT INTO t (report_id, cohort_year, fiscal_begin, fiscal_end, period_status) VALUES "
+            "('1', 2010, DATE '2010-05-01', DATE '2011-04-30', 'annual'), "
+            "('2', 2010, DATE '2010-07-01', DATE '2010-12-31', 'short')"
+        )
+        hcr_tbl['members'][0]['rows'] = hcr_tbl['rows']
+        builder.validate_plan({'hospital_cost_reports': hcr_tbl}, {'hospital_cost_reports': dict(defs['hospital_cost_reports'])})
+        hcr_res = coverage_scan.scan_table('hospital_cost_reports', hcr_tbl, defs['hospital_cost_reports'])
+        hcr_dims = {d['id']: d for d in hcr_res['dimensions']}
+        self.assertEqual((hcr_dims['fiscal-periods']['placedRows'], hcr_dims['fiscal-periods']['unplacedRows']), (2, 0))
+        self.assertEqual(hcr_dims['cohort-year']['buckets'], {'2010': 2})
+        self.assertEqual(hcr_dims['period-status']['buckets'], {'["annual"]': 1, '["short"]': 1})
+
+        _, hcm_tbl = write_table(
+            'hospital_cost_report_measures', defs['hospital_cost_report_measures']['schema'],
+            "INSERT INTO t (report_id, fiscal_begin, fiscal_end, measure, value_status) VALUES "
+            "('1', DATE '2010-05-01', DATE '2011-04-30', 'hospital_beds', 'value'), "
+            "('2', DATE '2010-07-01', DATE '2010-12-31', 'total_costs', 'absent_cell')"
+        )
+        hcm_tbl['members'][0]['rows'] = hcm_tbl['rows']
+        builder.validate_plan({'hospital_cost_report_measures': hcm_tbl}, {'hospital_cost_report_measures': dict(defs['hospital_cost_report_measures'])})
+        hcm_res = coverage_scan.scan_table('hospital_cost_report_measures', hcm_tbl, defs['hospital_cost_report_measures'])
+        hcm_dims = {d['id']: d for d in hcm_res['dimensions']}
+        self.assertEqual(hcm_dims['measure']['buckets'], {'["hospital_beds"]': 1, '["total_costs"]': 1})
+        self.assertEqual(hcm_dims['value-status']['buckets'], {'["absent_cell"]': 1, '["value"]': 1})
+
+        cells_path, cells_tbl = write_table(
+            'hospital_cost_report_cells', defs['hospital_cost_report_cells']['schema'],
+            "INSERT INTO t (report_id, cell_kind) VALUES ('1', 'nmrc'), ('2', 'alphnmrc')"
+        )
+        cells_tbl['members'][0]['rows'] = cells_tbl['rows']
+        builder.validate_plan({'hospital_cost_report_cells': cells_tbl}, {'hospital_cost_report_cells': dict(defs['hospital_cost_report_cells'])})
+        class SameGenHcr:
+            def parent(self_inner, child_id, child, relation):
+                return {'family': 'hospital-cost-reports', 'artifactDigest': 'sha256:' + 'a' * 64,
+                        'tableId': 'hospital_cost_reports', 'recordUrl': 'local://artifact.json',
+                        'members': hcr_tbl['members'], 'urls': [str(hcr_path)], 'rows': 2}
+        cells_measured = coverage_scan._measure(
+            self.conn, 'hospital_cost_report_cells', cells_tbl, [str(cells_path)],
+            defs['hospital_cost_report_cells'], SameGenHcr(),
+        )
+        cells_dims = {d['id']: d for d in cells_measured}
+        self.assertEqual((cells_dims['fiscal-periods']['matchedRows'], cells_dims['fiscal-periods']['unmatchedRows']), (2, 0))
+        self.assertEqual(cells_dims['cell-kind']['buckets'], {'["alphnmrc"]': 1, '["nmrc"]': 1})
+
+        _, sam_obs_tbl = write_table(
+            'sam_exclusion_observations', defs['sam_exclusion_observations']['schema'],
+            "INSERT INTO t (snapshot_date, creation_date_raw, active_date_raw, termination_date_raw, classification_raw, exclusion_program_raw) VALUES "
+            "('2026-11-12', '2020-01-15', '2020-01-15', 'Indefinite', 'Individual', 'Reciprocal'), "
+            "('2026-11-12', '2025-05-01', '2099-12-30', '2227-09-01', 'Firm', 'Procurement')"
+        )
+        sam_obs_tbl['members'][0]['rows'] = sam_obs_tbl['rows']
+        builder.validate_plan({'sam_exclusion_observations': sam_obs_tbl}, {'sam_exclusion_observations': dict(defs['sam_exclusion_observations'])})
+        sam_obs_res = coverage_scan.scan_table('sam_exclusion_observations', sam_obs_tbl, defs['sam_exclusion_observations'])
+        sam_obs_dims = {d['id']: d for d in sam_obs_res['dimensions']}
+        self.assertEqual(sam_obs_dims['active-dates']['buckets'], {'2020-01': 1})
+        self.assertEqual(sam_obs_dims['active-dates']['anomalies']['futureActivityBuckets'], {'2099-12': 1})
+        self.assertEqual(sam_obs_dims['termination-dates']['buckets'], {'2227-09': 1})
+        self.assertEqual(sam_obs_dims['termination-dates']['anomalies']['sourceLiteralReviewBuckets'], {'2227-09': 1})
+
+        _, sam_snap_tbl = write_table(
+            'sam_exclusion_snapshots', defs['sam_exclusion_snapshots']['schema'],
+            "INSERT INTO t (snapshot_date, source_kind) VALUES ('2026-11-12', 'exclusions')"
+        )
+        sam_snap_tbl['members'][0]['rows'] = sam_snap_tbl['rows']
+        builder.validate_plan({'sam_exclusion_snapshots': sam_snap_tbl}, {'sam_exclusion_snapshots': dict(defs['sam_exclusion_snapshots'])})
+        sam_snap_res = coverage_scan.scan_table('sam_exclusion_snapshots', sam_snap_tbl, defs['sam_exclusion_snapshots'])
+        self.assertEqual({d['id'] for d in sam_snap_res['dimensions']}, {'snapshot-dates', 'source-kind', 'retained-snapshot'})
+
+        _, usa_tx_tbl = write_table(
+            'usaspending_transactions', defs['usaspending_transactions']['schema'],
+            "INSERT INTO t (action_date, fiscal_year, award_family, awarding_agency_code) VALUES "
+            "(DATE '2025-09-29', 2025, 'assistance', '513')"
+        )
+        usa_tx_tbl['members'][0]['rows'] = usa_tx_tbl['rows']
+        builder.validate_plan({'usaspending_transactions': usa_tx_tbl}, {'usaspending_transactions': dict(defs['usaspending_transactions'])})
+        usa_tx_res = coverage_scan.scan_table('usaspending_transactions', usa_tx_tbl, defs['usaspending_transactions'])
+        usa_tx_dims = {d['id']: d for d in usa_tx_res['dimensions']}
+        self.assertEqual(usa_tx_dims['action-dates']['buckets'], {'2025-09': 1})
+        self.assertEqual(usa_tx_dims['fiscal-year']['buckets'], {'2025': 1})
+
+        _, usa_aw_tbl = write_table(
+            'usaspending_awards', defs['usaspending_awards']['schema'],
+            "INSERT INTO t (first_selected_action_date, last_selected_action_date, fiscal_year, award_family, awarding_agency_code) VALUES "
+            "(DATE '2024-10-04', DATE '2025-09-29', 2025, 'assistance', '513')"
+        )
+        usa_aw_tbl['members'][0]['rows'] = usa_aw_tbl['rows']
+        builder.validate_plan({'usaspending_awards': usa_aw_tbl}, {'usaspending_awards': dict(defs['usaspending_awards'])})
+        usa_aw_res = coverage_scan.scan_table('usaspending_awards', usa_aw_tbl, defs['usaspending_awards'])
+        usa_aw_dims = {d['id']: d for d in usa_aw_res['dimensions']}
+        self.assertEqual(usa_aw_dims['first-selected-action-dates']['buckets'], {'2024-10': 1})
+        self.assertEqual(usa_aw_dims['last-selected-action-dates']['buckets'], {'2025-09': 1})
+
+        _, usa_mem_tbl = write_table(
+            'usaspending_archive_members', defs['usaspending_archive_members']['schema'],
+            "INSERT INTO t (archive_version, fiscal_year, award_family, awarding_agency_code) VALUES "
+            "('2026-11-06', 2025, 'assistance', '513')"
+        )
+        usa_mem_tbl['members'][0]['rows'] = usa_mem_tbl['rows']
+        builder.validate_plan({'usaspending_archive_members': usa_mem_tbl}, {'usaspending_archive_members': dict(defs['usaspending_archive_members'])})
+        usa_mem_res = coverage_scan.scan_table('usaspending_archive_members', usa_mem_tbl, defs['usaspending_archive_members'])
+        usa_mem_dims = {d['id']: d for d in usa_mem_res['dimensions']}
+        self.assertEqual(usa_mem_dims['archive-version']['buckets'], {'2026-11': 1})
 
 if __name__ == '__main__': unittest.main()
