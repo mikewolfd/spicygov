@@ -490,5 +490,59 @@ class CongressCoverageTests(unittest.TestCase):
         cres=coverage.scan_special(self.conn,'document_citation_read_outcomes',self.table(str(read_path),1,'print-citations'),self.dim('cited-read-source-year','year',['document_key']),RepInputs(None))
         self.assertEqual(cres['buckets'],{'2026':1});self.assertEqual(cres['placedRows'],1)
 
+    def test_congress_sessions_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        root_dir = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', root_dir / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid in ('congress_sessions', 'congress_party_control'):
+            self.assertEqual(defs[tid]['family'], 'congress-sessions')
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': 'congress-sessions', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-26T05:08:17Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        sess_pol, sess_tbl = make_tbl(
+            'congress_sessions',
+            "INSERT INTO t (congress, session, begins, adjourned, adjournment_status, disagreement_kind) VALUES "
+            "(1, '1', DATE '1789-03-04', DATE '1789-09-29', 'adjourned', NULL), "
+            "(119, '2', DATE '2026-01-03', NULL, 'open', 'chamber-adjournment-difference')"
+        )
+        builder.validate_plan({'congress_sessions': sess_tbl}, {'congress_sessions': dict(sess_pol)})
+        sess_dims = {d['id']: d for d in coverage_scan.scan_table('congress_sessions', sess_tbl, sess_pol)['dimensions']}
+        self.assertEqual(sess_dims['session-start-dates']['buckets'], {'1789-03': 1, '2026-01': 1})
+        self.assertEqual((sess_dims['session-spans']['placedRows'], sess_dims['session-spans']['unplacedRows']), (1, 1))
+        self.assertEqual(sess_dims['congress']['buckets'], {'["1"]': 1, '["119"]': 1})
+        self.assertEqual(sess_dims['adjournment-status']['buckets'], {'["adjourned"]': 1, '["open"]': 1})
+        self.assertEqual((sess_dims['disagreement-kind']['placedRows'], sess_dims['disagreement-kind']['unplacedRows']), (1, 1))
+
+        party_pol, party_tbl = make_tbl(
+            'congress_party_control',
+            "INSERT INTO t (chamber, congress, effective_from, effective_to, majority_party, majority_basis) VALUES "
+            "('house', 18, DATE '1823-03-04', DATE '1825-03-03', NULL, 'house-seats-plurality'), "
+            "('senate', 119, DATE '2025-01-03', NULL, 'Republicans', 'senate-listed-first')"
+        )
+        builder.validate_plan({'congress_party_control': party_tbl}, {'congress_party_control': dict(party_pol)})
+        party_dims = {d['id']: d for d in coverage_scan.scan_table('congress_party_control', party_tbl, party_pol)['dimensions']}
+        self.assertEqual(party_dims['effective-start-dates']['buckets'], {'1823-03': 1, '2025-01': 1})
+        self.assertEqual((party_dims['effective-spans']['placedRows'], party_dims['effective-spans']['unplacedRows']), (1, 1))
+        self.assertEqual(party_dims['chamber']['buckets'], {'["house"]': 1, '["senate"]': 1})
+        self.assertEqual(party_dims['majority-basis']['buckets'], {'["house-seats-plurality"]': 1, '["senate-listed-first"]': 1})
+        self.assertEqual((party_dims['majority-party']['placedRows'], party_dims['majority-party']['unplacedRows']), (1, 1))
+
 
 if __name__=='__main__':unittest.main()

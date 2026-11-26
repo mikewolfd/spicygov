@@ -1044,7 +1044,7 @@ h1 {
 .lobbying-profile li > a, .lobbying-profile li > small { display: block; }
 .lobbying-profile-note { font-size: .85rem; color: #63715c; }
 .financial-profile h2 { font-size: 1.25rem; font-weight: 600; }
-.financial-profile p { margin: .6rem 0; line-height: 1.5; }
+.financial-profile p { margin: .6rem 0; line-height: 1.5; overflow-wrap: anywhere; }
 .financial-profile-note { font-size: .85rem; color: #63715c; }
 .financial-profile-status { border-left: 3px solid #78896b; padding-left: 1rem; }
 .financial-profile-status ul { list-style: disc; padding-left: 1.2rem; }

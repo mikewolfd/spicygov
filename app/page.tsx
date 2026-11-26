@@ -1,6 +1,7 @@
 "use client";
 import { SourceConnections } from '../components/source-connections';
 import { FinancialProfile } from '../components/financial-profile';
+import { FecResearchProfile } from '../components/fec-research-profile';
 import { LobbyingProfile } from '../components/lobbying-profile';
 import { RecordText } from '../components/record-text';
 import { LOBBYING_TABLES, LOBBYING_BODY_NAVIGATION_ID } from '../lib/lobbying-navigation';
@@ -1048,6 +1049,7 @@ export default function Explorer() {
                 </details>
               )}
             {table && record && !recordBusy && !recordError && <FinancialProfile table={table} row={record} />}
+            {table && record && !recordBusy && !recordError && <FecResearchProfile table={table} row={record} />}
             {table && record && !recordBusy && !recordError && <LobbyingProfile table={table} row={record} catalog={catalog} bodyNavigation={navigation.find(s=>s.id===LOBBYING_BODY_NAVIGATION_ID)} onOpen={browse}/>}
             {table && record && !recordBusy && <SourceConnections key={`source:${table.id}`} table={table} catalog={catalog} row={record} joins={joins} navigation={navigation} onOpen={browse}/> }
             {table && record && !recordBusy && <SharedBrowse key={table.id} table={table} catalog={catalog} filters={location.filters} row={record} onOpen={browse} />}
