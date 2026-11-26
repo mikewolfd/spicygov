@@ -2,6 +2,7 @@ import type { Dataset, Row } from '../lib/catalog';
 import { display } from '../lib/catalog';
 import { makeHref } from '../lib/explorer-location';
 import { completeIdentity } from '../lib/record-lookup';
+import { currency } from '../lib/exact-currency';
 
 const measures = [
   ['receipts', 'Reported receipts'],
@@ -52,16 +53,6 @@ function reasonLabel(reason: string) {
     return `${match[1] === 'period_start' ? 'Period start' : 'Period end'}: ${label(match[2], dateLabels)}`;
   }
   return label(reason, reasonLabels);
-}
-
-function currency(value: unknown): string | undefined {
-  // String-only formatting avoids rounding through JavaScript's Number range.
-  if (typeof value !== 'string' || !/^-?\d+(?:\.\d+)?$/.test(value)) return undefined;
-  const negative = value.startsWith('-');
-  const [whole, fraction = ''] = (negative ? value.slice(1) : value).split('.');
-  const grouped = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  // Remove only insignificant trailing zeros; keep every nonzero fractional digit.
-  return `${negative ? '-' : ''}$${grouped}.${fraction.replace(/0+$/, '').padEnd(2, '0')} USD`;
 }
 
 function coverageReasons(value: unknown): string[] | undefined {

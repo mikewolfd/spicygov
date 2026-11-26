@@ -12574,6 +12574,275 @@
           "VARCHAR"
         ]
       ]
+    },
+    "congress_sessions": {
+      "family": "congress-sessions",
+      "schema": [
+        [
+          "congress",
+          "INTEGER"
+        ],
+        [
+          "session",
+          "VARCHAR"
+        ],
+        [
+          "begins",
+          "DATE"
+        ],
+        [
+          "adjourned",
+          "DATE"
+        ],
+        [
+          "adjournment_status",
+          "VARCHAR"
+        ],
+        [
+          "house_session",
+          "VARCHAR"
+        ],
+        [
+          "house_begins",
+          "DATE"
+        ],
+        [
+          "house_adjourned",
+          "DATE"
+        ],
+        [
+          "senate_session",
+          "VARCHAR"
+        ],
+        [
+          "senate_begins",
+          "DATE"
+        ],
+        [
+          "senate_adjourned",
+          "DATE"
+        ],
+        [
+          "disagreement_kind",
+          "VARCHAR"
+        ],
+        [
+          "correction_reason",
+          "VARCHAR"
+        ],
+        [
+          "house_source_url",
+          "VARCHAR"
+        ],
+        [
+          "house_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "house_observed_at",
+          "VARCHAR"
+        ],
+        [
+          "senate_source_url",
+          "VARCHAR"
+        ],
+        [
+          "senate_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "senate_observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Reconciled House (history.house.gov) and Senate (senate.gov) session dates for Congresses 1\u2013119. Open and unstated adjournments remain NULL rather than inferred.",
+      "dimensions": [
+        {
+          "id": "session-start-dates",
+          "kind": "date",
+          "label": "Session begin dates",
+          "meaning": "Official opening dates of congressional sessions reconciled across House and Senate rosters (1st\u2013119th Congress).",
+          "fields": [
+            "begins"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "session-spans",
+          "kind": "interval",
+          "label": "Session date spans",
+          "meaning": "Spans from session beginning through adjournment. Open (119th Congress 2nd session) and unstated historical executive/special sessions remain unplaced.",
+          "fields": [
+            "begins",
+            "adjourned"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers (1\u2013119) represented by reconciled session rows.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "adjournment-status",
+          "kind": "category",
+          "label": "Adjournment status",
+          "meaning": "Whether the session has a recorded adjournment date (adjourned), remains open, or has an unstated historical adjournment.",
+          "fields": [
+            "adjournment_status"
+          ]
+        },
+        {
+          "id": "disagreement-kind",
+          "kind": "category",
+          "label": "Chamber disagreement kind",
+          "meaning": "Reconciled discrepancy classification where House and Senate session pages differed; rows without a discrepancy remain unplaced.",
+          "fields": [
+            "disagreement_kind"
+          ]
+        }
+      ]
+    },
+    "congress_party_control": {
+      "family": "congress-sessions",
+      "schema": [
+        [
+          "chamber",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "INTEGER"
+        ],
+        [
+          "effective_from",
+          "DATE"
+        ],
+        [
+          "effective_to",
+          "DATE"
+        ],
+        [
+          "majority_party",
+          "VARCHAR"
+        ],
+        [
+          "majority_seats",
+          "INTEGER"
+        ],
+        [
+          "minority_party",
+          "VARCHAR"
+        ],
+        [
+          "minority_seats",
+          "INTEGER"
+        ],
+        [
+          "other",
+          "VARCHAR"
+        ],
+        [
+          "vacancies",
+          "INTEGER"
+        ],
+        [
+          "total_seats",
+          "INTEGER"
+        ],
+        [
+          "majority_basis",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "printed_effective_from",
+          "DATE"
+        ],
+        [
+          "correction_reason",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Reconciled House and Senate party-control intervals for Congresses 1\u2013119. Plurality House Congresses leave majority_party NULL and ongoing 119th Congress intervals leave effective_to NULL.",
+      "dimensions": [
+        {
+          "id": "effective-start-dates",
+          "kind": "date",
+          "label": "Control period start dates",
+          "meaning": "Effective start dates of House and Senate party-control intervals across Congresses (1st\u2013119th Congress).",
+          "fields": [
+            "effective_from"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "effective-spans",
+          "kind": "interval",
+          "label": "Control period spans",
+          "meaning": "Spans from effective_from through effective_to for chamber party control. Ongoing 119th Congress intervals with NULL effective_to remain unplaced.",
+          "fields": [
+            "effective_from",
+            "effective_to"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers (1\u2013119) represented by chamber party-control rows.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "chamber",
+          "kind": "category",
+          "label": "Chamber",
+          "meaning": "Congressional chamber (house or senate).",
+          "fields": [
+            "chamber"
+          ]
+        },
+        {
+          "id": "majority-basis",
+          "kind": "category",
+          "label": "Majority attribution basis",
+          "meaning": "Rule used to attribute chamber control (senate-listed-first, house-seats-as-elected, house-seats-plurality, or house-footnote-organized).",
+          "fields": [
+            "majority_basis"
+          ]
+        },
+        {
+          "id": "majority-party",
+          "kind": "category",
+          "label": "Majority party",
+          "meaning": "Majority party when a chamber majority was held; House plurality Congresses without an outright majority remain NULL and unplaced.",
+          "fields": [
+            "majority_party"
+          ]
+        }
+      ]
     }
   }
 }

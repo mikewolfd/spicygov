@@ -1,0 +1,3100 @@
+{
+  "publication": {
+    "families": {
+      "fec-election-results": {
+        "artifactDigest": "sha256:c01e28a5e4a9f8daa0be49bf6cc7b595d456c7af496aaf03f1fd9cd91dc258a3",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:0ac9aab2058967b307255b314aff8122ec4a2fee92f6620f4fc138da606f45d5",
+        "prefix": "generations/fec-election-results/c01e28a5e4a9f8daa0be49bf6cc7b595d456c7af496aaf03f1fd9cd91dc258a3",
+        "publishedAt": "2026-11-13T12:52:06Z",
+        "tables": {
+          "fec_election_results.parquet": {
+            "byteSize": 234234,
+            "columns": [
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "source_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "captured_at",
+                "VARCHAR"
+              ],
+              [
+                "source_sheet",
+                "VARCHAR"
+              ],
+              [
+                "reader_version",
+                "VARCHAR"
+              ],
+              [
+                "source_column",
+                "VARCHAR"
+              ],
+              [
+                "state",
+                "VARCHAR"
+              ],
+              [
+                "state_raw",
+                "VARCHAR"
+              ],
+              [
+                "district_raw",
+                "VARCHAR"
+              ],
+              [
+                "seat_term",
+                "VARCHAR"
+              ],
+              [
+                "stage",
+                "VARCHAR"
+              ],
+              [
+                "round",
+                "VARCHAR"
+              ],
+              [
+                "vote_basis",
+                "VARCHAR"
+              ],
+              [
+                "row_kind",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id_status",
+                "VARCHAR"
+              ],
+              [
+                "candidate_name",
+                "VARCHAR"
+              ],
+              [
+                "party",
+                "VARCHAR"
+              ],
+              [
+                "votes_raw",
+                "VARCHAR"
+              ],
+              [
+                "votes_status",
+                "VARCHAR"
+              ],
+              [
+                "percentage_raw",
+                "VARCHAR"
+              ],
+              [
+                "footnotes",
+                "VARCHAR"
+              ],
+              [
+                "primary_winner_raw",
+                "VARCHAR"
+              ],
+              [
+                "general_winner_raw",
+                "VARCHAR"
+              ],
+              [
+                "interpretation_version",
+                "VARCHAR"
+              ],
+              [
+                "overlap_note",
+                "VARCHAR"
+              ],
+              [
+                "source_row",
+                "INTEGER"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ],
+              [
+                "votes",
+                "BIGINT"
+              ]
+            ],
+            "rows": 4968,
+            "sha256": "sha256:dc8597507b96d868504f472a48451b9cc157d555ce8be6928ea3d78c4ffdbb35"
+          },
+          "fec_election_workbook_rows.parquet": {
+            "byteSize": 697919,
+            "columns": [
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "source_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "captured_at",
+                "VARCHAR"
+              ],
+              [
+                "source_sheet",
+                "VARCHAR"
+              ],
+              [
+                "reader_version",
+                "VARCHAR"
+              ],
+              [
+                "cells_json",
+                "VARCHAR"
+              ],
+              [
+                "source_row",
+                "INTEGER"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ]
+            ],
+            "rows": 6070,
+            "sha256": "sha256:2ca6a7d8c8a63db2498914e56ba440eacc79dcc5c8b87ad9aad04e98a2941212"
+          }
+        }
+      },
+      "fec-research-profiles": {
+        "artifactDigest": "sha256:60ef871ddea604acfe94fdb21746171e9903c68d5d16fe285fca92e6dda018cd",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:18872c7194b81e85d377637b9ca5558dae17ec805ae76d9f5a1ac36045a2b211",
+        "prefix": "generations/fec-research-profiles/60ef871ddea604acfe94fdb21746171e9903c68d5d16fe285fca92e6dda018cd",
+        "publishedAt": "2026-11-13T12:52:06Z",
+        "tables": {
+          "fec_committee_relationship_profiles.parquet": {
+            "byteSize": 63763,
+            "columns": [
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_name",
+                "VARCHAR"
+              ],
+              [
+                "designation",
+                "VARCHAR"
+              ],
+              [
+                "source_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "captured_at",
+                "VARCHAR"
+              ],
+              [
+                "source_pointer",
+                "VARCHAR"
+              ],
+              [
+                "relationships_json",
+                "VARCHAR"
+              ],
+              [
+                "native_fields_json",
+                "VARCHAR"
+              ],
+              [
+                "relationship_effective_date_status",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 200,
+            "sha256": "sha256:6e7b1b855d2877e4ce41110db0b6b1afe886da65893bd3ea8f2105a7f90a6396"
+          },
+          "fec_contribution_decisions.parquet": {
+            "byteSize": 99391,
+            "columns": [
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_name",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_association_basis",
+                "VARCHAR"
+              ],
+              [
+                "filing_id",
+                "VARCHAR"
+              ],
+              [
+                "source_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "captured_at",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "source_evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ],
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "contribution_family",
+                "VARCHAR"
+              ],
+              [
+                "disposition",
+                "VARCHAR"
+              ],
+              [
+                "disposition_reason",
+                "VARCHAR"
+              ],
+              [
+                "amount",
+                "VARCHAR"
+              ],
+              [
+                "donor_id",
+                "VARCHAR"
+              ],
+              [
+                "donor_label",
+                "VARCHAR"
+              ],
+              [
+                "employer",
+                "VARCHAR"
+              ],
+              [
+                "occupation",
+                "VARCHAR"
+              ],
+              [
+                "native_entity_type",
+                "VARCHAR"
+              ],
+              [
+                "election_code",
+                "VARCHAR"
+              ],
+              [
+                "memo_field_status",
+                "VARCHAR"
+              ],
+              [
+                "transaction_date_scope",
+                "VARCHAR"
+              ],
+              [
+                "native_values_json",
+                "VARCHAR"
+              ],
+              [
+                "source_locator_json",
+                "VARCHAR"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ]
+            ],
+            "rows": 404,
+            "sha256": "sha256:0a285018e68dd081d9a5bfdcb23e6d75fcf6b1ebbd842a41205e5f9cc031e7ca"
+          },
+          "fec_contribution_profiles.parquet": {
+            "byteSize": 21753,
+            "columns": [
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_id",
+                "VARCHAR"
+              ],
+              [
+                "committee_name",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_association_basis",
+                "VARCHAR"
+              ],
+              [
+                "filing_id",
+                "VARCHAR"
+              ],
+              [
+                "source_sha256",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "captured_at",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "source_evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ],
+              [
+                "contribution_family",
+                "VARCHAR"
+              ],
+              [
+                "gross_itemized_receipts",
+                "VARCHAR"
+              ],
+              [
+                "negative_receipt_adjustments",
+                "VARCHAR"
+              ],
+              [
+                "signed_itemized_receipts",
+                "VARCHAR"
+              ],
+              [
+                "itemized_refunds",
+                "VARCHAR"
+              ],
+              [
+                "net_itemized_flow",
+                "VARCHAR"
+              ],
+              [
+                "unitemized_receipts",
+                "VARCHAR"
+              ],
+              [
+                "net_reported_family",
+                "VARCHAR"
+              ],
+              [
+                "amount_basis",
+                "VARCHAR"
+              ],
+              [
+                "breakdown_json",
+                "VARCHAR"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ],
+              [
+                "included_records",
+                "INTEGER"
+              ],
+              [
+                "memo_records",
+                "INTEGER"
+              ]
+            ],
+            "rows": 2,
+            "sha256": "sha256:b2bff581af960771aa542c76fcaa325168658c706cb095d4fbd9bb7b1a92181b"
+          },
+          "fec_outside_spending_profiles.parquet": {
+            "byteSize": 12501,
+            "columns": [
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_name",
+                "VARCHAR"
+              ],
+              [
+                "support_oppose",
+                "VARCHAR"
+              ],
+              [
+                "source_evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "source_generation",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "election_basis",
+                "VARCHAR"
+              ],
+              [
+                "amount_basis",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ],
+              [
+                "total",
+                "VARCHAR"
+              ],
+              [
+                "reported_event_dates",
+                "VARCHAR"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ],
+              [
+                "reported_spender_count",
+                "INTEGER"
+              ],
+              [
+                "unknown_spender_rows",
+                "INTEGER"
+              ]
+            ],
+            "rows": 2,
+            "sha256": "sha256:15683f223f2411e0e3351e20729962e1f803681a3815ed3fd410462d6ae30842"
+          },
+          "fec_outside_spending_spenders.parquet": {
+            "byteSize": 17891,
+            "columns": [
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_id",
+                "VARCHAR"
+              ],
+              [
+                "candidate_name",
+                "VARCHAR"
+              ],
+              [
+                "support_oppose",
+                "VARCHAR"
+              ],
+              [
+                "source_evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "source_generation",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "election_basis",
+                "VARCHAR"
+              ],
+              [
+                "amount_basis",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ],
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "spender_id",
+                "VARCHAR"
+              ],
+              [
+                "spender_name",
+                "VARCHAR"
+              ],
+              [
+                "spender_namespace",
+                "VARCHAR"
+              ],
+              [
+                "total",
+                "VARCHAR"
+              ],
+              [
+                "source_cycle",
+                "INTEGER"
+              ],
+              [
+                "reported_transaction_count",
+                "BIGINT"
+              ]
+            ],
+            "rows": 73,
+            "sha256": "sha256:a08dbc0d93f57b5a5d8554cd3bf083c228f8092b9352cd91ca072aacdc18fa4d"
+          }
+        }
+      },
+      "sector-comparisons": {
+        "prefix": "generations/sector-comparisons/6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:d4a614186bc5af5513b977e903517126a9379322edbfc1a2f89b36c7cef9b5c4",
+        "artifactDigest": "sha256:6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36",
+        "tables": {
+          "lobbying_issue_financial_observations.parquet": {
+            "sha256": "sha256:6a2499ef6d0fcbf46bc82b633710b7a4372246ad96b5e564e07db3fac8843479",
+            "byteSize": 8497,
+            "columns": [
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "issue_code",
+                "VARCHAR"
+              ],
+              [
+                "profile_id",
+                "VARCHAR"
+              ],
+              [
+                "filing_uuid",
+                "VARCHAR"
+              ],
+              [
+                "income",
+                "VARCHAR"
+              ],
+              [
+                "expenses",
+                "VARCHAR"
+              ],
+              [
+                "source_url",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "source_generation",
+                "VARCHAR"
+              ],
+              [
+                "amount_basis",
+                "VARCHAR"
+              ],
+              [
+                "overlap_note",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 39
+          },
+          "sector_classification_evidence.parquet": {
+            "sha256": "sha256:5cebf31b89b978189857ca8c0a7f445cf5e2b1c760009cf0a4d721435b4d5376",
+            "byteSize": 9459,
+            "columns": [
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "source_namespace",
+                "VARCHAR"
+              ],
+              [
+                "native_entity_id",
+                "VARCHAR"
+              ],
+              [
+                "sector_codes_json",
+                "VARCHAR"
+              ],
+              [
+                "classification_status",
+                "VARCHAR"
+              ],
+              [
+                "classification_scheme",
+                "VARCHAR"
+              ],
+              [
+                "mapping_version",
+                "VARCHAR"
+              ],
+              [
+                "method",
+                "VARCHAR"
+              ],
+              [
+                "applicable_start",
+                "VARCHAR"
+              ],
+              [
+                "applicable_end",
+                "VARCHAR"
+              ],
+              [
+                "observed_at",
+                "VARCHAR"
+              ],
+              [
+                "evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "uncertainty",
+                "VARCHAR"
+              ],
+              [
+                "association_json",
+                "VARCHAR"
+              ]
+            ],
+            "rows": 5
+          },
+          "sector_financial_comparisons.parquet": {
+            "sha256": "sha256:0bc8017bd984af1105dca859ed42bb15fdc6b61137bdb19a64f10c4bdf958173",
+            "byteSize": 16354,
+            "columns": [
+              [
+                "record_id",
+                "VARCHAR"
+              ],
+              [
+                "sector_code",
+                "VARCHAR"
+              ],
+              [
+                "sector_label",
+                "VARCHAR"
+              ],
+              [
+                "classification_scheme",
+                "VARCHAR"
+              ],
+              [
+                "mapping_version",
+                "VARCHAR"
+              ],
+              [
+                "source_family",
+                "VARCHAR"
+              ],
+              [
+                "measure",
+                "VARCHAR"
+              ],
+              [
+                "known_reported_amount",
+                "VARCHAR"
+              ],
+              [
+                "amount_status",
+                "VARCHAR"
+              ],
+              [
+                "amount_basis",
+                "VARCHAR"
+              ],
+              [
+                "period_start",
+                "VARCHAR"
+              ],
+              [
+                "period_end",
+                "VARCHAR"
+              ],
+              [
+                "source_generation",
+                "VARCHAR"
+              ],
+              [
+                "source_table_sha256",
+                "VARCHAR"
+              ],
+              [
+                "cutoff",
+                "VARCHAR"
+              ],
+              [
+                "population_json",
+                "VARCHAR"
+              ],
+              [
+                "evidence_json",
+                "VARCHAR"
+              ],
+              [
+                "coverage_note",
+                "VARCHAR"
+              ],
+              [
+                "policy_version",
+                "VARCHAR"
+              ],
+              [
+                "population_profiles",
+                "INTEGER"
+              ],
+              [
+                "group_profiles",
+                "INTEGER"
+              ],
+              [
+                "qualified_measure_profiles",
+                "INTEGER"
+              ],
+              [
+                "unresolved_measure_profiles",
+                "INTEGER"
+              ],
+              [
+                "classified_population_profiles",
+                "INTEGER"
+              ],
+              [
+                "unclassified_population_profiles",
+                "INTEGER"
+              ],
+              [
+                "uncertain_population_profiles",
+                "INTEGER"
+              ]
+            ],
+            "rows": 16
+          }
+        },
+        "publishedAt": "2026-11-13T12:52:06Z"
+      }
+    },
+    "format": "spicy-regs-publication",
+    "version": 2
+  },
+  "metadata": {
+    "format": "spicy-regs-explorer-metadata",
+    "version": 1,
+    "generatedAt": "2026-11-13T00:00:00+00:00",
+    "sourceRevision": "unknown",
+    "inputs": {},
+    "publication": {
+      "sha256": "sha256:cb939bd83805ab84660679f7658981e88017d697ff197726bdd052289ef8348d",
+      "families": {
+        "fec-election-results": "sha256:c01e28a5e4a9f8daa0be49bf6cc7b595d456c7af496aaf03f1fd9cd91dc258a3",
+        "fec-research-profiles": "sha256:60ef871ddea604acfe94fdb21746171e9903c68d5d16fe285fca92e6dda018cd",
+        "sector-comparisons": "sha256:6fe9669936390ed83cda0065e7d5204240da6ade5e9a3fa8e68a233804df0a36"
+      }
+    },
+    "extra_tables": {},
+    "tables": {
+      "fec_committee_relationship_profiles": {
+        "label": "Disclosed committee affiliations and sponsors",
+        "summary": "Disclosed committee affiliations and sponsors with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Sampled. Explicit retained committee pages; relationship dates, ownership and financial transfers are not inferred.",
+        "grain": "One selected committee occurrence.",
+        "identity_columns": [
+          "profile_id"
+        ],
+        "columns": [
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Identity of one selected profile; not an economic transaction ID."
+          },
+          {
+            "column_name": "committee_id",
+            "column_type": "VARCHAR",
+            "description": "Literal native FEC committee ID; no name matching."
+          },
+          {
+            "column_name": "committee_name",
+            "column_type": "VARCHAR",
+            "description": "Publisher committee label; earlier filing titles remain separately in native evidence."
+          },
+          {
+            "column_name": "designation",
+            "column_type": "VARCHAR",
+            "description": "Native committee designation code; sponsorship does not imply authorization."
+          },
+          {
+            "column_name": "source_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of the retained original publisher bytes."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher URL recorded for the retained original; its current contents can differ."
+          },
+          {
+            "column_name": "captured_at",
+            "column_type": "VARCHAR",
+            "description": "Known original capture time; null where historical acquisition time is unknown."
+          },
+          {
+            "column_name": "source_pointer",
+            "column_type": "VARCHAR",
+            "description": "JSON pointer to this exact occurrence in the original response."
+          },
+          {
+            "column_name": "relationships_json",
+            "column_type": "VARCHAR",
+            "description": "Every source relationship field and array entry, retaining missing, null, empty and unresolved labels."
+          },
+          {
+            "column_name": "native_fields_json",
+            "column_type": "VARCHAR",
+            "description": "Complete original committee result, including source field states and array multiplicity."
+          },
+          {
+            "column_name": "relationship_effective_date_status",
+            "column_type": "VARCHAR",
+            "description": "No relationship effective date is inferred from retrieval or filing dates."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the named interpretation and selection rules."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Explicit population, timing, attribution and financial limits of this named output."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "profile_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_committee_relationship_profiles",
+        "family": "fec-research-profiles",
+        "publicationSchema": [
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_name",
+            "VARCHAR"
+          ],
+          [
+            "designation",
+            "VARCHAR"
+          ],
+          [
+            "source_sha256",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "captured_at",
+            "VARCHAR"
+          ],
+          [
+            "source_pointer",
+            "VARCHAR"
+          ],
+          [
+            "relationships_json",
+            "VARCHAR"
+          ],
+          [
+            "native_fields_json",
+            "VARCHAR"
+          ],
+          [
+            "relationship_effective_date_status",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Bounded disclosed relationships and contribution/spending measures, with native identity uncertainty and exact official reconciliation.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_research_profiles.py"
+      },
+      "fec_contribution_decisions": {
+        "label": "Contribution inclusion and exclusion evidence",
+        "summary": "Contribution inclusion and exclusion evidence with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Window. Selected contribution-family observations, including excluded memos and prior-period transaction dates.",
+        "grain": "One existing financial-mapper observation.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "columns": [
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Identity of one selected profile; not an economic transaction ID."
+          },
+          {
+            "column_name": "committee_id",
+            "column_type": "VARCHAR",
+            "description": "Literal native FEC committee ID; no name matching."
+          },
+          {
+            "column_name": "committee_name",
+            "column_type": "VARCHAR",
+            "description": "Publisher committee label; earlier filing titles remain separately in native evidence."
+          },
+          {
+            "column_name": "candidate_id",
+            "column_type": "VARCHAR",
+            "description": "Native candidate ID. Different offices may have different IDs for the same person."
+          },
+          {
+            "column_name": "candidate_association_basis",
+            "column_type": "VARCHAR",
+            "description": "Native committee/cycle link and candidate observation before the report; daily authorization is not asserted."
+          },
+          {
+            "column_name": "filing_id",
+            "column_type": "VARCHAR",
+            "description": "Native filing number selected by matching publisher report evidence."
+          },
+          {
+            "column_name": "source_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of the retained original publisher bytes."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher URL recorded for the retained original; its current contents can differ."
+          },
+          {
+            "column_name": "captured_at",
+            "column_type": "VARCHAR",
+            "description": "Known original capture time; null where historical acquisition time is unknown."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage start, not necessarily the earliest transaction date."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage end, not necessarily the latest transaction date."
+          },
+          {
+            "column_name": "source_evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Exact retained request descriptors, original digests, sizes and capture dates."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the named interpretation and selection rules."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Explicit population, timing, attribution and financial limits of this named output."
+          },
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity of one native observation, bound to its source digest and coordinates."
+          },
+          {
+            "column_name": "contribution_family",
+            "column_type": "VARCHAR",
+            "description": "PAC receipts source-typed PAC, or individual-contribution schedule lines."
+          },
+          {
+            "column_name": "disposition",
+            "column_type": "VARCHAR",
+            "description": "Included or excluded under the selected-report calculation."
+          },
+          {
+            "column_name": "disposition_reason",
+            "column_type": "VARCHAR",
+            "description": "Receipt, signed adjustment, refund or source memo representation decision."
+          },
+          {
+            "column_name": "amount",
+            "column_type": "VARCHAR",
+            "description": "Exact source USD decimal text; the sign alone does not establish a refund."
+          },
+          {
+            "column_name": "donor_id",
+            "column_type": "VARCHAR",
+            "description": "Disclosed native PAC ID where supported; individuals remain unresolved."
+          },
+          {
+            "column_name": "donor_label",
+            "column_type": "VARCHAR",
+            "description": "Reported contributor label; similar names do not become resolved people."
+          },
+          {
+            "column_name": "employer",
+            "column_type": "VARCHAR",
+            "description": "Reported employer of a contributor, not the donor or an employer donation."
+          },
+          {
+            "column_name": "occupation",
+            "column_type": "VARCHAR",
+            "description": "Source-reported occupation label; not identity resolution."
+          },
+          {
+            "column_name": "native_entity_type",
+            "column_type": "VARCHAR",
+            "description": "Literal entity type in the filing."
+          },
+          {
+            "column_name": "election_code",
+            "column_type": "VARCHAR",
+            "description": "Literal transaction election designation; different elections remain separate in native observations."
+          },
+          {
+            "column_name": "memo_field_status",
+            "column_type": "VARCHAR",
+            "description": "Missing trailing field, explicitly empty field, or reported memo indicator."
+          },
+          {
+            "column_name": "transaction_date_scope",
+            "column_type": "VARCHAR",
+            "description": "Native transaction date within or outside declared report coverage; outside dates remain included and visible."
+          },
+          {
+            "column_name": "native_values_json",
+            "column_type": "VARCHAR",
+            "description": "Complete existing financial-mapper observation with raw amounts, dates, field omissions and provenance."
+          },
+          {
+            "column_name": "source_locator_json",
+            "column_type": "VARCHAR",
+            "description": "Exact native record ordinal and byte coordinates."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_contribution_decisions",
+        "family": "fec-research-profiles",
+        "publicationSchema": [
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_name",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_association_basis",
+            "VARCHAR"
+          ],
+          [
+            "filing_id",
+            "VARCHAR"
+          ],
+          [
+            "source_sha256",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "captured_at",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "source_evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ],
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "contribution_family",
+            "VARCHAR"
+          ],
+          [
+            "disposition",
+            "VARCHAR"
+          ],
+          [
+            "disposition_reason",
+            "VARCHAR"
+          ],
+          [
+            "amount",
+            "VARCHAR"
+          ],
+          [
+            "donor_id",
+            "VARCHAR"
+          ],
+          [
+            "donor_label",
+            "VARCHAR"
+          ],
+          [
+            "employer",
+            "VARCHAR"
+          ],
+          [
+            "occupation",
+            "VARCHAR"
+          ],
+          [
+            "native_entity_type",
+            "VARCHAR"
+          ],
+          [
+            "election_code",
+            "VARCHAR"
+          ],
+          [
+            "memo_field_status",
+            "VARCHAR"
+          ],
+          [
+            "transaction_date_scope",
+            "VARCHAR"
+          ],
+          [
+            "native_values_json",
+            "VARCHAR"
+          ],
+          [
+            "source_locator_json",
+            "VARCHAR"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Bounded disclosed relationships and contribution/spending measures, with native identity uncertainty and exact official reconciliation.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_research_profiles.py"
+      },
+      "fec_contribution_profiles": {
+        "label": "Qualified selected-report contributions",
+        "summary": "Qualified selected-report contributions with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Window. Complete selected recipient report with separate itemized, unitemized, signed-adjustment and refund measures; not a complete cycle.",
+        "grain": "One effective report and contribution family.",
+        "identity_columns": [
+          "profile_id"
+        ],
+        "columns": [
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Identity of one selected profile; not an economic transaction ID."
+          },
+          {
+            "column_name": "committee_id",
+            "column_type": "VARCHAR",
+            "description": "Literal native FEC committee ID; no name matching."
+          },
+          {
+            "column_name": "committee_name",
+            "column_type": "VARCHAR",
+            "description": "Publisher committee label; earlier filing titles remain separately in native evidence."
+          },
+          {
+            "column_name": "candidate_id",
+            "column_type": "VARCHAR",
+            "description": "Native candidate ID. Different offices may have different IDs for the same person."
+          },
+          {
+            "column_name": "candidate_association_basis",
+            "column_type": "VARCHAR",
+            "description": "Native committee/cycle link and candidate observation before the report; daily authorization is not asserted."
+          },
+          {
+            "column_name": "filing_id",
+            "column_type": "VARCHAR",
+            "description": "Native filing number selected by matching publisher report evidence."
+          },
+          {
+            "column_name": "source_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of the retained original publisher bytes."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher URL recorded for the retained original; its current contents can differ."
+          },
+          {
+            "column_name": "captured_at",
+            "column_type": "VARCHAR",
+            "description": "Known original capture time; null where historical acquisition time is unknown."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage start, not necessarily the earliest transaction date."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage end, not necessarily the latest transaction date."
+          },
+          {
+            "column_name": "source_evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Exact retained request descriptors, original digests, sizes and capture dates."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the named interpretation and selection rules."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Explicit population, timing, attribution and financial limits of this named output."
+          },
+          {
+            "column_name": "contribution_family",
+            "column_type": "VARCHAR",
+            "description": "PAC receipts source-typed PAC, or individual-contribution schedule lines."
+          },
+          {
+            "column_name": "gross_itemized_receipts",
+            "column_type": "VARCHAR",
+            "description": "Included nonnegative itemized receipts, in exact USD decimal text."
+          },
+          {
+            "column_name": "negative_receipt_adjustments",
+            "column_type": "VARCHAR",
+            "description": "Signed negative receipt adjustments, distinct from Schedule B refunds."
+          },
+          {
+            "column_name": "signed_itemized_receipts",
+            "column_type": "VARCHAR",
+            "description": "Gross itemized receipts plus signed adjustments, reconciled to the official report."
+          },
+          {
+            "column_name": "itemized_refunds",
+            "column_type": "VARCHAR",
+            "description": "Matching family Schedule B refunds; never inferred from a negative receipt sign."
+          },
+          {
+            "column_name": "net_itemized_flow",
+            "column_type": "VARCHAR",
+            "description": "Signed itemized receipts minus matching itemized refunds, in exact USD decimal text."
+          },
+          {
+            "column_name": "unitemized_receipts",
+            "column_type": "VARCHAR",
+            "description": "Separate reported unitemized amount; not attributed to named itemized donors."
+          },
+          {
+            "column_name": "net_reported_family",
+            "column_type": "VARCHAR",
+            "description": "Signed itemized receipts plus separate unitemized receipts minus matching refunds."
+          },
+          {
+            "column_name": "amount_basis",
+            "column_type": "VARCHAR",
+            "description": "Declared publisher or selected-report measure basis. Alternative representations are not added."
+          },
+          {
+            "column_name": "breakdown_json",
+            "column_type": "VARCHAR",
+            "description": "Exact amounts grouped by native PAC ID or reported contributor state; includes record counts, not unique donors."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          },
+          {
+            "column_name": "included_records",
+            "column_type": "INTEGER",
+            "description": "Included receipt/refund observation count, not a count of people."
+          },
+          {
+            "column_name": "memo_records",
+            "column_type": "INTEGER",
+            "description": "Preserved source memo observations excluded from additive money."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "profile_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_contribution_profiles",
+        "family": "fec-research-profiles",
+        "publicationSchema": [
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_id",
+            "VARCHAR"
+          ],
+          [
+            "committee_name",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_association_basis",
+            "VARCHAR"
+          ],
+          [
+            "filing_id",
+            "VARCHAR"
+          ],
+          [
+            "source_sha256",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "captured_at",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "source_evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ],
+          [
+            "contribution_family",
+            "VARCHAR"
+          ],
+          [
+            "gross_itemized_receipts",
+            "VARCHAR"
+          ],
+          [
+            "negative_receipt_adjustments",
+            "VARCHAR"
+          ],
+          [
+            "signed_itemized_receipts",
+            "VARCHAR"
+          ],
+          [
+            "itemized_refunds",
+            "VARCHAR"
+          ],
+          [
+            "net_itemized_flow",
+            "VARCHAR"
+          ],
+          [
+            "unitemized_receipts",
+            "VARCHAR"
+          ],
+          [
+            "net_reported_family",
+            "VARCHAR"
+          ],
+          [
+            "amount_basis",
+            "VARCHAR"
+          ],
+          [
+            "breakdown_json",
+            "VARCHAR"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ],
+          [
+            "included_records",
+            "INTEGER"
+          ],
+          [
+            "memo_records",
+            "INTEGER"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Bounded disclosed relationships and contribution/spending measures, with native identity uncertainty and exact official reconciliation.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_research_profiles.py"
+      },
+      "fec_election_results": {
+        "label": "Official Senate election results",
+        "summary": "Official Senate election results with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Window. Reviewed official Senate edition, preserving primaries, runoffs, general elections, unexpired terms, ballot lines, zero votes and ranked-choice rounds. Appendix observations remain literal in the companion table.",
+        "grain": "One native Senate row and vote column.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "columns": [
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity of one native observation, bound to its source digest and coordinates."
+          },
+          {
+            "column_name": "source_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of the retained original publisher bytes."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher URL recorded for the retained original; its current contents can differ."
+          },
+          {
+            "column_name": "captured_at",
+            "column_type": "VARCHAR",
+            "description": "Known original capture time; null where historical acquisition time is unknown."
+          },
+          {
+            "column_name": "source_sheet",
+            "column_type": "VARCHAR",
+            "description": "Literal worksheet name."
+          },
+          {
+            "column_name": "reader_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the source reader over maintained literal workbook syntax."
+          },
+          {
+            "column_name": "source_column",
+            "column_type": "VARCHAR",
+            "description": "Native vote column in the retained worksheet."
+          },
+          {
+            "column_name": "state",
+            "column_type": "VARCHAR",
+            "description": "Source state abbreviation; blank totals inherit only within the same explicitly repeated full state name."
+          },
+          {
+            "column_name": "state_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal native state cell; original blanks remain blank."
+          },
+          {
+            "column_name": "district_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal seat label, preserving full versus unexpired terms."
+          },
+          {
+            "column_name": "seat_term",
+            "column_type": "VARCHAR",
+            "description": "Full or unexpired Senate term, separate within each state."
+          },
+          {
+            "column_name": "stage",
+            "column_type": "VARCHAR",
+            "description": "Primary, primary runoff, general or general runoff, from separate source columns."
+          },
+          {
+            "column_name": "round",
+            "column_type": "VARCHAR",
+            "description": "Reported column, combined-party witness, or explicit ranked-choice round."
+          },
+          {
+            "column_name": "vote_basis",
+            "column_type": "VARCHAR",
+            "description": "Ballot line, combined-party witness, ranked-choice round or reported total. These bases overlap."
+          },
+          {
+            "column_name": "row_kind",
+            "column_type": "VARCHAR",
+            "description": "Candidate, party total or contest total; summary totals are not additional candidate votes."
+          },
+          {
+            "column_name": "candidate_id",
+            "column_type": "VARCHAR",
+            "description": "Native candidate ID. Different offices may have different IDs for the same person."
+          },
+          {
+            "column_name": "candidate_id_status",
+            "column_type": "VARCHAR",
+            "description": "Supported source ID shape or unresolved, including write-ins and totals."
+          },
+          {
+            "column_name": "candidate_name",
+            "column_type": "VARCHAR",
+            "description": "Literal source candidate label, independent of identifier resolution."
+          },
+          {
+            "column_name": "party",
+            "column_type": "VARCHAR",
+            "description": "Literal party ballot-line label; several party lines do not create several candidates."
+          },
+          {
+            "column_name": "votes_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal source vote cell, retaining zero, null, asterisk and Unopposed."
+          },
+          {
+            "column_name": "votes_status",
+            "column_type": "VARCHAR",
+            "description": "Exact nonnegative integer, missing value, or nonnumeric source text."
+          },
+          {
+            "column_name": "percentage_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal source fractional percentage; not recomputed or used to infer votes."
+          },
+          {
+            "column_name": "footnotes",
+            "column_type": "VARCHAR",
+            "description": "Literal source row footnotes, including ranked-choice and nomination-method qualifications."
+          },
+          {
+            "column_name": "primary_winner_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal primary winner indicator."
+          },
+          {
+            "column_name": "general_winner_raw",
+            "column_type": "VARCHAR",
+            "description": "Literal general winner indicator; not inferred from a single round."
+          },
+          {
+            "column_name": "interpretation_version",
+            "column_type": "VARCHAR",
+            "description": "Version of downstream Senate result interpretation."
+          },
+          {
+            "column_name": "overlap_note",
+            "column_type": "VARCHAR",
+            "description": "Repeated combined-party totals, distinct rounds and appendix overlap limits."
+          },
+          {
+            "column_name": "source_row",
+            "column_type": "INTEGER",
+            "description": "One-based native worksheet row, including source totals, notes and blanks."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          },
+          {
+            "column_name": "votes",
+            "column_type": "BIGINT",
+            "description": "Exact integer votes where supplied; zero survives and missing stays null."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_election_results",
+        "family": "fec-election-results",
+        "publicationSchema": [
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "source_sha256",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "captured_at",
+            "VARCHAR"
+          ],
+          [
+            "source_sheet",
+            "VARCHAR"
+          ],
+          [
+            "reader_version",
+            "VARCHAR"
+          ],
+          [
+            "source_column",
+            "VARCHAR"
+          ],
+          [
+            "state",
+            "VARCHAR"
+          ],
+          [
+            "state_raw",
+            "VARCHAR"
+          ],
+          [
+            "district_raw",
+            "VARCHAR"
+          ],
+          [
+            "seat_term",
+            "VARCHAR"
+          ],
+          [
+            "stage",
+            "VARCHAR"
+          ],
+          [
+            "round",
+            "VARCHAR"
+          ],
+          [
+            "vote_basis",
+            "VARCHAR"
+          ],
+          [
+            "row_kind",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id_status",
+            "VARCHAR"
+          ],
+          [
+            "candidate_name",
+            "VARCHAR"
+          ],
+          [
+            "party",
+            "VARCHAR"
+          ],
+          [
+            "votes_raw",
+            "VARCHAR"
+          ],
+          [
+            "votes_status",
+            "VARCHAR"
+          ],
+          [
+            "percentage_raw",
+            "VARCHAR"
+          ],
+          [
+            "footnotes",
+            "VARCHAR"
+          ],
+          [
+            "primary_winner_raw",
+            "VARCHAR"
+          ],
+          [
+            "general_winner_raw",
+            "VARCHAR"
+          ],
+          [
+            "interpretation_version",
+            "VARCHAR"
+          ],
+          [
+            "overlap_note",
+            "VARCHAR"
+          ],
+          [
+            "source_row",
+            "INTEGER"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ],
+          [
+            "votes",
+            "BIGINT"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Literal official workbook rows and reviewed Senate votes; ballot lines, rounds and source totals remain distinct.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_election_results.py"
+      },
+      "fec_election_workbook_rows": {
+        "label": "Official election workbook rows",
+        "summary": "Official election workbook rows with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Not a range. Literal official workbook rows, including summaries and overlapping appendices. Only the reviewed Senate layout is interpreted in the companion table.",
+        "grain": "One physical row in one retained worksheet.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "columns": [
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity of one native observation, bound to its source digest and coordinates."
+          },
+          {
+            "column_name": "source_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of the retained original publisher bytes."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher URL recorded for the retained original; its current contents can differ."
+          },
+          {
+            "column_name": "captured_at",
+            "column_type": "VARCHAR",
+            "description": "Known original capture time; null where historical acquisition time is unknown."
+          },
+          {
+            "column_name": "source_sheet",
+            "column_type": "VARCHAR",
+            "description": "Literal worksheet name."
+          },
+          {
+            "column_name": "reader_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the source reader over maintained literal workbook syntax."
+          },
+          {
+            "column_name": "cells_json",
+            "column_type": "VARCHAR",
+            "description": "Every literal cell on this workbook row, including nulls, cached formula values and presentation facts."
+          },
+          {
+            "column_name": "source_row",
+            "column_type": "INTEGER",
+            "description": "One-based native worksheet row, including source totals, notes and blanks."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_election_workbook_rows",
+        "family": "fec-election-results",
+        "publicationSchema": [
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "source_sha256",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "captured_at",
+            "VARCHAR"
+          ],
+          [
+            "source_sheet",
+            "VARCHAR"
+          ],
+          [
+            "reader_version",
+            "VARCHAR"
+          ],
+          [
+            "cells_json",
+            "VARCHAR"
+          ],
+          [
+            "source_row",
+            "INTEGER"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Literal official workbook rows and reviewed Senate votes; ballot lines, rounds and source totals remain distinct.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_election_results.py"
+      },
+      "fec_outside_spending_profiles": {
+        "label": "Candidate support and opposition spending",
+        "summary": "Candidate support and opposition spending with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Window. Observed publisher aggregate groups reconcile to separately captured official totals. Specific elections and observed date extrema are not supplied.",
+        "grain": "One candidate, cycle and support/oppose indicator.",
+        "identity_columns": [
+          "profile_id"
+        ],
+        "columns": [
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Identity of one selected profile; not an economic transaction ID."
+          },
+          {
+            "column_name": "candidate_id",
+            "column_type": "VARCHAR",
+            "description": "Native candidate ID. Different offices may have different IDs for the same person."
+          },
+          {
+            "column_name": "candidate_name",
+            "column_type": "VARCHAR",
+            "description": "Literal source candidate label, independent of identifier resolution."
+          },
+          {
+            "column_name": "support_oppose",
+            "column_type": "VARCHAR",
+            "description": "Source S (support) or O (oppose); unresolved indicators refuse aggregation."
+          },
+          {
+            "column_name": "source_evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Exact retained request descriptors, original digests, sizes and capture dates."
+          },
+          {
+            "column_name": "source_generation",
+            "column_type": "VARCHAR",
+            "description": "Digest binding the selected original query captures and interpretation policy."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage start, not necessarily the earliest transaction date."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage end, not necessarily the latest transaction date."
+          },
+          {
+            "column_name": "election_basis",
+            "column_type": "VARCHAR",
+            "description": "All elections in the selected two-year cycle; election-specific queries refuse."
+          },
+          {
+            "column_name": "amount_basis",
+            "column_type": "VARCHAR",
+            "description": "Declared publisher or selected-report measure basis. Alternative representations are not added."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the named interpretation and selection rules."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Explicit population, timing, attribution and financial limits of this named output."
+          },
+          {
+            "column_name": "total",
+            "column_type": "VARCHAR",
+            "description": "Exact USD decimal text for the named publisher group or total."
+          },
+          {
+            "column_name": "reported_event_dates",
+            "column_type": "VARCHAR",
+            "description": "The aggregate supplies cycle scope, not observed transaction date extrema."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          },
+          {
+            "column_name": "reported_spender_count",
+            "column_type": "INTEGER",
+            "description": "Distinct supported source filer IDs; not transaction or unique-person count."
+          },
+          {
+            "column_name": "unknown_spender_rows",
+            "column_type": "INTEGER",
+            "description": "Rows without supported filer identity, separately visible."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "profile_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_outside_spending_profiles",
+        "family": "fec-research-profiles",
+        "publicationSchema": [
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_name",
+            "VARCHAR"
+          ],
+          [
+            "support_oppose",
+            "VARCHAR"
+          ],
+          [
+            "source_evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "source_generation",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "election_basis",
+            "VARCHAR"
+          ],
+          [
+            "amount_basis",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ],
+          [
+            "total",
+            "VARCHAR"
+          ],
+          [
+            "reported_event_dates",
+            "VARCHAR"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ],
+          [
+            "reported_spender_count",
+            "INTEGER"
+          ],
+          [
+            "unknown_spender_rows",
+            "INTEGER"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Bounded disclosed relationships and contribution/spending measures, with native identity uncertainty and exact official reconciliation.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_research_profiles.py"
+      },
+      "fec_outside_spending_spenders": {
+        "label": "Reported independent expenditure filers",
+        "summary": "Reported independent expenditure filers with exact source coordinates and explicit interpretation limits.",
+        "coverage": "Window. Selected publisher candidate/cycle groups; Form 5 identities and unresolved filers remain separate.",
+        "grain": "One filer, candidate, cycle and support/oppose group.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "columns": [
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Identity of one selected profile; not an economic transaction ID."
+          },
+          {
+            "column_name": "candidate_id",
+            "column_type": "VARCHAR",
+            "description": "Native candidate ID. Different offices may have different IDs for the same person."
+          },
+          {
+            "column_name": "candidate_name",
+            "column_type": "VARCHAR",
+            "description": "Literal source candidate label, independent of identifier resolution."
+          },
+          {
+            "column_name": "support_oppose",
+            "column_type": "VARCHAR",
+            "description": "Source S (support) or O (oppose); unresolved indicators refuse aggregation."
+          },
+          {
+            "column_name": "source_evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Exact retained request descriptors, original digests, sizes and capture dates."
+          },
+          {
+            "column_name": "source_generation",
+            "column_type": "VARCHAR",
+            "description": "Digest binding the selected original query captures and interpretation policy."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage start, not necessarily the earliest transaction date."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "Declared report or cycle coverage end, not necessarily the latest transaction date."
+          },
+          {
+            "column_name": "election_basis",
+            "column_type": "VARCHAR",
+            "description": "All elections in the selected two-year cycle; election-specific queries refuse."
+          },
+          {
+            "column_name": "amount_basis",
+            "column_type": "VARCHAR",
+            "description": "Declared publisher or selected-report measure basis. Alternative representations are not added."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the named interpretation and selection rules."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Explicit population, timing, attribution and financial limits of this named output."
+          },
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity of one native observation, bound to its source digest and coordinates."
+          },
+          {
+            "column_name": "spender_id",
+            "column_type": "VARCHAR",
+            "description": "Native filer ID; C9 IDs remain Form 5 filer identities rather than inferred committees."
+          },
+          {
+            "column_name": "spender_name",
+            "column_type": "VARCHAR",
+            "description": "Literal reporting filer label, not an independently resolved organization."
+          },
+          {
+            "column_name": "spender_namespace",
+            "column_type": "VARCHAR",
+            "description": "FEC committee, FEC Form 5 filer, or unresolved source identity."
+          },
+          {
+            "column_name": "total",
+            "column_type": "VARCHAR",
+            "description": "Exact USD decimal text for the named publisher group or total."
+          },
+          {
+            "column_name": "source_cycle",
+            "column_type": "INTEGER",
+            "description": "Selected two-year FEC cycle or completed result edition."
+          },
+          {
+            "column_name": "reported_transaction_count",
+            "column_type": "BIGINT",
+            "description": "Publisher number of transactions behind one group; never a spender count."
+          }
+        ],
+        "category": "query_data",
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "table": "fec_outside_spending_spenders",
+        "family": "fec-research-profiles",
+        "publicationSchema": [
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_id",
+            "VARCHAR"
+          ],
+          [
+            "candidate_name",
+            "VARCHAR"
+          ],
+          [
+            "support_oppose",
+            "VARCHAR"
+          ],
+          [
+            "source_evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "source_generation",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "election_basis",
+            "VARCHAR"
+          ],
+          [
+            "amount_basis",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ],
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "spender_id",
+            "VARCHAR"
+          ],
+          [
+            "spender_name",
+            "VARCHAR"
+          ],
+          [
+            "spender_namespace",
+            "VARCHAR"
+          ],
+          [
+            "total",
+            "VARCHAR"
+          ],
+          [
+            "source_cycle",
+            "INTEGER"
+          ],
+          [
+            "reported_transaction_count",
+            "BIGINT"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          }
+        ],
+        "inputs": [],
+        "transformation": "Bounded disclosed relationships and contribution/spending measures, with native identity uncertainty and exact official reconciliation.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/fec_research_profiles.py"
+      },
+      "lobbying_issue_financial_observations": {
+        "table": "lobbying_issue_financial_observations",
+        "label": "Lobbying issue financial observations",
+        "summary": "Separate qualified FEC and lobbying measures with source-local classifications, exact evidence and visible uncertainty.",
+        "coverage": "Derived. Bounded selected source profiles and a versioned broad-sector mapping. Unknown classifications, unresolved quarters and overlapping issues remain visible; not a national or complete annual sector total.",
+        "kind": "derived",
+        "measured_on": "2026-11-13",
+        "data_quality": null,
+        "columns": [
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity bound to source selections and mapping revision."
+          },
+          {
+            "column_name": "issue_code",
+            "column_type": "VARCHAR",
+            "description": "Literal LDA issue code, separate from organizational industry."
+          },
+          {
+            "column_name": "profile_id",
+            "column_type": "VARCHAR",
+            "description": "Selected source quarterly profile, repeated at most once per issue."
+          },
+          {
+            "column_name": "filing_uuid",
+            "column_type": "VARCHAR",
+            "description": "Native selected LDA filing UUID; activities are reduced to distinct issues before any amount is exposed."
+          },
+          {
+            "column_name": "income",
+            "column_type": "VARCHAR",
+            "description": "Reported whole-filing registrant income estimate, not allocated to this issue."
+          },
+          {
+            "column_name": "expenses",
+            "column_type": "VARCHAR",
+            "description": "Reported whole-filing in-house expense estimate, separate from income and not allocated to this issue."
+          },
+          {
+            "column_name": "source_url",
+            "column_type": "VARCHAR",
+            "description": "Publisher filing URL for this observation."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Start of the explicitly supported comparison window."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "End of the explicitly supported comparison window."
+          },
+          {
+            "column_name": "source_generation",
+            "column_type": "VARCHAR",
+            "description": "Exact prerequisite generation pin, verified before reading."
+          },
+          {
+            "column_name": "amount_basis",
+            "column_type": "VARCHAR",
+            "description": "Source-specific measure and estimate basis, preserved separately."
+          },
+          {
+            "column_name": "overlap_note",
+            "column_type": "VARCHAR",
+            "description": "Issue-filtered views overlap; repeated activities never multiply money."
+          }
+        ],
+        "subject": "lobbying",
+        "grain": "One declared source measure and classification group, or one native classification/issue observation.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "family": "sector-comparisons",
+        "publicationSchema": [
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "issue_code",
+            "VARCHAR"
+          ],
+          [
+            "profile_id",
+            "VARCHAR"
+          ],
+          [
+            "filing_uuid",
+            "VARCHAR"
+          ],
+          [
+            "income",
+            "VARCHAR"
+          ],
+          [
+            "expenses",
+            "VARCHAR"
+          ],
+          [
+            "source_url",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "source_generation",
+            "VARCHAR"
+          ],
+          [
+            "amount_basis",
+            "VARCHAR"
+          ],
+          [
+            "overlap_note",
+            "VARCHAR"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          },
+          {
+            "id": "lobbying",
+            "name": "Senate Lobbying Disclosure Act filings",
+            "url": "https://lda.gov/",
+            "kind": "government",
+            "note": ""
+          }
+        ],
+        "inputs": [],
+        "transformation": "Keeps selected FEC period flows, LDA quarterly income and expenses separate. Industry assignments require business evidence; unresolved identities never join money. Issue views retain unallocated whole-filing amounts.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/sector_comparisons.py"
+      },
+      "sector_classification_evidence": {
+        "table": "sector_classification_evidence",
+        "label": "Sector classification evidence",
+        "summary": "Separate qualified FEC and lobbying measures with source-local classifications, exact evidence and visible uncertainty.",
+        "coverage": "Derived. Bounded selected source profiles and a versioned broad-sector mapping. Unknown classifications, unresolved quarters and overlapping issues remain visible; not a national or complete annual sector total.",
+        "kind": "derived",
+        "measured_on": "2026-11-13",
+        "data_quality": null,
+        "columns": [
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity bound to source selections and mapping revision."
+          },
+          {
+            "column_name": "source_namespace",
+            "column_type": "VARCHAR",
+            "description": "FEC committee or LDA client identity namespace; proposed cross-source links stay separate."
+          },
+          {
+            "column_name": "native_entity_id",
+            "column_type": "VARCHAR",
+            "description": "Literal source-local ID; names do not establish cross-source identity."
+          },
+          {
+            "column_name": "sector_codes_json",
+            "column_type": "VARCHAR",
+            "description": "Distinct proposed sector codes; multiple codes do not duplicate additive money."
+          },
+          {
+            "column_name": "classification_status",
+            "column_type": "VARCHAR",
+            "description": "Supported context, uncertain industry, or unresolved identity association."
+          },
+          {
+            "column_name": "classification_scheme",
+            "column_type": "VARCHAR",
+            "description": "The retained NAICS vintage, separate from LDA issue vocabulary."
+          },
+          {
+            "column_name": "mapping_version",
+            "column_type": "VARCHAR",
+            "description": "Explicit revision of curator assignments and their evidence."
+          },
+          {
+            "column_name": "method",
+            "column_type": "VARCHAR",
+            "description": "Curated business-evidence method. Name-only or issue-code industry inference refuses."
+          },
+          {
+            "column_name": "applicable_start",
+            "column_type": "VARCHAR",
+            "description": "First reporting date for which this mapping was declared applicable."
+          },
+          {
+            "column_name": "applicable_end",
+            "column_type": "VARCHAR",
+            "description": "Last reporting date for which this mapping was declared applicable."
+          },
+          {
+            "column_name": "observed_at",
+            "column_type": "VARCHAR",
+            "description": "Date classification evidence was reviewed, not a relationship effective date."
+          },
+          {
+            "column_name": "evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Assignment evidence with native IDs, source digests, original locators and limitations."
+          },
+          {
+            "column_name": "uncertainty",
+            "column_type": "VARCHAR",
+            "description": "Explicit limits of curator classification or identity association."
+          },
+          {
+            "column_name": "association_json",
+            "column_type": "VARCHAR",
+            "description": "Separately retained unresolved identity proposal; never used to join money."
+          }
+        ],
+        "subject": "campaign_finance",
+        "grain": "One declared source measure and classification group, or one native classification/issue observation.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "family": "sector-comparisons",
+        "publicationSchema": [
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "source_namespace",
+            "VARCHAR"
+          ],
+          [
+            "native_entity_id",
+            "VARCHAR"
+          ],
+          [
+            "sector_codes_json",
+            "VARCHAR"
+          ],
+          [
+            "classification_status",
+            "VARCHAR"
+          ],
+          [
+            "classification_scheme",
+            "VARCHAR"
+          ],
+          [
+            "mapping_version",
+            "VARCHAR"
+          ],
+          [
+            "method",
+            "VARCHAR"
+          ],
+          [
+            "applicable_start",
+            "VARCHAR"
+          ],
+          [
+            "applicable_end",
+            "VARCHAR"
+          ],
+          [
+            "observed_at",
+            "VARCHAR"
+          ],
+          [
+            "evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "uncertainty",
+            "VARCHAR"
+          ],
+          [
+            "association_json",
+            "VARCHAR"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          },
+          {
+            "id": "lobbying",
+            "name": "Senate Lobbying Disclosure Act filings",
+            "url": "https://lda.gov/",
+            "kind": "government",
+            "note": ""
+          }
+        ],
+        "inputs": [],
+        "transformation": "Keeps selected FEC period flows, LDA quarterly income and expenses separate. Industry assignments require business evidence; unresolved identities never join money. Issue views retain unallocated whole-filing amounts.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/sector_comparisons.py"
+      },
+      "sector_financial_comparisons": {
+        "table": "sector_financial_comparisons",
+        "label": "Sector financial comparisons",
+        "summary": "Separate qualified FEC and lobbying measures with source-local classifications, exact evidence and visible uncertainty.",
+        "coverage": "Derived. Bounded selected source profiles and a versioned broad-sector mapping. Unknown classifications, unresolved quarters and overlapping issues remain visible; not a national or complete annual sector total.",
+        "kind": "derived",
+        "measured_on": "2026-11-13",
+        "data_quality": null,
+        "columns": [
+          {
+            "column_name": "record_id",
+            "column_type": "VARCHAR",
+            "description": "Deterministic identity bound to source selections and mapping revision."
+          },
+          {
+            "column_name": "sector_code",
+            "column_type": "VARCHAR",
+            "description": "Selected NAICS 2022 sector, unclassified, or uncertain. Definitions alone do not classify organizations."
+          },
+          {
+            "column_name": "sector_label",
+            "column_type": "VARCHAR",
+            "description": "Official selected NAICS sector label, or explicit unclassified/uncertain category."
+          },
+          {
+            "column_name": "classification_scheme",
+            "column_type": "VARCHAR",
+            "description": "The retained NAICS vintage, separate from LDA issue vocabulary."
+          },
+          {
+            "column_name": "mapping_version",
+            "column_type": "VARCHAR",
+            "description": "Explicit revision of curator assignments and their evidence."
+          },
+          {
+            "column_name": "source_family",
+            "column_type": "VARCHAR",
+            "description": "FEC or LDA; the financial measures are never added across sources."
+          },
+          {
+            "column_name": "measure",
+            "column_type": "VARCHAR",
+            "description": "Receipts, disbursements, registrant income or in-house expenses, kept separate."
+          },
+          {
+            "column_name": "known_reported_amount",
+            "column_type": "VARCHAR",
+            "description": "Exact decimal text summed only over qualified selected observations; null when none qualify."
+          },
+          {
+            "column_name": "amount_status",
+            "column_type": "VARCHAR",
+            "description": "Known selected observations or no qualified measure; neither means a complete annual total."
+          },
+          {
+            "column_name": "amount_basis",
+            "column_type": "VARCHAR",
+            "description": "Source-specific measure and estimate basis, preserved separately."
+          },
+          {
+            "column_name": "period_start",
+            "column_type": "VARCHAR",
+            "description": "Start of the explicitly supported comparison window."
+          },
+          {
+            "column_name": "period_end",
+            "column_type": "VARCHAR",
+            "description": "End of the explicitly supported comparison window."
+          },
+          {
+            "column_name": "source_generation",
+            "column_type": "VARCHAR",
+            "description": "Exact prerequisite generation pin, verified before reading."
+          },
+          {
+            "column_name": "source_table_sha256",
+            "column_type": "VARCHAR",
+            "description": "SHA-256 of exact prerequisite table bytes, verified before reading."
+          },
+          {
+            "column_name": "cutoff",
+            "column_type": "VARCHAR",
+            "description": "Recorded source as-of scope; different capture dates do not imply a shared atomic snapshot."
+          },
+          {
+            "column_name": "population_json",
+            "column_type": "VARCHAR",
+            "description": "Declared source population and exclusions; the FEC and lobbying populations differ."
+          },
+          {
+            "column_name": "evidence_json",
+            "column_type": "VARCHAR",
+            "description": "Assignment evidence with native IDs, source digests, original locators and limitations."
+          },
+          {
+            "column_name": "coverage_note",
+            "column_type": "VARCHAR",
+            "description": "Coverage, classification, identity and financial-overlap limits."
+          },
+          {
+            "column_name": "policy_version",
+            "column_type": "VARCHAR",
+            "description": "Version of the comparison rules."
+          },
+          {
+            "column_name": "population_profiles",
+            "column_type": "INTEGER",
+            "description": "Declared source profile denominator, including unresolved observations."
+          },
+          {
+            "column_name": "group_profiles",
+            "column_type": "INTEGER",
+            "description": "Profiles assigned to this source-local industry group."
+          },
+          {
+            "column_name": "qualified_measure_profiles",
+            "column_type": "INTEGER",
+            "description": "Profiles contributing one accepted amount for this measure."
+          },
+          {
+            "column_name": "unresolved_measure_profiles",
+            "column_type": "INTEGER",
+            "description": "Group profiles without an accepted value, never replaced with zero."
+          },
+          {
+            "column_name": "classified_population_profiles",
+            "column_type": "INTEGER",
+            "description": "Source profile denominator with one supported broad classification."
+          },
+          {
+            "column_name": "unclassified_population_profiles",
+            "column_type": "INTEGER",
+            "description": "Source profile denominator lacking an industry assignment."
+          },
+          {
+            "column_name": "uncertain_population_profiles",
+            "column_type": "INTEGER",
+            "description": "Source profile denominator with competing or uncertain industry assignments."
+          }
+        ],
+        "subject": "campaign_finance",
+        "grain": "One declared source measure and classification group, or one native classification/issue observation.",
+        "identity_columns": [
+          "record_id"
+        ],
+        "recordIdentity": {
+          "columns": [
+            "record_id"
+          ],
+          "basis": "declared_main_key",
+          "uniqueness": "unknown"
+        },
+        "family": "sector-comparisons",
+        "publicationSchema": [
+          [
+            "record_id",
+            "VARCHAR"
+          ],
+          [
+            "sector_code",
+            "VARCHAR"
+          ],
+          [
+            "sector_label",
+            "VARCHAR"
+          ],
+          [
+            "classification_scheme",
+            "VARCHAR"
+          ],
+          [
+            "mapping_version",
+            "VARCHAR"
+          ],
+          [
+            "source_family",
+            "VARCHAR"
+          ],
+          [
+            "measure",
+            "VARCHAR"
+          ],
+          [
+            "known_reported_amount",
+            "VARCHAR"
+          ],
+          [
+            "amount_status",
+            "VARCHAR"
+          ],
+          [
+            "amount_basis",
+            "VARCHAR"
+          ],
+          [
+            "period_start",
+            "VARCHAR"
+          ],
+          [
+            "period_end",
+            "VARCHAR"
+          ],
+          [
+            "source_generation",
+            "VARCHAR"
+          ],
+          [
+            "source_table_sha256",
+            "VARCHAR"
+          ],
+          [
+            "cutoff",
+            "VARCHAR"
+          ],
+          [
+            "population_json",
+            "VARCHAR"
+          ],
+          [
+            "evidence_json",
+            "VARCHAR"
+          ],
+          [
+            "coverage_note",
+            "VARCHAR"
+          ],
+          [
+            "policy_version",
+            "VARCHAR"
+          ],
+          [
+            "population_profiles",
+            "INTEGER"
+          ],
+          [
+            "group_profiles",
+            "INTEGER"
+          ],
+          [
+            "qualified_measure_profiles",
+            "INTEGER"
+          ],
+          [
+            "unresolved_measure_profiles",
+            "INTEGER"
+          ],
+          [
+            "classified_population_profiles",
+            "INTEGER"
+          ],
+          [
+            "unclassified_population_profiles",
+            "INTEGER"
+          ],
+          [
+            "uncertain_population_profiles",
+            "INTEGER"
+          ]
+        ],
+        "sources": [
+          {
+            "id": "fec",
+            "name": "Federal Election Commission",
+            "url": "https://www.fec.gov/data/",
+            "kind": "government",
+            "note": "Original source and retained request URL appear in each observation or its evidence record."
+          },
+          {
+            "id": "lobbying",
+            "name": "Senate Lobbying Disclosure Act filings",
+            "url": "https://lda.gov/",
+            "kind": "government",
+            "note": ""
+          }
+        ],
+        "inputs": [],
+        "transformation": "Keeps selected FEC period flows, LDA quarterly income and expenses separate. Industry assignments require business evidence; unresolved identities never join money. Issue views retain unallocated whole-filing amounts.",
+        "modelGenerated": false,
+        "sourceStatus": "documented",
+        "metadataStatus": "documented",
+        "sourceEvidence": "src/spicy_regs/pipelines/sector_comparisons.py"
+      }
+    },
+    "joins": [],
+    "omittedJoins": [],
+    "navigation": [],
+    "retiredJoins": []
+  },
+  "fixture_sources": {
+    "publication.v2.json": "sha256:9f1be0d57f9353d65a9eb6ed183a8eb668b2fc5cf36ed95bea49bffe09ec4aca",
+    "explorer-metadata.v1.json": "sha256:db6b133c4f65ff5754481ae2c13fdd98d05aca011249d38d69a0db3df2731ce3"
+  },
+  "fixture_scope": "Test-only selection of the unchanged retained metadata definitions for the selected family tables. Not published metadata or a replacement for the whole-file FEC interpretation identity."
+}

@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 112,
+  "tableCount": 116,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -39885,6 +39885,489 @@
         "qualification": "RegInfo.gov EO 12866 concluded (1981-2026 YTD) and active Under Review XML Parquet, raw visual review, and live R2 publication verified."
       },
       "reviewNote": "2026-11-26: Coverage definition and review added against live oira-reviews generation Parquet."
+    },
+    {
+      "tableId": "sec_issuer_sources",
+      "family": "sec-edgar",
+      "schema": [
+        [
+          "cik",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "continuation",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "Retained SEC EDGAR submissions and companyfacts JSON source snapshots for the selected Apple (0000320193) and Microsoft (0000789019) cohort. Captures source custody, not a complete issuer census.",
+          "fields": []
+        },
+        {
+          "id": "issuer-cik",
+          "kind": "category",
+          "label": "Issuer CIK",
+          "meaning": "SEC Central Index Key for each retained issuer source file.",
+          "fields": [
+            "cik"
+          ]
+        },
+        {
+          "id": "source-kind",
+          "kind": "category",
+          "label": "Source feed kind",
+          "meaning": "Retained SEC API feed type (submissions or companyfacts).",
+          "fields": [
+            "kind"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:9c8cc0d64f63d42c74532f353229d608d8a99e67be778a0ba73c81e2c4af3eb0",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:04360c8af68bfb54907ac58cd242296602c679644e79bf0e68fbc7f9027fc660",
+        "publishedAt": "2026-11-26T05:11:14Z",
+        "rows": 4,
+        "byteSize": 7472,
+        "memberSha256": "sha256:a8978bc67565454ddc42e66d86c242a20aa904e2442188053837dd56456b26d4",
+        "qualification": "Apple (0000320193) and Microsoft (0000789019) 2023-01-01..2024-12-31 cohort Parquet, raw visual review (ss-h9qm), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26 (ss-h9qm): Coverage definition and review added against live sec-edgar generation Parquet."
+    },
+    {
+      "tableId": "sec_filings",
+      "family": "sec-edgar",
+      "schema": [
+        [
+          "cik",
+          "VARCHAR"
+        ],
+        [
+          "accession",
+          "VARCHAR"
+        ],
+        [
+          "form",
+          "VARCHAR"
+        ],
+        [
+          "is_amendment",
+          "BOOLEAN"
+        ],
+        [
+          "filing_date",
+          "VARCHAR"
+        ],
+        [
+          "report_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "acceptance_datetime_raw",
+          "VARCHAR"
+        ],
+        [
+          "filing_url",
+          "VARCHAR"
+        ],
+        [
+          "primary_document_url",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "filing-dates",
+          "kind": "date",
+          "label": "SEC filing dates",
+          "meaning": "Filing dates (2023-01-01 through 2024-12-31) for the selected Apple and Microsoft SEC submissions cohort.",
+          "fields": [
+            "filing_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "report-dates",
+          "kind": "date",
+          "label": "Period report dates",
+          "meaning": "As-reported period end dates where supplied on SEC submissions; insider/ownership forms (e.g., Form 4, 144) without reportDate remain unplaced.",
+          "fields": [
+            "report_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "issuer-cik",
+          "kind": "category",
+          "label": "Issuer CIK",
+          "meaning": "SEC Central Index Key for each filing (0000320193 Apple, 0000789019 Microsoft).",
+          "fields": [
+            "cik"
+          ]
+        },
+        {
+          "id": "filing-form",
+          "kind": "category",
+          "label": "SEC form type",
+          "meaning": "Verbatim SEC submission form code (e.g., 10-K, 10-Q, 8-K, 4, 144).",
+          "fields": [
+            "form"
+          ]
+        },
+        {
+          "id": "amendment-flag",
+          "kind": "category",
+          "label": "Amendment indicator",
+          "meaning": "Whether the SEC filing is an amended submission (is_amendment true/false).",
+          "fields": [
+            "is_amendment"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:9c8cc0d64f63d42c74532f353229d608d8a99e67be778a0ba73c81e2c4af3eb0",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:04360c8af68bfb54907ac58cd242296602c679644e79bf0e68fbc7f9027fc660",
+        "publishedAt": "2026-11-26T05:11:14Z",
+        "rows": 513,
+        "byteSize": 38999,
+        "memberSha256": "sha256:b21cef7fe5ca429f6b21df8cf25e88fa2bb544062b40dd270fa420512d6c53d0",
+        "qualification": "Apple (0000320193) and Microsoft (0000789019) 2023-01-01..2024-12-31 cohort Parquet, raw visual review (ss-h9qm), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26 (ss-h9qm): Coverage definition and review added against live sec-edgar generation Parquet."
+    },
+    {
+      "tableId": "sec_reported_facts",
+      "family": "sec-edgar",
+      "schema": [
+        [
+          "cik",
+          "VARCHAR"
+        ],
+        [
+          "taxonomy",
+          "VARCHAR"
+        ],
+        [
+          "concept",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "value_text",
+          "VARCHAR"
+        ],
+        [
+          "value_status",
+          "VARCHAR"
+        ],
+        [
+          "period_kind",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "accession",
+          "VARCHAR"
+        ],
+        [
+          "form",
+          "VARCHAR"
+        ],
+        [
+          "is_amendment",
+          "BOOLEAN"
+        ],
+        [
+          "filed_date",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "INTEGER"
+        ],
+        [
+          "fiscal_period",
+          "VARCHAR"
+        ],
+        [
+          "frame",
+          "VARCHAR"
+        ],
+        [
+          "label",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "context_json",
+          "VARCHAR"
+        ],
+        [
+          "observation_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "fact-period-end-dates",
+          "kind": "date",
+          "label": "Fact period end dates",
+          "meaning": "Reporting period end or instant dates (2023-01-01 through 2024-12-31) for selected US-GAAP companyfacts observations.",
+          "fields": [
+            "period_end"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "fact-filed-dates",
+          "kind": "date",
+          "label": "Fact filing dates",
+          "meaning": "SEC filing dates of the 10-K, 10-Q, and 8-K reports carrying each reported fact (includes comparative facts filed in later reports).",
+          "fields": [
+            "filed_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "issuer-cik",
+          "kind": "category",
+          "label": "Issuer CIK",
+          "meaning": "SEC Central Index Key for each reported fact.",
+          "fields": [
+            "cik"
+          ]
+        },
+        {
+          "id": "us-gaap-concept",
+          "kind": "category",
+          "label": "US-GAAP concept",
+          "meaning": "Selected US-GAAP XBRL concept tag (Assets, RevenueFromContractWithCustomerExcludingAssessedTax, EarningsPerShareDiluted).",
+          "fields": [
+            "concept"
+          ]
+        },
+        {
+          "id": "period-kind",
+          "kind": "category",
+          "label": "Fact period kind",
+          "meaning": "Whether the reported fact is an instant balance-sheet observation or a duration flow observation.",
+          "fields": [
+            "period_kind"
+          ]
+        },
+        {
+          "id": "value-status",
+          "kind": "category",
+          "label": "Fact value status",
+          "meaning": "Qualification status of the reported value_text (reported).",
+          "fields": [
+            "value_status"
+          ]
+        },
+        {
+          "id": "amendment-flag",
+          "kind": "category",
+          "label": "Amendment indicator",
+          "meaning": "Whether the source filing carrying the reported fact is an amendment.",
+          "fields": [
+            "is_amendment"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:9c8cc0d64f63d42c74532f353229d608d8a99e67be778a0ba73c81e2c4af3eb0",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:04360c8af68bfb54907ac58cd242296602c679644e79bf0e68fbc7f9027fc660",
+        "publishedAt": "2026-11-26T05:11:14Z",
+        "rows": 142,
+        "byteSize": 21164,
+        "memberSha256": "sha256:ffaef2a9d34d6ce6e8987b37a5fd9f4d31103b12a91ff7caf719f9a07b888747",
+        "qualification": "Apple (0000320193) and Microsoft (0000789019) 2023-01-01..2024-12-31 cohort Parquet, raw visual review (ss-h9qm), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26 (ss-h9qm): Coverage definition and review added against live sec-edgar generation Parquet."
+    },
+    {
+      "tableId": "sec_fact_scopes",
+      "family": "sec-edgar",
+      "schema": [
+        [
+          "cik",
+          "VARCHAR"
+        ],
+        [
+          "taxonomy",
+          "VARCHAR"
+        ],
+        [
+          "concept",
+          "VARCHAR"
+        ],
+        [
+          "end_from",
+          "VARCHAR"
+        ],
+        [
+          "end_through",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "observation_count",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published release",
+          "meaning": "Declared issuer CIK, US-GAAP concept, and end-date query scopes (2023-01-01 through 2024-12-31) for the Apple and Microsoft cohort.",
+          "fields": []
+        },
+        {
+          "id": "issuer-cik",
+          "kind": "category",
+          "label": "Issuer CIK",
+          "meaning": "SEC Central Index Key in each declared fact scope.",
+          "fields": [
+            "cik"
+          ]
+        },
+        {
+          "id": "us-gaap-concept",
+          "kind": "category",
+          "label": "US-GAAP concept",
+          "meaning": "Declared US-GAAP concept in each fact scope.",
+          "fields": [
+            "concept"
+          ]
+        },
+        {
+          "id": "scope-outcome",
+          "kind": "category",
+          "label": "Scope outcome",
+          "meaning": "Observation outcome recorded for each declared CIK/concept/period scope.",
+          "fields": [
+            "outcome"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:9c8cc0d64f63d42c74532f353229d608d8a99e67be778a0ba73c81e2c4af3eb0",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:04360c8af68bfb54907ac58cd242296602c679644e79bf0e68fbc7f9027fc660",
+        "publishedAt": "2026-11-26T05:11:14Z",
+        "rows": 6,
+        "byteSize": 4267,
+        "memberSha256": "sha256:1cbfc7a3632d7cfd54a5ea8aa55f11ff94c613edf1c90107ea887842a9344efa",
+        "qualification": "Apple (0000320193) and Microsoft (0000789019) 2023-01-01..2024-12-31 cohort Parquet, raw visual review (ss-h9qm), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26 (ss-h9qm): Coverage definition and review added against live sec-edgar generation Parquet."
     }
   ],
   "scannerRequirements": [

@@ -785,4 +785,75 @@ class RegulationCoverageTests(unittest.TestCase):
         self.assertEqual(mtg_dims['rule-stage']['buckets'], {'["Final Rule Stage"]': 1, '["Proposed Rule Stage"]': 1})
         self.assertEqual(mtg_dims['meeting-status']['buckets'], {'["Completed"]': 1, '["No Show"]': 1})
 
+    def test_sec_edgar_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid in ('sec_issuer_sources', 'sec_filings', 'sec_reported_facts', 'sec_fact_scopes'):
+            self.assertEqual(defs[tid]['family'], 'sec-edgar')
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': 'sec-edgar', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-26T05:11:14Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        src_pol, src_tbl = make_tbl(
+            'sec_issuer_sources',
+            "INSERT INTO t (cik, kind) VALUES ('0000320193', 'submissions'), ('0000789019', 'companyfacts')"
+        )
+        builder.validate_plan({'sec_issuer_sources': src_tbl}, {'sec_issuer_sources': dict(src_pol)})
+        src_dims = {d['id']: d for d in coverage_scan.scan_table('sec_issuer_sources', src_tbl, src_pol)['dimensions']}
+        self.assertEqual(src_dims['snapshot']['granularity'], 'snapshot')
+        self.assertEqual(src_dims['issuer-cik']['buckets'], {'["0000320193"]': 1, '["0000789019"]': 1})
+        self.assertEqual(src_dims['source-kind']['buckets'], {'["companyfacts"]': 1, '["submissions"]': 1})
+
+        fil_pol, fil_tbl = make_tbl(
+            'sec_filings',
+            "INSERT INTO t (cik, accession, form, is_amendment, filing_date, report_date_raw) VALUES "
+            "('0000320193', '0000320193-24-000123', '10-K', false, '2024-11-01', '2024-09-28'), "
+            "('0000789019', '0000950170-24-000456', '4', true, '2024-12-09', '')"
+        )
+        builder.validate_plan({'sec_filings': fil_tbl}, {'sec_filings': dict(fil_pol)})
+        fil_dims = {d['id']: d for d in coverage_scan.scan_table('sec_filings', fil_tbl, fil_pol)['dimensions']}
+        self.assertEqual(fil_dims['filing-dates']['buckets'], {'2024-11': 1, '2024-12': 1})
+        self.assertEqual(fil_dims['report-dates']['buckets'], {'2024-09': 1})
+        self.assertEqual((fil_dims['report-dates']['placedRows'], fil_dims['report-dates']['unplacedRows']), (1, 1))
+        self.assertEqual(fil_dims['amendment-flag']['buckets'], {'["false"]': 1, '["true"]': 1})
+
+        fact_pol, fact_tbl = make_tbl(
+            'sec_reported_facts',
+            "INSERT INTO t (cik, taxonomy, concept, unit, value_text, value_status, period_kind, period_start, period_end, form, is_amendment, filed_date) VALUES "
+            "('0000320193', 'us-gaap', 'Assets', 'USD', '352583000000', 'reported', 'instant', NULL, '2023-09-30', '10-K', false, '2023-11-03'), "
+            "('0000789019', 'us-gaap', 'RevenueFromContractWithCustomerExcludingAssessedTax', 'USD', '245122000000', 'reported', 'duration', '2023-07-01', '2024-06-30', '10-K', false, '2024-07-30')"
+        )
+        builder.validate_plan({'sec_reported_facts': fact_tbl}, {'sec_reported_facts': dict(fact_pol)})
+        fact_dims = {d['id']: d for d in coverage_scan.scan_table('sec_reported_facts', fact_tbl, fact_pol)['dimensions']}
+        self.assertEqual(fact_dims['fact-period-end-dates']['buckets'], {'2023-09': 1, '2024-06': 1})
+        self.assertEqual(fact_dims['fact-filed-dates']['buckets'], {'2023-11': 1, '2024-07': 1})
+        self.assertEqual(fact_dims['period-kind']['buckets'], {'["duration"]': 1, '["instant"]': 1})
+
+        scope_pol, scope_tbl = make_tbl(
+            'sec_fact_scopes',
+            "INSERT INTO t (cik, taxonomy, concept, end_from, end_through, outcome, observation_count) VALUES "
+            "('0000320193', 'us-gaap', 'Assets', '2023-01-01', '2024-12-31', 'observed', 16), "
+            "('0000789019', 'us-gaap', 'EarningsPerShareDiluted', '2023-01-01', '2024-12-31', 'observed', 28)"
+        )
+        builder.validate_plan({'sec_fact_scopes': scope_tbl}, {'sec_fact_scopes': dict(scope_pol)})
+        scope_dims = {d['id']: d for d in coverage_scan.scan_table('sec_fact_scopes', scope_tbl, scope_pol)['dimensions']}
+        self.assertEqual(scope_dims['snapshot']['granularity'], 'snapshot')
+        self.assertEqual(scope_dims['scope-outcome']['buckets'], {'["observed"]': 2})
+
 if __name__ == '__main__': unittest.main()
