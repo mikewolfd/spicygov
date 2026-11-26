@@ -42253,6 +42253,1806 @@
         "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
       },
       "reviewNote": "2026-11-25 (Batch C): Pre-publication coverage definition and review added against verified local candidate generation Parquet."
+    },
+    {
+      "tableId": "irs527_contributions",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "sched_a_id",
+          "VARCHAR"
+        ],
+        [
+          "org_name",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "contributor_name",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_1",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_2",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_city",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_state",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "contributor_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "contributor_employer",
+          "VARCHAR"
+        ],
+        [
+          "contribution_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "contribution_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "contribution_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "contributor_occupation",
+          "VARCHAR"
+        ],
+        [
+          "agg_contribution_ytd_raw",
+          "VARCHAR"
+        ],
+        [
+          "agg_contribution_ytd",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "agg_contribution_ytd_status",
+          "VARCHAR"
+        ],
+        [
+          "contribution_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "contribution_date",
+          "DATE"
+        ],
+        [
+          "contribution_date_status",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "contribution-dates",
+          "kind": "date",
+          "label": "Reported contribution dates",
+          "meaning": "Literal contribution date reported on IRS Form 8872 Schedule A. Blank source dates stay unplaced; amended filings remain separate rows alongside originals.",
+          "fields": [
+            "contribution_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-periods",
+          "kind": "inherited",
+          "label": "Parent Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number. Period spans describe the parent filing window, not individual transaction dates.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8872",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-periods",
+            "kind": "interval",
+            "label": "Parent Form 8872 reporting periods",
+            "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number.",
+            "fields": [
+              "period_begin_date",
+              "period_end_date"
+            ]
+          }
+        },
+        {
+          "id": "contribution-date-status",
+          "kind": "category",
+          "label": "Contribution date parsing status",
+          "meaning": "Whether each Schedule A contribution row carried a parsed calendar date or a legitimately blank date field in the IRS export.",
+          "fields": [
+            "contribution_date_status"
+          ]
+        },
+        {
+          "id": "contribution-amount-status",
+          "kind": "category",
+          "label": "Contribution amount parsing status",
+          "meaning": "Exact decimal parsing status for Schedule A contribution amounts (negative refund and adjustment values remain signed verbatim).",
+          "fields": [
+            "contribution_amount_status"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "contribution-dates",
+          "kind": "date",
+          "label": "Reported contribution dates",
+          "meaning": "Literal contribution date reported on IRS Form 8872 Schedule A. Blank source dates stay unplaced; amended filings remain separate rows alongside originals.",
+          "fields": [
+            "contribution_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-periods",
+          "kind": "inherited",
+          "label": "Parent Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number. Period spans describe the parent filing window, not individual transaction dates.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8872",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-periods",
+            "kind": "interval",
+            "label": "Parent Form 8872 reporting periods",
+            "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number.",
+            "fields": [
+              "period_begin_date",
+              "period_end_date"
+            ]
+          }
+        },
+        {
+          "id": "contribution-date-status",
+          "kind": "category",
+          "label": "Contribution date parsing status",
+          "meaning": "Whether each Schedule A contribution row carried a parsed calendar date or a legitimately blank date field in the IRS export.",
+          "fields": [
+            "contribution_date_status"
+          ]
+        },
+        {
+          "id": "contribution-amount-status",
+          "kind": "category",
+          "label": "Contribution amount parsing status",
+          "meaning": "Exact decimal parsing status for Schedule A contribution amounts (negative refund and adjustment values remain signed verbatim).",
+          "fields": [
+            "contribution_amount_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 9995001,
+        "byteSize": 288132369,
+        "memberSha256": "sha256:bee51ae79e8953dd6189e819e175693453f6a120b0be0bb15a69a1539998863f",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_directors",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "director_id",
+          "VARCHAR"
+        ],
+        [
+          "org_name",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "entity_name",
+          "VARCHAR"
+        ],
+        [
+          "entity_title",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_1",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_2",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_city",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_state",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_zip_code_ext",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "entity-address-state",
+          "kind": "category",
+          "label": "Director address state",
+          "meaning": "State code reported on each Form 8871 director, officer, or highly compensated employee record.",
+          "fields": [
+            "entity_address_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 director records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "entity-address-state",
+          "kind": "category",
+          "label": "Director address state",
+          "meaning": "State code reported on each Form 8871 director, officer, or highly compensated employee record.",
+          "fields": [
+            "entity_address_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 director records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 192718,
+        "byteSize": 7624161,
+        "memberSha256": "sha256:dbbbc5665213f8ac5365ac5df2a78030dac877efd63c9c7972849de8a1b695a7",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_eains",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "eain_id",
+          "VARCHAR"
+        ],
+        [
+          "election_authority_id_number",
+          "VARCHAR"
+        ],
+        [
+          "state_issued",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "state-issued",
+          "kind": "category",
+          "label": "Issuing state or authority",
+          "meaning": "State or federal (FD) election authority code reported on each Form 8871 EAIN record.",
+          "fields": [
+            "state_issued"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 election authority ID records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "state-issued",
+          "kind": "category",
+          "label": "Issuing state or authority",
+          "meaning": "State or federal (FD) election authority code reported on each Form 8871 EAIN record.",
+          "fields": [
+            "state_issued"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 election authority ID records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 18331,
+        "byteSize": 302974,
+        "memberSha256": "sha256:85f4285f1a0a9ed5176c0f1d99ae95b02ccae89f8f0f94af95c39445130d83a3",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_expenditures",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "sched_b_id",
+          "VARCHAR"
+        ],
+        [
+          "org_name",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "recipient_name",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_1",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_2",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_city",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_state",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "recipient_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "recipient_employer",
+          "VARCHAR"
+        ],
+        [
+          "expenditure_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "expenditure_amount",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "expenditure_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "recipient_occupation",
+          "VARCHAR"
+        ],
+        [
+          "expenditure_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "expenditure_date",
+          "DATE"
+        ],
+        [
+          "expenditure_date_status",
+          "VARCHAR"
+        ],
+        [
+          "expenditure_purpose",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "expenditure-dates",
+          "kind": "date",
+          "label": "Reported expenditure dates",
+          "meaning": "Literal expenditure date reported on IRS Form 8872 Schedule B. Blank source dates stay unplaced; amended filings remain separate rows alongside originals.",
+          "fields": [
+            "expenditure_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-periods",
+          "kind": "inherited",
+          "label": "Parent Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number. Period spans describe the parent filing window, not individual transaction dates.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8872",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-periods",
+            "kind": "interval",
+            "label": "Parent Form 8872 reporting periods",
+            "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number.",
+            "fields": [
+              "period_begin_date",
+              "period_end_date"
+            ]
+          }
+        },
+        {
+          "id": "expenditure-date-status",
+          "kind": "category",
+          "label": "Expenditure date parsing status",
+          "meaning": "Whether each Schedule B expenditure row carried a parsed calendar date or a legitimately blank date field in the IRS export.",
+          "fields": [
+            "expenditure_date_status"
+          ]
+        },
+        {
+          "id": "expenditure-amount-status",
+          "kind": "category",
+          "label": "Expenditure amount parsing status",
+          "meaning": "Exact decimal parsing status for Schedule B expenditure amounts (negative refund, void, and adjustment values remain signed verbatim).",
+          "fields": [
+            "expenditure_amount_status"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "expenditure-dates",
+          "kind": "date",
+          "label": "Reported expenditure dates",
+          "meaning": "Literal expenditure date reported on IRS Form 8872 Schedule B. Blank source dates stay unplaced; amended filings remain separate rows alongside originals.",
+          "fields": [
+            "expenditure_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-periods",
+          "kind": "inherited",
+          "label": "Parent Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number. Period spans describe the parent filing window, not individual transaction dates.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8872",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-periods",
+            "kind": "interval",
+            "label": "Parent Form 8872 reporting periods",
+            "meaning": "Reporting period begin and end dates inherited from matching irs527_form8872 reports in the same generation by form_id_number.",
+            "fields": [
+              "period_begin_date",
+              "period_end_date"
+            ]
+          }
+        },
+        {
+          "id": "expenditure-date-status",
+          "kind": "category",
+          "label": "Expenditure date parsing status",
+          "meaning": "Whether each Schedule B expenditure row carried a parsed calendar date or a legitimately blank date field in the IRS export.",
+          "fields": [
+            "expenditure_date_status"
+          ]
+        },
+        {
+          "id": "expenditure-amount-status",
+          "kind": "category",
+          "label": "Expenditure amount parsing status",
+          "meaning": "Exact decimal parsing status for Schedule B expenditure amounts (negative refund, void, and adjustment values remain signed verbatim).",
+          "fields": [
+            "expenditure_amount_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 8471119,
+        "byteSize": 109868191,
+        "memberSha256": "sha256:e4b3d62cb3affeb692ad6a6ebce01625c528f236fb828bd41fc8874f856c8124",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_form8871",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "initial_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "amended_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "final_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "organization_name",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_1",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_2",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_city",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_state",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "email_address",
+          "VARCHAR"
+        ],
+        [
+          "established_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "established_date",
+          "DATE"
+        ],
+        [
+          "established_date_status",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_city",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_state",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "contact_person_name",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_1",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_2",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_city",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_state",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "business_address_1",
+          "VARCHAR"
+        ],
+        [
+          "business_address_2",
+          "VARCHAR"
+        ],
+        [
+          "business_address_city",
+          "VARCHAR"
+        ],
+        [
+          "business_address_state",
+          "VARCHAR"
+        ],
+        [
+          "business_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "business_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "exempt_8872_indicator",
+          "VARCHAR"
+        ],
+        [
+          "exempt_state",
+          "VARCHAR"
+        ],
+        [
+          "exempt_990_indicator",
+          "VARCHAR"
+        ],
+        [
+          "purpose",
+          "VARCHAR"
+        ],
+        [
+          "material_change_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "material_change_date",
+          "DATE"
+        ],
+        [
+          "material_change_date_status",
+          "VARCHAR"
+        ],
+        [
+          "insert_datetime_raw",
+          "VARCHAR"
+        ],
+        [
+          "related_entity_bypass",
+          "VARCHAR"
+        ],
+        [
+          "eain_bypass",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "filing-insert-dates",
+          "kind": "date",
+          "label": "IRS filing insert dates",
+          "meaning": "IRS system insert timestamp recorded when each Form 8871 notice was loaded into the IRS Section 527 database, separate from organization establishment or capture time.",
+          "fields": [
+            "insert_datetime_raw"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "established-dates",
+          "kind": "date",
+          "label": "Organization establishment dates",
+          "meaning": "Historical organization establishment date stated on Form 8871 (extending back to the 19th century for long-standing committees); blank values remain unplaced.",
+          "fields": [
+            "established_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "material-change-dates",
+          "kind": "date",
+          "label": "Material change dates",
+          "meaning": "Literal filer-stated material change date on Form 8871; blank values remain unplaced and rare pre-1900 or post-transmission filer entries are preserved verbatim without correction.",
+          "fields": [
+            "material_change_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "filing-indicators",
+          "kind": "category",
+          "label": "Notice filing indicators",
+          "meaning": "Literal IRS 1/0 flags for initial, amended, and final Form 8871 notices. Amended notices remain separate rows alongside originals.",
+          "fields": [
+            "initial_report_indicator",
+            "amended_report_indicator",
+            "final_report_indicator"
+          ]
+        },
+        {
+          "id": "exemption-flags",
+          "kind": "category",
+          "label": "Form 8872 and Form 990 exemption flags",
+          "meaning": "Literal IRS 1/0 indicators of claimed Form 8872 and Form 990 exemptions; early notices with blank flags remain unplaced.",
+          "fields": [
+            "exempt_8872_indicator",
+            "exempt_990_indicator"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "filing-insert-dates",
+          "kind": "date",
+          "label": "IRS filing insert dates",
+          "meaning": "IRS system insert timestamp recorded when each Form 8871 notice was loaded into the IRS Section 527 database, separate from organization establishment or capture time.",
+          "fields": [
+            "insert_datetime_raw"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "established-dates",
+          "kind": "date",
+          "label": "Organization establishment dates",
+          "meaning": "Historical organization establishment date stated on Form 8871 (extending back to the 19th century for long-standing committees); blank values remain unplaced.",
+          "fields": [
+            "established_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "material-change-dates",
+          "kind": "date",
+          "label": "Material change dates",
+          "meaning": "Literal filer-stated material change date on Form 8871; blank values remain unplaced and rare pre-1900 or post-transmission filer entries are preserved verbatim without correction.",
+          "fields": [
+            "material_change_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "filing-indicators",
+          "kind": "category",
+          "label": "Notice filing indicators",
+          "meaning": "Literal IRS 1/0 flags for initial, amended, and final Form 8871 notices. Amended notices remain separate rows alongside originals.",
+          "fields": [
+            "initial_report_indicator",
+            "amended_report_indicator",
+            "final_report_indicator"
+          ]
+        },
+        {
+          "id": "exemption-flags",
+          "kind": "category",
+          "label": "Form 8872 and Form 990 exemption flags",
+          "meaning": "Literal IRS 1/0 indicators of claimed Form 8872 and Form 990 exemptions; early notices with blank flags remain unplaced.",
+          "fields": [
+            "exempt_8872_indicator",
+            "exempt_990_indicator"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 78849,
+        "byteSize": 13212929,
+        "memberSha256": "sha256:a7e5a5569d61f8f21b7f4df9ec7cdd4d09bbbc2406665fd94c0d6f1fdc813286",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_form8872",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "period_begin_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_begin_date",
+          "DATE"
+        ],
+        [
+          "period_begin_date_status",
+          "VARCHAR"
+        ],
+        [
+          "period_end_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_end_date",
+          "DATE"
+        ],
+        [
+          "period_end_date_status",
+          "VARCHAR"
+        ],
+        [
+          "initial_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "amended_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "final_report_indicator",
+          "VARCHAR"
+        ],
+        [
+          "change_of_address_indicator",
+          "VARCHAR"
+        ],
+        [
+          "organization_name",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_1",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_2",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_city",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_state",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "mailing_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "email_address",
+          "VARCHAR"
+        ],
+        [
+          "org_formation_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "org_formation_date",
+          "DATE"
+        ],
+        [
+          "org_formation_date_status",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_city",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_state",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "custodian_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "contact_person_name",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_1",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_2",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_city",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_state",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "contact_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "business_address_1",
+          "VARCHAR"
+        ],
+        [
+          "business_address_2",
+          "VARCHAR"
+        ],
+        [
+          "business_address_city",
+          "VARCHAR"
+        ],
+        [
+          "business_address_state",
+          "VARCHAR"
+        ],
+        [
+          "business_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "business_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "qtr_indicator",
+          "VARCHAR"
+        ],
+        [
+          "monthly_rpt_month",
+          "VARCHAR"
+        ],
+        [
+          "pre_elect_type",
+          "VARCHAR"
+        ],
+        [
+          "pre_or_post_elect_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "pre_or_post_elect_date",
+          "DATE"
+        ],
+        [
+          "pre_or_post_elect_date_status",
+          "VARCHAR"
+        ],
+        [
+          "pre_or_post_elect_state",
+          "VARCHAR"
+        ],
+        [
+          "sched_a_ind",
+          "VARCHAR"
+        ],
+        [
+          "total_sched_a_raw",
+          "VARCHAR"
+        ],
+        [
+          "total_sched_a",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "total_sched_a_status",
+          "VARCHAR"
+        ],
+        [
+          "sched_b_ind",
+          "VARCHAR"
+        ],
+        [
+          "total_sched_b_raw",
+          "VARCHAR"
+        ],
+        [
+          "total_sched_b",
+          "DECIMAL(38,2)"
+        ],
+        [
+          "total_sched_b_status",
+          "VARCHAR"
+        ],
+        [
+          "insert_datetime_raw",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "reporting-periods",
+          "kind": "interval",
+          "label": "Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates stated on each IRS Form 8872 periodic report. Amended reports remain separate rows alongside original filings.",
+          "fields": [
+            "period_begin_date",
+            "period_end_date"
+          ]
+        },
+        {
+          "id": "filing-insert-dates",
+          "kind": "date",
+          "label": "IRS filing insert dates",
+          "meaning": "IRS system insert timestamp recorded when each Form 8872 report was loaded into the IRS Section 527 database, separate from the reporting period.",
+          "fields": [
+            "insert_datetime_raw"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "election-dates",
+          "kind": "date",
+          "label": "Pre- or post-election dates",
+          "meaning": "Election date stated on pre-election or post-election Form 8872 reports; non-election periodic reports remain unplaced.",
+          "fields": [
+            "pre_or_post_elect_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "org-formation-dates",
+          "kind": "date",
+          "label": "Organization formation dates",
+          "meaning": "Historical organization formation date stated on each Form 8872 report, separate from the reporting period or filing date.",
+          "fields": [
+            "org_formation_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "report-type-indicators",
+          "kind": "category",
+          "label": "Report type and schedule flags",
+          "meaning": "Literal IRS 1/0 flags for initial, amended, and final reports together with Schedule A and Schedule B inclusion indicators. Amended filings remain separate rows and must be filtered before summing totals.",
+          "fields": [
+            "initial_report_indicator",
+            "amended_report_indicator",
+            "final_report_indicator",
+            "sched_a_ind",
+            "sched_b_ind"
+          ]
+        },
+        {
+          "id": "reporting-period-codes",
+          "kind": "category",
+          "label": "Form 8872 period indicator codes",
+          "meaning": "Literal IRS quarterly, semi-annual, monthly, or election period indicator code (qtr_indicator) stated on each Form 8872 report.",
+          "fields": [
+            "qtr_indicator"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "reporting-periods",
+          "kind": "interval",
+          "label": "Form 8872 reporting periods",
+          "meaning": "Reporting period begin and end dates stated on each IRS Form 8872 periodic report. Amended reports remain separate rows alongside original filings.",
+          "fields": [
+            "period_begin_date",
+            "period_end_date"
+          ]
+        },
+        {
+          "id": "filing-insert-dates",
+          "kind": "date",
+          "label": "IRS filing insert dates",
+          "meaning": "IRS system insert timestamp recorded when each Form 8872 report was loaded into the IRS Section 527 database, separate from the reporting period.",
+          "fields": [
+            "insert_datetime_raw"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "election-dates",
+          "kind": "date",
+          "label": "Pre- or post-election dates",
+          "meaning": "Election date stated on pre-election or post-election Form 8872 reports; non-election periodic reports remain unplaced.",
+          "fields": [
+            "pre_or_post_elect_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "org-formation-dates",
+          "kind": "date",
+          "label": "Organization formation dates",
+          "meaning": "Historical organization formation date stated on each Form 8872 report, separate from the reporting period or filing date.",
+          "fields": [
+            "org_formation_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "report-type-indicators",
+          "kind": "category",
+          "label": "Report type and schedule flags",
+          "meaning": "Literal IRS 1/0 flags for initial, amended, and final reports together with Schedule A and Schedule B inclusion indicators. Amended filings remain separate rows and must be filtered before summing totals.",
+          "fields": [
+            "initial_report_indicator",
+            "amended_report_indicator",
+            "final_report_indicator",
+            "sched_a_ind",
+            "sched_b_ind"
+          ]
+        },
+        {
+          "id": "reporting-period-codes",
+          "kind": "category",
+          "label": "Form 8872 period indicator codes",
+          "meaning": "Literal IRS quarterly, semi-annual, monthly, or election period indicator code (qtr_indicator) stated on each Form 8872 report.",
+          "fields": [
+            "qtr_indicator"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 56756,
+        "byteSize": 4373712,
+        "memberSha256": "sha256:fa85aad50bb2b241f8ec00cd589a9d7e7b99cc09d31f6d32ed5f2da10b213af0",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_related_entities",
+      "family": "irs-527",
+      "schema": [
+        [
+          "form_id_number",
+          "VARCHAR"
+        ],
+        [
+          "entity_id",
+          "VARCHAR"
+        ],
+        [
+          "org_name",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "entity_name",
+          "VARCHAR"
+        ],
+        [
+          "entity_relationship",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_1",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_2",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_city",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_state",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_zip_code",
+          "VARCHAR"
+        ],
+        [
+          "entity_address_zip_ext",
+          "VARCHAR"
+        ],
+        [
+          "line_number",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "entity-address-state",
+          "kind": "category",
+          "label": "Related entity address state",
+          "meaning": "State code reported on each Form 8871 related entity record.",
+          "fields": [
+            "entity_address_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 related entity records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-notice-insert-dates",
+          "kind": "inherited",
+          "label": "Parent Form 8871 filing insert dates",
+          "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number. Rows whose parent Form 8871 notice was quarantined as truncated upstream remain unmatched and unplaced.",
+          "fields": [
+            "form_id_number"
+          ],
+          "parent": {
+            "table": "irs527_form8871",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "form_id_number",
+                "form_id_number"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-notice-insert-dates",
+            "kind": "date",
+            "label": "Parent Form 8871 filing insert dates",
+            "meaning": "IRS system insert dates inherited from matching irs527_form8871 notices in the same generation by form_id_number.",
+            "fields": [
+              "insert_datetime_raw"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "entity-address-state",
+          "kind": "category",
+          "label": "Related entity address state",
+          "meaning": "State code reported on each Form 8871 related entity record.",
+          "fields": [
+            "entity_address_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Point-in-time full bulk export of IRS Form 8871 related entity records from PolOrgsFullData.zip.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 65201,
+        "byteSize": 1287247,
+        "memberSha256": "sha256:252897191e662e85d7bf331ec6a84f0309525bd3681274cfb40cb4123a55e4f4",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "irs527_transmissions",
+      "family": "irs-527",
+      "schema": [
+        [
+          "transmission_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "transmission_time_raw",
+          "VARCHAR"
+        ],
+        [
+          "file_id_modifier",
+          "VARCHAR"
+        ],
+        [
+          "transmission_date",
+          "DATE"
+        ],
+        [
+          "transmission_date_status",
+          "VARCHAR"
+        ],
+        [
+          "footer_transmission_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "footer_transmission_time_raw",
+          "VARCHAR"
+        ],
+        [
+          "footer_record_count",
+          "BIGINT"
+        ],
+        [
+          "observed_data_records",
+          "BIGINT"
+        ],
+        [
+          "malformed_row_count",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "transmission-dates",
+          "kind": "date",
+          "label": "Archive transmission dates",
+          "meaning": "Publisher transmission date stated in the IRS PolOrgsFullData.zip header (H) record, separate from capture time and underlying filing dates.",
+          "fields": [
+            "transmission_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "file-id-modifier",
+          "kind": "category",
+          "label": "Transmission file modifier",
+          "meaning": "Literal IRS H-record file identifier modifier (such as F for full extract) accounted for by each transmission row.",
+          "fields": [
+            "file_id_modifier"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Reconciled header, footer, observed valid data record, and quarantined publisher-truncated row counts (observed_data_records + malformed_row_count = footer_record_count) for each captured PolOrgsFullData.zip transmission.",
+          "fields": []
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "transmission-dates",
+          "kind": "date",
+          "label": "Archive transmission dates",
+          "meaning": "Publisher transmission date stated in the IRS PolOrgsFullData.zip header (H) record, separate from capture time and underlying filing dates.",
+          "fields": [
+            "transmission_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "file-id-modifier",
+          "kind": "category",
+          "label": "Transmission file modifier",
+          "meaning": "Literal IRS H-record file identifier modifier (such as F for full extract) accounted for by each transmission row.",
+          "fields": [
+            "file_id_modifier"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Reconciled header, footer, observed valid data record, and quarantined publisher-truncated row counts (observed_data_records + malformed_row_count = footer_record_count) for each captured PolOrgsFullData.zip transmission.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:278cd6f73b478d045ca1a78ad6e250ee22a2794632591fa6067bd0a1bc30cf5a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b4097b86ff47b140ee90938122ca4f85a65e2748269a21fc4cff835ea1f9d72c",
+        "rows": 1,
+        "byteSize": 4910,
+        "memberSha256": "sha256:a7344a4e090048adc55f6c03bd8a869e072e05557d61c9fc139fbdb1c81ef466",
+        "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
     }
   ],
   "completenessFollowup": {
