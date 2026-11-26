@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 110,
+  "tableCount": 112,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -3599,7 +3599,7 @@
         ],
         [
           "attachments",
-          "STRUCT(title VARCHAR, formats STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[], attachment_id VARCHAR, restrict_reason VARCHAR, restrict_reason_type VARCHAR)[]"
+          "STRUCT(title VARCHAR, formats STRUCT(url VARCHAR, format VARCHAR, size BIGINT)[], attachment_id VARCHAR, restrict_reason VARCHAR, restrict_reason_type VARCHAR, agency_note VARCHAR, authors VARCHAR[], description VARCHAR, doc_abstract VARCHAR, doc_order BIGINT, modify_date VARCHAR, \"publication\" VARCHAR)[]"
         ],
         [
           "text_content",
@@ -9832,7 +9832,8 @@
           },
           "meaning": "Both files are read from this one generation, so no header or ETag recheck applies."
         }
-      }
+      },
+      "reviewNote": "2026-11-26: Synced comments attachments struct schema with live publication.v2.json (26,992,049 rows)."
     },
     {
       "tableId": "comments_index",
@@ -39631,6 +39632,259 @@
         "qualification": "Nationwide 2024 ACS five-year county and 119th Congress district Parquets, raw visual review (ss-cedj), and live R2 publication verified."
       },
       "reviewNote": "2026-11-25 (ss-cedj): Coverage definition and review added against verified nationwide 2024 ACS5 generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "oira_meetings",
+      "family": "oira-meetings",
+      "schema": [
+        [
+          "meeting_id",
+          "VARCHAR"
+        ],
+        [
+          "rin",
+          "VARCHAR"
+        ],
+        [
+          "agency_code",
+          "VARCHAR"
+        ],
+        [
+          "agency_name",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "rule_stage",
+          "VARCHAR"
+        ],
+        [
+          "meeting_date",
+          "VARCHAR"
+        ],
+        [
+          "meeting_status",
+          "VARCHAR"
+        ],
+        [
+          "requestor_organization",
+          "VARCHAR"
+        ],
+        [
+          "requestor_name",
+          "VARCHAR"
+        ],
+        [
+          "summary",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "url",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "meeting-dates",
+          "kind": "date",
+          "label": "EO 12866 meeting dates",
+          "meaning": "Dates of OIRA EO 12866 stakeholder meetings recorded in the retained RegInfo.gov bulk XML logs.",
+          "fields": [
+            "meeting_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "rule-stage",
+          "kind": "category",
+          "label": "Regulatory stage",
+          "meaning": "Rulemaking stage recorded on each EO 12866 stakeholder meeting log entry.",
+          "fields": [
+            "rule_stage"
+          ]
+        },
+        {
+          "id": "meeting-status",
+          "kind": "category",
+          "label": "Meeting status",
+          "meaning": "Recorded status of each scheduled EO 12866 stakeholder meeting (Completed, No Show, Scheduled, or Other).",
+          "fields": [
+            "meeting_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:b5256b172566910e7b4df46bb184c4224f19b08b70bba88066155a75a05c4fc4",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:41774c89afda2735ca9461796a946fc4b9fa0defceabd331c836acf296baafe3",
+        "publishedAt": "2026-11-25T20:26:40Z",
+        "rows": 1197,
+        "byteSize": 49103,
+        "memberSha256": "sha256:63411dfec9f9bed3b3b463540b0cb35a3ea021221e3474a588a27ce362bcb859",
+        "qualification": "CY 2024 RegInfo.gov EO 12866 bulk meeting XML Parquet, raw visual review, and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26: Coverage definition and review added against live oira-meetings generation Parquet."
+    },
+    {
+      "tableId": "oira_reviews",
+      "family": "oira-reviews",
+      "schema": [
+        [
+          "rin",
+          "VARCHAR"
+        ],
+        [
+          "agency_code",
+          "VARCHAR"
+        ],
+        [
+          "agency_name",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "review_status",
+          "VARCHAR"
+        ],
+        [
+          "received_date",
+          "VARCHAR"
+        ],
+        [
+          "concluded_date",
+          "VARCHAR"
+        ],
+        [
+          "review_days",
+          "BIGINT"
+        ],
+        [
+          "review_outcome",
+          "VARCHAR"
+        ],
+        [
+          "economically_significant",
+          "VARCHAR"
+        ],
+        [
+          "major",
+          "VARCHAR"
+        ],
+        [
+          "legal_deadline",
+          "VARCHAR"
+        ],
+        [
+          "review_extended",
+          "VARCHAR"
+        ],
+        [
+          "published_date",
+          "VARCHAR"
+        ],
+        [
+          "flags_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "received-dates",
+          "kind": "date",
+          "label": "OIRA review received dates",
+          "meaning": "Dates OIRA received regulatory actions for EO 12866 review. Blank values and literal dates after the publication month remain separate.",
+          "fields": [
+            "received_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "concluded-dates",
+          "kind": "date",
+          "label": "OIRA review concluded dates",
+          "meaning": "Dates OIRA concluded EO 12866 reviews. Active actions still under review have no concluded date and remain unplaced.",
+          "fields": [
+            "concluded_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "published-dates",
+          "kind": "date",
+          "label": "Rule publication dates",
+          "meaning": "Federal Register publication dates recorded on completed OIRA reviews when available. Pending, withdrawn, or unlinked reviews remain unplaced.",
+          "fields": [
+            "published_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "review-status",
+          "kind": "category",
+          "label": "OIRA review status",
+          "meaning": "Whether each EO 12866 review row comes from concluded historical/YTD exports or the active Under Review XML feed.",
+          "fields": [
+            "review_status"
+          ]
+        },
+        {
+          "id": "rule-stage",
+          "kind": "category",
+          "label": "Regulatory stage",
+          "meaning": "Rulemaking stage recorded on each OIRA review row (e.g., Proposed Rule, Final Rule, Notice).",
+          "fields": [
+            "stage"
+          ]
+        },
+        {
+          "id": "review-outcome",
+          "kind": "category",
+          "label": "OIRA review outcome",
+          "meaning": "Verbatim EO 12866 review decision recorded by OIRA for concluded reviews; active reviews under review remain unplaced.",
+          "fields": [
+            "review_outcome"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:f4a0feddbad071f937044728583dbbbabb4225e2ee048a84ee59d0d3e3b836d0",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:04efb8911fc1f3a298d0988b8726444291f0f6f780b3800158f347106cda2e1d",
+        "publishedAt": "2026-11-25T20:33:35Z",
+        "rows": 49160,
+        "byteSize": 1830529,
+        "memberSha256": "sha256:d9ec5953f6fb5490c2c9ec9dd6b7edb07c7e53c12b49ba63bc89e8cb64886541",
+        "qualification": "RegInfo.gov EO 12866 concluded (1981-2026 YTD) and active Under Review XML Parquet, raw visual review, and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-26: Coverage definition and review added against live oira-reviews generation Parquet."
     }
   ],
   "scannerRequirements": [

@@ -733,4 +733,56 @@ class RegulationCoverageTests(unittest.TestCase):
         })
         self.assertEqual(cd_dims['state-jurisdiction']['buckets'], {'["10"]': 1, '["33"]': 1})
 
+    def test_oira_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid, fam in (('oira_reviews', 'oira-reviews'), ('oira_meetings', 'oira-meetings')):
+            self.assertEqual(defs[tid]['family'], fam)
+
+        def make_tbl(name, fam, published_at, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': fam, 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': published_at, '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        rev_pol, rev_tbl = make_tbl(
+            'oira_reviews', 'oira-reviews', '2026-11-25T20:33:35Z',
+            "INSERT INTO t (rin, stage, review_status, received_date, concluded_date, review_outcome, published_date) VALUES "
+            "('0331-YA01', 'Final Rule', 'Concluded', '1981-02-25', '1981-02-26', 'Consistent w/no change', '1981-03-24'), "
+            "('3046-AB37', 'Proposed Rule', 'Under Review', '2026-11-20', NULL, NULL, NULL)"
+        )
+        builder.validate_plan({'oira_reviews': rev_tbl}, {'oira_reviews': dict(rev_pol)})
+        rev_dims = {d['id']: d for d in coverage_scan.scan_table('oira_reviews', rev_tbl, rev_pol)['dimensions']}
+        self.assertEqual(rev_dims['received-dates']['buckets'], {'1981-02': 1, '2026-11': 1})
+        self.assertEqual((rev_dims['concluded-dates']['placedRows'], rev_dims['concluded-dates']['unplacedRows']), (1, 1))
+        self.assertEqual((rev_dims['published-dates']['placedRows'], rev_dims['published-dates']['unplacedRows']), (1, 1))
+        self.assertEqual(rev_dims['review-status']['buckets'], {'["Concluded"]': 1, '["Under Review"]': 1})
+        self.assertEqual(rev_dims['rule-stage']['buckets'], {'["Final Rule"]': 1, '["Proposed Rule"]': 1})
+        self.assertEqual(rev_dims['review-outcome']['buckets'], {'["Consistent w/no change"]': 1})
+
+        mtg_pol, mtg_tbl = make_tbl(
+            'oira_meetings', 'oira-meetings', '2026-11-25T20:26:40Z',
+            "INSERT INTO t (meeting_id, rin, rule_stage, meeting_date, meeting_status) VALUES "
+            "(NULL, '2900-AR75', 'Final Rule Stage', '2024-06-27', 'Completed'), "
+            "('1234', '0581-AE30', 'Proposed Rule Stage', '2024-08-15', 'No Show')"
+        )
+        builder.validate_plan({'oira_meetings': mtg_tbl}, {'oira_meetings': dict(mtg_pol)})
+        mtg_dims = {d['id']: d for d in coverage_scan.scan_table('oira_meetings', mtg_tbl, mtg_pol)['dimensions']}
+        self.assertEqual(mtg_dims['meeting-dates']['buckets'], {'2024-06': 1, '2024-08': 1})
+        self.assertEqual(mtg_dims['rule-stage']['buckets'], {'["Final Rule Stage"]': 1, '["Proposed Rule Stage"]': 1})
+        self.assertEqual(mtg_dims['meeting-status']['buckets'], {'["Completed"]': 1, '["No Show"]': 1})
+
 if __name__ == '__main__': unittest.main()
