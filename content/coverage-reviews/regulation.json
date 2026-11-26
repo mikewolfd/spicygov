@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 108,
+  "tableCount": 110,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -39284,6 +39284,353 @@
         "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
       },
       "reviewNote": "2026-11-25 (Batch C): Pre-publication coverage definition and review added against verified local candidate generation Parquet."
+    },
+    {
+      "tableId": "census_acs_congressional_district_observations",
+      "family": "census-acs",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "INTEGER"
+        ],
+        [
+          "geography",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "congressional_district",
+          "VARCHAR"
+        ],
+        [
+          "district_geoid",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_prefix",
+          "VARCHAR"
+        ],
+        [
+          "congress_session_code",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "estimate",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "margin_of_error",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "estimate_status",
+          "VARCHAR"
+        ],
+        [
+          "margin_status",
+          "VARCHAR"
+        ],
+        [
+          "estimate_raw",
+          "VARCHAR"
+        ],
+        [
+          "margin_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_annotation",
+          "VARCHAR"
+        ],
+        [
+          "margin_annotation",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "variable_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "value_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "metadata_sources_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "acs-vintage",
+          "kind": "year",
+          "label": "ACS five-year vintage",
+          "meaning": "Final year of the selected American Community Survey five-year estimate period (e.g., 2024 represents 2020-2024 five-year estimates), not acquisition time.",
+          "fields": [
+            "vintage"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "acs-dataset",
+          "kind": "category",
+          "label": "Census ACS dataset",
+          "meaning": "Census API dataset path represented in this release (currently acs/acs5 five-year estimates).",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "congress-session",
+          "kind": "category",
+          "label": "Congress session boundaries",
+          "meaning": "Two-digit Congress session code embedded in the Census GEO_ID summary-level prefix (e.g., 19 for 119th Congress district boundaries).",
+          "fields": [
+            "congress_session_code"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Selected ACS measures",
+          "meaning": "Explicitly selected ACS measures (population and median_household_income); each estimate retains its own 90% confidence margin of error.",
+          "fields": [
+            "measure"
+          ]
+        },
+        {
+          "id": "estimate-status",
+          "kind": "category",
+          "label": "Estimate and margin status",
+          "meaning": "Numeric, controlled-estimate, unavailable, or insufficient-observations status for each estimate and its margin of error; Census sentinel codes stay explicit rather than zero.",
+          "fields": [
+            "estimate_status",
+            "margin_status"
+          ]
+        },
+        {
+          "id": "state-jurisdiction",
+          "kind": "category",
+          "label": "State and territory FIPS codes",
+          "meaning": "Two-digit Census state or territory FIPS codes included in the selected release (50 states, DC, and Puerto Rico; excludes AS, GU, MP, and VI).",
+          "fields": [
+            "state_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:777a0f30cc64678f495f8637720be4c5ebf3741194f63be8f3a831c6c6896d1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:1dcc80e481dc16c13b286cfc96c1db49749b0c21fd1335ad31f789a5af224970",
+        "publishedAt": "2026-11-26T01:49:29Z",
+        "rows": 880,
+        "byteSize": 64762,
+        "memberSha256": "sha256:6a93e662fe99f66a827be7142c072e2fce41daceb41c673a16f03c61906341b1",
+        "qualification": "Nationwide 2024 ACS five-year county and 119th Congress district Parquets, raw visual review (ss-cedj), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-25 (ss-cedj): Coverage definition and review added against verified nationwide 2024 ACS5 generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "census_acs_county_observations",
+      "family": "census-acs",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "INTEGER"
+        ],
+        [
+          "geography",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "county_code",
+          "VARCHAR"
+        ],
+        [
+          "county_geoid",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "estimate",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "margin_of_error",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "estimate_status",
+          "VARCHAR"
+        ],
+        [
+          "margin_status",
+          "VARCHAR"
+        ],
+        [
+          "estimate_raw",
+          "VARCHAR"
+        ],
+        [
+          "margin_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_annotation",
+          "VARCHAR"
+        ],
+        [
+          "margin_annotation",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "variable_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "value_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "metadata_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_authority",
+          "VARCHAR"
+        ],
+        [
+          "geography_source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "acs-vintage",
+          "kind": "year",
+          "label": "ACS five-year vintage",
+          "meaning": "Final year of the selected American Community Survey five-year estimate period (e.g., 2024 represents 2020-2024 five-year estimates), not acquisition time.",
+          "fields": [
+            "vintage"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "acs-dataset",
+          "kind": "category",
+          "label": "Census ACS dataset",
+          "meaning": "Census API dataset path represented in this release (currently acs/acs5 five-year estimates).",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Selected ACS measures",
+          "meaning": "Explicitly selected ACS measures (population and median_household_income); each estimate retains its own 90% confidence margin of error.",
+          "fields": [
+            "measure"
+          ]
+        },
+        {
+          "id": "estimate-status",
+          "kind": "category",
+          "label": "Estimate and margin status",
+          "meaning": "Numeric, controlled-estimate, unavailable, or insufficient-observations status for each estimate and its margin of error; Census sentinel codes stay explicit rather than zero.",
+          "fields": [
+            "estimate_status",
+            "margin_status"
+          ]
+        },
+        {
+          "id": "state-jurisdiction",
+          "kind": "category",
+          "label": "State and territory FIPS codes",
+          "meaning": "Two-digit Census state or territory FIPS codes included in the selected release (50 states, DC, and Puerto Rico; excludes AS, GU, MP, and VI).",
+          "fields": [
+            "state_code"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:777a0f30cc64678f495f8637720be4c5ebf3741194f63be8f3a831c6c6896d1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:1dcc80e481dc16c13b286cfc96c1db49749b0c21fd1335ad31f789a5af224970",
+        "publishedAt": "2026-11-26T01:49:29Z",
+        "rows": 6444,
+        "byteSize": 335560,
+        "memberSha256": "sha256:727116fd852079e64427a722b1037833f211821473c8b1f0af938e65d690e823",
+        "qualification": "Nationwide 2024 ACS five-year county and 119th Congress district Parquets, raw visual review (ss-cedj), and live R2 publication verified."
+      },
+      "reviewNote": "2026-11-25 (ss-cedj): Coverage definition and review added against verified nationwide 2024 ACS5 generation Parquets and raw visual review."
     }
   ],
   "scannerRequirements": [

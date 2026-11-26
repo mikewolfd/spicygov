@@ -674,4 +674,63 @@ class RegulationCoverageTests(unittest.TestCase):
         self.assertEqual(dims['termination-dates']['buckets'], {'2025-05': 1})
         self.assertEqual((dims['termination-dates']['placedRows'], dims['termination-dates']['unplacedRows']), (1, 2))
 
+    def test_census_acs_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid in ('census_acs_county_observations', 'census_acs_congressional_district_observations'):
+            self.assertEqual(defs[tid]['family'], 'census-acs')
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': 'census-acs', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-26T01:49:29Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        county_pol, county_tbl = make_tbl(
+            'census_acs_county_observations',
+            "INSERT INTO t (dataset, vintage, geography, state_code, county_code, county_geoid, measure, estimate_status, margin_status) VALUES "
+            "('acs/acs5', 2024, 'county', '10', '001', '10001', 'population', 'numeric', 'controlled_estimate'), "
+            "('acs/acs5', 2024, 'county', '35', '011', '35011', 'median_household_income', 'unavailable', 'insufficient_observations')"
+        )
+        builder.validate_plan({'census_acs_county_observations': county_tbl}, {'census_acs_county_observations': dict(county_pol)})
+        county_dims = {d['id']: d for d in coverage_scan.scan_table('census_acs_county_observations', county_tbl, county_pol)['dimensions']}
+        self.assertEqual(county_dims['acs-vintage']['buckets'], {'2024': 2})
+        self.assertEqual(county_dims['acs-dataset']['buckets'], {'["acs/acs5"]': 2})
+        self.assertEqual(county_dims['measure']['buckets'], {'["median_household_income"]': 1, '["population"]': 1})
+        self.assertEqual(county_dims['estimate-status']['buckets'], {
+            '["numeric","controlled_estimate"]': 1,
+            '["unavailable","insufficient_observations"]': 1,
+        })
+        self.assertEqual(county_dims['state-jurisdiction']['buckets'], {'["10"]': 1, '["35"]': 1})
+
+        cd_pol, cd_tbl = make_tbl(
+            'census_acs_congressional_district_observations',
+            "INSERT INTO t (dataset, vintage, geography, state_code, congressional_district, district_geoid, congress_session_code, measure, estimate_status, margin_status) VALUES "
+            "('acs/acs5', 2024, 'congressional district', '10', '00', '1000', '19', 'population', 'numeric', 'controlled_estimate'), "
+            "('acs/acs5', 2024, 'congressional district', '33', 'ZZ', '33ZZ', '19', 'median_household_income', 'unavailable', 'insufficient_observations')"
+        )
+        builder.validate_plan({'census_acs_congressional_district_observations': cd_tbl}, {'census_acs_congressional_district_observations': dict(cd_pol)})
+        cd_dims = {d['id']: d for d in coverage_scan.scan_table('census_acs_congressional_district_observations', cd_tbl, cd_pol)['dimensions']}
+        self.assertEqual(cd_dims['acs-vintage']['buckets'], {'2024': 2})
+        self.assertEqual(cd_dims['congress-session']['buckets'], {'["19"]': 2})
+        self.assertEqual(cd_dims['measure']['buckets'], {'["median_household_income"]': 1, '["population"]': 1})
+        self.assertEqual(cd_dims['estimate-status']['buckets'], {
+            '["numeric","controlled_estimate"]': 1,
+            '["unavailable","insufficient_observations"]': 1,
+        })
+        self.assertEqual(cd_dims['state-jurisdiction']['buckets'], {'["10"]': 1, '["33"]': 1})
+
 if __name__ == '__main__': unittest.main()

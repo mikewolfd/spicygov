@@ -264,4 +264,137 @@ class FecCoverageTest(unittest.TestCase):
         self.assertEqual(lifo_dims['reporting-periods']['yearBuckets'], {'2025': 2})
         self.assertEqual(lifo_dims['issue-code']['buckets'], {'["DEF"]': 1, '["TAX"]': 1})
 
+    def test_irs527_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        repo = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', repo / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        irs_tables = (
+            'irs527_transmissions', 'irs527_form8871', 'irs527_form8872',
+            'irs527_directors', 'irs527_related_entities', 'irs527_eains',
+            'irs527_contributions', 'irs527_expenditures',
+        )
+        for tid in irs_tables:
+            self.assertEqual(defs[tid]['family'], 'irs-527')
+        self.assertIn(['malformed_row_count', 'BIGINT'], defs['irs527_transmissions']['schema'])
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, path, {
+                'family': 'irs-527', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-26T01:50:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        tx_pol, _, tx_tbl = make_tbl(
+            'irs527_transmissions',
+            "INSERT INTO t (file_id_modifier, transmission_date, footer_record_count, observed_data_records, malformed_row_count) VALUES "
+            "('F', DATE '2026-11-21', 18878123, 18877975, 148)"
+        )
+        builder.validate_plan({'irs527_transmissions': tx_tbl}, {'irs527_transmissions': dict(tx_pol)})
+        tx_dims = {d['id']: d for d in coverage_scan.scan_table('irs527_transmissions', tx_tbl, tx_pol)['dimensions']}
+        self.assertEqual(tx_dims['transmission-dates']['buckets'], {'2026-11': 1})
+        self.assertEqual(tx_dims['file-id-modifier']['buckets'], {'["F"]': 1})
+        self.assertEqual(tx_dims['retained-snapshot']['granularity'], 'snapshot')
+
+        f8871_pol, f8871_path, f8871_tbl = make_tbl(
+            'irs527_form8871',
+            "INSERT INTO t (form_id_number, initial_report_indicator, amended_report_indicator, final_report_indicator, "
+            "established_date, exempt_8872_indicator, exempt_990_indicator, material_change_date, insert_datetime_raw) VALUES "
+            "('8', '0', '0', '0', DATE '1808-01-01', '1', '0', NULL, '2001-05-13 21:20:54'), "
+            "('9', '1', '0', '0', NULL, '', '', DATE '2026-08-12', '2026-08-12 17:03:50')"
+        )
+        builder.validate_plan({'irs527_form8871': f8871_tbl}, {'irs527_form8871': dict(f8871_pol)})
+        f8871_dims = {d['id']: d for d in coverage_scan.scan_table('irs527_form8871', f8871_tbl, f8871_pol)['dimensions']}
+        self.assertEqual(f8871_dims['filing-insert-dates']['buckets'], {'2001-05': 1, '2026-08': 1})
+        self.assertEqual(f8871_dims['established-dates']['buckets'], {'1808-01': 1})
+        self.assertEqual((f8871_dims['established-dates']['placedRows'], f8871_dims['established-dates']['unplacedRows']), (1, 1))
+        self.assertEqual(f8871_dims['material-change-dates']['buckets'], {'2026-08': 1})
+        self.assertEqual(f8871_dims['filing-indicators']['buckets'], {'["0","0","0"]': 1, '["1","0","0"]': 1})
+        self.assertEqual(f8871_dims['exemption-flags']['buckets'], {'["1","0"]': 1})
+        self.assertEqual((f8871_dims['exemption-flags']['placedRows'], f8871_dims['exemption-flags']['unplacedRows']), (1, 1))
+
+        f8872_pol, f8872_path, f8872_tbl = make_tbl(
+            'irs527_form8872',
+            "INSERT INTO t (form_id_number, period_begin_date, period_end_date, initial_report_indicator, amended_report_indicator, "
+            "final_report_indicator, org_formation_date, qtr_indicator, pre_or_post_elect_date, sched_a_ind, sched_b_ind, insert_datetime_raw) VALUES "
+            "('465', DATE '2000-01-01', DATE '2000-03-31', '1', '0', '0', DATE '1869-09-01', '8', DATE '2000-11-07', '1', '1', '2000-11-17 16:41:01'), "
+            "('466', NULL, NULL, '0', '1', '0', DATE '2024-01-15', '4', NULL, '0', '0', '2026-10-15 12:20:39')"
+        )
+        builder.validate_plan({'irs527_form8872': f8872_tbl}, {'irs527_form8872': dict(f8872_pol)})
+        f8872_dims = {d['id']: d for d in coverage_scan.scan_table('irs527_form8872', f8872_tbl, f8872_pol)['dimensions']}
+        self.assertEqual(f8872_dims['reporting-periods']['buckets'], {'2000-01': 1, '2000-02': 1, '2000-03': 1})
+        self.assertEqual((f8872_dims['reporting-periods']['placedRows'], f8872_dims['reporting-periods']['unplacedRows']), (1, 1))
+        self.assertEqual(f8872_dims['filing-insert-dates']['buckets'], {'2000-11': 1, '2026-10': 1})
+        self.assertEqual(f8872_dims['election-dates']['buckets'], {'2000-11': 1})
+        self.assertEqual(f8872_dims['org-formation-dates']['buckets'], {'1869-09': 1, '2024-01': 1})
+        self.assertEqual(f8872_dims['reporting-period-codes']['buckets'], {'["4"]': 1, '["8"]': 1})
+
+        class SameGenIrs527:
+            def parent(self_inner, child_id, child, relation):
+                table_id = relation['table']
+                p_path = f8871_path if table_id == 'irs527_form8871' else f8872_path
+                p_tbl = f8871_tbl if table_id == 'irs527_form8871' else f8872_tbl
+                return {
+                    'family': 'irs-527', 'artifactDigest': 'sha256:' + 'a' * 64,
+                    'tableId': table_id, 'recordUrl': 'local://artifact.json',
+                    'members': p_tbl['members'], 'urls': [str(p_path)], 'rows': p_tbl['rows'],
+                }
+
+        for child_name, sql, cat_id, cat_bucket in (
+            ('irs527_directors', "INSERT INTO t (form_id_number, entity_address_state) VALUES ('8', 'WA'), ('orphan', 'CA')", 'entity-address-state', {'["CA"]': 1, '["WA"]': 1}),
+            ('irs527_related_entities', "INSERT INTO t (form_id_number, entity_address_state) VALUES ('8', 'NY'), ('orphan', 'OH')", 'entity-address-state', {'["NY"]': 1, '["OH"]': 1}),
+            ('irs527_eains', "INSERT INTO t (form_id_number, state_issued) VALUES ('9', 'FL'), ('orphan', 'FD')", 'state-issued', {'["FD"]': 1, '["FL"]': 1}),
+        ):
+            c_pol, c_path, c_tbl = make_tbl(child_name, sql)
+            builder.validate_plan({child_name: c_tbl}, {child_name: dict(c_pol)})
+            c_dims = {d['id']: d for d in coverage_scan._measure(
+                self.conn, child_name, c_tbl, [str(c_path)], c_pol, SameGenIrs527(),
+            )}
+            self.assertEqual((c_dims['parent-notice-insert-dates']['matchedRows'], c_dims['parent-notice-insert-dates']['unmatchedRows']), (1, 1))
+            self.assertEqual((c_dims['parent-notice-insert-dates']['placedRows'], c_dims['parent-notice-insert-dates']['unplacedRows']), (1, 1))
+            self.assertEqual(c_dims[cat_id]['buckets'], cat_bucket)
+
+        c_pol, c_path, c_tbl = make_tbl(
+            'irs527_contributions',
+            "INSERT INTO t (form_id_number, contribution_amount_status, contribution_date, contribution_date_status) VALUES "
+            "('465', 'parsed', DATE '2000-02-15', 'parsed'), "
+            "('466', 'parsed', NULL, 'blank')"
+        )
+        builder.validate_plan({'irs527_contributions': c_tbl}, {'irs527_contributions': dict(c_pol)})
+        c_dims = {d['id']: d for d in coverage_scan._measure(
+            self.conn, 'irs527_contributions', c_tbl, [str(c_path)], c_pol, SameGenIrs527(),
+        )}
+        self.assertEqual(c_dims['contribution-dates']['buckets'], {'2000-02': 1})
+        self.assertEqual((c_dims['contribution-dates']['placedRows'], c_dims['contribution-dates']['unplacedRows']), (1, 1))
+        self.assertEqual((c_dims['parent-report-periods']['matchedRows'], c_dims['parent-report-periods']['unmatchedRows']), (2, 0))
+        self.assertEqual((c_dims['parent-report-periods']['placedRows'], c_dims['parent-report-periods']['unplacedRows']), (1, 1))
+        self.assertEqual(c_dims['contribution-date-status']['buckets'], {'["blank"]': 1, '["parsed"]': 1})
+
+        e_pol, e_path, e_tbl = make_tbl(
+            'irs527_expenditures',
+            "INSERT INTO t (form_id_number, expenditure_amount_status, expenditure_date, expenditure_date_status) VALUES "
+            "('465', 'parsed', DATE '2000-03-10', 'parsed'), "
+            "('466', 'parsed', NULL, 'blank')"
+        )
+        builder.validate_plan({'irs527_expenditures': e_tbl}, {'irs527_expenditures': dict(e_pol)})
+        e_dims = {d['id']: d for d in coverage_scan._measure(
+            self.conn, 'irs527_expenditures', e_tbl, [str(e_path)], e_pol, SameGenIrs527(),
+        )}
+        self.assertEqual(e_dims['expenditure-dates']['buckets'], {'2000-03': 1})
+        self.assertEqual((e_dims['expenditure-dates']['placedRows'], e_dims['expenditure-dates']['unplacedRows']), (1, 1))
+        self.assertEqual((e_dims['parent-report-periods']['matchedRows'], e_dims['parent-report-periods']['unmatchedRows']), (2, 0))
+        self.assertEqual((e_dims['parent-report-periods']['placedRows'], e_dims['parent-report-periods']['unplacedRows']), (1, 1))
+        self.assertEqual(e_dims['expenditure-date-status']['buckets'], {'["blank"]': 1, '["parsed"]': 1})
+
 if __name__=='__main__':unittest.main()

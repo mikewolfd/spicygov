@@ -232,6 +232,335 @@
         }
       ]
     },
+    "census_acs_congressional_district_observations": {
+      "family": "census-acs",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "INTEGER"
+        ],
+        [
+          "geography",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "congressional_district",
+          "VARCHAR"
+        ],
+        [
+          "district_geoid",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_prefix",
+          "VARCHAR"
+        ],
+        [
+          "congress_session_code",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "estimate",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "margin_of_error",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "estimate_status",
+          "VARCHAR"
+        ],
+        [
+          "margin_status",
+          "VARCHAR"
+        ],
+        [
+          "estimate_raw",
+          "VARCHAR"
+        ],
+        [
+          "margin_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_annotation",
+          "VARCHAR"
+        ],
+        [
+          "margin_annotation",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "variable_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "value_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "metadata_sources_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe selected American Community Survey five-year congressional-district observations for explicit vintages, states, and measures (population and median household income), not complete ACS variable catalogs or statistical significance tests. Each vintage represents a five-year estimate ending in that year, and undefined water/unassigned (ZZ) or non-voting (98) districts remain explicitly marked.",
+      "dimensions": [
+        {
+          "id": "acs-vintage",
+          "kind": "year",
+          "label": "ACS five-year vintage",
+          "meaning": "Final year of the selected American Community Survey five-year estimate period (e.g., 2024 represents 2020-2024 five-year estimates), not acquisition time.",
+          "fields": [
+            "vintage"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "acs-dataset",
+          "kind": "category",
+          "label": "Census ACS dataset",
+          "meaning": "Census API dataset path represented in this release (currently acs/acs5 five-year estimates).",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "congress-session",
+          "kind": "category",
+          "label": "Congress session boundaries",
+          "meaning": "Two-digit Congress session code embedded in the Census GEO_ID summary-level prefix (e.g., 19 for 119th Congress district boundaries).",
+          "fields": [
+            "congress_session_code"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Selected ACS measures",
+          "meaning": "Explicitly selected ACS measures (population and median_household_income); each estimate retains its own 90% confidence margin of error.",
+          "fields": [
+            "measure"
+          ]
+        },
+        {
+          "id": "estimate-status",
+          "kind": "category",
+          "label": "Estimate and margin status",
+          "meaning": "Numeric, controlled-estimate, unavailable, or insufficient-observations status for each estimate and its margin of error; Census sentinel codes stay explicit rather than zero.",
+          "fields": [
+            "estimate_status",
+            "margin_status"
+          ]
+        },
+        {
+          "id": "state-jurisdiction",
+          "kind": "category",
+          "label": "State and territory FIPS codes",
+          "meaning": "Two-digit Census state or territory FIPS codes included in the selected release (50 states, DC, and Puerto Rico; excludes AS, GU, MP, and VI).",
+          "fields": [
+            "state_code"
+          ]
+        }
+      ]
+    },
+    "census_acs_county_observations": {
+      "family": "census-acs",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "INTEGER"
+        ],
+        [
+          "geography",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "county_code",
+          "VARCHAR"
+        ],
+        [
+          "county_geoid",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "source_geo_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "estimate",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "margin_of_error",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "estimate_status",
+          "VARCHAR"
+        ],
+        [
+          "margin_status",
+          "VARCHAR"
+        ],
+        [
+          "estimate_raw",
+          "VARCHAR"
+        ],
+        [
+          "margin_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_annotation",
+          "VARCHAR"
+        ],
+        [
+          "margin_annotation",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "variable_metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "value_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "metadata_sources_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_authority",
+          "VARCHAR"
+        ],
+        [
+          "geography_source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe selected American Community Survey five-year county observations for explicit vintages, states, and measures (population and median household income), not complete ACS variable catalogs or statistical significance tests. Each vintage represents a five-year estimate ending in that year; controlled population margins and unavailable-income sentinels stay explicitly marked.",
+      "dimensions": [
+        {
+          "id": "acs-vintage",
+          "kind": "year",
+          "label": "ACS five-year vintage",
+          "meaning": "Final year of the selected American Community Survey five-year estimate period (e.g., 2024 represents 2020-2024 five-year estimates), not acquisition time.",
+          "fields": [
+            "vintage"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "acs-dataset",
+          "kind": "category",
+          "label": "Census ACS dataset",
+          "meaning": "Census API dataset path represented in this release (currently acs/acs5 five-year estimates).",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Selected ACS measures",
+          "meaning": "Explicitly selected ACS measures (population and median_household_income); each estimate retains its own 90% confidence margin of error.",
+          "fields": [
+            "measure"
+          ]
+        },
+        {
+          "id": "estimate-status",
+          "kind": "category",
+          "label": "Estimate and margin status",
+          "meaning": "Numeric, controlled-estimate, unavailable, or insufficient-observations status for each estimate and its margin of error; Census sentinel codes stay explicit rather than zero.",
+          "fields": [
+            "estimate_status",
+            "margin_status"
+          ]
+        },
+        {
+          "id": "state-jurisdiction",
+          "kind": "category",
+          "label": "State and territory FIPS codes",
+          "meaning": "Two-digit Census state or territory FIPS codes included in the selected release (50 states, DC, and Puerto Rico; excludes AS, GU, MP, and VI).",
+          "fields": [
+            "state_code"
+          ]
+        }
+      ]
+    },
     "cfr_sections": {
       "family": "cfr-sections",
       "schema": [
