@@ -544,5 +544,105 @@ class CongressCoverageTests(unittest.TestCase):
         self.assertEqual(party_dims['majority-basis']['buckets'], {'["house-seats-plurality"]': 1, '["senate-listed-first"]': 1})
         self.assertEqual((party_dims['majority-party']['placedRows'], party_dims['majority-party']['unplacedRows']), (1, 1))
 
+    def test_cbo_data_and_eval_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        root_dir = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', root_dir / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+
+        cbo_data_tables = (
+            'cbo_automatic_stabilizers', 'cbo_data_snapshots', 'cbo_demographic',
+            'cbo_economic_projections', 'cbo_historical_budget', 'cbo_historical_economic',
+            'cbo_long_term_budget', 'cbo_long_term_economic', 'cbo_potential_gdp',
+            'cbo_revenue_detail', 'cbo_spending_detail', 'cbo_tax_parameters',
+            'cbo_ten_year_budget', 'cbo_trust_fund',
+        )
+        cbo_eval_tables = (
+            'cbo_eval_actuals', 'cbo_eval_baseline_changes', 'cbo_eval_baselines',
+            'cbo_projection_error_summary_stats', 'cbo_projection_errors',
+        )
+        for tid in cbo_data_tables:
+            self.assertEqual(defs[tid]['family'], 'cbo-data')
+        for tid in cbo_eval_tables:
+            self.assertEqual(defs[tid]['family'], 'cbo-eval-projections')
+
+        def make_tbl(name, family, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': family, 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-27T20:55:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        # Validate representative tables spanning every dimension kind/syntax across both families.
+        fixtures = [
+            ('cbo_ten_year_budget', 'cbo-data',
+             "INSERT INTO t (vintage, date, category) VALUES ('2025-01', 'FY2025', 'outlays'), ('2026-02', 'FY2036', 'debt')",
+             {'vintage': {'["2025-01"]': 1, '["2026-02"]': 1}, 'fiscal-year-label': {'["FY2025"]': 1, '["FY2036"]': 1}, 'category': {'["outlays"]': 1, '["debt"]': 1}}),
+            ('cbo_data_snapshots', 'cbo-data',
+             "INSERT INTO t (dataset, vintage, file_type) VALUES ('ten_year_budget', '2026-02', 'annual_fy'), ('demographic', '2026-01', 'fertility')",
+             {'dataset': {'["ten_year_budget"]': 1, '["demographic"]': 1}, 'vintage': {'["2026-02"]': 1, '["2026-01"]': 1}, 'file-type': {'["annual_fy"]': 1, '["fertility"]': 1}}),
+            ('cbo_demographic', 'cbo-data',
+             "INSERT INTO t (year, vintage, domain, measure) VALUES (2025, '2026-01', 'fertility', 'births_per_1000_females'), (2099, '2026-01', 'mortality', 'deaths_per_1000_people')",
+             {'projection-year': {'2025': 1, '2099': 1}, 'domain': {'["fertility"]': 1, '["mortality"]': 1}, 'measure': {'["births_per_1000_females"]': 1, '["deaths_per_1000_people"]': 1}}),
+            ('cbo_long_term_economic', 'cbo-data',
+             "INSERT INTO t (date, vintage, file_type) VALUES ('1994', '2026-02', 'rates'), ('2100', '2025-03', 'lfp_rates')",
+             {'projection-year': {'1994': 1, '2100': 1}, 'vintage': {'["2026-02"]': 1, '["2025-03"]': 1}, 'file-type': {'["rates"]': 1, '["lfp_rates"]': 1}}),
+            ('cbo_spending_detail', 'cbo-data',
+             "INSERT INTO t (vintage, date, disc_or_mand, category) VALUES ('2026-02', 'FY2026', 'Mandatory', 'Medicare'), ('2026-02', 'FY2027', 'Discretionary', 'Defense')",
+             {'spending-type': {'["Mandatory"]': 1, '["Discretionary"]': 1}, 'category': {'["Medicare"]': 1, '["Defense"]': 1}}),
+            ('cbo_potential_gdp', 'cbo-data',
+             "INSERT INTO t (vintage, file_type, variable) VALUES ('2019-08', 'annual', 'gdp_pot'), ('2019-08', 'quarterly', 'unemployment_rate_natural')",
+             {'vintage': {'["2019-08"]': 2}, 'file-type': {'["annual"]': 1, '["quarterly"]': 1}}),
+            ('cbo_eval_actuals', 'cbo-eval-projections',
+             "INSERT INTO t (fiscal_year, component, category, excluded_from_error_analysis) VALUES (1982, 'revenue', 'Total', false), (2022, 'outlay', 'Mandatory', true)",
+             {'fiscal-year': {'1982': 1, '2022': 1}, 'component': {'["revenue"]': 1, '["outlay"]': 1}, 'error-analysis-exclusion': {'["false"]': 1, '["true"]': 1}}),
+            ('cbo_eval_baselines', 'cbo-eval-projections',
+             "INSERT INTO t (baseline_date, projected_fiscal_year, component, category) VALUES (DATE '1982-02-01', 1982, 'revenue', 'Total'), (DATE '2026-02-01', 2036, 'debt', 'Total')",
+             {'baseline-date': {'1982-02': 1, '2026-02': 1}, 'projected-fiscal-year': {'1982': 1, '2036': 1}, 'component': {'["revenue"]': 1, '["debt"]': 1}}),
+            ('cbo_eval_baseline_changes', 'cbo-eval-projections',
+             "INSERT INTO t (changes_baseline_date, projected_fiscal_year, component, change_category) VALUES (DATE '1983-02-01', 1984, 'revenue', 'Legislative'), (DATE '2026-02-01', 2035, 'outlay', 'Economic')",
+             {'changes-baseline-date': {'1983-02': 1, '2026-02': 1}, 'projected-fiscal-year': {'1984': 1, '2035': 1}, 'change-category': {'["Legislative"]': 1, '["Economic"]': 1}}),
+            ('cbo_projection_errors', 'cbo-eval-projections',
+             "INSERT INTO t (baseline_date, projected_fiscal_year, component, projected_year_number) VALUES (DATE '2024-06-01', 2025, 'deficit', 1), (DATE '2015-01-01', 2025, 'revenue', 11)",
+             {'baseline-date': {'2024-06': 1, '2015-01': 1}, 'projected-fiscal-year': {'2025': 2}, 'forecast-horizon': {'["1"]': 1, '["11"]': 1}}),
+            ('cbo_projection_error_summary_stats', 'cbo-eval-projections',
+             "INSERT INTO t (component, projected_year_number, error_basis, projection_year_range) VALUES ('revenue', 1, 'pct_actual', '1982-2025'), ('debt', 11, 'pct_gdp', '1994-2025')",
+             {'component': {'["revenue"]': 1, '["debt"]': 1}, 'forecast-horizon': {'["1"]': 1, '["11"]': 1}, 'error-basis': {'["pct_actual"]': 1, '["pct_gdp"]': 1}}),
+        ]
+        tested = set()
+        for tid, family, sql, expected_buckets in fixtures:
+            tested.add(tid)
+            pol, tbl = make_tbl(tid, family, sql)
+            builder.validate_plan({tid: tbl}, {tid: dict(pol)})
+            dims = {d['id']: d for d in coverage_scan.scan_table(tid, tbl, pol)['dimensions']}
+            for dim_id, buckets in expected_buckets.items():
+                self.assertEqual(dims[dim_id]['buckets'], buckets, f'{tid}.{dim_id}')
+                self.assertEqual(dims[dim_id]['unplacedRows'], 0, f'{tid}.{dim_id}')
+        # Also validate remaining cbo-data tables against synthetic rows so all 19 are scanned.
+        for tid in set(cbo_data_tables) - tested:
+            pol = defs[tid]
+            col_names = {n for n, _ in pol['schema']}
+            row_vals = {'vintage': "'2026-02'", 'date': "'FY2026'", 'category': "'outlays'",
+                        'file_type': "'annual_fy'", 'estimate_type': "'projected'"}
+            present = [(c, v) for c, v in row_vals.items() if c in col_names]
+            sql = f"INSERT INTO t ({', '.join(c for c, _ in present)}) VALUES ({', '.join(v for _, v in present)})"
+            pol, tbl = make_tbl(tid, 'cbo-data', sql)
+            builder.validate_plan({tid: tbl}, {tid: dict(pol)})
+            dims = coverage_scan.scan_table(tid, tbl, pol)['dimensions']
+            for d in dims:
+                self.assertEqual(d['placedRows'], 1, f'{tid}.{d["id"]}')
+                self.assertEqual(d['unplacedRows'], 0, f'{tid}.{d["id"]}')
+
 
 if __name__=='__main__':unittest.main()

@@ -3,6 +3,8 @@ import titles from '../content/catalog-titles.json';
 const purposes: Record<string, string> = {
   'administration-policy': 'White House statements explaining its position on bills in Congress.',
   cbo: 'Congressional Budget Office estimates of how proposed laws affect federal spending and revenue.',
+  'cbo-data': 'Congressional Budget Office Open Data series covering 10-year and long-term budget and economic projections, historical data, demographics, revenue and spending detail, trust funds, tax parameters, and automatic stabilizers.',
+  'cbo-eval-projections': 'Congressional Budget Office historical baseline projections, realized budget actuals, baseline revision changes, and forecast error evaluations.',
   'cftc-comments': 'Public comments on Commodity Futures Trading Commission proposals.',
   'congress-committees': 'Congressional committee names and history, for identifying committees across records.',
   'congress-sessions': 'Official House and Senate session dates and party control records across Congresses.',

@@ -13642,6 +13642,2096 @@
           ]
         }
       ]
+    },
+    "cbo_automatic_stabilizers": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data CSV vintages (2023-06, 2024-11; Pub 51139) from the pinned US-CBO/cbo-data commit. Earlier unarchived CBO editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO Open Data publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Source fiscal year labels (FY1965-FY2034) recorded in the automatic stabilizers series.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Series category",
+          "meaning": "CBO variable category (with/without stabilizers, stabilizer effects, and economic gaps).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_data_snapshots": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ],
+        [
+          "catalog_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "One provenance row per acquired US-CBO/cbo-data CSV distribution in the pinned commit (80 distributions across 13 datasets). Missing older CBO releases are not implied.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Distribution provenance inventory for the pinned US-CBO/cbo-data commit.",
+          "fields": []
+        },
+        {
+          "id": "dataset",
+          "kind": "category",
+          "label": "CBO dataset",
+          "meaning": "CBO Open Data dataset identifier represented by each retained CSV distribution.",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) for each retained CSV distribution.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Distribution file type",
+          "meaning": "Series frequency or domain file type within each CBO Open Data dataset.",
+          "fields": [
+            "file_type"
+          ]
+        }
+      ]
+    },
+    "cbo_demographic": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "domain",
+          "VARCHAR"
+        ],
+        [
+          "year",
+          "INTEGER"
+        ],
+        [
+          "age",
+          "VARCHAR"
+        ],
+        [
+          "sex",
+          "VARCHAR"
+        ],
+        [
+          "place_of_birth",
+          "VARCHAR"
+        ],
+        [
+          "immigration_status",
+          "VARCHAR"
+        ],
+        [
+          "migration_flow",
+          "VARCHAR"
+        ],
+        [
+          "marital_status",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "domain_description",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data demographic projection vintages (2025-01, 2025-09, 2026-01; Pub 57059) across six demographic domains from the pinned US-CBO/cbo-data commit. Earlier unarchived editions are not implied.",
+      "dimensions": [
+        {
+          "id": "projection-year",
+          "kind": "year",
+          "label": "Projection year",
+          "meaning": "Calendar year (2020-2099) represented by retained CBO demographic projection rows.",
+          "fields": [
+            "year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "domain",
+          "kind": "category",
+          "label": "Demographic domain",
+          "meaning": "Demographic projection domain (fertility, migration, mortality, population_bls, population_census, ss_area_population).",
+          "fields": [
+            "domain"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Demographic measure",
+          "meaning": "Reported demographic measure (births per 1,000 females, deaths per 1,000 people, or number of people).",
+          "fields": [
+            "measure"
+          ]
+        }
+      ]
+    },
+    "cbo_economic_projections": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_type",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data 10-year macroeconomic projection vintages (2024-02 through 2026-02; Pub 51135) from the pinned US-CBO/cbo-data commit. Calendar, fiscal, and quarterly series remain distinguished by file_type.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Period basis of the economic series (calendar, fiscal, or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "estimate-type",
+          "kind": "category",
+          "label": "Estimate status",
+          "meaning": "Whether CBO designates the observation as actual or projected.",
+          "fields": [
+            "estimate_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Economic category",
+          "meaning": "CBO macroeconomic variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_eval_actuals": {
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "actual_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "gdp_billions",
+          "DOUBLE"
+        ],
+        [
+          "actuals_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "excluded_from_error_analysis",
+          "BOOLEAN"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "actual_gdp_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Complete US-CBO/eval-projections realized budget actuals and nominal fiscal-year GDP from FY1982 through FY2025 (revenues from FY1982; Total outlays, deficits, and debt from FY1984; detailed outlay categories from FY1989).",
+      "dimensions": [
+        {
+          "id": "fiscal-year",
+          "kind": "year",
+          "label": "Fiscal year",
+          "meaning": "Realized federal fiscal year (1982-2025) represented in CBO evaluation actuals.",
+          "fields": [
+            "fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Major federal budget category or Total.",
+          "fields": [
+            "category"
+          ]
+        },
+        {
+          "id": "error-analysis-exclusion",
+          "kind": "category",
+          "label": "Excluded from error analysis",
+          "meaning": "Whether CBO excludes the observation from standard forecast error analysis (e.g., Fannie Mae/Freddie Mac or 2022 student loan forgiveness).",
+          "fields": [
+            "excluded_from_error_analysis"
+          ]
+        }
+      ]
+    },
+    "cbo_eval_baseline_changes": {
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "changes_baseline_date",
+          "DATE"
+        ],
+        [
+          "change_category",
+          "VARCHAR"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "change_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Complete US-CBO/eval-projections baseline revision changes spanning 1983-2026 revision dates across Economic, Legislative, and Technical categories for outlays, deficits, and revenues (revenues include Legislative changes only).",
+      "dimensions": [
+        {
+          "id": "changes-baseline-date",
+          "kind": "date",
+          "label": "Revision baseline date",
+          "meaning": "CBO baseline release date (1983-02-01 through 2026-02-01, day 01 per CBO convention) recording the revision.",
+          "fields": [
+            "changes_baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Target federal fiscal year (1982-2035) affected by the baseline revision.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "change-category",
+          "kind": "category",
+          "label": "Revision category",
+          "meaning": "CBO revision attribution (Economic, Legislative, or Technical).",
+          "fields": [
+            "change_category"
+          ]
+        }
+      ]
+    },
+    "cbo_eval_baselines": {
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "baseline_date",
+          "DATE"
+        ],
+        [
+          "spring_flag",
+          "BOOLEAN"
+        ],
+        [
+          "winter_flag",
+          "BOOLEAN"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projected_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Complete US-CBO/eval-projections input_data/baselines.csv spanning February 1982 through February 2026 baselines and projected fiscal years 1982-2036, including non-Spring/non-Winter baselines and unrealized future years.",
+      "dimensions": [
+        {
+          "id": "baseline-date",
+          "kind": "date",
+          "label": "Baseline release date",
+          "meaning": "CBO baseline release date (1982-02-01 through 2026-02-01, day 01 per CBO convention).",
+          "fields": [
+            "baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Target federal fiscal year (1982-2036) projected by each historical baseline.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Major federal budget category or Total.",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_historical_budget": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data historical federal budget vintages (2024-02, 2025-01, 2026-02; Pub 51134) from the pinned US-CBO/cbo-data commit. Earlier unarchived editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Historical fiscal year labels (FY1962-FY2025) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "CBO historical budget series category (revenues, outlays, discretionary, mandatory, and summary totals).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_historical_economic": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data historical economic vintages (2022-05 through 2026-02; Pub 55022) from the pinned US-CBO/cbo-data commit. Quarterly, calendar-year, and fiscal-year series stay distinguished by file_type.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Period basis of the historical economic series (annual_cy, annual_fy, or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Economic category",
+          "meaning": "CBO historical economic variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_long_term_budget": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data 30-year long-term budget outlook vintages (2025-03, 2026-02; Pub 51119) from the pinned US-CBO/cbo-data commit. Earlier unarchived editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2025-FY2056) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "CBO long-term budget series category (revenues, spending, deficit, debt, health cost growth, HI trust fund, addendum).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_long_term_economic": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "sex",
+          "VARCHAR"
+        ],
+        [
+          "age_group",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data long-term economic vintages (2024-03, 2025-03, 2026-02; Pub 57054) from the pinned US-CBO/cbo-data commit. Growth rates, levels, and labor force participation rates remain distinguished by file_type.",
+      "dimensions": [
+        {
+          "id": "projection-year",
+          "kind": "year",
+          "label": "Projection year",
+          "meaning": "Calendar year (1994-2100) represented by retained long-term economic rows.",
+          "fields": [
+            "date"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series type",
+          "meaning": "Distribution series type (levels, lfp_rates, or rates).",
+          "fields": [
+            "file_type"
+          ]
+        }
+      ]
+    },
+    "cbo_potential_gdp": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Legacy standalone CBO potential GDP estimates (2019-08 vintage; Pub 51137) from the pinned US-CBO/cbo-data commit. Post-2020 potential GDP series are published in cbo_historical_economic and cbo_economic_projections.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (2019-08) represented by retained legacy rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Series frequency (annual or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "variable",
+          "kind": "category",
+          "label": "Series variable",
+          "meaning": "Potential GDP and underlying labor/capital input series identifier.",
+          "fields": [
+            "variable"
+          ]
+        }
+      ]
+    },
+    "cbo_projection_error_summary_stats": {
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projection_year_range",
+          "VARCHAR"
+        ],
+        [
+          "number_of_projections",
+          "BIGINT"
+        ],
+        [
+          "error_basis",
+          "VARCHAR"
+        ],
+        [
+          "average_error_pct",
+          "DOUBLE"
+        ],
+        [
+          "average_absolute_error_pct",
+          "DOUBLE"
+        ],
+        [
+          "rmse_pct",
+          "DOUBLE"
+        ],
+        [
+          "two_thirds_spread_pct",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Derived CBO historical forecast accuracy summary statistics across horizons 1-11 for FY1982-FY2025 revenues (Winter baselines) and FY1984-FY2025 outlays, deficits, and debt (Spring baselines), excluding Fannie Mae, Freddie Mac, and 2022 student loan forgiveness.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Derived horizon-by-category accuracy summary statistics from the pinned US-CBO/eval-projections commit.",
+          "fields": []
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "forecast-horizon",
+          "kind": "category",
+          "label": "Forecast horizon",
+          "meaning": "Projected year number (1 through 11) summarized by each statistic row.",
+          "fields": [
+            "projected_year_number"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "error-basis",
+          "kind": "category",
+          "label": "Error basis",
+          "meaning": "Percentage denominator basis (pct_actual or pct_gdp).",
+          "fields": [
+            "error_basis"
+          ]
+        },
+        {
+          "id": "projection-year-range",
+          "kind": "category",
+          "label": "Evaluation fiscal-year range",
+          "meaning": "Fiscal-year evaluation span summarized by each horizon row.",
+          "fields": [
+            "projection_year_range"
+          ]
+        }
+      ]
+    },
+    "cbo_projection_errors": {
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "baseline_date",
+          "DATE"
+        ],
+        [
+          "spring_flag",
+          "BOOLEAN"
+        ],
+        [
+          "winter_flag",
+          "BOOLEAN"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projected_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "actual_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "gdp_billions",
+          "DOUBLE"
+        ],
+        [
+          "legislative_change_billions",
+          "DOUBLE"
+        ],
+        [
+          "legislative_deficit_change_billions",
+          "DOUBLE"
+        ],
+        [
+          "adjusted_projection_billions",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_billions",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_pct_actual",
+          "DOUBLE"
+        ],
+        [
+          "leg_change_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Derived US-CBO/eval-projections forecast error observations covering FY1982-FY2025 revenues (Winter and Spring baselines) and FY1984-FY2025 outlays, deficits, and debt (Spring baselines), horizons 1-11. Excludes Fannie Mae, Freddie Mac, 2022 student loan forgiveness, and horizon 0.",
+      "dimensions": [
+        {
+          "id": "baseline-date",
+          "kind": "date",
+          "label": "Baseline release date",
+          "meaning": "CBO baseline release date (1982-02-01 through 2025-01-01, day 01 per CBO convention).",
+          "fields": [
+            "baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Realized federal fiscal year (1982-2025) evaluated against each CBO baseline.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "forecast-horizon",
+          "kind": "category",
+          "label": "Forecast horizon",
+          "meaning": "Forecast horizon year (1 through 11) from baseline release to target fiscal year.",
+          "fields": [
+            "projected_year_number"
+          ],
+          "syntax": "positive-integer"
+        }
+      ]
+    },
+    "cbo_revenue_detail": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_type",
+          "VARCHAR"
+        ],
+        [
+          "section",
+          "VARCHAR"
+        ],
+        [
+          "variable_note",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data detailed federal revenue projection vintages (2024-06, 2025-01, 2026-02; Pub 51138) from the pinned US-CBO/cbo-data commit. Fiscal-year and calendar-year distributions remain distinguished by file_type.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Period basis",
+          "meaning": "Distribution period basis (annual_cy or annual_fy).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "estimate-type",
+          "kind": "category",
+          "label": "Estimate status",
+          "meaning": "Whether CBO designates the observation as actual or projected.",
+          "fields": [
+            "estimate_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Revenue category",
+          "meaning": "Detailed federal revenue category (individual income tax, payroll, corporate profits, excise, capital gains, baseline changes).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_spending_detail": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "tin",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "disc_or_mand",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "agency",
+          "VARCHAR"
+        ],
+        [
+          "bureau",
+          "VARCHAR"
+        ],
+        [
+          "function_code",
+          "VARCHAR"
+        ],
+        [
+          "subfunction_code",
+          "VARCHAR"
+        ],
+        [
+          "off_budget",
+          "VARCHAR"
+        ],
+        [
+          "budget_authority",
+          "DOUBLE"
+        ],
+        [
+          "outlays",
+          "DOUBLE"
+        ],
+        [
+          "budget_authority_raw",
+          "VARCHAR"
+        ],
+        [
+          "outlays_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data account-level 10-year spending projection vintages (2024-06, 2025-01, 2026-02; Pub 51142) from the pinned US-CBO/cbo-data commit. Offsetting receipts and other spending rows for the same account remain distinct.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2024-FY2036) recorded in account-level spending rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "spending-type",
+          "kind": "category",
+          "label": "Discretionary or mandatory",
+          "meaning": "Budget enforcement classification (Discretionary or Mandatory).",
+          "fields": [
+            "disc_or_mand"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Spending category",
+          "meaning": "Major federal spending category (Defense, Nondefense, Medicare, Medicaid, Social Security, Net Interest, Offsetting receipts, Other Spending).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_tax_parameters": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data tax parameter and effective marginal tax rate vintages (2024-06, 2025-01, 2026-02; Pub 53724) from the pinned US-CBO/cbo-data commit. Earlier unarchived editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "calendar-year-label",
+          "kind": "category",
+          "label": "Calendar year",
+          "meaning": "Calendar year labels (CY2021-CY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Tax parameter category",
+          "meaning": "CBO tax parameter and EMTR category (tax_parameters, emtr_capital, emtr_labor, delta_emtr_capital, tax_wedges).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_ten_year_budget": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data 10-year federal budget baseline vintages (2024-06, 2025-01, 2026-02; Pub 51118) from the pinned US-CBO/cbo-data commit. Earlier unarchived CBO editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2023-FY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Ten-year budget baseline and scenario variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
+    },
+    "cbo_trust_fund": {
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Sampled CBO Open Data federal trust fund projection vintages (2024-06, 2025-01, 2026-02; Pub 51136) from the pinned US-CBO/cbo-data commit. Earlier unarchived editions are not implied.",
+      "dimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2023-FY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Trust fund category",
+          "meaning": "Trust fund series category (balances, surpluses, oasi_detail, di_detail, hi_detail).",
+          "fields": [
+            "category"
+          ]
+        }
+      ]
     }
   }
 }
