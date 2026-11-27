@@ -856,4 +856,65 @@ class RegulationCoverageTests(unittest.TestCase):
         self.assertEqual(scope_dims['snapshot']['granularity'], 'snapshot')
         self.assertEqual(scope_dims['scope-outcome']['buckets'], {'["observed"]': 2})
 
+    def test_sam_opportunities_definitions_measure_candidate_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        for tid in ('sam_opportunity_observations', 'sam_opportunity_snapshots'):
+            self.assertEqual(defs[tid]['family'], 'sam-opportunities')
+            self.assertIn('ss-vf7b', defs[tid]['note'])
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': 'sam-opportunities', 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-27T15:00:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        obs_pol, obs_tbl = make_tbl(
+            'sam_opportunity_observations',
+            "INSERT INTO t (posted_date_raw, response_deadline_raw, archive_date_raw, notice_type_raw, set_aside_code_raw, text_interpretation_status) VALUES "
+            "('2026-11-06 09:33:33', '2026-11-13T16:00:00-05:00', '2026-11-28', 'Sources Sought', 'SBA', 'decoded-exact'), "
+            "('2026-11-02 12:31:40', '2027-03-01T12:00:00-05:00', '9999-05-01', 'Presolicitation', '', 'byte-preserving-unqualified'), "
+            "('2099-01-01 00:00:00', '', '', 'Award Notice', 'NONE', 'decoded-exact')"
+        )
+        builder.validate_plan({'sam_opportunity_observations': obs_tbl}, {'sam_opportunity_observations': dict(obs_pol)})
+        obs_dims = {d['id']: d for d in coverage_scan.scan_table('sam_opportunity_observations', obs_tbl, obs_pol)['dimensions']}
+        self.assertEqual(obs_dims['posted-dates']['buckets'], {'2026-11': 2})
+        self.assertEqual(obs_dims['posted-dates']['anomalies']['futureActivityBuckets'], {'2099-01': 1})
+        self.assertEqual(obs_dims['response-deadlines']['buckets'], {'2026-11': 1, '2027-03': 1})
+        self.assertEqual((obs_dims['response-deadlines']['placedRows'], obs_dims['response-deadlines']['unplacedRows']), (2, 1))
+        self.assertEqual(obs_dims['archive-dates']['buckets'], {'2026-11': 1, '9999-05': 1})
+        self.assertEqual(obs_dims['archive-dates']['anomalies']['sourceLiteralReviewBuckets'], {'9999-05': 1})
+        self.assertEqual(obs_dims['notice-type']['buckets'], {
+            '["Award Notice"]': 1, '["Presolicitation"]': 1, '["Sources Sought"]': 1,
+        })
+        self.assertEqual(obs_dims['set-aside-code']['buckets'], {'["NONE"]': 1, '["SBA"]': 1})
+        self.assertEqual((obs_dims['set-aside-code']['placedRows'], obs_dims['set-aside-code']['unplacedRows']), (2, 1))
+        self.assertEqual(obs_dims['text-interpretation-status']['buckets'], {
+            '["byte-preserving-unqualified"]': 1, '["decoded-exact"]': 2,
+        })
+
+        snap_pol, snap_tbl = make_tbl(
+            'sam_opportunity_snapshots',
+            "INSERT INTO t (source_kind, text_encoding, snapshot_date) VALUES ('opportunities', 'latin-1', NULL)"
+        )
+        builder.validate_plan({'sam_opportunity_snapshots': snap_tbl}, {'sam_opportunity_snapshots': dict(snap_pol)})
+        snap_dims = {d['id']: d for d in coverage_scan.scan_table('sam_opportunity_snapshots', snap_tbl, snap_pol)['dimensions']}
+        self.assertEqual(set(snap_dims), {'source-kind', 'text-encoding', 'retained-snapshot'})
+        self.assertEqual(snap_dims['source-kind']['buckets'], {'["opportunities"]': 1})
+        self.assertEqual(snap_dims['text-encoding']['buckets'], {'["latin-1"]': 1})
+        self.assertEqual(snap_dims['retained-snapshot']['granularity'], 'snapshot')
+
 if __name__ == '__main__': unittest.main()
