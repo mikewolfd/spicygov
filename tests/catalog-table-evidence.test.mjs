@@ -155,3 +155,71 @@ test("unreviewed changes cannot promote a guessed actionable warning", async () 
   assert.doesNotMatch(visible(html), /2025 edition is unconfirmed|Title 14/);
   assert.match(html, /New evidence/);
 });
+
+test("carried coverage notes distinguish earlier review from exact release checks", async () => {
+  const fs = await import("node:fs/promises");
+  const copy = JSON.parse(await fs.readFile("content/catalog-coverage-copy.json", "utf8"));
+  const note = Object.keys(copy).find(text => text.startsWith("The named CFR-2025-title1-vol1"));
+  const newest = "sha256:" + "c".repeat(64);
+
+  const exactHtml = render({
+    ...destination,
+    coverageNote: note,
+    coverageNoteMatch: "exact",
+    coverageNoteReviewedVersion: generation,
+  });
+  assert.match(visible(exactHtml), /Checked this release/);
+  assert.doesNotMatch(visible(exactHtml), /Carried from earlier review/);
+  assert.match(exactHtml, new RegExp(`Reviewed publication: <code>${generation}</code>`));
+
+  const carriedCurrent = render({
+    ...destination,
+    artifactDigest: later,
+    coverageNote: note,
+    coverageNoteMatch: "carried",
+    coverageNoteReviewedVersion: generation,
+  }, { id: "table", artifactDigest: later });
+  assert.match(visible(carriedCurrent), /Carried from earlier review/);
+  assert.doesNotMatch(visible(carriedCurrent), /Checked this release/);
+  assert.match(carriedCurrent, /carried forward from an earlier reviewed publication across routine data-only republishes with matching schema, policy, and acquisition route or parent bindings/);
+  assert.match(carriedCurrent, new RegExp(`Reviewed publication: <code>${generation}</code>`));
+  assert.match(carriedCurrent, new RegExp(`Current publication: <code>${later}</code>`));
+  assert.doesNotMatch(carriedCurrent, /Catalog publication:/);
+
+  const carriedGeneral = render({
+    ...destination,
+    artifactDigest: later,
+    coverageNoteMatch: "carried",
+    coverageNoteReviewedVersion: generation,
+  }, { id: "table", artifactDigest: later });
+  assert.doesNotMatch(visible(carriedGeneral), /Carried from earlier review|Checked this release|carried forward/);
+  assert.match(carriedGeneral, /carried forward from an earlier reviewed publication/);
+  assert.match(carriedGeneral, new RegExp(`Reviewed publication: <code>${generation}</code>`));
+
+  const carriedStale = render({
+    ...destination,
+    artifactDigest: later,
+    coverageNote: note,
+    coverageNoteMatch: "carried",
+    coverageNoteReviewedVersion: generation,
+  }, { id: "table", artifactDigest: newest });
+  assert.match(visible(carriedStale), /Checked earlier release/);
+  assert.doesNotMatch(visible(carriedStale), /Checked this release|Carried from earlier review/);
+  assert.equal((visible(carriedStale).match(/earlier release/g) ?? []).length, 1);
+  assert.match(carriedStale, /raw-file coverage review describes an earlier publication/);
+  assert.match(carriedStale, new RegExp(`Reviewed publication: <code>${generation}</code>`));
+  assert.match(carriedStale, new RegExp(`Catalog publication: <code>${later}</code>`));
+  assert.match(carriedStale, new RegExp(`Current publication: <code>${newest}</code>`));
+
+  const carriedUnconfirmed = render({
+    ...destination,
+    artifactDigest: later,
+    coverageNote: note,
+    coverageNoteMatch: "carried",
+    coverageNoteReviewedVersion: generation,
+  }, { id: "table" });
+  assert.match(visible(carriedUnconfirmed), /Release not confirmed/);
+  assert.doesNotMatch(visible(carriedUnconfirmed), /Checked this release/);
+  assert.match(carriedUnconfirmed, /raw-file coverage review could not be compared/);
+  assert.match(carriedUnconfirmed, new RegExp(`Reviewed publication: <code>${generation}</code>`));
+});

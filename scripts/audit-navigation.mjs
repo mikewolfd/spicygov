@@ -61,7 +61,7 @@ for (const spec of recipes) {
    continue;
   }
   const columns=[...new Set([...navigationColumns(spec),...(spec.field?[spec.field]:[])])];
-  if(!spec.available || columns.some(column=>!source.columns.some(c=>c.name===column)) || spec.candidates&&spec.receiptFields.length&&!spec.field) {
+  if(!spec.available || columns.some(column=>!source.columns.some(c=>c.name===column)) || spec.candidates&&spec.receiptFields?.length&&!spec.field) {
    result.reason='Required references live in receipts or source fields that this scan cannot read. No empty-population claim.';
   } else {
    for(const target of spec.targets) {

@@ -18,7 +18,7 @@ export type PublicationMember = { key: string; sha256: string; bytes: number; ro
 export type PublicationTable = { table: string; bytes: number; rows: number; sha256?: string; members?: PublicationMember[]; partitionColumns?: string[] };
 export type PublicationObservation = { id: string; family: string; captureAt: string; familyPublishedAt: string; serverDate: string; responseSha256: string; artifactDigest: string; artifactPrefix: string; associationStatus: 'exact-family' | 'unqualified'; tables: PublicationTable[] };
 export type PublicationReconciliation = { scope: 'current' | 'historical'; version: string; status: 'verified' | 'missing_local_files' | 'missing_provenance' | 'conflicting_evidence'; sourceFiles: number; matchedSourceFiles: number; missingSourceFiles: number; capturedSourceFiles: number; inputClosureComplete: boolean; reasons: string[]; evidenceLinks: { label: string; url: string }[] };
-export type CatalogTable = { id: string; family: string; status: string; artifactDigest?: string; coverageNote?: string; publication?: PublicationReconciliation };
+export type CatalogTable = { id: string; family: string; status: string; artifactDigest?: string; coverageNote?: string; coverageNoteMatch?: 'exact' | 'carried'; coverageNoteReviewedVersion?: string; publication?: PublicationReconciliation };
 export type CatalogFilePart = { path: string; rows: number } | CatalogParquetPart;
 export type CatalogDetail = { format: 'spicy-source-collection'; version: CatalogVersion; generation: string; collection: CatalogCollection & { periods: CatalogPeriod[] }; routes: CatalogRoute[]; tables: CatalogTable[]; files: { pages: CatalogFilePart[]; total: number }; retainedFiles?: { pages: CatalogFilePart[]; total: number }; planned: Record<string, unknown>[]; observations: Record<string, unknown>[]; relationships: Record<string, unknown>[]; coverage?: CatalogCoverage; publicationObservations?: PublicationObservation[]; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
 export type CatalogFilePage = { format: 'spicy-source-files'; version: CatalogVersion; generation: string; collectionId: string; files: CatalogFile[]; localPath?: string; encodedBytes?: number; verification?: string; internalOnly?: unknown };
@@ -155,10 +155,25 @@ function validateFilePartitions(raw: unknown, version: CatalogVersion) {
   unique(array(files.pages), 'path');
   if (array(files.pages).reduce((sum: number, page) => sum + (object(page).rows as number), 0) !== files.total) throw Error('Catalog file partitions do not match total');
 }
+function validateTableCoverageNote(row: Record<string, unknown>) {
+  const match = row.coverageNoteMatch;
+  const reviewedVersion = row.coverageNoteReviewedVersion;
+  if (match !== undefined) {
+    if (match !== 'exact' && match !== 'carried') throw Error('Invalid coverage note match status');
+    if (typeof row.coverageNote !== 'string' || !row.coverageNote.trim()) throw Error('Coverage note match status requires a coverage note');
+  }
+  if (match === 'carried') {
+    if (typeof reviewedVersion !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(reviewedVersion)) throw Error('Carried coverage note requires a reviewed version digest');
+    if (reviewedVersion === row.artifactDigest) throw Error('Carried coverage note must reference a different reviewed version');
+  } else if (reviewedVersion !== undefined) {
+    if (typeof reviewedVersion !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(reviewedVersion)) throw Error('Invalid coverage note reviewed version digest');
+    if (match !== 'exact' || reviewedVersion !== row.artifactDigest) throw Error('Reviewed version without carried match must match artifactDigest');
+  }
+}
 export function parseCatalogDetail(raw: unknown, generation: string, collectionId: string, internal = false, version?: CatalogVersion): CatalogDetail {
   if (!internal) publicSafe(raw); const value = header(raw, 'spicy-source-collection', ['collection','routes','tables','files','planned','observations','relationships','coverage','publicationObservations','retainedFiles'], internal, generation, version); collection(value.collection, internal, value.version as CatalogVersion, true); if (object(value.collection).id !== collectionId) throw Error('Catalog collection mismatch');
   array(value.routes).forEach(raw => { const row = fields(raw, ['id','label','deliveryMethod','lifecycle','custodian','contentBehavior','accessUrl','periods','status','note'], internal); ['id','label','deliveryMethod','lifecycle','custodian','contentBehavior'].forEach(key => string(row[key])); ['status','note'].forEach(key => optionalString(row[key])); array(row.periods).forEach(period); if (row.accessUrl !== undefined) { const url = new URL(string(row.accessUrl)); if (!['http:','https:'].includes(url.protocol) || url.username || url.password) throw Error('Unsafe source route URL'); } }); unique(array(value.routes), 'id'); if (array(value.routes).length !== object(value.collection).routeCount) throw Error('Catalog route count mismatch');
-  array(value.tables).forEach(raw => { const row = fields(raw, ['id','family','status','artifactDigest','coverageNote','publication'], internal); ['id','family','status'].forEach(key => string(row[key])); ['artifactDigest','coverageNote'].forEach(key => optionalString(row[key])); if (row.publication !== undefined) validateReconciliation(row.publication, row.artifactDigest); });
+  array(value.tables).forEach(raw => { const row = fields(raw, ['id','family','status','artifactDigest','coverageNote','coverageNoteMatch','coverageNoteReviewedVersion','publication'], internal); ['id','family','status'].forEach(key => string(row[key])); ['artifactDigest','coverageNote'].forEach(key => optionalString(row[key])); validateTableCoverageNote(row); if (row.publication !== undefined) validateReconciliation(row.publication, row.artifactDigest); });
   validateFilePartitions(value.files,value.version as CatalogVersion);
   if (value.retainedFiles !== undefined) validateFilePartitions(value.retainedFiles,value.version as CatalogVersion);
   const entryFields: Record<string, string[]> = { planned: ['id','table','family','status','reason','routeId','destinationIds'], observations: ['id','status','observedAt','scope','declaredCount','observedCount','note'], relationships: ['id','kind','fromId','toId','scope','note'] };

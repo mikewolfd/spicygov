@@ -363,3 +363,52 @@ test('reader refuses cross-version details and file pages within the same genera
  const filesReader=new SourceCatalogReader('https://data.example/source-catalog/manifest.json',false,async()=>new Response(JSON.stringify(page)));
  await assert.rejects(filesReader.files(slimManifest,slimDetail,0),/partition version/);
 });
+
+test('table coverage note carry-forward metadata accepts valid exact and carried contracts and rejects malformed combinations', () => {
+ const baseTable = { id:'table', family:'family', status:'publication-pinned', artifactDigest:generation };
+ const parseTable = table => parseCatalogDetail({...detail, tables:[table]}, generation, item.id).tables[0];
+
+ const implicitExact = parseTable({...baseTable, coverageNote:'Reviewed raw files cover 2020–2025.'});
+ assert.equal(implicitExact.coverageNoteMatch, undefined);
+ assert.equal(implicitExact.coverageNoteReviewedVersion, undefined);
+
+ const explicitExactWithoutVersion = parseTable({...baseTable, coverageNote:'Reviewed raw files cover 2020–2025.', coverageNoteMatch:'exact'});
+ assert.equal(explicitExactWithoutVersion.coverageNoteMatch, 'exact');
+ assert.equal(explicitExactWithoutVersion.coverageNoteReviewedVersion, undefined);
+
+ const explicitExactWithVersion = parseTable({...baseTable, coverageNote:'Reviewed raw files cover 2020–2025.', coverageNoteMatch:'exact', coverageNoteReviewedVersion:generation});
+ assert.equal(explicitExactWithVersion.coverageNoteMatch, 'exact');
+ assert.equal(explicitExactWithVersion.coverageNoteReviewedVersion, generation);
+
+ const carried = parseTable({...baseTable, coverageNote:'Reviewed raw files cover 2020–2025.', coverageNoteMatch:'carried', coverageNoteReviewedVersion:otherGeneration});
+ assert.equal(carried.coverageNoteMatch, 'carried');
+ assert.equal(carried.coverageNoteReviewedVersion, otherGeneration);
+
+ const carriedWithoutArtifactDigest = parseTable({id:'table', family:'family', status:'published', coverageNote:'Reviewed raw files cover 2020–2025.', coverageNoteMatch:'carried', coverageNoteReviewedVersion:otherGeneration});
+ assert.equal(carriedWithoutArtifactDigest.coverageNoteMatch, 'carried');
+ assert.equal(carriedWithoutArtifactDigest.coverageNoteReviewedVersion, otherGeneration);
+
+ const invalidCases = [
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'fuzzy'}, /Invalid coverage note match status/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:''}, /Invalid coverage note match status/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:null}, /Invalid coverage note match status/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:123}, /Invalid coverage note match status/],
+  [{...baseTable, coverageNoteMatch:'exact'}, /requires a coverage note/],
+  [{...baseTable, coverageNoteMatch:'carried', coverageNoteReviewedVersion:otherGeneration}, /requires a coverage note/],
+  [{...baseTable, coverageNote:'   ', coverageNoteMatch:'carried', coverageNoteReviewedVersion:otherGeneration}, /Catalog text expected/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried'}, /requires a reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried', coverageNoteReviewedVersion:'sha256:bad'}, /requires a reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried', coverageNoteReviewedVersion:'b'.repeat(64)}, /requires a reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried', coverageNoteReviewedVersion:'sha256:'+'B'.repeat(64)}, /requires a reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried', coverageNoteReviewedVersion:null}, /requires a reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'carried', coverageNoteReviewedVersion:generation}, /different reviewed version/],
+  [{...baseTable, coverageNote:'Note', coverageNoteReviewedVersion:generation}, /must match artifactDigest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'exact', coverageNoteReviewedVersion:otherGeneration}, /must match artifactDigest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'exact', coverageNoteReviewedVersion:'sha256:bad'}, /Invalid coverage note reviewed version digest/],
+  [{...baseTable, coverageNote:'Note', coverageNoteMatch:'exact', coverageNoteReviewedVersion:null}, /Invalid coverage note reviewed version digest/],
+  [{id:'table', family:'family', status:'published', coverageNote:'Note', coverageNoteMatch:'exact', coverageNoteReviewedVersion:generation}, /must match artifactDigest/],
+ ];
+ for (const [bad, pattern] of invalidCases) {
+  assert.throws(() => parseTable(bad), pattern, JSON.stringify(bad));
+ }
+});

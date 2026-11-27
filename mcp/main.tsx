@@ -58,6 +58,11 @@ function McpGuide() {
           <a className="mcp-text-link" href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noreferrer">Claude Code setup guide <ArrowUpRight size={14} /></a>
         </details>
       </section>
+      <section className="mcp-setup" aria-labelledby="clients-heading">
+        <h2 id="clients-heading">Tested clients &amp; HTTP scripts</h2>
+        <p>Tested public clients that connect directly include the official <code>mcp</code> SDK, Claude.ai, Claude Code, <code>curl</code>, Python <code>httpx</code> and <code>requests</code>, and Node <code>fetch</code>.</p>
+        <p>Cloudflare edge checks return HTTP 403 for bare Python <code>urllib</code> requests sent with the default <code>Python-urllib</code> header. For scripted access, use the <code>mcp</code> SDK, <code>httpx</code>, or <code>requests</code>, or send an explicit identifying <code>User-Agent</code> header for your tool (for example, <code>my-research-script/1.0</code>).</p>
+      </section>
       <section className="mcp-try" aria-labelledby="try-heading">
         <h2 id="try-heading">Start with a question</h2>
         <blockquote>“What datasets are available? Show me how bills connect to their sponsors.”</blockquote>
