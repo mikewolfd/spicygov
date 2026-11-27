@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 122,
+  "tableCount": 124,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -35290,6 +35290,325 @@
         "qualification": "Candidate generation Parquet schema and field distributions verified ahead of live R2 publication."
       },
       "reviewNote": "2026-11-25 (Wave 2C): Pre-publication coverage definition and review added against verified local candidate generation Parquets."
+    },
+    {
+      "tableId": "sam_opportunity_observations",
+      "family": "sam-opportunities",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "native_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_date",
+          "VARCHAR"
+        ],
+        [
+          "text_encoding",
+          "VARCHAR"
+        ],
+        [
+          "text_interpretation_status",
+          "VARCHAR"
+        ],
+        [
+          "unqualified_text_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "record_content_sha256",
+          "VARCHAR"
+        ],
+        [
+          "title_raw",
+          "VARCHAR"
+        ],
+        [
+          "solicitation_number",
+          "VARCHAR"
+        ],
+        [
+          "department_raw",
+          "VARCHAR"
+        ],
+        [
+          "agency_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "sub_tier_raw",
+          "VARCHAR"
+        ],
+        [
+          "office_raw",
+          "VARCHAR"
+        ],
+        [
+          "office_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "posted_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "notice_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "base_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "response_deadline_raw",
+          "VARCHAR"
+        ],
+        [
+          "set_aside_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "set_aside_raw",
+          "VARCHAR"
+        ],
+        [
+          "naics_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "classification_code_raw",
+          "VARCHAR"
+        ],
+        [
+          "active_raw",
+          "VARCHAR"
+        ],
+        [
+          "archive_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "source_link",
+          "VARCHAR"
+        ],
+        [
+          "additional_info_link",
+          "VARCHAR"
+        ],
+        [
+          "description_raw",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "source_line_start",
+          "BIGINT"
+        ],
+        [
+          "source_line_end",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "posted-dates",
+          "kind": "date",
+          "label": "Notice posted dates",
+          "meaning": "Posted dates stated in the retained SAM.gov public active-opportunities CSV. Source calendar dates are preserved without inferred time zone conversion.",
+          "fields": [
+            "posted_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "response-deadlines",
+          "kind": "date",
+          "label": "Response deadlines",
+          "meaning": "Scheduled response deadlines stated in the source SAM.gov notice rows; blank deadlines remain unplaced on calendar months and source years outside 1900\u20132100 remain visibly flagged for review.",
+          "fields": [
+            "response_deadline_raw"
+          ],
+          "syntax": "iso",
+          "special": "source-date-literals"
+        },
+        {
+          "id": "archive-dates",
+          "kind": "date",
+          "label": "Scheduled archive dates",
+          "meaning": "Scheduled archive dates stated in the source SAM.gov notice rows; blank values remain unplaced and extreme literal years such as 9999 remain visibly flagged for source review without silent correction.",
+          "fields": [
+            "archive_date_raw"
+          ],
+          "syntax": "iso",
+          "special": "source-date-literals"
+        },
+        {
+          "id": "notice-type",
+          "kind": "category",
+          "label": "Notice type",
+          "meaning": "Source-stated SAM.gov contract opportunity notice type (for example, Combined Synopsis/Solicitation, Solicitation, Presolicitation, Sources Sought, Special Notice, or Award Notice).",
+          "fields": [
+            "notice_type_raw"
+          ]
+        },
+        {
+          "id": "set-aside-code",
+          "kind": "category",
+          "label": "Set-aside code",
+          "meaning": "Source-stated SAM.gov small business or socioeconomic set-aside code (for example, SBA, SDVOSBC, 8A, HZC, WOSB, or NONE); notices without a set-aside code remain unplaced.",
+          "fields": [
+            "set_aside_code_raw"
+          ]
+        },
+        {
+          "id": "text-interpretation-status",
+          "kind": "category",
+          "label": "Text interpretation status",
+          "meaning": "Byte-preservation diagnostic distinguishing strictly ASCII-exact observations (decoded-exact) from rows with mixed-encoding non-ASCII free-text bytes staged reversibly under latin-1 (byte-preserving-unqualified).",
+          "fields": [
+            "text_interpretation_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:effa0bd28469f89e003c43127e70cc023a3093e75159785a247b6d651bf8d28a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:9a803d64e4a1ca69d5dd10abdb919b3141dc3d6ce75a430c8842d377def970e4",
+        "rows": 72318,
+        "byteSize": 86785464,
+        "memberSha256": "sha256:aa3ae42a037f4fa3d3dc99c4ddaee18e9b3bcfd67852ef72a45d8b6398b5adb4",
+        "qualification": "Full public-extract candidate generation (72,318 rows, 60,431 decoded-exact, 11,887 byte-preserving-unqualified under latin-1) verified against retained ContractOpportunitiesFullCSV.csv ahead of live R2 publication; API-only attachments and version history explicitly omitted pending ss-vf7b."
+      },
+      "reviewNote": "2026-11-27 (ss-5m6o): Pre-publication coverage definition and review added against verified local full public-extract candidate generation Parquets; API-only attachments and version history omitted pending ss-vf7b."
+    },
+    {
+      "tableId": "sam_opportunity_snapshots",
+      "family": "sam-opportunities",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "source_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "snapshot_date",
+          "VARCHAR"
+        ],
+        [
+          "selection_json",
+          "VARCHAR"
+        ],
+        [
+          "coverage_limit",
+          "VARCHAR"
+        ],
+        [
+          "text_encoding",
+          "VARCHAR"
+        ],
+        [
+          "source_rows",
+          "BIGINT"
+        ],
+        [
+          "selected_rows",
+          "BIGINT"
+        ],
+        [
+          "distinct_native_ids",
+          "BIGINT"
+        ],
+        [
+          "unqualified_text_rows",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-kind",
+          "kind": "category",
+          "label": "SAM source kind",
+          "meaning": "SAM.gov public extract kind accounted for by each snapshot row.",
+          "fields": [
+            "source_kind"
+          ]
+        },
+        {
+          "id": "text-encoding",
+          "kind": "category",
+          "label": "Explicit text encoding",
+          "meaning": "Explicit CSV decoding recorded for each retained SAM.gov opportunities snapshot (latin-1 preserves mixed-encoding raw bytes reversibly).",
+          "fields": [
+            "text_encoding"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Reconciled source, selected, distinct native-ID, and unqualified-text row counts for each selected SAM.gov public active-opportunities extract. API-only attachments and version history are omitted pending ss-vf7b.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:effa0bd28469f89e003c43127e70cc023a3093e75159785a247b6d651bf8d28a",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:9a803d64e4a1ca69d5dd10abdb919b3141dc3d6ce75a430c8842d377def970e4",
+        "rows": 1,
+        "byteSize": 6274,
+        "memberSha256": "sha256:f0a24d36bab496fb03d535ed82d01f3220900eacf1b6572f7f64e4762eea576a",
+        "qualification": "Full public-extract snapshot metadata Parquet verified ahead of live R2 publication; rolling CSV states no snapshot_date and omits API-only attachments/version history pending ss-vf7b."
+      },
+      "reviewNote": "2026-11-27 (ss-5m6o): Pre-publication coverage definition and review added against verified local full public-extract candidate generation Parquets; API-only attachments and version history omitted pending ss-vf7b."
     },
     {
       "tableId": "sec_comment_files",
