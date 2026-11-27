@@ -13622,6 +13622,126 @@
           ]
         }
       ]
+    },
+    "nppes_provider_observations": {
+      "family": "nppes-providers",
+      "schema": [
+        [
+          "npi",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "scope",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "record_number",
+          "BIGINT"
+        ],
+        [
+          "byte_offset",
+          "BIGINT"
+        ],
+        [
+          "byte_length",
+          "BIGINT"
+        ],
+        [
+          "entity_type_code",
+          "VARCHAR"
+        ],
+        [
+          "organization_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "deactivation_date",
+          "VARCHAR"
+        ],
+        [
+          "reactivation_date",
+          "VARCHAR"
+        ],
+        [
+          "fields_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Counts describe explicitly pinned CMS NPPES Version 2 main and reference sidecar CSV observations, not complete nationwide provider coverage, licensure, or Medicare participation. Sparse deactivated main rows and sidecars remain unplaced on entity_type_code.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published NPPES observations",
+          "meaning": "Total literal main and sidecar rows in the selected pinned CMS NPPES Version 2 generation.",
+          "fields": []
+        },
+        {
+          "id": "record-kind",
+          "kind": "category",
+          "label": "NPPES file roles",
+          "meaning": "Whether each row comes from the main npidata file or the othername, practice_location, or endpoint reference sidecars.",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "source-scope",
+          "kind": "category",
+          "label": "Source scope",
+          "meaning": "Whether each observation came from a complete CMS CSV member or a bounded excerpt.",
+          "fields": [
+            "scope"
+          ]
+        },
+        {
+          "id": "entity-type",
+          "kind": "category",
+          "label": "Provider entity types",
+          "meaning": "Individual (1) vs Organization (2) NPI entity type code on active/reactivated main rows; sparse deactivated main rows and sidecars remain unplaced.",
+          "fields": [
+            "entity_type_code"
+          ]
+        },
+        {
+          "id": "source-member",
+          "kind": "category",
+          "label": "CMS CSV members",
+          "meaning": "Exact CMS V2 CSV member filename inside each pinned archive, identifying the covered monthly or weekly date span.",
+          "fields": [
+            "source_member"
+          ]
+        }
+      ]
     }
   }
 }

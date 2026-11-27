@@ -67,6 +67,7 @@ const purposes: Record<string, string> = {
   members: 'Members of Congress, their terms of service and party affiliations.',
   'native-legal-references': 'Legal citations found in source documents, for following references to other laws and rules.',
   nominations: 'Presidential nominations and their progress through the Senate.',
+  'nppes-providers': 'CMS National Plan and Provider Enumeration System (NPPES) Version 2 provider and sidecar observations, for looking up providers by NPI with deactivation and reactivation history.',
   'ofac-sanctions': 'Treasury sanctions lists and related records, for researching listed entities.',
   'org-committee-links': 'Links between organizations and committees recorded in the collected data.',
   'press-releases': 'Collected public press releases, for following official announcements.',

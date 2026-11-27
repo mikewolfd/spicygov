@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 124,
+  "tableCount": 125,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -41641,6 +41641,134 @@
         "qualification": "Live R2 irs-form990 generation Parquet verified against publication.v2.json (11 Part VII officer entries)."
       },
       "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live irs-form990 generation Parquet."
+    },
+    {
+      "tableId": "nppes_provider_observations",
+      "family": "nppes-providers",
+      "schema": [
+        [
+          "npi",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "scope",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_member",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "record_number",
+          "BIGINT"
+        ],
+        [
+          "byte_offset",
+          "BIGINT"
+        ],
+        [
+          "byte_length",
+          "BIGINT"
+        ],
+        [
+          "entity_type_code",
+          "VARCHAR"
+        ],
+        [
+          "organization_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "deactivation_date",
+          "VARCHAR"
+        ],
+        [
+          "reactivation_date",
+          "VARCHAR"
+        ],
+        [
+          "fields_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Published NPPES observations",
+          "meaning": "Total literal main and sidecar rows in the selected pinned CMS NPPES Version 2 generation.",
+          "fields": []
+        },
+        {
+          "id": "record-kind",
+          "kind": "category",
+          "label": "NPPES file roles",
+          "meaning": "Whether each row comes from the main npidata file or the othername, practice_location, or endpoint reference sidecars.",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "source-scope",
+          "kind": "category",
+          "label": "Source scope",
+          "meaning": "Whether each observation came from a complete CMS CSV member or a bounded excerpt.",
+          "fields": [
+            "scope"
+          ]
+        },
+        {
+          "id": "entity-type",
+          "kind": "category",
+          "label": "Provider entity types",
+          "meaning": "Individual (1) vs Organization (2) NPI entity type code on active/reactivated main rows; sparse deactivated main rows and sidecars remain unplaced.",
+          "fields": [
+            "entity_type_code"
+          ]
+        },
+        {
+          "id": "source-member",
+          "kind": "category",
+          "label": "CMS CSV members",
+          "meaning": "Exact CMS V2 CSV member filename inside each pinned archive, identifying the covered monthly or weekly date span.",
+          "fields": [
+            "source_member"
+          ]
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:e92e57c29b5cb600063db8d07b71665e3e6db0c43262809eb9e4c9661755ae23",
+        "candidateLogicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:5cf6c147d62556ca8fe178d6f9a2ea764531897e1a17b3f1a886d89f3f15fba7",
+        "rows": 92,
+        "byteSize": 16373,
+        "memberSha256": "sha256:4a6f92d13e0ffc955deeb3a01ba3c46cc8b657edde1340f12259b828028bdf4d",
+        "qualification": "Live November 2026 CMS NPPES V2 monthly/weekly qualification (110926_111526 and 111626_112226 canary cohort Parquet across main + othername/pl/endpoint sidecars) verified ahead of live R2 publication."
+      },
+      "reviewNote": "2026-11-27 (ss-jknq): Pre-publication coverage definition and review added against verified local November 2026 CMS NPPES V2 canary generation Parquet."
     }
   ],
   "scannerRequirements": [

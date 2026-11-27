@@ -917,4 +917,54 @@ class RegulationCoverageTests(unittest.TestCase):
         self.assertEqual(snap_dims['text-encoding']['buckets'], {'["latin-1"]': 1})
         self.assertEqual(snap_dims['retained-snapshot']['granularity'], 'snapshot')
 
+    def test_nppes_provider_observations_definition_measures_candidate_schema(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+        self.assertIn('nppes_provider_observations', defs)
+        pol = defs['nppes_provider_observations']
+        self.assertEqual(pol['family'], 'nppes-providers')
+
+        path = self.root / 'nppes_provider_observations.parquet'
+        cols = ', '.join(f'"{n}" {t}' for n, t in pol['schema'])
+        with duckdb.connect() as conn:
+            conn.execute(f'CREATE TABLE t ({cols})')
+            conn.execute("""
+                INSERT INTO t (
+                    npi, kind, scope, source_url, source_member, source_sha256, source_bytes,
+                    record_number, byte_offset, byte_length, entity_type_code, organization_name,
+                    last_name, first_name, deactivation_date, reactivation_date, fields_json
+                ) VALUES
+                ('1306750138', 'main', 'member', 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_110926_111526_Weekly_V2.zip',
+                 'npidata_pfile_20261109-20261115.csv', 'sha256:aaa', 1000, 7, 100, 200, '2', 'WEBIVOX LLC', '', '', '', '', '{}'),
+                ('1023950664', 'main', 'member', 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_111626_112226_Weekly_V2.zip',
+                 'npidata_pfile_20261116-20261122.csv', 'sha256:bbb', 1000, 12, 200, 200, '1', '', 'HUDA', 'NOOR-UL', '11/09/2026', '11/17/2026', '{}'),
+                ('1174491484', 'main', 'member', 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_111626_112226_Weekly_V2.zip',
+                 'npidata_pfile_20261116-20261122.csv', 'sha256:bbb', 1000, 41, 400, 80, '', '', '', '', '11/16/2026', '', '{}'),
+                ('1023642576', 'othername', 'member', 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_110926_111526_Weekly_V2.zip',
+                 'othername_pfile_20261109-20261115.csv', 'sha256:ccc', 500, 616, 50, 60, NULL, NULL, NULL, NULL, NULL, NULL, '{}')
+            """)
+            conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+        raw = path.read_bytes()
+        tbl = {
+            'family': 'nppes-providers', 'kind': 'generation', 'columns': pol['schema'],
+            'rows': 4, 'publishedAt': '2026-11-27T15:00:00Z', '_coverageAsOfMonth': '2026-11',
+            'members': [{'key': path.name, 'url': str(path), 'rows': 4, 'byteSize': len(raw)}],
+        }
+        builder.validate_plan({'nppes_provider_observations': tbl}, {'nppes_provider_observations': dict(pol)})
+        dims = {d['id']: d for d in coverage_scan.scan_table('nppes_provider_observations', tbl, pol)['dimensions']}
+        self.assertEqual(dims['snapshot']['granularity'], 'snapshot')
+        self.assertEqual(dims['snapshot']['placedRows'], 4)
+        self.assertEqual(dims['record-kind']['buckets'], {'["main"]': 3, '["othername"]': 1})
+        self.assertEqual(dims['source-scope']['buckets'], {'["member"]': 4})
+        self.assertEqual(dims['entity-type']['buckets'], {'["1"]': 1, '["2"]': 1})
+        self.assertEqual((dims['entity-type']['placedRows'], dims['entity-type']['unplacedRows']), (2, 2))
+        self.assertEqual(dims['source-member']['buckets'], {
+            '["npidata_pfile_20261109-20261115.csv"]': 1,
+            '["npidata_pfile_20261116-20261122.csv"]': 2,
+            '["othername_pfile_20261109-20261115.csv"]': 1,
+        })
+
 if __name__ == '__main__': unittest.main()
