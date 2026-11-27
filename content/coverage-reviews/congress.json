@@ -16,6 +16,7 @@
     "house-communications",
     "house-disbursement-pages",
     "house-disbursements",
+    "house-disclosures",
     "member-vote-terms",
     "members",
     "nominations",
@@ -26,9 +27,10 @@
     "scorecard-analysis",
     "scorecards",
     "senate-expenditures",
+    "table3-history",
     "treaties"
   ],
-  "tableCount": 81,
+  "tableCount": 87,
   "everyAssignedTableEnumerated": true,
   "fullCountsReconciled": true,
   "claimBoundary": "This review measures retained presence and source scope, not the completeness of publisher acquisition.",
@@ -60838,6 +60840,897 @@
         "majority-party"
       ],
       "reviewNote": "2026-11-26: Coverage definition and review added against live congress-sessions generation Parquet."
+    },
+    {
+      "tableId": "house_disclosure_filings",
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_type",
+          "VARCHAR"
+        ],
+        [
+          "prefix",
+          "VARCHAR"
+        ],
+        [
+          "first",
+          "VARCHAR"
+        ],
+        [
+          "last",
+          "VARCHAR"
+        ],
+        [
+          "suffix",
+          "VARCHAR"
+        ],
+        [
+          "state_district",
+          "VARCHAR"
+        ],
+        [
+          "year_raw",
+          "VARCHAR"
+        ],
+        [
+          "filing_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "filing_date_status",
+          "VARCHAR"
+        ],
+        [
+          "report_url",
+          "VARCHAR"
+        ],
+        [
+          "report_url_basis",
+          "VARCHAR"
+        ],
+        [
+          "index_uri",
+          "VARCHAR"
+        ],
+        [
+          "index_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ],
+        [
+          "index_year",
+          "BIGINT"
+        ],
+        [
+          "source_line",
+          "BIGINT"
+        ],
+        [
+          "filing_date",
+          "DATE"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
+        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
+        "sha256": "sha256:3b3d342c67684cab0397b31ce514ca88f8a3a19f36bd763dba8a18bf9b3b9a50",
+        "members": [],
+        "rows": 2935,
+        "byteSize": 261122,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "index-year",
+          "kind": "year",
+          "label": "House index year",
+          "meaning": "Annual House Clerk financial disclosure index year (2025FD.zip). Reflects one declared retained index snapshot.",
+          "fields": [
+            "index_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "filing-dates",
+          "kind": "date",
+          "label": "Index filing dates",
+          "meaning": "Filing dates parsed from the House Clerk annual disclosure index; rows with blank filing dates remain unplaced.",
+          "fields": [
+            "filing_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "filing-type",
+          "kind": "category",
+          "label": "Filing type code",
+          "meaning": "House Clerk filing category code (e.g., C candidate, X extension, P periodic transaction report, O annual, D duplicate/new filer, A amendment).",
+          "fields": [
+            "filing_type"
+          ]
+        },
+        {
+          "id": "filing-date-status",
+          "kind": "category",
+          "label": "Filing date parse status",
+          "meaning": "Whether the index filing date parsed cleanly (parsed) or was blank in the source index (blank).",
+          "fields": [
+            "filing_date_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.house_disclosure_filings",
+      "executableDimensions": [
+        "index-year",
+        "filing-dates",
+        "filing-type",
+        "filing-date-status"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+    },
+    {
+      "tableId": "house_disclosure_reports",
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "extraction_status",
+          "VARCHAR"
+        ],
+        [
+          "refusal_reason",
+          "VARCHAR"
+        ],
+        [
+          "parser_version",
+          "VARCHAR"
+        ],
+        [
+          "backend",
+          "VARCHAR"
+        ],
+        [
+          "backend_version",
+          "VARCHAR"
+        ],
+        [
+          "model",
+          "VARCHAR"
+        ],
+        [
+          "filer_name_raw",
+          "VARCHAR"
+        ],
+        [
+          "state_district_raw",
+          "VARCHAR"
+        ],
+        [
+          "signed_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "index_year",
+          "BIGINT"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "page_count",
+          "BIGINT"
+        ],
+        [
+          "transaction_count",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
+        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
+        "sha256": "sha256:419a69b17637677c261c829983e2a804bc9acfc3c8b0561a9339c4148a2f8efc",
+        "members": [],
+        "rows": 8,
+        "byteSize": 9484,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "index-year",
+          "kind": "year",
+          "label": "House index year",
+          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2025).",
+          "fields": [
+            "index_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "parent-filing-dates",
+          "kind": "inherited",
+          "label": "Parent index filing dates",
+          "meaning": "Filing date inherited from the matching house_disclosure_filings row by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-filing-dates",
+            "kind": "date",
+            "label": "Parent index filing dates",
+            "meaning": "Filing date inherited from house_disclosure_filings by filing_id.",
+            "fields": [
+              "filing_date"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "extraction-status",
+          "kind": "category",
+          "label": "PDF extraction status",
+          "meaning": "Whether the retained PTR PDF was parsed from native layout text (native_layout) or explicitly refused (refused).",
+          "fields": [
+            "extraction_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.house_disclosure_reports",
+      "executableDimensions": [
+        "index-year",
+        "parent-filing-dates",
+        "extraction-status"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+    },
+    {
+      "tableId": "house_disclosure_pages",
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "page_id",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "page_status",
+          "VARCHAR"
+        ],
+        [
+          "native_text",
+          "VARCHAR"
+        ],
+        [
+          "page_locator",
+          "VARCHAR"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
+        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
+        "sha256": "sha256:0789c6cc7dab48c373837c251bbd5a0f318e6c7cc512fd44cc4e4ec672fa45e3",
+        "members": [],
+        "rows": 103,
+        "byteSize": 25987,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "parent-report-index-year",
+          "kind": "inherited",
+          "label": "Parent report index year",
+          "meaning": "House Clerk disclosure index year inherited from house_disclosure_reports by report_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-index-year",
+            "kind": "year",
+            "label": "Parent report index year",
+            "meaning": "House Clerk index year inherited from house_disclosure_reports by report_id.",
+            "fields": [
+              "index_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "page-status",
+          "kind": "category",
+          "label": "PDF page status",
+          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid) or was an unsupported image-only page (unsupported_image_page).",
+          "fields": [
+            "page_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.house_disclosure_pages",
+      "executableDimensions": [
+        "parent-report-index-year",
+        "page-status"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+    },
+    {
+      "tableId": "house_disclosure_transactions",
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "owner_raw",
+          "VARCHAR"
+        ],
+        [
+          "asset_raw",
+          "VARCHAR"
+        ],
+        [
+          "action_raw",
+          "VARCHAR"
+        ],
+        [
+          "native_transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_status",
+          "VARCHAR"
+        ],
+        [
+          "notification_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "notification_date_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "currency",
+          "VARCHAR"
+        ],
+        [
+          "filing_status_raw",
+          "VARCHAR"
+        ],
+        [
+          "details_raw",
+          "VARCHAR"
+        ],
+        [
+          "capital_gains_read_status",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "page_locator",
+          "VARCHAR"
+        ],
+        [
+          "fragments_json",
+          "VARCHAR"
+        ],
+        [
+          "row_number",
+          "BIGINT"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ],
+        [
+          "page_end",
+          "BIGINT"
+        ],
+        [
+          "amount_lower_usd",
+          "BIGINT"
+        ],
+        [
+          "amount_upper_usd",
+          "BIGINT"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "notification_date",
+          "DATE"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
+        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
+        "sha256": "sha256:36a9a0baaf118c72ba790660f5e13a190bef57f1be9e63d3907842245830b44b",
+        "members": [],
+        "rows": 738,
+        "byteSize": 257208,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Asset transaction dates parsed from selected native-layout House Periodic Transaction Reports.",
+          "fields": [
+            "transaction_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "notification-dates",
+          "kind": "date",
+          "label": "Notification dates",
+          "meaning": "Transaction notification dates parsed from selected native-layout House Periodic Transaction Reports.",
+          "fields": [
+            "notification_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "action-type",
+          "kind": "category",
+          "label": "Transaction action",
+          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale).",
+          "fields": [
+            "action_raw"
+          ]
+        },
+        {
+          "id": "filing-status",
+          "kind": "category",
+          "label": "Transaction filing status",
+          "meaning": "Verbatim filing status printed on each PTR transaction row (New or Amended).",
+          "fields": [
+            "filing_status_raw"
+          ]
+        },
+        {
+          "id": "amount-status",
+          "kind": "category",
+          "label": "Amount representation status",
+          "meaning": "Whether transaction amounts are represented as statutory dollar ranges (reported_range).",
+          "fields": [
+            "amount_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.house_disclosure_transactions",
+      "executableDimensions": [
+        "transaction-dates",
+        "notification-dates",
+        "action-type",
+        "filing-status",
+        "amount-status"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+    },
+    {
+      "tableId": "house_disclosure_amendment_links",
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "link_id",
+          "VARCHAR"
+        ],
+        [
+          "original_report_id",
+          "VARCHAR"
+        ],
+        [
+          "amended_report_id",
+          "VARCHAR"
+        ],
+        [
+          "original_doc_id",
+          "VARCHAR"
+        ],
+        [
+          "amended_doc_id",
+          "VARCHAR"
+        ],
+        [
+          "original_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "amended_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "original_page_locator",
+          "VARCHAR"
+        ],
+        [
+          "amended_page_locator",
+          "VARCHAR"
+        ],
+        [
+          "link_status",
+          "VARCHAR"
+        ],
+        [
+          "source_statement",
+          "VARCHAR"
+        ],
+        [
+          "basis",
+          "VARCHAR"
+        ],
+        [
+          "uncertainty",
+          "VARCHAR"
+        ],
+        [
+          "review_sha256",
+          "VARCHAR"
+        ],
+        [
+          "original_page_number",
+          "BIGINT"
+        ],
+        [
+          "amended_page_number",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
+        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
+        "sha256": "sha256:074e3137d67b2f020cbfbd4a14ffdf512dee339d634a775b81e25fcc2f6c9d82",
+        "members": [],
+        "rows": 1,
+        "byteSize": 9607,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "original-report-index-year",
+          "kind": "inherited",
+          "label": "Original report index year",
+          "meaning": "House Clerk disclosure index year inherited from the linked original report in house_disclosure_reports by original_report_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "original_report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "original-report-index-year",
+            "kind": "year",
+            "label": "Original report index year",
+            "meaning": "House Clerk index year inherited from house_disclosure_reports by original_report_id.",
+            "fields": [
+              "index_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "link-status",
+          "kind": "category",
+          "label": "Amendment link status",
+          "meaning": "Review qualification status for each explicit amendment link between retained PTR PDFs.",
+          "fields": [
+            "link_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.house_disclosure_amendment_links",
+      "executableDimensions": [
+        "original-report-index-year",
+        "link-status"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+    },
+    {
+      "tableId": "table3_historical_records",
+      "family": "table3-history",
+      "schema": [
+        [
+          "id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "release_point",
+          "VARCHAR"
+        ],
+        [
+          "act_key",
+          "VARCHAR"
+        ],
+        [
+          "act_native_id",
+          "VARCHAR"
+        ],
+        [
+          "act_number",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "act_date",
+          "VARCHAR"
+        ],
+        [
+          "statutes_at_large_volume",
+          "VARCHAR"
+        ],
+        [
+          "act_native_sequence",
+          "VARCHAR"
+        ],
+        [
+          "act_insertion",
+          "VARCHAR"
+        ],
+        [
+          "act_format",
+          "VARCHAR"
+        ],
+        [
+          "act_print_in_supplement",
+          "VARCHAR"
+        ],
+        [
+          "act_include_in_online_release_point",
+          "VARCHAR"
+        ],
+        [
+          "act_public_law",
+          "VARCHAR"
+        ],
+        [
+          "record_native_id",
+          "VARCHAR"
+        ],
+        [
+          "record_native_sequence",
+          "VARCHAR"
+        ],
+        [
+          "usc_key",
+          "VARCHAR"
+        ],
+        [
+          "act_section",
+          "VARCHAR"
+        ],
+        [
+          "record_page",
+          "VARCHAR"
+        ],
+        [
+          "usc_title",
+          "VARCHAR"
+        ],
+        [
+          "usc_section",
+          "VARCHAR"
+        ],
+        [
+          "status",
+          "VARCHAR"
+        ],
+        [
+          "record_print_in_supplement",
+          "VARCHAR"
+        ],
+        [
+          "usc_section_key",
+          "VARCHAR"
+        ],
+        [
+          "usc_place",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "raw_source_row",
+          "VARCHAR"
+        ],
+        [
+          "act_record_position",
+          "BIGINT"
+        ],
+        [
+          "fragment_position",
+          "BIGINT"
+        ],
+        [
+          "fragment_record_position",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/table3-history/456a22a0e120cd5509a07679386c340733032dd4a0f952ad7beb3b2cea0b3ee8/artifact.json",
+        "artifactDigest": "sha256:456a22a0e120cd5509a07679386c340733032dd4a0f952ad7beb3b2cea0b3ee8",
+        "sha256": "sha256:50be7f4abe516d2543471b83b2247ffc89018cb2003345b3732b31c9367a0736",
+        "members": [],
+        "rows": 317590,
+        "byteSize": 40750048,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "olrc-act-dates",
+          "kind": "date",
+          "label": "OLRC historical act dates",
+          "meaning": "Act dates stated in retained Office of the Law Revision Counsel Table III historical records (1789-06-01 through 2026-01-23 at release point 119-73).",
+          "fields": [
+            "act_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers (1\u2013119) represented across retained Table III historical classification records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "release-point",
+          "kind": "category",
+          "label": "OLRC release point",
+          "meaning": "Office of the Law Revision Counsel Table III release point from which the retained historical records were parsed.",
+          "fields": [
+            "release_point"
+          ]
+        },
+        {
+          "id": "usc-place",
+          "kind": "category",
+          "label": "U.S. Code placement kind",
+          "meaning": "Normalized U.S. Code placement kind (section, note, preceding, note_preceding); rows without a normalized placement remain unplaced.",
+          "fields": [
+            "usc_place"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.table3_historical_records",
+      "executableDimensions": [
+        "olrc-act-dates",
+        "congress",
+        "release-point",
+        "usc-place"
+      ],
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live table3-history generation Parquet."
     }
   ],
   "implementationValidation": {

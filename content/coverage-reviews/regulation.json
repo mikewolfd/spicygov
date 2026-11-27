@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 116,
+  "tableCount": 122,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -40368,6 +40368,960 @@
         "qualification": "Apple (0000320193) and Microsoft (0000789019) 2023-01-01..2024-12-31 cohort Parquet, raw visual review (ss-h9qm), and live R2 publication verified."
       },
       "reviewNote": "2026-11-26 (ss-h9qm): Coverage definition and review added against live sec-edgar generation Parquet."
+    },
+    {
+      "tableId": "executive_disclosure_filings",
+      "family": "executive-disclosures",
+      "schema": [
+        [
+          "cohort_id",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "official_id",
+          "VARCHAR"
+        ],
+        [
+          "official_name",
+          "VARCHAR"
+        ],
+        [
+          "position_raw",
+          "VARCHAR"
+        ],
+        [
+          "agency_raw",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "report_period_raw",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "filing_date",
+          "VARCHAR"
+        ],
+        [
+          "filer_signed_date",
+          "VARCHAR"
+        ],
+        [
+          "agency_certification_date",
+          "VARCHAR"
+        ],
+        [
+          "oge_certification_date",
+          "VARCHAR"
+        ],
+        [
+          "metadata_review_ref",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "acquired_at",
+          "VARCHAR"
+        ],
+        [
+          "access_status",
+          "VARCHAR"
+        ],
+        [
+          "access_basis",
+          "VARCHAR"
+        ],
+        [
+          "access_reason",
+          "VARCHAR"
+        ],
+        [
+          "access_evidence_ref",
+          "VARCHAR"
+        ],
+        [
+          "amendment_status",
+          "VARCHAR"
+        ],
+        [
+          "amendment_details_json",
+          "VARCHAR"
+        ],
+        [
+          "facts_status",
+          "VARCHAR"
+        ],
+        [
+          "facts_reason",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "BIGINT"
+        ],
+        [
+          "byte_size",
+          "BIGINT"
+        ],
+        [
+          "cover_page",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "report-year",
+          "kind": "year",
+          "label": "Disclosure report year",
+          "meaning": "Native annual reporting years (2020 and 2023) covered by the selected archived White House OGE Form 278e packages.",
+          "fields": [
+            "report_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "filer-signed-dates",
+          "kind": "date",
+          "label": "Filer signature dates",
+          "meaning": "Dates on which the filer signed each retained OGE Form 278e report.",
+          "fields": [
+            "filer_signed_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "oge-certification-dates",
+          "kind": "date",
+          "label": "OGE certification dates",
+          "meaning": "Office of Government Ethics certification dates printed on each retained OGE Form 278e cover page.",
+          "fields": [
+            "oge_certification_date"
+          ],
+          "syntax": "iso",
+          "special": "literal-date-anomalies"
+        },
+        {
+          "id": "facts-status",
+          "kind": "category",
+          "label": "Fact extraction qualification",
+          "meaning": "Whether structured fact rows were qualified from the PDF (qualified_part6 for 2024) or left lookup-only (unsupported for the amended 2021 package).",
+          "fields": [
+            "facts_status"
+          ]
+        },
+        {
+          "id": "amendment-status",
+          "kind": "category",
+          "label": "Amendment status",
+          "meaning": "Whether the retained filing package includes unreconciled amendments or none observed.",
+          "fields": [
+            "amendment_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:8b50968fcbe9056dcde0a1e47d962aa7c54be9674cb235fc225e2c5378dd4015",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:8758be553f59cc64708faef2230b6187989bf20fe1be074c0908b17e949fcdb8",
+        "publishedAt": "2026-11-27T03:00:25Z",
+        "rows": 2,
+        "byteSize": 19437,
+        "memberSha256": "sha256:8191524afd62254b0eed2c3e7ec706ee024e07e4ddf976bd648e0b95c4678835",
+        "qualification": "Live R2 executive-disclosures generation Parquet verified against publication.v2.json (2 archived OGE Form 278e filings)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live executive-disclosures generation Parquet."
+    },
+    {
+      "tableId": "executive_disclosure_facts",
+      "family": "executive-disclosures",
+      "schema": [
+        [
+          "cohort_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "fact_id",
+          "VARCHAR"
+        ],
+        [
+          "section",
+          "VARCHAR"
+        ],
+        [
+          "row_number_raw",
+          "VARCHAR"
+        ],
+        [
+          "description_raw",
+          "VARCHAR"
+        ],
+        [
+          "eif_raw",
+          "VARCHAR"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "income_type_raw",
+          "VARCHAR"
+        ],
+        [
+          "income_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "ownership_label",
+          "VARCHAR"
+        ],
+        [
+          "value_status",
+          "VARCHAR"
+        ],
+        [
+          "income_status",
+          "VARCHAR"
+        ],
+        [
+          "currency",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "parser_revision",
+          "VARCHAR"
+        ],
+        [
+          "backend_version",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ],
+        [
+          "cell_boxes_json",
+          "VARCHAR"
+        ],
+        [
+          "page",
+          "BIGINT"
+        ],
+        [
+          "value_lower",
+          "BIGINT"
+        ],
+        [
+          "value_upper",
+          "BIGINT"
+        ],
+        [
+          "income_lower",
+          "BIGINT"
+        ],
+        [
+          "income_upper",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-report-year",
+          "kind": "inherited",
+          "label": "Parent filing report year",
+          "meaning": "Native annual disclosure report year inherited from executive_disclosure_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "executive_disclosure_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-year",
+            "kind": "year",
+            "label": "Parent filing report year",
+            "meaning": "Native annual disclosure report year inherited from executive_disclosure_filings by filing_id.",
+            "fields": [
+              "report_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "section",
+          "kind": "category",
+          "label": "Form 278e section",
+          "meaning": "Qualified OGE Form 278e section from which each fact row was parsed.",
+          "fields": [
+            "section"
+          ]
+        },
+        {
+          "id": "value-status",
+          "kind": "category",
+          "label": "Asset value parse status",
+          "meaning": "Whether each fact row reported a statutory asset value range (range) or was blank (blank).",
+          "fields": [
+            "value_status"
+          ]
+        },
+        {
+          "id": "income-status",
+          "kind": "category",
+          "label": "Income parse status",
+          "meaning": "Whether each fact row reported a statutory income range (range) or was blank (blank).",
+          "fields": [
+            "income_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:8b50968fcbe9056dcde0a1e47d962aa7c54be9674cb235fc225e2c5378dd4015",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:8758be553f59cc64708faef2230b6187989bf20fe1be074c0908b17e949fcdb8",
+        "publishedAt": "2026-11-27T03:00:25Z",
+        "rows": 5,
+        "byteSize": 12516,
+        "memberSha256": "sha256:78e5dd9d2efa52ea4628350a0d3023f4a095283451710cad57c1147da9f8a85f",
+        "qualification": "Live R2 executive-disclosures generation Parquet verified against publication.v2.json (5 qualified Part 6 fact rows)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live executive-disclosures generation Parquet."
+    },
+    {
+      "tableId": "executive_disclosure_pages",
+      "family": "executive-disclosures",
+      "schema": [
+        [
+          "cohort_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "page_text",
+          "VARCHAR"
+        ],
+        [
+          "filer_identity_json",
+          "VARCHAR"
+        ],
+        [
+          "table_bbox_json",
+          "VARCHAR"
+        ],
+        [
+          "parser_revision",
+          "VARCHAR"
+        ],
+        [
+          "backend_version",
+          "VARCHAR"
+        ],
+        [
+          "page",
+          "BIGINT"
+        ],
+        [
+          "source_slot_count",
+          "BIGINT"
+        ],
+        [
+          "blank_slot_count",
+          "BIGINT"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-report-year",
+          "kind": "inherited",
+          "label": "Parent filing report year",
+          "meaning": "Native annual disclosure report year inherited from executive_disclosure_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "executive_disclosure_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-year",
+            "kind": "year",
+            "label": "Parent filing report year",
+            "meaning": "Native annual disclosure report year inherited from executive_disclosure_filings by filing_id.",
+            "fields": [
+              "report_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "cohort-id",
+          "kind": "category",
+          "label": "Declared filing cohort",
+          "meaning": "Explicitly declared executive disclosure archive cohort for each interpreted PDF page.",
+          "fields": [
+            "cohort_id"
+          ]
+        },
+        {
+          "id": "parser-revision",
+          "kind": "category",
+          "label": "Page parser revision",
+          "meaning": "Qualified layout parser revision used to interpret each executive disclosure PDF page.",
+          "fields": [
+            "parser_revision"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:8b50968fcbe9056dcde0a1e47d962aa7c54be9674cb235fc225e2c5378dd4015",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:8758be553f59cc64708faef2230b6187989bf20fe1be074c0908b17e949fcdb8",
+        "publishedAt": "2026-11-27T03:00:25Z",
+        "rows": 1,
+        "byteSize": 11451,
+        "memberSha256": "sha256:5287ad61f852c15e5ab389d6b6bf5e5e41b290c718ab6e5bb26d4b214a87a2d1",
+        "qualification": "Live R2 executive-disclosures generation Parquet verified against publication.v2.json (1 interpreted Part 6 PDF page)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live executive-disclosures generation Parquet."
+    },
+    {
+      "tableId": "irs990_filings",
+      "family": "irs-form990",
+      "schema": [
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "organization_name",
+          "VARCHAR"
+        ],
+        [
+          "return_id",
+          "VARCHAR"
+        ],
+        [
+          "tax_period",
+          "VARCHAR"
+        ],
+        [
+          "return_type",
+          "VARCHAR"
+        ],
+        [
+          "return_version",
+          "VARCHAR"
+        ],
+        [
+          "tax_year",
+          "VARCHAR"
+        ],
+        [
+          "tax_period_begin",
+          "VARCHAR"
+        ],
+        [
+          "tax_period_end",
+          "VARCHAR"
+        ],
+        [
+          "amended_raw",
+          "VARCHAR"
+        ],
+        [
+          "amended_status",
+          "VARCHAR"
+        ],
+        [
+          "revenue_raw",
+          "VARCHAR"
+        ],
+        [
+          "expenses_raw",
+          "VARCHAR"
+        ],
+        [
+          "grants_paid_raw",
+          "VARCHAR"
+        ],
+        [
+          "revenue_status",
+          "VARCHAR"
+        ],
+        [
+          "expenses_status",
+          "VARCHAR"
+        ],
+        [
+          "grants_paid_status",
+          "VARCHAR"
+        ],
+        [
+          "revenue_reconciliation",
+          "VARCHAR"
+        ],
+        [
+          "expenses_reconciliation",
+          "VARCHAR"
+        ],
+        [
+          "schedule_i_status",
+          "VARCHAR"
+        ],
+        [
+          "index_native_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "native_xml_json",
+          "VARCHAR"
+        ],
+        [
+          "submission_year",
+          "INTEGER"
+        ],
+        [
+          "revenue_usd",
+          "DECIMAL(38,0)"
+        ],
+        [
+          "expenses_usd",
+          "DECIMAL(38,0)"
+        ],
+        [
+          "grants_paid_usd",
+          "DECIMAL(38,0)"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "tax-periods",
+          "kind": "interval",
+          "label": "Tax period spans",
+          "meaning": "Organization tax periods declared on selected IRS Form 990 XML returns (tax_period_begin through tax_period_end). Represents explicitly selected filings, not a complete IRS Form 990 census.",
+          "fields": [
+            "tax_period_begin",
+            "tax_period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "tax-year",
+          "kind": "year",
+          "label": "IRS tax year",
+          "meaning": "Tax year declared on each selected IRS Form 990 return.",
+          "fields": [
+            "tax_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "submission-year",
+          "kind": "year",
+          "label": "IRS submission index year",
+          "meaning": "IRS annual e-file index year from which each selected Form 990 XML return was acquired.",
+          "fields": [
+            "submission_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "return-type-version",
+          "kind": "category",
+          "label": "Form type and XML schema version",
+          "meaning": "Declared IRS return type and XML schema version qualified for parsing (Form 990, 2021v4.2).",
+          "fields": [
+            "return_type",
+            "return_version"
+          ]
+        },
+        {
+          "id": "schedule-i-status",
+          "kind": "category",
+          "label": "Schedule I presence",
+          "meaning": "Whether Schedule I (Grants and Other Assistance) was present or absent on each selected Form 990 return.",
+          "fields": [
+            "schedule_i_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:23e13ef19f7283ce08a420928d85e6b840967fa7226506d5603cf94db74a8fb8",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:f2c939bb21d59a9cc3fc2dc8fdd4455f39ad9c42f5dfb1f1666522b887b7ec39",
+        "publishedAt": "2026-11-27T03:01:53Z",
+        "rows": 3,
+        "byteSize": 31995,
+        "memberSha256": "sha256:542be75ac43d39e49b2896491365e1c6e1560821923d5a8a97d930154cc24461",
+        "qualification": "Live R2 irs-form990 generation Parquet verified against publication.v2.json (3 selected Form 990 XML returns)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live irs-form990 generation Parquet."
+    },
+    {
+      "tableId": "irs990_grants",
+      "family": "irs-form990",
+      "schema": [
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "source_xpath",
+          "VARCHAR"
+        ],
+        [
+          "recipient_ein",
+          "VARCHAR"
+        ],
+        [
+          "recipient_name",
+          "VARCHAR"
+        ],
+        [
+          "purpose",
+          "VARCHAR"
+        ],
+        [
+          "cash_raw",
+          "VARCHAR"
+        ],
+        [
+          "cash_status",
+          "VARCHAR"
+        ],
+        [
+          "noncash_raw",
+          "VARCHAR"
+        ],
+        [
+          "noncash_status",
+          "VARCHAR"
+        ],
+        [
+          "native_entry_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "entry_ordinal",
+          "INTEGER"
+        ],
+        [
+          "cash_usd",
+          "DECIMAL(38,0)"
+        ],
+        [
+          "noncash_usd",
+          "DECIMAL(38,0)"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-tax-periods",
+          "kind": "inherited",
+          "label": "Parent return tax periods",
+          "meaning": "Organization tax period span inherited from irs990_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "irs990_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-tax-periods",
+            "kind": "interval",
+            "label": "Parent return tax periods",
+            "meaning": "Organization tax period span inherited from irs990_filings by filing_id.",
+            "fields": [
+              "tax_period_begin",
+              "tax_period_end"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "parent-tax-year",
+          "kind": "inherited",
+          "label": "Parent return tax year",
+          "meaning": "Tax year inherited from irs990_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "irs990_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-tax-year",
+            "kind": "year",
+            "label": "Parent return tax year",
+            "meaning": "Tax year inherited from irs990_filings by filing_id.",
+            "fields": [
+              "tax_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "grant-amount-status",
+          "kind": "category",
+          "label": "Cash and noncash amount status",
+          "meaning": "Parsing qualification status for Schedule I cash and noncash grant amounts.",
+          "fields": [
+            "cash_status",
+            "noncash_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:23e13ef19f7283ce08a420928d85e6b840967fa7226506d5603cf94db74a8fb8",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:f2c939bb21d59a9cc3fc2dc8fdd4455f39ad9c42f5dfb1f1666522b887b7ec39",
+        "publishedAt": "2026-11-27T03:01:53Z",
+        "rows": 1,
+        "byteSize": 17728,
+        "memberSha256": "sha256:1dbcb370eade9c72854826c70aa37f4348141d1704daf09cf149d048191c688d",
+        "qualification": "Live R2 irs-form990 generation Parquet verified against publication.v2.json (1 Schedule I grant entry)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live irs-form990 generation Parquet."
+    },
+    {
+      "tableId": "irs990_officers",
+      "family": "irs-form990",
+      "schema": [
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "ein",
+          "VARCHAR"
+        ],
+        [
+          "source_xpath",
+          "VARCHAR"
+        ],
+        [
+          "person_name",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "compensation_raw",
+          "VARCHAR"
+        ],
+        [
+          "compensation_status",
+          "VARCHAR"
+        ],
+        [
+          "related_compensation_raw",
+          "VARCHAR"
+        ],
+        [
+          "related_compensation_status",
+          "VARCHAR"
+        ],
+        [
+          "other_compensation_raw",
+          "VARCHAR"
+        ],
+        [
+          "other_compensation_status",
+          "VARCHAR"
+        ],
+        [
+          "native_entry_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "entry_ordinal",
+          "INTEGER"
+        ],
+        [
+          "compensation_usd",
+          "DECIMAL(38,0)"
+        ],
+        [
+          "related_compensation_usd",
+          "DECIMAL(38,0)"
+        ],
+        [
+          "other_compensation_usd",
+          "DECIMAL(38,0)"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "parent-tax-periods",
+          "kind": "inherited",
+          "label": "Parent return tax periods",
+          "meaning": "Organization tax period span inherited from irs990_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "irs990_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-tax-periods",
+            "kind": "interval",
+            "label": "Parent return tax periods",
+            "meaning": "Organization tax period span inherited from irs990_filings by filing_id.",
+            "fields": [
+              "tax_period_begin",
+              "tax_period_end"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "parent-tax-year",
+          "kind": "inherited",
+          "label": "Parent return tax year",
+          "meaning": "Tax year inherited from irs990_filings by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "irs990_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-tax-year",
+            "kind": "year",
+            "label": "Parent return tax year",
+            "meaning": "Tax year inherited from irs990_filings by filing_id.",
+            "fields": [
+              "tax_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "compensation-status",
+          "kind": "category",
+          "label": "Compensation amount parse status",
+          "meaning": "Parsing qualification status for reportable, related-organization, and other compensation amounts on Form 990 Part VII.",
+          "fields": [
+            "compensation_status",
+            "related_compensation_status",
+            "other_compensation_status"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:23e13ef19f7283ce08a420928d85e6b840967fa7226506d5603cf94db74a8fb8",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:f2c939bb21d59a9cc3fc2dc8fdd4455f39ad9c42f5dfb1f1666522b887b7ec39",
+        "publishedAt": "2026-11-27T03:01:53Z",
+        "rows": 11,
+        "byteSize": 16557,
+        "memberSha256": "sha256:9e8dfcff438b5f3c5595e372129944a4cc4e242177c4d89067133e1e8043c51b",
+        "qualification": "Live R2 irs-form990 generation Parquet verified against publication.v2.json (11 Part VII officer entries)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live irs-form990 generation Parquet."
     }
   ],
   "scannerRequirements": [
