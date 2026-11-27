@@ -7,6 +7,8 @@
     "amendments",
     "bill-family",
     "bill-subjects",
+    "cbo-data",
+    "cbo-eval-projections",
     "committee-meetings",
     "committee-reports",
     "committee-rosters",
@@ -30,7 +32,7 @@
     "table3-history",
     "treaties"
   ],
-  "tableCount": 87,
+  "tableCount": 106,
   "everyAssignedTableEnumerated": true,
   "fullCountsReconciled": true,
   "claimBoundary": "This review measures retained presence and source scope, not the completeness of publisher acquisition.",
@@ -61731,6 +61733,2392 @@
         "usc-place"
       ],
       "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live table3-history generation Parquet."
+    },
+    {
+      "tableId": "cbo_automatic_stabilizers",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:8d5854c4364dd86258b4736148d80a0a742650ab46ac16b2f30c672870fdfeb5",
+        "members": [],
+        "rows": 2780,
+        "byteSize": 46054,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO Open Data publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Source fiscal year labels (FY1965-FY2034) recorded in the automatic stabilizers series.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Series category",
+          "meaning": "CBO variable category (with/without stabilizers, stabilizer effects, and economic gaps).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_automatic_stabilizers",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_data_snapshots",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "dataset",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "row_count",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ],
+        [
+          "catalog_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:dcb0612cdb00ed0ebbbf703418c042afdc399e71403df90659242dc1cc8c431d",
+        "members": [],
+        "rows": 80,
+        "byteSize": 11102,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Distribution provenance inventory for the pinned US-CBO/cbo-data commit.",
+          "fields": []
+        },
+        {
+          "id": "dataset",
+          "kind": "category",
+          "label": "CBO dataset",
+          "meaning": "CBO Open Data dataset identifier represented by each retained CSV distribution.",
+          "fields": [
+            "dataset"
+          ]
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) for each retained CSV distribution.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Distribution file type",
+          "meaning": "Series frequency or domain file type within each CBO Open Data dataset.",
+          "fields": [
+            "file_type"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_data_snapshots",
+      "executableDimensions": [
+        "snapshot",
+        "dataset",
+        "vintage",
+        "file-type"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_demographic",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "domain",
+          "VARCHAR"
+        ],
+        [
+          "year",
+          "INTEGER"
+        ],
+        [
+          "age",
+          "VARCHAR"
+        ],
+        [
+          "sex",
+          "VARCHAR"
+        ],
+        [
+          "place_of_birth",
+          "VARCHAR"
+        ],
+        [
+          "immigration_status",
+          "VARCHAR"
+        ],
+        [
+          "migration_flow",
+          "VARCHAR"
+        ],
+        [
+          "marital_status",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "domain_description",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:1288e1b72e9d7380c7349d68769f74195f2831233b1c43b4fd7ccdb27fde1e3e",
+        "members": [],
+        "rows": 644470,
+        "byteSize": 8384299,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "projection-year",
+          "kind": "year",
+          "label": "Projection year",
+          "meaning": "Calendar year (2020-2099) represented by retained CBO demographic projection rows.",
+          "fields": [
+            "year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "domain",
+          "kind": "category",
+          "label": "Demographic domain",
+          "meaning": "Demographic projection domain (fertility, migration, mortality, population_bls, population_census, ss_area_population).",
+          "fields": [
+            "domain"
+          ]
+        },
+        {
+          "id": "measure",
+          "kind": "category",
+          "label": "Demographic measure",
+          "meaning": "Reported demographic measure (births per 1,000 females, deaths per 1,000 people, or number of people).",
+          "fields": [
+            "measure"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_demographic",
+      "executableDimensions": [
+        "projection-year",
+        "vintage",
+        "domain",
+        "measure"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_economic_projections",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_type",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:97b43d1134851b76747a313979e809a1e9ed56a409cb1e19118d11bea5fc39e8",
+        "members": [],
+        "rows": 46396,
+        "byteSize": 685836,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Period basis of the economic series (calendar, fiscal, or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "estimate-type",
+          "kind": "category",
+          "label": "Estimate status",
+          "meaning": "Whether CBO designates the observation as actual or projected.",
+          "fields": [
+            "estimate_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Economic category",
+          "meaning": "CBO macroeconomic variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_economic_projections",
+      "executableDimensions": [
+        "vintage",
+        "file-type",
+        "estimate-type",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_eval_actuals",
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "actual_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "gdp_billions",
+          "DOUBLE"
+        ],
+        [
+          "actuals_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "excluded_from_error_analysis",
+          "BOOLEAN"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "actual_gdp_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-eval-projections/a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d/artifact.json",
+        "artifactDigest": "sha256:a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d",
+        "sha256": "sha256:fedd00742cc9816b8ba4ae7c83658a22c238603229df9a5155791151e0f55ea9",
+        "members": [],
+        "rows": 792,
+        "byteSize": 18615,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "fiscal-year",
+          "kind": "year",
+          "label": "Fiscal year",
+          "meaning": "Realized federal fiscal year (1982-2025) represented in CBO evaluation actuals.",
+          "fields": [
+            "fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Major federal budget category or Total.",
+          "fields": [
+            "category"
+          ]
+        },
+        {
+          "id": "error-analysis-exclusion",
+          "kind": "category",
+          "label": "Excluded from error analysis",
+          "meaning": "Whether CBO excludes the observation from standard forecast error analysis (e.g., Fannie Mae/Freddie Mac or 2022 student loan forgiveness).",
+          "fields": [
+            "excluded_from_error_analysis"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_eval_actuals",
+      "executableDimensions": [
+        "fiscal-year",
+        "component",
+        "category",
+        "error-analysis-exclusion"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-eval-projections generation Parquet."
+    },
+    {
+      "tableId": "cbo_eval_baseline_changes",
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "changes_baseline_date",
+          "DATE"
+        ],
+        [
+          "change_category",
+          "VARCHAR"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "change_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-eval-projections/a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d/artifact.json",
+        "artifactDigest": "sha256:a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d",
+        "sha256": "sha256:139d69cdb2dfe0526658a360f466361e04ab5f783bcc54cb2d31d54cff5a58b6",
+        "members": [],
+        "rows": 36187,
+        "byteSize": 224493,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "changes-baseline-date",
+          "kind": "date",
+          "label": "Revision baseline date",
+          "meaning": "CBO baseline release date (1983-02-01 through 2026-02-01, day 01 per CBO convention) recording the revision.",
+          "fields": [
+            "changes_baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Target federal fiscal year (1982-2035) affected by the baseline revision.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "change-category",
+          "kind": "category",
+          "label": "Revision category",
+          "meaning": "CBO revision attribution (Economic, Legislative, or Technical).",
+          "fields": [
+            "change_category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_eval_baseline_changes",
+      "executableDimensions": [
+        "changes-baseline-date",
+        "projected-fiscal-year",
+        "component",
+        "change-category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-eval-projections generation Parquet."
+    },
+    {
+      "tableId": "cbo_eval_baselines",
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "baseline_date",
+          "DATE"
+        ],
+        [
+          "spring_flag",
+          "BOOLEAN"
+        ],
+        [
+          "winter_flag",
+          "BOOLEAN"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projected_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-eval-projections/a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d/artifact.json",
+        "artifactDigest": "sha256:a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d",
+        "sha256": "sha256:30c5ff2dc72af33eb7554579fc4f559a496dd70c7e6769f3487758d47fec7997",
+        "members": [],
+        "rows": 20342,
+        "byteSize": 165229,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "baseline-date",
+          "kind": "date",
+          "label": "Baseline release date",
+          "meaning": "CBO baseline release date (1982-02-01 through 2026-02-01, day 01 per CBO convention).",
+          "fields": [
+            "baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Target federal fiscal year (1982-2036) projected by each historical baseline.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Major federal budget category or Total.",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_eval_baselines",
+      "executableDimensions": [
+        "baseline-date",
+        "projected-fiscal-year",
+        "component",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-eval-projections generation Parquet."
+    },
+    {
+      "tableId": "cbo_historical_budget",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:bb02182d0d4d6799dd2bcfecc6dacf3f41240147239ad699b160997a01ca114e",
+        "members": [],
+        "rows": 12384,
+        "byteSize": 158272,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Historical fiscal year labels (FY1962-FY2025) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "CBO historical budget series category (revenues, outlays, discretionary, mandatory, and summary totals).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_historical_budget",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_historical_economic",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:2613f5358f9826572792501b5683915b5c935012dbaab189cf73b65880031bc1",
+        "members": [],
+        "rows": 164507,
+        "byteSize": 3199155,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Period basis of the historical economic series (annual_cy, annual_fy, or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Economic category",
+          "meaning": "CBO historical economic variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_historical_economic",
+      "executableDimensions": [
+        "vintage",
+        "file-type",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_long_term_budget",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:858f79bec1888135c204aab980932756c0807c2756eacaa20d810ca1646607de",
+        "members": [],
+        "rows": 1890,
+        "byteSize": 32344,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2025-FY2056) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "CBO long-term budget series category (revenues, spending, deficit, debt, health cost growth, HI trust fund, addendum).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_long_term_budget",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_long_term_economic",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "sex",
+          "VARCHAR"
+        ],
+        [
+          "age_group",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:96daf04052c7de70252a80654cdf5c9a0cf790ae74564828d53df5eb7e66e6b7",
+        "members": [],
+        "rows": 13342,
+        "byteSize": 183038,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "projection-year",
+          "kind": "year",
+          "label": "Projection year",
+          "meaning": "Calendar year (1994-2100) represented by retained long-term economic rows.",
+          "fields": [
+            "date"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series type",
+          "meaning": "Distribution series type (levels, lfp_rates, or rates).",
+          "fields": [
+            "file_type"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_long_term_economic",
+      "executableDimensions": [
+        "projection-year",
+        "vintage",
+        "file-type"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_potential_gdp",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:80476f99c5602f355c0af6b06099955bbb5cd38d4f0faf1a70b8ca74fca8d3ab",
+        "members": [],
+        "rows": 2349,
+        "byteSize": 40480,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (2019-08) represented by retained legacy rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Series frequency",
+          "meaning": "Series frequency (annual or quarterly).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "variable",
+          "kind": "category",
+          "label": "Series variable",
+          "meaning": "Potential GDP and underlying labor/capital input series identifier.",
+          "fields": [
+            "variable"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_potential_gdp",
+      "executableDimensions": [
+        "vintage",
+        "file-type",
+        "variable"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_projection_error_summary_stats",
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projection_year_range",
+          "VARCHAR"
+        ],
+        [
+          "number_of_projections",
+          "BIGINT"
+        ],
+        [
+          "error_basis",
+          "VARCHAR"
+        ],
+        [
+          "average_error_pct",
+          "DOUBLE"
+        ],
+        [
+          "average_absolute_error_pct",
+          "DOUBLE"
+        ],
+        [
+          "rmse_pct",
+          "DOUBLE"
+        ],
+        [
+          "two_thirds_spread_pct",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-eval-projections/a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d/artifact.json",
+        "artifactDigest": "sha256:a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d",
+        "sha256": "sha256:9b7f22c483f2c40163dcd3c1db541b2e86d349bfaba6d8d462d8779334d979f0",
+        "members": [],
+        "rows": 220,
+        "byteSize": 9940,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "label": "Retained snapshot",
+          "meaning": "Derived horizon-by-category accuracy summary statistics from the pinned US-CBO/eval-projections commit.",
+          "fields": []
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "forecast-horizon",
+          "kind": "category",
+          "label": "Forecast horizon",
+          "meaning": "Projected year number (1 through 11) summarized by each statistic row.",
+          "fields": [
+            "projected_year_number"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "error-basis",
+          "kind": "category",
+          "label": "Error basis",
+          "meaning": "Percentage denominator basis (pct_actual or pct_gdp).",
+          "fields": [
+            "error_basis"
+          ]
+        },
+        {
+          "id": "projection-year-range",
+          "kind": "category",
+          "label": "Evaluation fiscal-year range",
+          "meaning": "Fiscal-year evaluation span summarized by each horizon row.",
+          "fields": [
+            "projection_year_range"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_projection_error_summary_stats",
+      "executableDimensions": [
+        "snapshot",
+        "component",
+        "forecast-horizon",
+        "error-basis",
+        "projection-year-range"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-eval-projections generation Parquet."
+    },
+    {
+      "tableId": "cbo_projection_errors",
+      "family": "cbo-eval-projections",
+      "schema": [
+        [
+          "component",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "subcategory",
+          "VARCHAR"
+        ],
+        [
+          "baseline_date",
+          "DATE"
+        ],
+        [
+          "spring_flag",
+          "BOOLEAN"
+        ],
+        [
+          "winter_flag",
+          "BOOLEAN"
+        ],
+        [
+          "projected_fiscal_year",
+          "BIGINT"
+        ],
+        [
+          "projected_year_number",
+          "BIGINT"
+        ],
+        [
+          "projected_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "actual_value_billions",
+          "DOUBLE"
+        ],
+        [
+          "gdp_billions",
+          "DOUBLE"
+        ],
+        [
+          "legislative_change_billions",
+          "DOUBLE"
+        ],
+        [
+          "legislative_deficit_change_billions",
+          "DOUBLE"
+        ],
+        [
+          "adjusted_projection_billions",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_billions",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_pct_actual",
+          "DOUBLE"
+        ],
+        [
+          "leg_change_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "projection_error_pct_gdp",
+          "DOUBLE"
+        ],
+        [
+          "source_commit",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-eval-projections/a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d/artifact.json",
+        "artifactDigest": "sha256:a5ce9feb392e7776d0929b9dd8657f4f8decbb16ef0170e2ea7b8aeb20b84b2d",
+        "sha256": "sha256:19971e0cb296dcf3103d54be6f34d4d879e7a5c4c31924ab03be59ecadc79e80",
+        "members": [],
+        "rows": 8722,
+        "byteSize": 313984,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "baseline-date",
+          "kind": "date",
+          "label": "Baseline release date",
+          "meaning": "CBO baseline release date (1982-02-01 through 2025-01-01, day 01 per CBO convention).",
+          "fields": [
+            "baseline_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "projected-fiscal-year",
+          "kind": "year",
+          "label": "Projected fiscal year",
+          "meaning": "Realized federal fiscal year (1982-2025) evaluated against each CBO baseline.",
+          "fields": [
+            "projected_fiscal_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "component",
+          "kind": "category",
+          "label": "Budget component",
+          "meaning": "Federal budget component (debt, deficit, outlay, or revenue).",
+          "fields": [
+            "component"
+          ]
+        },
+        {
+          "id": "forecast-horizon",
+          "kind": "category",
+          "label": "Forecast horizon",
+          "meaning": "Forecast horizon year (1 through 11) from baseline release to target fiscal year.",
+          "fields": [
+            "projected_year_number"
+          ],
+          "syntax": "positive-integer"
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_projection_errors",
+      "executableDimensions": [
+        "baseline-date",
+        "projected-fiscal-year",
+        "component",
+        "forecast-horizon"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-eval-projections generation Parquet."
+    },
+    {
+      "tableId": "cbo_revenue_detail",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "estimate_type",
+          "VARCHAR"
+        ],
+        [
+          "section",
+          "VARCHAR"
+        ],
+        [
+          "variable_note",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:7a848cf2179a237b3676b7ab8cc4ff37e33d87e829d9c1f7d361c94bdf7e7c16",
+        "members": [],
+        "rows": 8501,
+        "byteSize": 120727,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "file-type",
+          "kind": "category",
+          "label": "Period basis",
+          "meaning": "Distribution period basis (annual_cy or annual_fy).",
+          "fields": [
+            "file_type"
+          ]
+        },
+        {
+          "id": "estimate-type",
+          "kind": "category",
+          "label": "Estimate status",
+          "meaning": "Whether CBO designates the observation as actual or projected.",
+          "fields": [
+            "estimate_type"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Revenue category",
+          "meaning": "Detailed federal revenue category (individual income tax, payroll, corporate profits, excise, capital gains, baseline changes).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_revenue_detail",
+      "executableDimensions": [
+        "vintage",
+        "file-type",
+        "estimate-type",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_spending_detail",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "tin",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "disc_or_mand",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "agency",
+          "VARCHAR"
+        ],
+        [
+          "bureau",
+          "VARCHAR"
+        ],
+        [
+          "function_code",
+          "VARCHAR"
+        ],
+        [
+          "subfunction_code",
+          "VARCHAR"
+        ],
+        [
+          "off_budget",
+          "VARCHAR"
+        ],
+        [
+          "budget_authority",
+          "DOUBLE"
+        ],
+        [
+          "outlays",
+          "DOUBLE"
+        ],
+        [
+          "budget_authority_raw",
+          "VARCHAR"
+        ],
+        [
+          "outlays_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:17a2519e1d673a4422f1c955ba510946ab84ed80612fabef33363eb320dc1ce7",
+        "members": [],
+        "rows": 65648,
+        "byteSize": 1371968,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2024-FY2036) recorded in account-level spending rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "spending-type",
+          "kind": "category",
+          "label": "Discretionary or mandatory",
+          "meaning": "Budget enforcement classification (Discretionary or Mandatory).",
+          "fields": [
+            "disc_or_mand"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Spending category",
+          "meaning": "Major federal spending category (Defense, Nondefense, Medicare, Medicaid, Social Security, Net Interest, Offsetting receipts, Other Spending).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_spending_detail",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "spending-type",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_tax_parameters",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:4beb3dd9e3661010ea8a770c8eed112a82ac7ae30085b05a7ee20c2d064f81c5",
+        "members": [],
+        "rows": 5531,
+        "byteSize": 62859,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "calendar-year-label",
+          "kind": "category",
+          "label": "Calendar year",
+          "meaning": "Calendar year labels (CY2021-CY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Tax parameter category",
+          "meaning": "CBO tax parameter and EMTR category (tax_parameters, emtr_capital, emtr_labor, delta_emtr_capital, tax_wedges).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_tax_parameters",
+      "executableDimensions": [
+        "vintage",
+        "calendar-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_ten_year_budget",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:620f59729b8f72560d09ce827d9f9fa2a7fb2902c409a06c3df38e348aa2baf3",
+        "members": [],
+        "rows": 8384,
+        "byteSize": 138040,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2023-FY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Budget category",
+          "meaning": "Ten-year budget baseline and scenario variable category.",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_ten_year_budget",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "cbo_trust_fund",
+      "family": "cbo-data",
+      "schema": [
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "commit_sha",
+          "VARCHAR"
+        ],
+        [
+          "publication_id",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "file_type",
+          "VARCHAR"
+        ],
+        [
+          "date",
+          "VARCHAR"
+        ],
+        [
+          "variable",
+          "VARCHAR"
+        ],
+        [
+          "value",
+          "DOUBLE"
+        ],
+        [
+          "value_raw",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "category",
+          "VARCHAR"
+        ],
+        [
+          "series_description",
+          "VARCHAR"
+        ],
+        [
+          "metadata_json",
+          "VARCHAR"
+        ],
+        [
+          "source_file",
+          "VARCHAR"
+        ],
+        [
+          "source_row_index",
+          "BIGINT"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "schema_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/cbo-data/8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085/artifact.json",
+        "artifactDigest": "sha256:8e766c67b129bbbf12e0ae7a86ad27abeef938f28bc65dbdff01d0950995e085",
+        "sha256": "sha256:0e390676153197d82ca152e49af53f9aabf1e0231b244324324c3e3282b4124c",
+        "members": [],
+        "rows": 1808,
+        "byteSize": 34700,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "vintage",
+          "kind": "category",
+          "label": "Publication vintage",
+          "meaning": "CBO publication vintage (YYYY-MM) represented by retained rows.",
+          "fields": [
+            "vintage"
+          ]
+        },
+        {
+          "id": "fiscal-year-label",
+          "kind": "category",
+          "label": "Fiscal year",
+          "meaning": "Projected fiscal year labels (FY2023-FY2036) recorded in retained rows.",
+          "fields": [
+            "date"
+          ]
+        },
+        {
+          "id": "category",
+          "kind": "category",
+          "label": "Trust fund category",
+          "meaning": "Trust fund series category (balances, surpluses, oasi_detail, di_detail, hi_detail).",
+          "fields": [
+            "category"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.cbo_trust_fund",
+      "executableDimensions": [
+        "vintage",
+        "fiscal-year-label",
+        "category"
+      ],
+      "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
     }
   ],
   "implementationValidation": {
