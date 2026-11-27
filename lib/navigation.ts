@@ -5,7 +5,7 @@ export type Part = { path: string[]; from: 'row' | 'element'; transform?: string
 export type Key = { parts: Part[]; separator: string; pattern: string };
 export type Guard = Part & { values?: string[]; pattern?: string; sameAs?: Part };
 export type Target = { table: string; columns: string[]; keys: Key[]; guards: Guard[]; available?: boolean; unavailableReason?: string;sourceAvailable?:boolean;completeKey?:boolean;directions?:{forward:RouteCapability;reverse:RouteCapability};requiredMainFields?:{path:string;status:string}[];requiredElementFields?:{path:string;status:string}[] };
-export type Navigation = { id: string; source: string; fields: string[]; field?: string; targets: Target[]; mode: 'row' | 'array'; candidates?: boolean; meaning: string; receiptFields: string[]; elementPath: string[]; ruleVersion: string; available?: boolean; unavailableReason?: string };
+export type Navigation = { id: string; source: string; fields: string[]; field?: string; targets: Target[]; mode: 'row' | 'array'; candidates?: boolean; meaning: string; receiptFields?: string[]; elementPath: string[]; ruleVersion: string; available?: boolean; unavailableReason?: string };
 export type Connection = { id: string; target: number; values: string[] };
 const transforms = [undefined, 'lower', 'bill-type', 'nomination-citation', 'partition', 'partition-value', 'senate-amendment', 'hearing-congress', 'vote-congress', 'native-boolean', 'canonical-date', 'fr-document-number', 'fr-publication-date'];
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -17,7 +17,7 @@ export function parseNavigation(value: unknown): Navigation[] {
   if (!Array.isArray(value)) throw new Error('Invalid source connection definitions.');
   const ids = new Set<string>();
   for (const s of value) {
-    if (!object(s) || typeof s.id !== 'string' || ids.has(s.id) || typeof s.source !== 'string' || !strings(s.fields) || !strings(s.receiptFields) || !strings(s.elementPath) || !['row','array'].includes(s.mode) || typeof s.meaning !== 'string' || s.ruleVersion !== 'source-navigation/1' || !Array.isArray(s.targets) || !s.targets.length) throw new Error('Invalid source connection definitions.');
+    if (!object(s) || typeof s.id !== 'string' || ids.has(s.id) || typeof s.source !== 'string' || !strings(s.fields) || (s.receiptFields !== undefined && !strings(s.receiptFields)) || !strings(s.elementPath) || !['row','array'].includes(s.mode) || typeof s.meaning !== 'string' || s.ruleVersion !== 'source-navigation/1' || !Array.isArray(s.targets) || !s.targets.length) throw new Error('Invalid source connection definitions.');
     ids.add(s.id);
     for (const t of s.targets) {
       if (!object(t) || typeof t.table !== 'string' || !strings(t.columns) || !t.columns.length || !Array.isArray(t.keys) || t.keys.length !== t.columns.length || !Array.isArray(t.guards)
@@ -83,13 +83,13 @@ function decoded(v: unknown, integerReferences = false): unknown { if (typeof v 
 export type FccDocumentOutcome = { state: 'unavailable' | 'unread' | 'unrecorded' | 'malformed' | 'ambiguous' | 'recorded'; message: string; sourceSha256?: string; pageCount?: number; error?: string };
 // Main result observations take precedence. The older receipt form remains
 // readable for the separate evidence inspector, never for navigation keys.
-export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = true): FccDocumentOutcome {
+export function fccDocumentOutcome(url: string, row: Row, fieldAvailable = true): FccDocumentOutcome {
   const malformed: FccDocumentOutcome = {state:'malformed',message:'Recorded extraction diagnostics are malformed.'};
   const unrecorded: FccDocumentOutcome = {state:'unrecorded',message:'No extraction attempt recorded for this URL.'};
   if (!fieldAvailable) return {state:'unavailable',message:'Extraction diagnostics are unavailable in the published source details.'};
-  if (Object.hasOwn(receipt, 'extraction_results')) {
-    if (receipt.extraction_results === null) return unrecorded;
-    const results = decoded(receipt.extraction_results);
+  if (Object.hasOwn(row, 'extraction_results')) {
+    if (row.extraction_results === null) return unrecorded;
+    const results = decoded(row.extraction_results);
     if (!Array.isArray(results)) return malformed;
     const matches = results.filter(d => object(d) && d.url === url);
     if (matches.length > 1) return {state:'ambiguous',message:'Multiple recorded outcomes; no outcome chosen.'};
@@ -111,8 +111,8 @@ export function fccDocumentOutcome(url: string, receipt: Row, fieldAvailable = t
       ...(Number.isSafeInteger(count) && count >= 0 ? {pageCount:count} : {}),
       ...(typeof d.error === 'string' && d.error ? {error:d.error} : {})};
   }
-  if (!Object.hasOwn(receipt, 'pdf_extraction_results_json')) return {state:'unread',message:'Extraction outcome not read yet.'};
-  const raw = receipt.pdf_extraction_results_json;
+  if (!Object.hasOwn(row, 'pdf_extraction_results_json')) return {state:'unread',message:'Extraction outcome not read yet.'};
+  const raw = row.pdf_extraction_results_json;
   if (raw === null) return unrecorded;
   const diagnostics = decoded(raw);
   if (!Array.isArray(diagnostics) || !diagnostics.every(d => object(d) && typeof d.url === 'string' && /^https:\/\/[^\s]+$/.test(d.url))) return malformed;
@@ -133,7 +133,7 @@ export function sourceOccurrences(s: Navigation, row: Row): unknown[] {
   if (s.mode === 'row') return [];
   const field = s.field && s.field in row ? s.field : s.fields.find(f => f in row);
   let value = decoded(field ? row[field] : undefined, true);
-  if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
+  if (s.elementPath.length && field && s.receiptFields?.includes(field)) value = at(value, s.elementPath);
   return Array.isArray(value) ? value : [];
 }
 export function elements(s: Navigation, row: Row): { state: string; values: unknown[] } {
@@ -142,7 +142,7 @@ export function elements(s: Navigation, row: Row): { state: string; values: unkn
   const raw = field ? row[field] : undefined;
   if (raw == null) return {state: row.detail_read === 'false' ? 'unread' : row.detail_read === 'true' ? 'not stated' : 'unknown read state', values: []};
   let value = decoded(raw, true);
-  if (s.elementPath.length && field && s.receiptFields.includes(field)) value = at(value, s.elementPath);
+  if (s.elementPath.length && field && s.receiptFields?.includes(field)) value = at(value, s.elementPath);
   if (!Array.isArray(value)) return {state: 'unsupported shape', values: []};
   const ambiguous = s.candidates && value.some(candidate => object(candidate) && candidate.target_status === 'ambiguous');
   if (s.candidates) value = value.flatMap(candidate => object(candidate) && Array.isArray(candidate.candidate_keys) ? candidate.candidate_keys.filter(object).map(identity => ({...candidate, ...identity})) : []);

@@ -24,6 +24,17 @@ export function CatalogTableEvidence({ destination, current }: {
     ? current.publication.manifestSha256 : current?.publicationIdentity);
   const rawVersion = destination.artifactDigest;
   const rawStale = !!(currentVersion && rawVersion && currentVersion !== rawVersion);
+  const carried = destination.coverageNoteMatch === "carried";
+  const reviewedVersion = carried
+    ? destination.coverageNoteReviewedVersion
+    : destination.coverageNoteReviewedVersion ?? rawVersion;
+  const coverageCaption = rawStale
+    ? "Checked earlier release"
+    : !rawVersion || !currentVersion
+      ? "Release not confirmed"
+      : carried
+        ? "Carried from earlier review"
+        : "Checked this release";
   const publication = destination.publication;
   const historicalStale = !!(currentVersion && publication && currentVersion !== publication.version);
   const historicalCurrent = publication?.scope === "current" && !!currentVersion && !historicalStale;
@@ -42,12 +53,13 @@ export function CatalogTableEvidence({ destination, current }: {
   const attention = destination.coverageNote ? coverageAttentionSummary(destination.coverageNote) : undefined;
   return <div className="catalog-table-evidence">
     {attention && <p className="context-note">{attention}</p>}
-    {attention && <p className="detail-caption">{rawStale ? "Checked earlier release" : !rawVersion || !currentVersion ? "Release not confirmed" : "Checked this release"}</p>}
+    {attention && <p className="detail-caption">{coverageCaption}</p>}
     {publication?.status === "conflicting_evidence" && <p role="alert">Historical file evidence conflicts; check technical evidence before reproducing this dataset.</p>}
     <details>
       <summary>Technical evidence</summary>
       <p><strong>Source coverage:</strong> {sourceSummary || "Unknown; saved source coverage has not been reviewed for this dataset."}</p>
       {sourceSummary !== destination.coverageNote && <p>{destination.coverageNote}</p>}
+      {destination.coverageNote && carried && <p>This raw-file coverage note was carried forward from an earlier reviewed publication across routine data-only republishes with matching schema, policy, and acquisition route or parent bindings.</p>}
       {destination.coverageNote && rawStale && <p>This raw-file coverage review describes an earlier publication. It has not been checked against the current release.</p>}
       {destination.coverageNote && (!rawVersion || !currentVersion) && <p>This raw-file coverage review could not be compared with the current publication.</p>}
       <p><strong>Past processing:</strong> {historicalStatus}</p>
@@ -62,7 +74,8 @@ export function CatalogTableEvidence({ destination, current }: {
         <p>Checked historical publication: <code>{publication.version}</code></p>
         {publication.evidenceLinks.map((link, index) => <p key={index}><a href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a></p>)}
       </>}
-      {destination.coverageNote && rawVersion && <p>Reviewed publication: <code>{rawVersion}</code></p>}
+      {destination.coverageNote && reviewedVersion && <p>Reviewed publication: <code>{reviewedVersion}</code></p>}
+      {destination.coverageNote && carried && rawVersion && rawVersion !== reviewedVersion && rawVersion !== currentVersion && <p>Catalog publication: <code>{rawVersion}</code></p>}
       {currentVersion && <p>Current publication: <code>{currentVersion}</code></p>}
     </details>
   </div>;

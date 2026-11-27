@@ -201,8 +201,8 @@ test('legal targets distinguish unresolved and ambiguous candidates from absent 
  assert.equal(elements(s,{nomination_references_json:JSON.stringify([{target_status:'ambiguous',candidate_keys:[{id:'one'},{id:'two'}]}])}).state,'ambiguous targets');
 });
 
-test('receipt routes constrain the event type as well as the exact source identity',()=>{
- const t={table:'@receipt:congress_acquisition',columns:['event','congress','citation'],keys:[key({...part(''),literal:'congress-detail-result'}),key(part('congress','row')),key(part('citation','row'))],guards:[]};
+test('literal key routes constrain constant target values as well as the exact source identity',()=>{
+ const t={table:'congress_detail_reads',columns:['event','congress','citation'],keys:[key({...part(''),literal:'congress-detail-result'}),key(part('congress','row')),key(part('citation','row'))],guards:[]};
  const s={...spec,mode:'row',field:undefined,fields:[],targets:[t]};
  assert.deepEqual(forwardLinks(s,{congress:'119',citation:'PN129-10'})[0].filters,[{column:'event',value:'congress-detail-result'},{column:'congress',value:'119'},{column:'citation',value:'PN129-10'}]);
  assert.throws(()=>parseNavigation([{...s,targets:[{...t,keys:[key({...part(''),literal:42}),...t.keys.slice(1)]}]}]),/keys/);
@@ -219,4 +219,24 @@ test('source occurrences retain unresolved, repeated and null legal candidates',
  const values=[{target_status:'unsupported',candidate_keys:[]},{target_status:'ambiguous',candidate_keys:[{id:'a'},{id:'a'}]},null];
  assert.deepEqual(sourceOccurrences(s,{refs:JSON.stringify(values)}),values);
  assert.deepEqual(sourceOccurrences({...s,mode:'row'}, {refs:values}),[]);
+});
+
+test('navigation recipes work with receiptFields empty or omitted and still reject non-string arrays',()=>{
+ const {receiptFields: _omitted, ...withoutReceiptFields} = spec;
+ const references=[{congress:118,number:14,part:'2'},{congress:118,number:14,part:'3'}];
+ const row={nomination_references_json:JSON.stringify(references)};
+ const connection={id:spec.id,target:0,values:['118','PN14-2']};
+ for (const candidate of [spec, withoutReceiptFields, {...withoutReceiptFields, elementPath:['documents']}]) {
+  const [parsed]=parseNavigation([candidate]);
+  assert.equal(parsed.id,spec.id);
+  assert.deepEqual(elements(parsed,row),{state:'stated',values:references});
+  assert.deepEqual(sourceOccurrences(parsed,row),references);
+  assert.deepEqual(forwardLinks(parsed,row).map(link=>link.values),[['118','PN14-2'],['118','PN14-3']]);
+  assert.equal(matchesConnection(row,parsed,connection),true);
+  assert.equal(matchesConnection(row,parsed,{...connection,values:['119','PN14-2']}),false);
+ }
+ assert.equal(parseNavigation([{...withoutReceiptFields,receiptFields:['native_fields_json']}])[0].id,spec.id);
+ for (const bad of [null,'native_fields_json',[1],{},true]) {
+  assert.throws(()=>parseNavigation([{...withoutReceiptFields,receiptFields:bad}]),/Invalid source connection definitions/);
+ }
 });
