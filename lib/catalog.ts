@@ -293,7 +293,7 @@ export function defaultColumns(table: Dataset): string[] {
     fec_contribution_decisions: ["committee_id", "contribution_family", "disposition", "amount", "donor_label", "transaction_date_scope"],
     fec_outside_spending_profiles: ["candidate_name", "support_oppose", "total", "reported_spender_count", "source_cycle"],
     fec_outside_spending_spenders: ["candidate_name", "support_oppose", "spender_id", "spender_name", "total"],
-    fec_election_results: ["candidate_name", "state", "seat_term", "stage", "round", "party", "votes", "votes_status"],
+    fec_election_results: ["source_cycle", "office", "candidate_name", "state", "district", "seat_term", "stage", "round", "party", "votes", "votes_status"],
     sector_financial_comparisons: ["sector_label", "source_family", "measure", "known_reported_amount", "qualified_measure_profiles", "unclassified_population_profiles"],
     sector_classification_evidence: ["source_namespace", "native_entity_id", "classification_status", "mapping_version", "uncertainty"],
     lobbying_issue_financial_observations: ["issue_code", "filing_uuid", "income", "expenses", "overlap_note"],

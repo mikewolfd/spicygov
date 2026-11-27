@@ -50,6 +50,54 @@ test('ranked-choice source zero remains a zero and round stays visible',()=>{
   const html=render('fec_election_results');
   assert.match(html,/<strong>0<\/strong> votes/);assert.match(html,/rcv_3/);assert.match(html,/column AC/);
 });
+test('multi-cycle v2 House and Presidential electoral-vote election results render distinctly',()=>{
+  const houseHtml=render('fec_election_results',{
+    interpretation_version:'fec-federal-election-results/2',
+    reader_version:'fec-election-workbook/2',
+    office:'house',
+    state:'IN',
+    district:'02',
+    seat_term:'unexpired',
+    stage:'general',
+    round:'reported',
+    vote_basis:'ballot_line',
+    candidate_name:'Yakym, Rudolph (Rudy), III',
+    party:'R',
+    votes:118997,
+    votes_raw:'118997',
+    votes_status:'exact',
+    source_sheet:'8. US House Results by State',
+    source_row:1405,
+    source_column:'P',
+  });
+  assert.match(houseHtml,/Official election result/);
+  assert.match(houseHtml,/house · IN · district 02 · unexpired term · R/);
+  assert.match(houseHtml,/<strong>118997<\/strong> votes/);
+
+  const presEvHtml=render('fec_election_results',{
+    interpretation_version:'fec-federal-election-results/2',
+    reader_version:'fec-election-workbook/2',
+    office:'president',
+    state:'ME',
+    district:'P',
+    seat_term:'not_applicable',
+    stage:'general',
+    round:'electoral_vote',
+    vote_basis:'electoral_vote',
+    candidate_name:'HARRIS',
+    party:'D',
+    votes:3,
+    votes_raw:'3',
+    votes_status:'exact',
+    source_sheet:'OFFICIAL 2024 PRES GE RESULTS',
+    source_row:21,
+    source_column:'D',
+  });
+  assert.match(presEvHtml,/Official election result/);
+  assert.match(presEvHtml,/president · ME · district P · D/);
+  assert.doesNotMatch(presEvHtml,/not_applicable term/);
+  assert.match(presEvHtml,/<strong>3<\/strong> electoral votes/);
+});
 test('sector comparison preserves separate measure, cutoff, policy version and unknown denominators',()=>{
   const html=render('sector_financial_comparisons');
   assert.match(html,/\$20,000\.00 USD/);assert.match(html,/lda/);assert.match(html,/income/);

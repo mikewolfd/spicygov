@@ -26,8 +26,11 @@ const definitions: Record<string, Record<string, string | readonly string[]>> = 
   fec_outside_spending_spenders: {policy_version:'fec-publisher-outside-spending/1',
     amount_basis:'publisher_schedule_e_aggregate_reconciled_to_publisher_total',
     election_basis:'all_elections_in_selected_two_year_cycle'},
-  fec_election_results: {interpretation_version:'fec-senate-results/1',reader_version:'fec-election-workbook/1',
-    vote_basis:['ballot_line','reported_total','combined_party_witness','ranked_choice_round']},
+  fec_election_results: {
+    interpretation_version: ['fec-senate-results/1', 'fec-federal-election-results/2'],
+    reader_version: ['fec-election-workbook/1', 'fec-election-workbook/2'],
+    vote_basis: ['ballot_line', 'reported_total', 'combined_party_witness', 'ranked_choice_round', 'electoral_vote'],
+  },
   sector_financial_comparisons: {policy_version:'fec-lda-sector-comparison/1',
     classification_scheme:'NAICS-2022',mapping_version:'fec-lda-curated-naics2022-context-20261113/2'},
   sector_classification_evidence: {classification_scheme:'NAICS-2022',
@@ -193,11 +196,19 @@ export function FecResearchProfile({ table, row }: { table: Dataset; row: Row })
     </section>;
   }
   if (table.id === 'fec_election_results') {
+    const scopeParts = [
+      row.office ? text(row.office) : null,
+      text(row.state),
+      row.district ? `district ${text(row.district)}` : null,
+      row.seat_term && row.seat_term !== 'not_applicable' ? `${text(row.seat_term)} term` : null,
+      row.party ? text(row.party) : null,
+    ].filter(Boolean);
+    const voteUnit = row.vote_basis === 'electoral_vote' ? 'electoral votes' : 'votes';
     return <section className="financial-profile" aria-label="Official election result">
       <h2>Official election result</h2>
-      <p>{text(row.candidate_name)} · {text(row.state)} · {text(row.seat_term)} term · {text(row.party)}</p>
+      <p>{text(row.candidate_name)} · {scopeParts.join(' · ')}</p>
       <p>{text(row.stage)} · {text(row.round)} · {text(row.vote_basis)}</p>
-      <p><strong>{row.votes_status === 'exact' ? text(row.votes) : text(row.votes_raw)}</strong> {row.votes_status === 'exact' ? 'votes' : `(${text(row.votes_status)})`}</p>
+      <p><strong>{row.votes_status === 'exact' ? text(row.votes) : text(row.votes_raw)}</strong> {row.votes_status === 'exact' ? voteUnit : `(${text(row.votes_status)})`}</p>
       <p>{text(row.footnotes)}</p>
       <p>Source: {text(row.source_sheet)}, row {text(row.source_row)}, column {text(row.source_column)}.</p>
       {source(row)}
