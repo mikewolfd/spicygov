@@ -12843,6 +12843,805 @@
           ]
         }
       ]
+    },
+    "house_disclosure_filings": {
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_type",
+          "VARCHAR"
+        ],
+        [
+          "prefix",
+          "VARCHAR"
+        ],
+        [
+          "first",
+          "VARCHAR"
+        ],
+        [
+          "last",
+          "VARCHAR"
+        ],
+        [
+          "suffix",
+          "VARCHAR"
+        ],
+        [
+          "state_district",
+          "VARCHAR"
+        ],
+        [
+          "year_raw",
+          "VARCHAR"
+        ],
+        [
+          "filing_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "filing_date_status",
+          "VARCHAR"
+        ],
+        [
+          "report_url",
+          "VARCHAR"
+        ],
+        [
+          "report_url_basis",
+          "VARCHAR"
+        ],
+        [
+          "index_uri",
+          "VARCHAR"
+        ],
+        [
+          "index_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ],
+        [
+          "index_year",
+          "BIGINT"
+        ],
+        [
+          "source_line",
+          "BIGINT"
+        ],
+        [
+          "filing_date",
+          "DATE"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Index entries from one declared retained House Clerk annual financial disclosure index snapshot (2025FD.zip; 2,935 rows). Categories outside explicitly selected Periodic Transaction Report PDFs are discovery only; other filing years and source-wide completeness remain unqualified.",
+      "dimensions": [
+        {
+          "id": "index-year",
+          "kind": "year",
+          "label": "House index year",
+          "meaning": "Annual House Clerk financial disclosure index year (2025FD.zip). Reflects one declared retained index snapshot.",
+          "fields": [
+            "index_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "filing-dates",
+          "kind": "date",
+          "label": "Index filing dates",
+          "meaning": "Filing dates parsed from the House Clerk annual disclosure index; rows with blank filing dates remain unplaced.",
+          "fields": [
+            "filing_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "filing-type",
+          "kind": "category",
+          "label": "Filing type code",
+          "meaning": "House Clerk filing category code (e.g., C candidate, X extension, P periodic transaction report, O annual, D duplicate/new filer, A amendment).",
+          "fields": [
+            "filing_type"
+          ]
+        },
+        {
+          "id": "filing-date-status",
+          "kind": "category",
+          "label": "Filing date parse status",
+          "meaning": "Whether the index filing date parsed cleanly (parsed) or was blank in the source index (blank).",
+          "fields": [
+            "filing_date_status"
+          ]
+        }
+      ]
+    },
+    "house_disclosure_reports": {
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "extraction_status",
+          "VARCHAR"
+        ],
+        [
+          "refusal_reason",
+          "VARCHAR"
+        ],
+        [
+          "parser_version",
+          "VARCHAR"
+        ],
+        [
+          "backend",
+          "VARCHAR"
+        ],
+        [
+          "backend_version",
+          "VARCHAR"
+        ],
+        [
+          "model",
+          "VARCHAR"
+        ],
+        [
+          "filer_name_raw",
+          "VARCHAR"
+        ],
+        [
+          "state_district_raw",
+          "VARCHAR"
+        ],
+        [
+          "signed_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "index_year",
+          "BIGINT"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "page_count",
+          "BIGINT"
+        ],
+        [
+          "transaction_count",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Explicitly selected House Clerk Periodic Transaction Report PDFs from the 2025 disclosure index (8 reports: 6 parsed via native_layout, 2 explicitly refused due to image-only pages or header mismatch). Image-form extraction and source-wide completeness remain unqualified.",
+      "dimensions": [
+        {
+          "id": "index-year",
+          "kind": "year",
+          "label": "House index year",
+          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2025).",
+          "fields": [
+            "index_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "parent-filing-dates",
+          "kind": "inherited",
+          "label": "Parent index filing dates",
+          "meaning": "Filing date inherited from the matching house_disclosure_filings row by filing_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_filings",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "filing_id",
+                "filing_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-filing-dates",
+            "kind": "date",
+            "label": "Parent index filing dates",
+            "meaning": "Filing date inherited from house_disclosure_filings by filing_id.",
+            "fields": [
+              "filing_date"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "extraction-status",
+          "kind": "category",
+          "label": "PDF extraction status",
+          "meaning": "Whether the retained PTR PDF was parsed from native layout text (native_layout) or explicitly refused (refused).",
+          "fields": [
+            "extraction_status"
+          ]
+        }
+      ]
+    },
+    "house_disclosure_pages": {
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "page_id",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "page_status",
+          "VARCHAR"
+        ],
+        [
+          "native_text",
+          "VARCHAR"
+        ],
+        [
+          "page_locator",
+          "VARCHAR"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Per-page inventory for explicitly selected House Periodic Transaction Report PDFs (103 pages: 87 native_grid and 16 unsupported_image_page). Image-only pages are recorded explicitly rather than OCR-guessed.",
+      "dimensions": [
+        {
+          "id": "parent-report-index-year",
+          "kind": "inherited",
+          "label": "Parent report index year",
+          "meaning": "House Clerk disclosure index year inherited from house_disclosure_reports by report_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-index-year",
+            "kind": "year",
+            "label": "Parent report index year",
+            "meaning": "House Clerk index year inherited from house_disclosure_reports by report_id.",
+            "fields": [
+              "index_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "page-status",
+          "kind": "category",
+          "label": "PDF page status",
+          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid) or was an unsupported image-only page (unsupported_image_page).",
+          "fields": [
+            "page_status"
+          ]
+        }
+      ]
+    },
+    "house_disclosure_transactions": {
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "doc_id",
+          "VARCHAR"
+        ],
+        [
+          "owner_raw",
+          "VARCHAR"
+        ],
+        [
+          "asset_raw",
+          "VARCHAR"
+        ],
+        [
+          "action_raw",
+          "VARCHAR"
+        ],
+        [
+          "native_transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_status",
+          "VARCHAR"
+        ],
+        [
+          "notification_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "notification_date_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "currency",
+          "VARCHAR"
+        ],
+        [
+          "filing_status_raw",
+          "VARCHAR"
+        ],
+        [
+          "details_raw",
+          "VARCHAR"
+        ],
+        [
+          "capital_gains_read_status",
+          "VARCHAR"
+        ],
+        [
+          "source_uri",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "page_locator",
+          "VARCHAR"
+        ],
+        [
+          "fragments_json",
+          "VARCHAR"
+        ],
+        [
+          "row_number",
+          "BIGINT"
+        ],
+        [
+          "page_number",
+          "BIGINT"
+        ],
+        [
+          "page_end",
+          "BIGINT"
+        ],
+        [
+          "amount_lower_usd",
+          "BIGINT"
+        ],
+        [
+          "amount_upper_usd",
+          "BIGINT"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "notification_date",
+          "DATE"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Transactions extracted from explicitly selected native-layout House Periodic Transaction Report PDFs (738 rows across 6 parsed reports; 2 refused image-only PDFs contribute no transaction rows). Statutory amount ranges are preserved without midpoint estimation and capital-gains checkboxes remain unqualified.",
+      "dimensions": [
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Asset transaction dates parsed from selected native-layout House Periodic Transaction Reports.",
+          "fields": [
+            "transaction_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "notification-dates",
+          "kind": "date",
+          "label": "Notification dates",
+          "meaning": "Transaction notification dates parsed from selected native-layout House Periodic Transaction Reports.",
+          "fields": [
+            "notification_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "action-type",
+          "kind": "category",
+          "label": "Transaction action",
+          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale).",
+          "fields": [
+            "action_raw"
+          ]
+        },
+        {
+          "id": "filing-status",
+          "kind": "category",
+          "label": "Transaction filing status",
+          "meaning": "Verbatim filing status printed on each PTR transaction row (New or Amended).",
+          "fields": [
+            "filing_status_raw"
+          ]
+        },
+        {
+          "id": "amount-status",
+          "kind": "category",
+          "label": "Amount representation status",
+          "meaning": "Whether transaction amounts are represented as statutory dollar ranges (reported_range).",
+          "fields": [
+            "amount_status"
+          ]
+        }
+      ]
+    },
+    "house_disclosure_amendment_links": {
+      "family": "house-disclosures",
+      "schema": [
+        [
+          "link_id",
+          "VARCHAR"
+        ],
+        [
+          "original_report_id",
+          "VARCHAR"
+        ],
+        [
+          "amended_report_id",
+          "VARCHAR"
+        ],
+        [
+          "original_doc_id",
+          "VARCHAR"
+        ],
+        [
+          "amended_doc_id",
+          "VARCHAR"
+        ],
+        [
+          "original_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "amended_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "original_page_locator",
+          "VARCHAR"
+        ],
+        [
+          "amended_page_locator",
+          "VARCHAR"
+        ],
+        [
+          "link_status",
+          "VARCHAR"
+        ],
+        [
+          "source_statement",
+          "VARCHAR"
+        ],
+        [
+          "basis",
+          "VARCHAR"
+        ],
+        [
+          "uncertainty",
+          "VARCHAR"
+        ],
+        [
+          "review_sha256",
+          "VARCHAR"
+        ],
+        [
+          "original_page_number",
+          "BIGINT"
+        ],
+        [
+          "amended_page_number",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Explicitly reviewed amendment links between retained House Periodic Transaction Report PDFs, retaining the exact source statement, page locators, and scope uncertainty rather than inferring full-report replacement.",
+      "dimensions": [
+        {
+          "id": "original-report-index-year",
+          "kind": "inherited",
+          "label": "Original report index year",
+          "meaning": "House Clerk disclosure index year inherited from the linked original report in house_disclosure_reports by original_report_id.",
+          "fields": [],
+          "parent": {
+            "table": "house_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "original_report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "original-report-index-year",
+            "kind": "year",
+            "label": "Original report index year",
+            "meaning": "House Clerk index year inherited from house_disclosure_reports by original_report_id.",
+            "fields": [
+              "index_year"
+            ],
+            "syntax": "year"
+          }
+        },
+        {
+          "id": "link-status",
+          "kind": "category",
+          "label": "Amendment link status",
+          "meaning": "Review qualification status for each explicit amendment link between retained PTR PDFs.",
+          "fields": [
+            "link_status"
+          ]
+        }
+      ]
+    },
+    "table3_historical_records": {
+      "family": "table3-history",
+      "schema": [
+        [
+          "id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_sha256",
+          "VARCHAR"
+        ],
+        [
+          "member_name",
+          "VARCHAR"
+        ],
+        [
+          "release_point",
+          "VARCHAR"
+        ],
+        [
+          "act_key",
+          "VARCHAR"
+        ],
+        [
+          "act_native_id",
+          "VARCHAR"
+        ],
+        [
+          "act_number",
+          "VARCHAR"
+        ],
+        [
+          "congress",
+          "VARCHAR"
+        ],
+        [
+          "act_date",
+          "VARCHAR"
+        ],
+        [
+          "statutes_at_large_volume",
+          "VARCHAR"
+        ],
+        [
+          "act_native_sequence",
+          "VARCHAR"
+        ],
+        [
+          "act_insertion",
+          "VARCHAR"
+        ],
+        [
+          "act_format",
+          "VARCHAR"
+        ],
+        [
+          "act_print_in_supplement",
+          "VARCHAR"
+        ],
+        [
+          "act_include_in_online_release_point",
+          "VARCHAR"
+        ],
+        [
+          "act_public_law",
+          "VARCHAR"
+        ],
+        [
+          "record_native_id",
+          "VARCHAR"
+        ],
+        [
+          "record_native_sequence",
+          "VARCHAR"
+        ],
+        [
+          "usc_key",
+          "VARCHAR"
+        ],
+        [
+          "act_section",
+          "VARCHAR"
+        ],
+        [
+          "record_page",
+          "VARCHAR"
+        ],
+        [
+          "usc_title",
+          "VARCHAR"
+        ],
+        [
+          "usc_section",
+          "VARCHAR"
+        ],
+        [
+          "status",
+          "VARCHAR"
+        ],
+        [
+          "record_print_in_supplement",
+          "VARCHAR"
+        ],
+        [
+          "usc_section_key",
+          "VARCHAR"
+        ],
+        [
+          "usc_place",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "raw_source_row",
+          "VARCHAR"
+        ],
+        [
+          "act_record_position",
+          "BIGINT"
+        ],
+        [
+          "fragment_position",
+          "BIGINT"
+        ],
+        [
+          "fragment_record_position",
+          "BIGINT"
+        ]
+      ],
+      "classification": "record-dates",
+      "note": "Historical Office of the Law Revision Counsel Table III act-to-U.S. Code classification placements parsed from retained Table III fulldump XML (release point 119-73; 317,590 rows across Congresses 1\u2013119, 1789-06-01 through 2026-01-23). Blank labels, source order, and repeated placements retain native meanings; classification placements are not independently acquired legal text.",
+      "dimensions": [
+        {
+          "id": "olrc-act-dates",
+          "kind": "date",
+          "label": "OLRC historical act dates",
+          "meaning": "Act dates stated in retained Office of the Law Revision Counsel Table III historical records (1789-06-01 through 2026-01-23 at release point 119-73).",
+          "fields": [
+            "act_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "congress",
+          "kind": "category",
+          "label": "Congress",
+          "meaning": "Congress numbers (1\u2013119) represented across retained Table III historical classification records.",
+          "fields": [
+            "congress"
+          ],
+          "syntax": "positive-integer"
+        },
+        {
+          "id": "release-point",
+          "kind": "category",
+          "label": "OLRC release point",
+          "meaning": "Office of the Law Revision Counsel Table III release point from which the retained historical records were parsed.",
+          "fields": [
+            "release_point"
+          ]
+        },
+        {
+          "id": "usc-place",
+          "kind": "category",
+          "label": "U.S. Code placement kind",
+          "meaning": "Normalized U.S. Code placement kind (section, note, preceding, note_preceding); rows without a normalized placement remain unplaced.",
+          "fields": [
+            "usc_place"
+          ]
+        }
+      ]
     }
   }
 }

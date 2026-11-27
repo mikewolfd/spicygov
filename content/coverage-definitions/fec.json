@@ -19436,6 +19436,915 @@
           "fields": []
         }
       ]
+    },
+    "fec_committee_relationship_profiles": {
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "relationships_json",
+          "VARCHAR"
+        ],
+        [
+          "native_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "relationship_effective_date_status",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Selected retained OpenFEC committee relationship occurrences (200 committees from explicit retained pages). Disclosures do not prove ownership, transfers, or candidate authorization; relationship effective dates are not supplied, and retrieval/filing timestamps are not relationship dates.",
+      "dimensions": [
+        {
+          "id": "committee-designation",
+          "kind": "category",
+          "label": "Committee designation",
+          "meaning": "FEC committee designation code (P principal campaign, U unauthorized, B lobbyist/registrant PAC, J joint fundraising, D leadership PAC, A authorized) across retained committee relationship profiles.",
+          "fields": [
+            "designation"
+          ]
+        },
+        {
+          "id": "relationship-date-status",
+          "kind": "category",
+          "label": "Relationship effective date status",
+          "meaning": "Explicit status noting that relationship effective dates are not supplied in retained committee disclosures; filing and retrieval timestamps are not relationship dates.",
+          "fields": [
+            "relationship_effective_date_status"
+          ]
+        },
+        {
+          "id": "policy-version",
+          "kind": "category",
+          "label": "Profile policy version",
+          "meaning": "Disclosed-relationship interpretation policy version governing each retained committee profile.",
+          "fields": [
+            "policy_version"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained committee profile snapshot",
+          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "fields": []
+        }
+      ]
+    },
+    "fec_contribution_profiles": {
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_association_basis",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "contribution_family",
+          "VARCHAR"
+        ],
+        [
+          "gross_itemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "negative_receipt_adjustments",
+          "VARCHAR"
+        ],
+        [
+          "signed_itemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "itemized_refunds",
+          "VARCHAR"
+        ],
+        [
+          "net_itemized_flow",
+          "VARCHAR"
+        ],
+        [
+          "unitemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "net_reported_family",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "breakdown_json",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "included_records",
+          "INTEGER"
+        ],
+        [
+          "memo_records",
+          "INTEGER"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Complete selected recipient report contribution profiles reconciled to official report totals, separating itemized receipts, negative adjustments, refunds, and unitemized totals. Covers complete selected reports, not complete election cycles.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on each selected contribution profile. Profiles cover complete selected reports, not complete election cycles.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the retained recipient report (period_start through period_end). Complete selected reports do not establish complete election cycles.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-family",
+          "kind": "category",
+          "label": "Contribution family",
+          "meaning": "Contribution family summarized by each report profile (individual or pac).",
+          "fields": [
+            "contribution_family"
+          ]
+        },
+        {
+          "id": "amount-basis",
+          "kind": "category",
+          "label": "Amount reconciliation basis",
+          "meaning": "Reconciliation rule tying itemized, adjustment, refund, and unitemized totals to the official report.",
+          "fields": [
+            "amount_basis"
+          ]
+        }
+      ]
+    },
+    "fec_contribution_decisions": {
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_association_basis",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "contribution_family",
+          "VARCHAR"
+        ],
+        [
+          "disposition",
+          "VARCHAR"
+        ],
+        [
+          "disposition_reason",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "VARCHAR"
+        ],
+        [
+          "donor_id",
+          "VARCHAR"
+        ],
+        [
+          "donor_label",
+          "VARCHAR"
+        ],
+        [
+          "employer",
+          "VARCHAR"
+        ],
+        [
+          "occupation",
+          "VARCHAR"
+        ],
+        [
+          "native_entity_type",
+          "VARCHAR"
+        ],
+        [
+          "election_code",
+          "VARCHAR"
+        ],
+        [
+          "memo_field_status",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_scope",
+          "VARCHAR"
+        ],
+        [
+          "native_values_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Per-observation inclusion and exclusion decisions backing selected FEC contribution profiles, keeping excluded memo entries, negative adjustments, itemized refunds, and outside-coverage transaction dates explicit. Covers selected recipient reports, not complete election cycles.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on the selected recipient report for each contribution decision.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the parent recipient report (period_start through period_end); individual transactions may carry dates outside report coverage as tracked by transaction_date_scope.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-disposition",
+          "kind": "category",
+          "label": "Contribution family and disposition",
+          "meaning": "Whether each observation was included in or excluded from reconciled profile totals by contribution family.",
+          "fields": [
+            "contribution_family",
+            "disposition"
+          ]
+        },
+        {
+          "id": "disposition-reason",
+          "kind": "category",
+          "label": "Disposition reason",
+          "meaning": "Rule explaining inclusion or exclusion (recipient_receipt, source_memo_representation, negative_receipt_adjustment, itemized_refund).",
+          "fields": [
+            "disposition_reason"
+          ]
+        },
+        {
+          "id": "transaction-date-scope",
+          "kind": "category",
+          "label": "Transaction date scope",
+          "meaning": "Whether each observation date fell within or outside the parent report coverage window.",
+          "fields": [
+            "transaction_date_scope"
+          ]
+        }
+      ]
+    },
+    "fec_outside_spending_profiles": {
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "support_oppose",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "election_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "total",
+          "VARCHAR"
+        ],
+        [
+          "reported_event_dates",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "reported_spender_count",
+          "INTEGER"
+        ],
+        [
+          "unknown_spender_rows",
+          "INTEGER"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Observed publisher Schedule E outside-spending aggregate snapshots reconciled to separately captured official totals by candidate, cycle, and support/oppose indicator. Memo items and 24/48-hour notices are excluded, and specific election dates or observed transaction date extrema are not supplied by the aggregate.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle requested for each outside-spending aggregate profile.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window (period_start through period_end). Reflects requested cycle bounds, not observed min/max expenditure dates.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether aggregated Schedule E independent expenditures supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "election-basis",
+          "kind": "category",
+          "label": "Election aggregation basis",
+          "meaning": "Scope of elections combined by the publisher Schedule E aggregate snapshot.",
+          "fields": [
+            "election_basis"
+          ]
+        }
+      ]
+    },
+    "fec_outside_spending_spenders": {
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "support_oppose",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "election_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "spender_id",
+          "VARCHAR"
+        ],
+        [
+          "spender_name",
+          "VARCHAR"
+        ],
+        [
+          "spender_namespace",
+          "VARCHAR"
+        ],
+        [
+          "total",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "reported_transaction_count",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Spender-level breakdown backing observed FEC outside-spending aggregate profiles by candidate, cycle, and support/oppose indicator. Separates registered FEC committees from Form 5 independent-expenditure filers; individual expenditure dates are not supplied by the publisher aggregate.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared for each outside-spending spender group.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window for the publisher aggregate snapshot; individual expenditure dates are not supplied.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether each spender supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "spender-namespace",
+          "kind": "category",
+          "label": "Spender identity namespace",
+          "meaning": "Namespace separating registered political committees (fec_committee) from Form 5 independent-expenditure filers (fec_form5_filer).",
+          "fields": [
+            "spender_namespace"
+          ]
+        }
+      ]
+    },
+    "fec_election_results": {
+      "family": "fec-election-results",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "source_column",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_raw",
+          "VARCHAR"
+        ],
+        [
+          "district_raw",
+          "VARCHAR"
+        ],
+        [
+          "seat_term",
+          "VARCHAR"
+        ],
+        [
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "round",
+          "VARCHAR"
+        ],
+        [
+          "vote_basis",
+          "VARCHAR"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "votes_raw",
+          "VARCHAR"
+        ],
+        [
+          "votes_status",
+          "VARCHAR"
+        ],
+        [
+          "percentage_raw",
+          "VARCHAR"
+        ],
+        [
+          "footnotes",
+          "VARCHAR"
+        ],
+        [
+          "primary_winner_raw",
+          "VARCHAR"
+        ],
+        [
+          "general_winner_raw",
+          "VARCHAR"
+        ],
+        [
+          "interpretation_version",
+          "VARCHAR"
+        ],
+        [
+          "overlap_note",
+          "VARCHAR"
+        ],
+        [
+          "source_row",
+          "INTEGER"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "votes",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Reviewed official FEC Federal Elections workbook Senate results (2022 edition), preserving primaries, runoffs, general elections, unexpired terms, ballot lines, zero votes, and ranked-choice voting rounds. Combined-party witnesses repeat across ballot lines and rounds overlap, so rows must never be summed without filtering by stage and vote_basis.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "stage-and-basis",
+          "kind": "category",
+          "label": "Election stage and vote basis",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "fields": [
+            "stage",
+            "vote_basis"
+          ]
+        },
+        {
+          "id": "row-kind",
+          "kind": "category",
+          "label": "Workbook row kind",
+          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "fields": [
+            "row_kind"
+          ]
+        },
+        {
+          "id": "votes-status",
+          "kind": "category",
+          "label": "Vote count parse status",
+          "meaning": "Whether the workbook vote cell held an exact integer count, non-numeric source text (such as Unopposed or *), or was blank/missing.",
+          "fields": [
+            "votes_status"
+          ]
+        },
+        {
+          "id": "seat-term",
+          "kind": "category",
+          "label": "Senate seat term",
+          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "fields": [
+            "seat_term"
+          ]
+        }
+      ]
+    },
+    "fec_election_workbook_rows": {
+      "family": "fec-election-results",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "cells_json",
+          "VARCHAR"
+        ],
+        [
+          "source_row",
+          "INTEGER"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Literal physical rows across all 11 worksheets of the retained official 2022 FEC Federal Elections workbook, including House results, Senate results, special elections, party tables, and publication notes. Only the reviewed Senate worksheet is interpreted in fec_election_results.",
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "Source worksheet",
+          "meaning": "Worksheet name inside the retained FEC Federal Elections workbook.",
+          "fields": [
+            "source_sheet"
+          ]
+        }
+      ]
     }
   }
 }

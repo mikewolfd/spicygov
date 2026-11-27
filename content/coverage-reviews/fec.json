@@ -44053,6 +44053,1258 @@
         "qualification": "Full PolOrgsFullData.zip candidate generation Parquets (18,877,975 valid records + 148 quarantined truncated rows = 18,878,123 footer count) and raw visual review (ss-gmq1) verified ahead of live R2 publication."
       },
       "reviewNote": "2026-11-25 (ss-gmq1): Pre-publication coverage definition and review added against verified IRS Section 527 candidate generation Parquets and raw visual review."
+    },
+    {
+      "tableId": "fec_committee_relationship_profiles",
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "relationships_json",
+          "VARCHAR"
+        ],
+        [
+          "native_fields_json",
+          "VARCHAR"
+        ],
+        [
+          "relationship_effective_date_status",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "committee-designation",
+          "kind": "category",
+          "label": "Committee designation",
+          "meaning": "FEC committee designation code (P principal campaign, U unauthorized, B lobbyist/registrant PAC, J joint fundraising, D leadership PAC, A authorized) across retained committee relationship profiles.",
+          "fields": [
+            "designation"
+          ]
+        },
+        {
+          "id": "relationship-date-status",
+          "kind": "category",
+          "label": "Relationship effective date status",
+          "meaning": "Explicit status noting that relationship effective dates are not supplied in retained committee disclosures; filing and retrieval timestamps are not relationship dates.",
+          "fields": [
+            "relationship_effective_date_status"
+          ]
+        },
+        {
+          "id": "policy-version",
+          "kind": "category",
+          "label": "Profile policy version",
+          "meaning": "Disclosed-relationship interpretation policy version governing each retained committee profile.",
+          "fields": [
+            "policy_version"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained committee profile snapshot",
+          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "fields": []
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "committee-designation",
+          "kind": "category",
+          "label": "Committee designation",
+          "meaning": "FEC committee designation code (P principal campaign, U unauthorized, B lobbyist/registrant PAC, J joint fundraising, D leadership PAC, A authorized) across retained committee relationship profiles.",
+          "fields": [
+            "designation"
+          ]
+        },
+        {
+          "id": "relationship-date-status",
+          "kind": "category",
+          "label": "Relationship effective date status",
+          "meaning": "Explicit status noting that relationship effective dates are not supplied in retained committee disclosures; filing and retrieval timestamps are not relationship dates.",
+          "fields": [
+            "relationship_effective_date_status"
+          ]
+        },
+        {
+          "id": "policy-version",
+          "kind": "category",
+          "label": "Profile policy version",
+          "meaning": "Disclosed-relationship interpretation policy version governing each retained committee profile.",
+          "fields": [
+            "policy_version"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained committee profile snapshot",
+          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
+        "publishedAt": "2026-11-27T02:55:53Z",
+        "rows": 200,
+        "byteSize": 63763,
+        "memberSha256": "sha256:6e7b1b855d2877e4ce41110db0b6b1afe886da65893bd3ea8f2105a7f90a6396",
+        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (200 retained committee profiles)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+    },
+    {
+      "tableId": "fec_contribution_profiles",
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_association_basis",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "contribution_family",
+          "VARCHAR"
+        ],
+        [
+          "gross_itemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "negative_receipt_adjustments",
+          "VARCHAR"
+        ],
+        [
+          "signed_itemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "itemized_refunds",
+          "VARCHAR"
+        ],
+        [
+          "net_itemized_flow",
+          "VARCHAR"
+        ],
+        [
+          "unitemized_receipts",
+          "VARCHAR"
+        ],
+        [
+          "net_reported_family",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "breakdown_json",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "included_records",
+          "INTEGER"
+        ],
+        [
+          "memo_records",
+          "INTEGER"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on each selected contribution profile. Profiles cover complete selected reports, not complete election cycles.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the retained recipient report (period_start through period_end). Complete selected reports do not establish complete election cycles.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-family",
+          "kind": "category",
+          "label": "Contribution family",
+          "meaning": "Contribution family summarized by each report profile (individual or pac).",
+          "fields": [
+            "contribution_family"
+          ]
+        },
+        {
+          "id": "amount-basis",
+          "kind": "category",
+          "label": "Amount reconciliation basis",
+          "meaning": "Reconciliation rule tying itemized, adjustment, refund, and unitemized totals to the official report.",
+          "fields": [
+            "amount_basis"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on each selected contribution profile. Profiles cover complete selected reports, not complete election cycles.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the retained recipient report (period_start through period_end). Complete selected reports do not establish complete election cycles.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-family",
+          "kind": "category",
+          "label": "Contribution family",
+          "meaning": "Contribution family summarized by each report profile (individual or pac).",
+          "fields": [
+            "contribution_family"
+          ]
+        },
+        {
+          "id": "amount-basis",
+          "kind": "category",
+          "label": "Amount reconciliation basis",
+          "meaning": "Reconciliation rule tying itemized, adjustment, refund, and unitemized totals to the official report.",
+          "fields": [
+            "amount_basis"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
+        "publishedAt": "2026-11-27T02:55:53Z",
+        "rows": 2,
+        "byteSize": 21753,
+        "memberSha256": "sha256:b2bff581af960771aa542c76fcaa325168658c706cb095d4fbd9bb7b1a92181b",
+        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (2 reconciled contribution-family profiles)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+    },
+    {
+      "tableId": "fec_contribution_decisions",
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_association_basis",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "contribution_family",
+          "VARCHAR"
+        ],
+        [
+          "disposition",
+          "VARCHAR"
+        ],
+        [
+          "disposition_reason",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "VARCHAR"
+        ],
+        [
+          "donor_id",
+          "VARCHAR"
+        ],
+        [
+          "donor_label",
+          "VARCHAR"
+        ],
+        [
+          "employer",
+          "VARCHAR"
+        ],
+        [
+          "occupation",
+          "VARCHAR"
+        ],
+        [
+          "native_entity_type",
+          "VARCHAR"
+        ],
+        [
+          "election_code",
+          "VARCHAR"
+        ],
+        [
+          "memo_field_status",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date_scope",
+          "VARCHAR"
+        ],
+        [
+          "native_values_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on the selected recipient report for each contribution decision.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the parent recipient report (period_start through period_end); individual transactions may carry dates outside report coverage as tracked by transaction_date_scope.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-disposition",
+          "kind": "category",
+          "label": "Contribution family and disposition",
+          "meaning": "Whether each observation was included in or excluded from reconciled profile totals by contribution family.",
+          "fields": [
+            "contribution_family",
+            "disposition"
+          ]
+        },
+        {
+          "id": "disposition-reason",
+          "kind": "category",
+          "label": "Disposition reason",
+          "meaning": "Rule explaining inclusion or exclusion (recipient_receipt, source_memo_representation, negative_receipt_adjustment, itemized_refund).",
+          "fields": [
+            "disposition_reason"
+          ]
+        },
+        {
+          "id": "transaction-date-scope",
+          "kind": "category",
+          "label": "Transaction date scope",
+          "meaning": "Whether each observation date fell within or outside the parent report coverage window.",
+          "fields": [
+            "transaction_date_scope"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared on the selected recipient report for each contribution decision.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-periods",
+          "kind": "interval",
+          "label": "Selected report coverage periods",
+          "meaning": "Coverage window stated on the parent recipient report (period_start through period_end); individual transactions may carry dates outside report coverage as tracked by transaction_date_scope.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "contribution-disposition",
+          "kind": "category",
+          "label": "Contribution family and disposition",
+          "meaning": "Whether each observation was included in or excluded from reconciled profile totals by contribution family.",
+          "fields": [
+            "contribution_family",
+            "disposition"
+          ]
+        },
+        {
+          "id": "disposition-reason",
+          "kind": "category",
+          "label": "Disposition reason",
+          "meaning": "Rule explaining inclusion or exclusion (recipient_receipt, source_memo_representation, negative_receipt_adjustment, itemized_refund).",
+          "fields": [
+            "disposition_reason"
+          ]
+        },
+        {
+          "id": "transaction-date-scope",
+          "kind": "category",
+          "label": "Transaction date scope",
+          "meaning": "Whether each observation date fell within or outside the parent report coverage window.",
+          "fields": [
+            "transaction_date_scope"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
+        "publishedAt": "2026-11-27T02:55:53Z",
+        "rows": 404,
+        "byteSize": 99391,
+        "memberSha256": "sha256:0a285018e68dd081d9a5bfdcb23e6d75fcf6b1ebbd842a41205e5f9cc031e7ca",
+        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (404 contribution decisions)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+    },
+    {
+      "tableId": "fec_outside_spending_profiles",
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "support_oppose",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "election_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "total",
+          "VARCHAR"
+        ],
+        [
+          "reported_event_dates",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "reported_spender_count",
+          "INTEGER"
+        ],
+        [
+          "unknown_spender_rows",
+          "INTEGER"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle requested for each outside-spending aggregate profile.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window (period_start through period_end). Reflects requested cycle bounds, not observed min/max expenditure dates.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether aggregated Schedule E independent expenditures supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "election-basis",
+          "kind": "category",
+          "label": "Election aggregation basis",
+          "meaning": "Scope of elections combined by the publisher Schedule E aggregate snapshot.",
+          "fields": [
+            "election_basis"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle requested for each outside-spending aggregate profile.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window (period_start through period_end). Reflects requested cycle bounds, not observed min/max expenditure dates.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether aggregated Schedule E independent expenditures supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "election-basis",
+          "kind": "category",
+          "label": "Election aggregation basis",
+          "meaning": "Scope of elections combined by the publisher Schedule E aggregate snapshot.",
+          "fields": [
+            "election_basis"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
+        "publishedAt": "2026-11-27T02:55:53Z",
+        "rows": 2,
+        "byteSize": 12501,
+        "memberSha256": "sha256:15683f223f2411e0e3351e20729962e1f803681a3815ed3fd410462d6ae30842",
+        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (2 candidate outside-spending profiles)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+    },
+    {
+      "tableId": "fec_outside_spending_spenders",
+      "family": "fec-research-profiles",
+      "schema": [
+        [
+          "profile_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "support_oppose",
+          "VARCHAR"
+        ],
+        [
+          "source_evidence_json",
+          "VARCHAR"
+        ],
+        [
+          "source_generation",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "VARCHAR"
+        ],
+        [
+          "period_end",
+          "VARCHAR"
+        ],
+        [
+          "election_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount_basis",
+          "VARCHAR"
+        ],
+        [
+          "policy_version",
+          "VARCHAR"
+        ],
+        [
+          "coverage_note",
+          "VARCHAR"
+        ],
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "spender_id",
+          "VARCHAR"
+        ],
+        [
+          "spender_name",
+          "VARCHAR"
+        ],
+        [
+          "spender_namespace",
+          "VARCHAR"
+        ],
+        [
+          "total",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "reported_transaction_count",
+          "BIGINT"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared for each outside-spending spender group.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window for the publisher aggregate snapshot; individual expenditure dates are not supplied.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether each spender supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "spender-namespace",
+          "kind": "category",
+          "label": "Spender identity namespace",
+          "meaning": "Namespace separating registered political committees (fec_committee) from Form 5 independent-expenditure filers (fec_form5_filer).",
+          "fields": [
+            "spender_namespace"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Source election cycles",
+          "meaning": "FEC two-year election cycle declared for each outside-spending spender group.",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "cycle-periods",
+          "kind": "interval",
+          "label": "Requested cycle periods",
+          "meaning": "Requested two-year cycle window for the publisher aggregate snapshot; individual expenditure dates are not supplied.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "support-oppose",
+          "kind": "category",
+          "label": "Support or oppose indicator",
+          "meaning": "Whether each spender supported (S) or opposed (O) the candidate.",
+          "fields": [
+            "support_oppose"
+          ]
+        },
+        {
+          "id": "spender-namespace",
+          "kind": "category",
+          "label": "Spender identity namespace",
+          "meaning": "Namespace separating registered political committees (fec_committee) from Form 5 independent-expenditure filers (fec_form5_filer).",
+          "fields": [
+            "spender_namespace"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
+        "publishedAt": "2026-11-27T02:55:53Z",
+        "rows": 73,
+        "byteSize": 17891,
+        "memberSha256": "sha256:a08dbc0d93f57b5a5d8554cd3bf083c228f8092b9352cd91ca072aacdc18fa4d",
+        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (73 spender totals)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+    },
+    {
+      "tableId": "fec_election_results",
+      "family": "fec-election-results",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "source_column",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_raw",
+          "VARCHAR"
+        ],
+        [
+          "district_raw",
+          "VARCHAR"
+        ],
+        [
+          "seat_term",
+          "VARCHAR"
+        ],
+        [
+          "stage",
+          "VARCHAR"
+        ],
+        [
+          "round",
+          "VARCHAR"
+        ],
+        [
+          "vote_basis",
+          "VARCHAR"
+        ],
+        [
+          "row_kind",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "votes_raw",
+          "VARCHAR"
+        ],
+        [
+          "votes_status",
+          "VARCHAR"
+        ],
+        [
+          "percentage_raw",
+          "VARCHAR"
+        ],
+        [
+          "footnotes",
+          "VARCHAR"
+        ],
+        [
+          "primary_winner_raw",
+          "VARCHAR"
+        ],
+        [
+          "general_winner_raw",
+          "VARCHAR"
+        ],
+        [
+          "interpretation_version",
+          "VARCHAR"
+        ],
+        [
+          "overlap_note",
+          "VARCHAR"
+        ],
+        [
+          "source_row",
+          "INTEGER"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "votes",
+          "BIGINT"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "stage-and-basis",
+          "kind": "category",
+          "label": "Election stage and vote basis",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "fields": [
+            "stage",
+            "vote_basis"
+          ]
+        },
+        {
+          "id": "row-kind",
+          "kind": "category",
+          "label": "Workbook row kind",
+          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "fields": [
+            "row_kind"
+          ]
+        },
+        {
+          "id": "votes-status",
+          "kind": "category",
+          "label": "Vote count parse status",
+          "meaning": "Whether the workbook vote cell held an exact integer count, non-numeric source text (such as Unopposed or *), or was blank/missing.",
+          "fields": [
+            "votes_status"
+          ]
+        },
+        {
+          "id": "seat-term",
+          "kind": "category",
+          "label": "Senate seat term",
+          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "fields": [
+            "seat_term"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "stage-and-basis",
+          "kind": "category",
+          "label": "Election stage and vote basis",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "fields": [
+            "stage",
+            "vote_basis"
+          ]
+        },
+        {
+          "id": "row-kind",
+          "kind": "category",
+          "label": "Workbook row kind",
+          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "fields": [
+            "row_kind"
+          ]
+        },
+        {
+          "id": "votes-status",
+          "kind": "category",
+          "label": "Vote count parse status",
+          "meaning": "Whether the workbook vote cell held an exact integer count, non-numeric source text (such as Unopposed or *), or was blank/missing.",
+          "fields": [
+            "votes_status"
+          ]
+        },
+        {
+          "id": "seat-term",
+          "kind": "category",
+          "label": "Senate seat term",
+          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "fields": [
+            "seat_term"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:f76768276a271725a3722b3737759de1cadaa5b54d40fc5f27cec1570b941fe7",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:5ffc90e61c7f5f6ffbadc1b4444790aa669b5bf217d819821f4c34679da201ef",
+        "publishedAt": "2026-11-27T02:57:37Z",
+        "rows": 4968,
+        "byteSize": 234234,
+        "memberSha256": "sha256:dc8597507b96d868504f472a48451b9cc157d555ce8be6928ea3d78c4ffdbb35",
+        "qualification": "Live R2 fec-election-results generation Parquet verified against publication.v2.json (4,968 reviewed 2022 Senate rows)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-election-results generation Parquet."
+    },
+    {
+      "tableId": "fec_election_workbook_rows",
+      "family": "fec-election-results",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "reader_version",
+          "VARCHAR"
+        ],
+        [
+          "cells_json",
+          "VARCHAR"
+        ],
+        [
+          "source_row",
+          "INTEGER"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "Source worksheet",
+          "meaning": "Worksheet name inside the retained FEC Federal Elections workbook.",
+          "fields": [
+            "source_sheet"
+          ]
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "source-cycles",
+          "kind": "year",
+          "label": "Election cycles",
+          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "fields": [
+            "source_cycle"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "Source worksheet",
+          "meaning": "Worksheet name inside the retained FEC Federal Elections workbook.",
+          "fields": [
+            "source_sheet"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:f76768276a271725a3722b3737759de1cadaa5b54d40fc5f27cec1570b941fe7",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:5ffc90e61c7f5f6ffbadc1b4444790aa669b5bf217d819821f4c34679da201ef",
+        "publishedAt": "2026-11-27T02:57:37Z",
+        "rows": 6070,
+        "byteSize": 697919,
+        "memberSha256": "sha256:2ca6a7d8c8a63db2498914e56ba440eacc79dcc5c8b87ad9aad04e98a2941212",
+        "qualification": "Live R2 fec-election-results generation Parquet verified against publication.v2.json (6,070 literal rows across 11 sheets)."
+      },
+      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-election-results generation Parquet."
     }
   ],
   "completenessFollowup": {
