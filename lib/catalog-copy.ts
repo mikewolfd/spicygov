@@ -10,6 +10,7 @@ const purposes: Record<string, string> = {
   'cms-part-b-associations': 'Medicare Part B supporting HCPCS drug-use summaries and non-additive manufacturer associations, kept separate from spending totals so manufacturer multiplicity never inflates spending.',
   'congress-committees': 'Congressional committee names and history, for identifying committees across records.',
   'congress-sessions': 'Official House and Senate session dates and party control records across Congresses.',
+  'courtlistener-bankruptcy-dockets': 'Archival CourtListener 2022-09-19 bankruptcy docket export across 94 federal bankruptcy courts (plus five non-bankruptcy courts matching court_id LIKE \'%b\'; eight bankruptcy appellate panels are absent).',
   'courtlistener-bulk': 'CourtListener files containing court records for research across cases.',
   ferc: 'Federal Energy Regulatory Commission filings, comments and docket documents.',
   'inspectors-general-archive': 'An archived list of inspector general reports. The listed report documents have not been downloaded.',

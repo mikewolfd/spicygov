@@ -14659,6 +14659,141 @@
           "fields": []
         }
       ]
+    },
+    "courtlistener_bankruptcy_dockets": {
+      "family": "courtlistener-bankruptcy-dockets",
+      "schema": [
+        [
+          "cl_docket_id",
+          "VARCHAR"
+        ],
+        [
+          "court_id",
+          "VARCHAR"
+        ],
+        [
+          "docket_number",
+          "VARCHAR"
+        ],
+        [
+          "docket_number_core",
+          "VARCHAR"
+        ],
+        [
+          "pacer_case_id",
+          "VARCHAR"
+        ],
+        [
+          "case_name",
+          "VARCHAR"
+        ],
+        [
+          "case_name_short",
+          "VARCHAR"
+        ],
+        [
+          "case_name_full",
+          "VARCHAR"
+        ],
+        [
+          "date_filed",
+          "DATE"
+        ],
+        [
+          "date_terminated",
+          "DATE"
+        ],
+        [
+          "assigned_to_id",
+          "VARCHAR"
+        ],
+        [
+          "assigned_to_str",
+          "VARCHAR"
+        ],
+        [
+          "referred_to_id",
+          "VARCHAR"
+        ],
+        [
+          "referred_to_str",
+          "VARCHAR"
+        ],
+        [
+          "blocked",
+          "BOOLEAN"
+        ],
+        [
+          "date_blocked",
+          "DATE"
+        ],
+        [
+          "date_created",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "date_modified",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "dump_date",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "record-dates",
+      "note": "Archival one-off CourtListener export dated 2022-09-19 (no post-2022-09-19 cases). The publisher selected rows with court_id LIKE '%b', which covers 94 federal bankruptcy courts plus 65,365 non-bankruptcy rows across five other courts (neb, mspb, pactcomplcolumb, paorphctcolumb, nyoytermctalb) and excludes all eight Bankruptcy Appellate Panels. Counts show saved rows, not complete court coverage.",
+      "dimensions": [
+        {
+          "id": "docket-filing-dates",
+          "kind": "date",
+          "label": "Docket filing dates",
+          "meaning": "Case filing dates recorded in CourtListener's one-off 2022-09-19 bankruptcy dockets export. Missing dates remain unplaced; clerical literal years outside 1900\u20132022 remain visible and flagged for review rather than corrected.",
+          "fields": [
+            "date_filed"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2022
+          ]
+        },
+        {
+          "id": "docket-termination-dates",
+          "kind": "date",
+          "label": "Docket termination dates",
+          "meaning": "Case termination dates recorded in CourtListener's 2022-09-19 bankruptcy dockets export. Missing dates remain unplaced; clerical literal years outside 1900\u20132022 remain visible and flagged for review rather than corrected.",
+          "fields": [
+            "date_terminated"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2022
+          ]
+        },
+        {
+          "id": "docket-blocked-dates",
+          "kind": "date",
+          "label": "Docket blocked dates",
+          "meaning": "Dates CourtListener marked dockets blocked from search indexing (2013-10 through 2022-09 in this export). Missing dates remain unplaced.",
+          "fields": [
+            "date_blocked"
+          ]
+        },
+        {
+          "id": "courtlistener-bulk-editions",
+          "kind": "category",
+          "label": "CourtListener bulk editions",
+          "meaning": "Export edition date (2022-09-19) of this archival one-off CourtListener bankruptcy dockets dump.",
+          "fields": [
+            "dump_date"
+          ]
+        }
+      ]
     }
   }
 }
