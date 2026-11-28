@@ -88,6 +88,19 @@ test('FEC transaction dates retain literal future observations without treating 
   assert.equal(transactions.buckets['2056-04'],1);
 });
 
+test('House disclosure transaction dates keep literal source typos out of the headline freshness range', () => {
+  const transactions = {...dates,id:'transaction-dates',fields:['transaction_date'],
+    buckets:{'2025-11':40,'2026-11':12,'2202-09':1,'2220-04':1},latestDate:'2220-04-07'};
+  const original = JSON.stringify(transactions);
+  const summary = dimensionPeriodSummary(transactions,{tableId:'house_disclosure_transactions',measuredAt:'2026-11-28T06:00:00Z'});
+  assert.equal(summary.range,'2025 Q4, 2026 Q4');
+  assert.equal(summary.latestDate,undefined);
+  assert.match(summary.note,/Latest observed transaction month: 2026-11\./);
+  assert.match(summary.note,/Future transaction values remain in the detailed counts/);
+  assert.equal(JSON.stringify(transactions),original);
+  assert.equal(transactions.buckets['2220-04'],1);
+});
+
 test('a bill printing summary with only future months makes no past-period claim', () => {
   const printing = {...dates,id:'printing-dates',fields:['version_date'],buckets:{'2066-06':1},latestDate:'2066-06-07'};
   const summary = dimensionPeriodSummary(printing,{tableId:'bill_versions',measuredAt:'2026-10-30T04:01:36Z'});
