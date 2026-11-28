@@ -967,4 +967,122 @@ class RegulationCoverageTests(unittest.TestCase):
             '["othername_pfile_20261109-20261115.csv"]': 1,
         })
 
+    def test_wave2_wave3_federal_datasets_definitions_measure_live_schemas(self):
+        import importlib.util
+        import coverage_scan
+        spec = importlib.util.spec_from_file_location('coverage_builder', ROOT / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+
+        expected_families = {
+            'foreign_assistance_observations': 'foreign-assistance',
+            'foreign_assistance_snapshots': 'foreign-assistance',
+            'white_house_action_versions': 'white-house-actions',
+            'census_geocoder_lookups': 'census-geocoder',
+            'census_geocoder_geographies': 'census-geocoder',
+            'cms_part_b_drug_use_information': 'cms-part-b-associations',
+            'cms_part_b_manufacturer_associations': 'cms-part-b-associations',
+        }
+        for tid, fam in expected_families.items():
+            self.assertEqual(defs[tid]['family'], fam)
+        self.assertIn('non-additive', defs['cms_part_b_manufacturer_associations']['note'].lower())
+
+        def make_tbl(name, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, {
+                'family': policy['family'], 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-28T05:00:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        fao_pol, fao_tbl = make_tbl(
+            'foreign_assistance_observations',
+            "INSERT INTO t (snapshot_id, recipient_scope, fiscal_period, period_start, period_end, measure, dollar_basis) VALUES "
+            "('sha256:s1', 'country_or_area', '1976tq', DATE '1976-07-01', DATE '1976-09-30', 'Obligations', 'current'), "
+            "('sha256:s2', 'global', '2026', DATE '2025-10-01', DATE '2026-09-30', 'Disbursements', 'constant')"
+        )
+        builder.validate_plan({'foreign_assistance_observations': fao_tbl}, {'foreign_assistance_observations': dict(fao_pol)})
+        fao_dims = {d['id']: d for d in coverage_scan.scan_table('foreign_assistance_observations', fao_tbl, fao_pol)['dimensions']}
+        self.assertEqual((fao_dims['fiscal-period-span']['placedRows'], fao_dims['fiscal-period-span']['unplacedRows']), (2, 0))
+        self.assertEqual(fao_dims['fiscal-period-span']['yearBuckets'], {'1976': 1, '2025': 1, '2026': 1})
+        self.assertEqual(fao_dims['fiscal-period']['buckets'], {'["1976tq"]': 1, '["2026"]': 1})
+        self.assertEqual(fao_dims['measure-and-basis']['buckets'], {
+            '["Disbursements","constant"]': 1, '["Obligations","current"]': 1,
+        })
+        self.assertEqual(fao_dims['recipient-scope']['buckets'], {'["country_or_area"]': 1, '["global"]': 1})
+
+        fas_pol, fas_tbl = make_tbl(
+            'foreign_assistance_snapshots',
+            "INSERT INTO t (snapshot_id, publisher_release_date) VALUES ('sha256:s1', NULL), ('sha256:s2', DATE '2026-11-10')"
+        )
+        builder.validate_plan({'foreign_assistance_snapshots': fas_tbl}, {'foreign_assistance_snapshots': dict(fas_pol)})
+        fas_dims = {d['id']: d for d in coverage_scan.scan_table('foreign_assistance_snapshots', fas_tbl, fas_pol)['dimensions']}
+        self.assertEqual(fas_dims['publisher-release-dates']['buckets'], {'2026-11': 1})
+        self.assertEqual((fas_dims['publisher-release-dates']['placedRows'], fas_dims['publisher-release-dates']['unplacedRows']), (1, 1))
+        self.assertEqual(fas_dims['retained-snapshot']['granularity'], 'snapshot')
+
+        wha_pol, wha_tbl = make_tbl(
+            'white_house_action_versions',
+            "INSERT INTO t (action_version_id, document_type, published_time, modified_time, modified_time_status, parser_version, official_match_status) VALUES "
+            "('a1', 'Nominations & Appointments', '2026-11-12T22:04:41+00:00', '2026-11-12T22:04:42+00:00', 'stated', 'white-house-html-v2', 'unresolved'), "
+            "('a2', 'Nominations & Appointments', '2026-11-10T21:56:49+00:00', '2026-11-10T21:56:50+00:00', 'not_stated', 'white-house-html-v2', 'unresolved')"
+        )
+        builder.validate_plan({'white_house_action_versions': wha_tbl}, {'white_house_action_versions': dict(wha_pol)})
+        wha_dims = {d['id']: d for d in coverage_scan.scan_table('white_house_action_versions', wha_tbl, wha_pol)['dimensions']}
+        self.assertEqual(wha_dims['published-dates']['buckets'], {'2026-11': 2})
+        self.assertEqual((wha_dims['modified-dates']['placedRows'], wha_dims['modified-dates']['unplacedRows']), (1, 1))
+        self.assertEqual(wha_dims['official-match-status']['buckets'], {'["unresolved"]': 2})
+
+        cgl_pol, cgl_tbl = make_tbl(
+            'census_geocoder_lookups',
+            "INSERT INTO t (lookup_id, kind, benchmark, vintage, outcome) VALUES "
+            "('l1', 'onelineaddress', 'Public_AR_Census2020', 'Census2020_Census2020', 'matched'), "
+            "('l2', 'coordinates', 'Public_AR_Census2020', 'Census2020_Census2020', 'unmatched')"
+        )
+        builder.validate_plan({'census_geocoder_lookups': cgl_tbl}, {'census_geocoder_lookups': dict(cgl_pol)})
+        cgl_dims = {d['id']: d for d in coverage_scan.scan_table('census_geocoder_lookups', cgl_tbl, cgl_pol)['dimensions']}
+        self.assertEqual(cgl_dims['lookup-kind']['buckets'], {'["coordinates"]': 1, '["onelineaddress"]': 1})
+        self.assertEqual(cgl_dims['lookup-outcome']['buckets'], {'["matched"]': 1, '["unmatched"]': 1})
+
+        cgg_pol, cgg_tbl = make_tbl(
+            'census_geocoder_geographies',
+            "INSERT INTO t (lookup_id, kind, benchmark, vintage, layer, unique_assignment, geography_authority) VALUES "
+            "('l1', 'onelineaddress', 'Public_AR_Census2020', 'Census2020_Census2020', 'States', true, 'census-geo-identifier-authority-2026-08-03'), "
+            "('l2', 'coordinates', 'Public_AR_Census2020', 'Census2020_Census2020', 'Census Tracts', true, 'census-geo-identifier-authority-2026-08-03')"
+        )
+        builder.validate_plan({'census_geocoder_geographies': cgg_tbl}, {'census_geocoder_geographies': dict(cgg_pol)})
+        cgg_dims = {d['id']: d for d in coverage_scan.scan_table('census_geocoder_geographies', cgg_tbl, cgg_pol)['dimensions']}
+        self.assertEqual(cgg_dims['geography-layer']['buckets'], {'["Census Tracts"]': 1, '["States"]': 1})
+        self.assertEqual(cgg_dims['unique-assignment']['buckets'], {'["true"]': 2})
+
+        cdu_pol, cdu_tbl = make_tbl(
+            'cms_part_b_drug_use_information',
+            "INSERT INTO t (drug_use_id, benefit_year, drug_use_status, source_sheet) VALUES "
+            "('d1', 2024, 'summary_provided', 'Drug Use Information'), "
+            "('d2', 2024, 'not_available', 'Drug Use Information')"
+        )
+        builder.validate_plan({'cms_part_b_drug_use_information': cdu_tbl}, {'cms_part_b_drug_use_information': dict(cdu_pol)})
+        cdu_dims = {d['id']: d for d in coverage_scan.scan_table('cms_part_b_drug_use_information', cdu_tbl, cdu_pol)['dimensions']}
+        self.assertEqual(cdu_dims['benefit-year']['buckets'], {'2024': 2})
+        self.assertEqual(cdu_dims['drug-use-status']['buckets'], {'["not_available"]': 1, '["summary_provided"]': 1})
+
+        cma_pol, cma_tbl = make_tbl(
+            'cms_part_b_manufacturer_associations',
+            "INSERT INTO t (association_id, benefit_year, spending_allocation_status, source_sheet) VALUES "
+            "('m1', 2024, 'not_allocated_in_source', 'Manufacturer Summary'), "
+            "('m2', 2024, 'not_allocated_in_source', 'Manufacturer Summary')"
+        )
+        builder.validate_plan({'cms_part_b_manufacturer_associations': cma_tbl}, {'cms_part_b_manufacturer_associations': dict(cma_pol)})
+        cma_dims = {d['id']: d for d in coverage_scan.scan_table('cms_part_b_manufacturer_associations', cma_tbl, cma_pol)['dimensions']}
+        self.assertEqual(cma_dims['benefit-year']['buckets'], {'2024': 2})
+        self.assertEqual(cma_dims['spending-allocation-status']['buckets'], {'["not_allocated_in_source"]': 2})
+
 if __name__ == '__main__': unittest.main()

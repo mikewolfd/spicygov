@@ -397,4 +397,107 @@ class FecCoverageTest(unittest.TestCase):
         self.assertEqual((e_dims['parent-report-periods']['placedRows'], e_dims['parent-report-periods']['unplacedRows']), (1, 1))
         self.assertEqual(e_dims['expenditure-date-status']['buckets'], {'["blank"]': 1, '["parsed"]': 1})
 
+    def test_wave2_fec_query_50_tables_and_v2_election_results_and_profiles(self):
+        import importlib.util
+        import coverage_scan
+        repo = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', repo / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+
+        fec_query_tables = sorted(t for t, p in defs.items() if p['family'] == 'fec-query')
+        self.assertEqual(len(fec_query_tables), 50)
+        for retired in (
+            'fec_research_source_pages', 'fec_research_filing_feed_items',
+            'fec_research_document_observations', 'fec_research_context_dispositions',
+            'fec_research_response_outcomes', 'fec_retained_csv_observations',
+        ):
+            self.assertNotIn(retired, defs)
+        for added in ('fec_reference_source_pages', 'fec_reference_filing_feed_items'):
+            self.assertIn(added, defs)
+            self.assertEqual(defs[added]['family'], 'fec-query')
+
+        def make_tbl(name, family, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, path, {
+                'family': family, 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-28T05:00:00Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        coll_path = self.collections('fec_ref_colls', [
+            ('col1', 'fec_access', 'no-record-rejections',
+             json.dumps({'capture': {'requestUrl': 'https://www.fec.gov/help-candidates-and-committees/forms/'}}), '{}'),
+            ('col2', 'fec_reports', 'no-record-rejections',
+             json.dumps({'capture': {'requestUrl': 'https://efilingapps.fec.gov/rss/generate'}}), '{}'),
+        ])
+        inputs = RetainedInputs({PIN_A: self.parent(PIN_A, coll_path, 2)})
+
+        rp_pol, rp_path, rp_tbl = make_tbl(
+            'fec_reference_source_pages', 'fec-query',
+            "INSERT INTO t (record_id, collection_id, page_type, content_scope, content_status) VALUES "
+            "('p1', 'col1', 'filing_form_reference', 'retained_native_context_part', 'body_extracted')"
+        )
+        builder.validate_plan({'fec_reference_source_pages': rp_tbl}, {'fec_reference_source_pages': dict(rp_pol)})
+        rp_dims = {d['id']: d for d in coverage_scan._measure(
+            self.conn, 'fec_reference_source_pages', rp_tbl, [str(rp_path)], rp_pol, inputs,
+        )}
+        self.assertEqual(rp_dims['page_type_content_scope']['buckets'], {'["filing_form_reference","retained_native_context_part"]': 1})
+        self.assertEqual(rp_dims['content_status']['buckets'], {'["body_extracted"]': 1})
+        self.assertEqual(rp_dims['selected_source_scopes']['matchedRows'], 1)
+
+        ff_pol, ff_path, ff_tbl = make_tbl(
+            'fec_reference_filing_feed_items', 'fec-query',
+            "INSERT INTO t (record_id, collection_id, published_at, coverage_start_date, coverage_end_date, source_label_status, parsing_status) VALUES "
+            "('f1', 'col2', TIMESTAMPTZ '2026-10-15 14:00:00+00', DATE '2026-07-01', DATE '2026-09-30', 'committee_id', 'parsed'), "
+            "('f2', 'col2', NULL, NULL, NULL, 'missing', 'missing')"
+        )
+        builder.validate_plan({'fec_reference_filing_feed_items': ff_tbl}, {'fec_reference_filing_feed_items': dict(ff_pol)})
+        ff_dims = {d['id']: d for d in coverage_scan._measure(
+            self.conn, 'fec_reference_filing_feed_items', ff_tbl, [str(ff_path)], ff_pol, inputs,
+        )}
+        self.assertEqual(ff_dims['published_at']['buckets'], {'2026-10': 1})
+        self.assertEqual((ff_dims['published_at']['placedRows'], ff_dims['published_at']['unplacedRows']), (1, 1))
+        self.assertEqual(ff_dims['coverage_period']['buckets'], {'2026-07': 1, '2026-08': 1, '2026-09': 1})
+        self.assertEqual((ff_dims['coverage_period']['placedRows'], ff_dims['coverage_period']['unplacedRows']), (1, 1))
+        self.assertEqual(ff_dims['source_label_status']['buckets'], {'["committee_id"]': 1, '["missing"]': 1})
+        self.assertEqual(ff_dims['selected_source_scopes']['matchedRows'], 2)
+
+        fer_pol, _, fer_tbl = make_tbl(
+            'fec_election_results', 'fec-election-results',
+            "INSERT INTO t (record_id, office, state, district, seat_term, stage, vote_basis, row_kind, votes_status, source_cycle, votes) VALUES "
+            "('e1', 'president', 'ME', 'P', 'not_applicable', 'general', 'electoral_vote', 'candidate', 'exact', 2024, 3), "
+            "('e2', 'house', 'IN', '02', 'unexpired', 'general', 'ballot_line', 'candidate', 'exact', 2022, 118997), "
+            "('e3', 'senate', 'AK', NULL, 'full', 'general', 'ranked_choice_round', 'state_total', 'missing', 2022, NULL)"
+        )
+        builder.validate_plan({'fec_election_results': fer_tbl}, {'fec_election_results': dict(fer_pol)})
+        fer_dims = {d['id']: d for d in coverage_scan.scan_table('fec_election_results', fer_tbl, fer_pol)['dimensions']}
+        self.assertEqual(fer_dims['source-cycles']['buckets'], {'2022': 2, '2024': 1})
+        self.assertEqual(fer_dims['office']['buckets'], {'["house"]': 1, '["president"]': 1, '["senate"]': 1})
+        self.assertEqual(fer_dims['stage-and-basis']['buckets'], {
+            '["general","ballot_line"]': 1,
+            '["general","electoral_vote"]': 1,
+            '["general","ranked_choice_round"]': 1,
+        })
+        self.assertEqual(fer_dims['seat-term']['buckets'], {'["full"]': 1, '["not_applicable"]': 1, '["unexpired"]': 1})
+
+        rel_pol, _, rel_tbl = make_tbl(
+            'fec_committee_relationship_profiles', 'fec-research-profiles',
+            "INSERT INTO t (profile_id, committee_id, designation, relationship_effective_date_status, policy_version) VALUES "
+            "('r1', 'C00000001', 'P', 'not_supplied; filing and retrieval dates are not relationship dates', 'fec-disclosed-relationships/1'), "
+            "('r2', 'C00000002', NULL, 'not_supplied; filing and retrieval dates are not relationship dates', 'fec-disclosed-relationships/1')"
+        )
+        builder.validate_plan({'fec_committee_relationship_profiles': rel_tbl}, {'fec_committee_relationship_profiles': dict(rel_pol)})
+        rel_dims = {d['id']: d for d in coverage_scan.scan_table('fec_committee_relationship_profiles', rel_tbl, rel_pol)['dimensions']}
+        self.assertEqual((rel_dims['committee-designation']['placedRows'], rel_dims['committee-designation']['unplacedRows']), (1, 1))
+        self.assertEqual(rel_dims['retained-snapshot']['placedRows'], 2)
+
 if __name__=='__main__':unittest.main()

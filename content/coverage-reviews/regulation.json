@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 125,
+  "tableCount": 132,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -41769,6 +41769,986 @@
         "qualification": "Live November 2026 CMS NPPES V2 monthly/weekly qualification (110926_111526 and 111626_112226 canary cohort Parquet across main + othername/pl/endpoint sidecars) verified ahead of live R2 publication."
       },
       "reviewNote": "2026-11-27 (ss-jknq): Pre-publication coverage definition and review added against verified local November 2026 CMS NPPES V2 canary generation Parquet."
+    },
+    {
+      "tableId": "foreign_assistance_observations",
+      "family": "foreign-assistance",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "recipient_code",
+          "VARCHAR"
+        ],
+        [
+          "recipient_name",
+          "VARCHAR"
+        ],
+        [
+          "recipient_scope",
+          "VARCHAR"
+        ],
+        [
+          "region_id",
+          "VARCHAR"
+        ],
+        [
+          "region_name",
+          "VARCHAR"
+        ],
+        [
+          "income_group_acronym",
+          "VARCHAR"
+        ],
+        [
+          "income_group_name",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_period",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ],
+        [
+          "measure_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "dollar_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "constant_dollar_base_year",
+          "INTEGER"
+        ],
+        [
+          "reporting_status",
+          "VARCHAR"
+        ],
+        [
+          "agency_scope",
+          "VARCHAR"
+        ],
+        [
+          "program_scope",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "fiscal-period-span",
+          "kind": "interval",
+          "label": "Fiscal period calendar span",
+          "meaning": "Calendar span of each federal fiscal period (period_start through period_end), covering FY1946 (1945-07-01) through FY2026 (2026-09-30) including the 1976 Transition Quarter.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "fiscal-period",
+          "kind": "category",
+          "label": "Fiscal period label",
+          "meaning": "Publisher-reported fiscal period label (1946\u20132026 plus 1976tq for the 1976 Transition Quarter).",
+          "fields": [
+            "fiscal_period"
+          ]
+        },
+        {
+          "id": "measure-and-basis",
+          "kind": "category",
+          "label": "Financial measure and dollar basis",
+          "meaning": "Distinct foreign assistance financial measure paired with dollar basis (current vs constant). Never sum across measures or dollar bases.",
+          "fields": [
+            "measure",
+            "dollar_basis"
+          ]
+        },
+        {
+          "id": "recipient-scope",
+          "kind": "category",
+          "label": "Recipient scope",
+          "meaning": "Distinguishes country_or_area recipients from regional and global program aggregates.",
+          "fields": [
+            "recipient_scope"
+          ]
+        },
+        {
+          "id": "snapshot-id",
+          "kind": "category",
+          "label": "Retained summary snapshot",
+          "meaning": "SHA-256 identity of each retained country-summary snapshot; multiple snapshots remain separate and non-additive.",
+          "fields": [
+            "snapshot_id"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:e9c0fde1ad45223ed14ba2242b2dd74e64801b46343f7461331e3a62c3cf7583",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:2ea8fa61b99349c61c3d8ac968bbafdcb140180d6fb3f39685d8d915aafcb4dd",
+        "publishedAt": "2026-11-28T03:50:32Z",
+        "rows": 91528,
+        "byteSize": 6072592,
+        "memberSha256": "sha256:87f257022283f819bdeef0b6224399d4765de50b65bc5b324eae35c00840ebf0",
+        "qualification": "Live R2 foreign-assistance generation sha256:e9c0fde1 verified (91,528 rows across 2 retained snapshots x 45,764 rows; 82 fiscal periods 1946\u20132026 + 1976tq; 4 measures x 2 dollar bases; country_or_area 82,600, regional 8,336, global 592)."
+      },
+      "reviewNote": "2026-11-28 (ss-ir6a): Added coverage definition and review against live foreign-assistance generation sha256:e9c0fde1."
+    },
+    {
+      "tableId": "foreign_assistance_snapshots",
+      "family": "foreign-assistance",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "dictionary_sha256",
+          "VARCHAR"
+        ],
+        [
+          "dictionary_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_row_count",
+          "BIGINT"
+        ],
+        [
+          "publisher_release_date",
+          "DATE"
+        ],
+        [
+          "coverage",
+          "VARCHAR"
+        ],
+        [
+          "source_scope_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "publisher-release-dates",
+          "kind": "date",
+          "label": "Publisher release dates",
+          "meaning": "Explicit publisher release date when supplied by the source; remains unplaced when the upstream CSV omits a release date (capture time is never substituted).",
+          "fields": [
+            "publisher_release_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained summary snapshots",
+          "meaning": "Explicitly captured complete country-summary distributions and pinned official dictionary receipts (2 snapshots).",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:e9c0fde1ad45223ed14ba2242b2dd74e64801b46343f7461331e3a62c3cf7583",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:2ea8fa61b99349c61c3d8ac968bbafdcb140180d6fb3f39685d8d915aafcb4dd",
+        "publishedAt": "2026-11-28T03:50:32Z",
+        "rows": 2,
+        "byteSize": 10173,
+        "memberSha256": "sha256:7af6f9f6fcf68d0dc20ffd26ebb31e9cdd6f54eeeffa47537b7727f59265bf42",
+        "qualification": "Live R2 foreign-assistance generation sha256:e9c0fde1 verified (2 retained snapshots, 22,882 source rows each; publisher_release_date NULL -> explicitly unplaced)."
+      },
+      "reviewNote": "2026-11-28 (ss-ir6a): Added coverage definition and review against live foreign-assistance generation sha256:e9c0fde1."
+    },
+    {
+      "tableId": "white_house_action_versions",
+      "family": "white-house-actions",
+      "schema": [
+        [
+          "action_version_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "native_post_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "document_type",
+          "VARCHAR"
+        ],
+        [
+          "categories_json",
+          "VARCHAR"
+        ],
+        [
+          "listing_url",
+          "VARCHAR"
+        ],
+        [
+          "listing_sha256",
+          "VARCHAR"
+        ],
+        [
+          "listing_record_index",
+          "VARCHAR"
+        ],
+        [
+          "published_time",
+          "VARCHAR"
+        ],
+        [
+          "display_time",
+          "VARCHAR"
+        ],
+        [
+          "modified_time",
+          "VARCHAR"
+        ],
+        [
+          "modified_time_status",
+          "VARCHAR"
+        ],
+        [
+          "body_text",
+          "VARCHAR"
+        ],
+        [
+          "body_html",
+          "VARCHAR"
+        ],
+        [
+          "body_selector",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "parser_version",
+          "VARCHAR"
+        ],
+        [
+          "official_match_status",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "published-dates",
+          "kind": "date",
+          "label": "Page publication dates",
+          "meaning": "Literal publication timestamp stated on the retained White House action page (distinct from capture time).",
+          "fields": [
+            "published_time"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "modified-dates",
+          "kind": "date",
+          "label": "Page modification dates",
+          "meaning": "Stated modification timestamp on retained White House action pages when modified_time_status is stated.",
+          "fields": [
+            "modified_time"
+          ],
+          "syntax": "iso",
+          "conditions": [
+            {
+              "field": "modified_time_status",
+              "values": [
+                "stated"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "document-type",
+          "kind": "category",
+          "label": "White House document category",
+          "meaning": "Native White House action category label (e.g., Nominations & Appointments).",
+          "fields": [
+            "document_type"
+          ]
+        },
+        {
+          "id": "official-match-status",
+          "kind": "category",
+          "label": "Official-document match status",
+          "meaning": "Whether an exact official-document equivalence was established or remains unresolved.",
+          "fields": [
+            "official_match_status"
+          ]
+        },
+        {
+          "id": "parser-version",
+          "kind": "category",
+          "label": "HTML parser version",
+          "meaning": "Version of the White House HTML parser used to extract each retained action version.",
+          "fields": [
+            "parser_version"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:adb93e1314012573435fde58e914f7567aa7f0c4fc460741b4c0abefc8639e35",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:ffe09206f97241f7acea3d41148c26f119ae4cea678e8da92e24188c2feb6725",
+        "publishedAt": "2026-11-28T03:50:43Z",
+        "rows": 4,
+        "byteSize": 35214,
+        "memberSha256": "sha256:502cc52e4e709a8020bdd0db84c88569ff1eb932434e02687b409f6cd9ecbcb1",
+        "qualification": "Live R2 white-house-actions generation sha256:adb93e13 verified (4 Nominations & Appointments versions published 2026-11-09..2026-11-12; modified_time_status=stated, official_match_status=unresolved, white-house-html-v2)."
+      },
+      "reviewNote": "2026-11-28 (ss-huhm): Added coverage definition and review against live white-house-actions generation sha256:adb93e13."
+    },
+    {
+      "tableId": "census_geocoder_lookups",
+      "family": "census-geocoder",
+      "schema": [
+        [
+          "lookup_id",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "benchmark",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "request_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "response_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "address",
+          "VARCHAR"
+        ],
+        [
+          "input_x",
+          "VARCHAR"
+        ],
+        [
+          "input_y",
+          "VARCHAR"
+        ],
+        [
+          "candidate_count",
+          "INTEGER"
+        ],
+        [
+          "response_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "lookup-kind",
+          "kind": "category",
+          "label": "Geocoder lookup kind",
+          "meaning": "Single-record lookup mode submitted to the Census Geocoder (onelineaddress or coordinates).",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "benchmark-vintage",
+          "kind": "category",
+          "label": "Census benchmark and vintage",
+          "meaning": "Declared Census Geocoder address benchmark paired with geography vintage (Public_AR_Census2020 / Census2020_Census2020).",
+          "fields": [
+            "benchmark",
+            "vintage"
+          ]
+        },
+        {
+          "id": "lookup-outcome",
+          "kind": "category",
+          "label": "Lookup outcome",
+          "meaning": "Whether the Census Geocoder returned a geography match (matched) or explicitly returned no match (unmatched).",
+          "fields": [
+            "outcome"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained geocoder lookup cohort",
+          "meaning": "Explicit single-record Census 2020 lookup observations; capture time is not a geographic validity date.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:1d004a0520e9c8d43d10f27abc9eb1a9b528b37cfb779bdab5adb3d0b417f4f3",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:37a1f268c9dfc5cb7227ad55f63d995969eaab4053fed6bf610adc848c115da1",
+        "publishedAt": "2026-11-28T03:52:55Z",
+        "rows": 4,
+        "byteSize": 11039,
+        "memberSha256": "sha256:05e1fa9837a5a01a77a53538e9d81daf9e72dbcf3c170a550f9423499b6f4fb6",
+        "qualification": "Live R2 census-geocoder generation sha256:1d004a05 verified (4 single-record lookups: 2 onelineaddress, 2 coordinates; 2 matched, 2 unmatched)."
+      },
+      "reviewNote": "2026-11-28 (ss-zs7b): Added coverage definition and review against live census-geocoder generation sha256:1d004a05."
+    },
+    {
+      "tableId": "census_geocoder_geographies",
+      "family": "census-geocoder",
+      "schema": [
+        [
+          "lookup_id",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "benchmark",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "request_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "response_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "candidate_index",
+          "INTEGER"
+        ],
+        [
+          "unique_assignment",
+          "BOOLEAN"
+        ],
+        [
+          "matched_address",
+          "VARCHAR"
+        ],
+        [
+          "x",
+          "VARCHAR"
+        ],
+        [
+          "y",
+          "VARCHAR"
+        ],
+        [
+          "layer",
+          "VARCHAR"
+        ],
+        [
+          "geoid",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "county_code",
+          "VARCHAR"
+        ],
+        [
+          "county_geoid",
+          "VARCHAR"
+        ],
+        [
+          "tract_code",
+          "VARCHAR"
+        ],
+        [
+          "block_code",
+          "VARCHAR"
+        ],
+        [
+          "json_pointer",
+          "VARCHAR"
+        ],
+        [
+          "geography_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_authority",
+          "VARCHAR"
+        ],
+        [
+          "geography_source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "lookup-kind",
+          "kind": "category",
+          "label": "Geocoder lookup kind",
+          "meaning": "Single-record lookup mode (onelineaddress or coordinates) that returned each geography row.",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "benchmark-vintage",
+          "kind": "category",
+          "label": "Census benchmark and vintage",
+          "meaning": "Declared Census Geocoder benchmark paired with geography vintage.",
+          "fields": [
+            "benchmark",
+            "vintage"
+          ]
+        },
+        {
+          "id": "geography-layer",
+          "kind": "category",
+          "label": "Census geography layer",
+          "meaning": "Returned Census geography layer (States, Counties, Census Tracts, Census Blocks, 116th Congressional Districts, etc.).",
+          "fields": [
+            "layer"
+          ]
+        },
+        {
+          "id": "unique-assignment",
+          "kind": "category",
+          "label": "Unique candidate assignment",
+          "meaning": "Whether the lookup returned a single unambiguous candidate assignment (true) or multiple candidates (false).",
+          "fields": [
+            "unique_assignment"
+          ]
+        },
+        {
+          "id": "geography-authority",
+          "kind": "category",
+          "label": "Geography identifier authority",
+          "meaning": "Pinned authority governing Census geography identifier interpretation.",
+          "fields": [
+            "geography_authority"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained geocoder geography cohort",
+          "meaning": "Explicitly returned Census2020 geography candidates for the retained lookup cohort.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:1d004a0520e9c8d43d10f27abc9eb1a9b528b37cfb779bdab5adb3d0b417f4f3",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:37a1f268c9dfc5cb7227ad55f63d995969eaab4053fed6bf610adc848c115da1",
+        "publishedAt": "2026-11-28T03:52:55Z",
+        "rows": 22,
+        "byteSize": 15600,
+        "memberSha256": "sha256:85fd51ae12672af6e2a59d744d4b3a216b92d0bda77e4d0ff1ad8b3455445110",
+        "qualification": "Live R2 census-geocoder generation sha256:1d004a05 verified (22 rows across 11 Census2020 layers, 11 onelineaddress + 11 coordinates, unique_assignment=true)."
+      },
+      "reviewNote": "2026-11-28 (ss-zs7b): Added coverage definition and review against live census-geocoder generation sha256:1d004a05."
+    },
+    {
+      "tableId": "cms_part_b_drug_use_information",
+      "family": "cms-part-b-associations",
+      "schema": [
+        [
+          "drug_use_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "hcpcs_code",
+          "VARCHAR"
+        ],
+        [
+          "drug_description",
+          "VARCHAR"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "drug_uses",
+          "VARCHAR"
+        ],
+        [
+          "drug_use_status",
+          "VARCHAR"
+        ],
+        [
+          "value_states_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "source_row_number",
+          "INTEGER"
+        ],
+        [
+          "source_workbook_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_workbook_url",
+          "VARCHAR"
+        ],
+        [
+          "source_resources_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Medicare Part B benefit year",
+          "meaning": "Selected CMS Medicare Part B benefit year of the pinned supporting workbook (2024).",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "drug-use-status",
+          "kind": "category",
+          "label": "Drug use summary availability",
+          "meaning": "Whether the CMS supporting worksheet provided a clinical drug-use summary (summary_provided) or reported none available (not_available).",
+          "fields": [
+            "drug_use_status"
+          ]
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "CMS workbook worksheet",
+          "meaning": "Source worksheet name in the pinned CMS Part B supporting workbook (Drug Use Information).",
+          "fields": [
+            "source_sheet"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained Part B drug-use workbook",
+          "meaning": "Explicitly selected CMS Part B supporting Drug Use Information worksheet linked to the pinned Part B spending release.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:1e6aa62e672c6f9fafd4da650931f94e00a7e08cccd76388dc5223ad8fd3dc9f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:2f561804bfb2bfda795df755563af11708bcb611dbfe5306e2ded9f717eae68a",
+        "publishedAt": "2026-11-28T04:59:46Z",
+        "rows": 799,
+        "byteSize": 225539,
+        "memberSha256": "sha256:80612413b0001fde757a249f6fb0b229435aa759d02ca10732c122d6eae7d401",
+        "qualification": "Live R2 cms-part-b-associations generation sha256:1e6aa62e verified (799 rows for 2024 Medicare Part B: 623 summary_provided, 176 not_available)."
+      },
+      "reviewNote": "2026-11-28 (ss-mb8j): Added coverage definition and review against live cms-part-b-associations generation sha256:1e6aa62e."
+    },
+    {
+      "tableId": "cms_part_b_manufacturer_associations",
+      "family": "cms-part-b-associations",
+      "schema": [
+        [
+          "association_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "hcpcs_code",
+          "VARCHAR"
+        ],
+        [
+          "drug_description",
+          "VARCHAR"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_name",
+          "VARCHAR"
+        ],
+        [
+          "spending_allocation_status",
+          "VARCHAR"
+        ],
+        [
+          "value_states_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "source_row_number",
+          "INTEGER"
+        ],
+        [
+          "source_workbook_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_workbook_url",
+          "VARCHAR"
+        ],
+        [
+          "source_resources_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Medicare Part B benefit year",
+          "meaning": "Selected CMS Medicare Part B benefit year of the pinned supporting workbook (2024).",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "spending-allocation-status",
+          "kind": "category",
+          "label": "Manufacturer spending allocation status",
+          "meaning": "Explicit non-additive guard (not_allocated_in_source): CMS does not allocate HCPCS spending across associated manufacturers; never sum spending across a flat join.",
+          "fields": [
+            "spending_allocation_status"
+          ]
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "CMS workbook worksheet",
+          "meaning": "Source worksheet name in the pinned CMS Part B supporting workbook (Manufacturer Summary).",
+          "fields": [
+            "source_sheet"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained Part B manufacturer associations",
+          "meaning": "Explicitly selected CMS Part B Manufacturer Summary worksheet (3,485 non-additive association rows across 799 HCPCS codes); manufacturer multiplicity must not be joined into spending sums.",
+          "fields": []
+        }
+      ],
+      "evidence": {
+        "artifactDigest": "sha256:1e6aa62e672c6f9fafd4da650931f94e00a7e08cccd76388dc5223ad8fd3dc9f",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:2f561804bfb2bfda795df755563af11708bcb611dbfe5306e2ded9f717eae68a",
+        "publishedAt": "2026-11-28T04:59:46Z",
+        "rows": 3485,
+        "byteSize": 324674,
+        "memberSha256": "sha256:3b9ce2cddc06c4efc209840fb13f707290c4784997db62911466fac41a27901f",
+        "qualification": "Live R2 cms-part-b-associations generation sha256:1e6aa62e verified (3,485 non-additive rows across 799 HCPCS codes for 2024 Medicare Part B; spending_allocation_status=not_allocated_in_source on all 3,485 rows; 74 blank manufacturer_name cells)."
+      },
+      "reviewNote": "2026-11-28 (ss-mb8j): Added coverage definition and review against live cms-part-b-associations generation sha256:1e6aa62e with explicit non-additive manufacturer association semantics."
     }
   ],
   "scannerRequirements": [

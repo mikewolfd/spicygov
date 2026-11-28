@@ -12929,13 +12929,13 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Index entries from one declared retained House Clerk annual financial disclosure index snapshot (2025FD.zip; 2,935 rows). Categories outside explicitly selected Periodic Transaction Report PDFs are discovery only; other filing years and source-wide completeness remain unqualified.",
+      "note": "Complete retained House Clerk annual financial disclosure index snapshots across 2008\u20132026 (19 index years, 42,254 filing entries: 41,543 parsed filing dates including verbatim source-index year typos such as 3013, and 711 blank dates). Categories outside explicitly selected Periodic Transaction Report PDFs remain discovery only.",
       "dimensions": [
         {
           "id": "index-year",
           "kind": "year",
           "label": "House index year",
-          "meaning": "Annual House Clerk financial disclosure index year (2025FD.zip). Reflects one declared retained index snapshot.",
+          "meaning": "Annual House Clerk financial disclosure index year across retained 2008\u20132026 index archives.",
           "fields": [
             "index_year"
           ],
@@ -12945,7 +12945,7 @@
           "id": "filing-dates",
           "kind": "date",
           "label": "Index filing dates",
-          "meaning": "Filing dates parsed from the House Clerk annual disclosure index; rows with blank filing dates remain unplaced.",
+          "meaning": "Filing dates parsed verbatim from the House Clerk annual disclosure indexes; blank dates remain unplaced and literal source year typos are preserved without silent alteration.",
           "fields": [
             "filing_date"
           ],
@@ -12955,7 +12955,7 @@
           "id": "filing-type",
           "kind": "category",
           "label": "Filing type code",
-          "meaning": "House Clerk filing category code (e.g., C candidate, X extension, P periodic transaction report, O annual, D duplicate/new filer, A amendment).",
+          "meaning": "House Clerk filing category code across retained indexes (C, O, P, X, A, D, W, T, H, G, E, B, R).",
           "fields": [
             "filing_type"
           ]
@@ -13052,13 +13052,13 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Explicitly selected House Clerk Periodic Transaction Report PDFs from the 2025 disclosure index (8 reports: 6 parsed via native_layout, 2 explicitly refused due to image-only pages or header mismatch). Image-form extraction and source-wide completeness remain unqualified.",
+      "note": "Retained House Clerk Periodic Transaction Report PDFs across 2013\u20132026 index years (8,358 retained PTR reports: 1,999 parsed via native_layout and 6,359 explicitly refused with recorded refusal_reason due to scanned image pages, unsupported layouts, or missing native headers). Refused readings are never treated as empty reports.",
       "dimensions": [
         {
           "id": "index-year",
           "kind": "year",
           "label": "House index year",
-          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2025).",
+          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2013\u20132026).",
           "fields": [
             "index_year"
           ],
@@ -13143,7 +13143,7 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Per-page inventory for explicitly selected House Periodic Transaction Report PDFs (103 pages: 87 native_grid and 16 unsupported_image_page). Image-only pages are recorded explicitly rather than OCR-guessed.",
+      "note": "Per-page inventory for all 8,358 retained House Periodic Transaction Report PDFs (21,655 visited pages: 8,945 unsupported_image_page, 5,892 native_grid, 4,031 native_supplement, and 2,787 unsupported_native_layout). Image-only and unsupported-layout pages are recorded explicitly rather than OCR-guessed.",
       "dimensions": [
         {
           "id": "parent-report-index-year",
@@ -13176,7 +13176,7 @@
           "id": "page-status",
           "kind": "category",
           "label": "PDF page status",
-          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid) or was an unsupported image-only page (unsupported_image_page).",
+          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid), native supplement text (native_supplement), unsupported native layout (unsupported_native_layout), or was an image-only page (unsupported_image_page).",
           "fields": [
             "page_status"
           ]
@@ -13304,7 +13304,7 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Transactions extracted from explicitly selected native-layout House Periodic Transaction Report PDFs (738 rows across 6 parsed reports; 2 refused image-only PDFs contribute no transaction rows). Statutory amount ranges are preserved without midpoint estimation and capital-gains checkboxes remain unqualified.",
+      "note": "Transactions extracted from 1,999 qualified native-layout House Periodic Transaction Report PDFs (20,834 native 2022\u20132026 PTR transaction rows; 6,359 refused reports contribute no transaction rows). Statutory dollar ranges and literal printed date outliers (e.g., 1935\u20132220 source typos) are preserved verbatim without midpoint estimation or silent correction, and capital-gains checkboxes remain unqualified.",
       "dimensions": [
         {
           "id": "transaction-dates",
@@ -13330,7 +13330,7 @@
           "id": "action-type",
           "kind": "category",
           "label": "Transaction action",
-          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale).",
+          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale, E exchange).",
           "fields": [
             "action_raw"
           ]
@@ -13348,7 +13348,7 @@
           "id": "amount-status",
           "kind": "category",
           "label": "Amount representation status",
-          "meaning": "Whether transaction amounts are represented as statutory dollar ranges (reported_range).",
+          "meaning": "Representation status of transaction amounts (reported_range, unparsed, or reported_exclusive_lower_bound).",
           "fields": [
             "amount_status"
           ]
@@ -13424,7 +13424,7 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Explicitly reviewed amendment links between retained House Periodic Transaction Report PDFs, retaining the exact source statement, page locators, and scope uncertainty rather than inferring full-report replacement.",
+      "note": "Explicitly reviewed amendment links between retained House Periodic Transaction Report PDFs (1 reviewed date-reference link in live generation sha256:053b67c8), retaining the exact source statement, page locators, and scope uncertainty rather than inferring full-report replacement.",
       "dimensions": [
         {
           "id": "original-report-index-year",
@@ -15730,6 +15730,569 @@
           "fields": [
             "category"
           ]
+        }
+      ]
+    },
+    "senate_disclosure_reports": {
+      "family": "senate-disclosures",
+      "schema": [
+        [
+          "filing_year",
+          "INTEGER"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "filer_label",
+          "VARCHAR"
+        ],
+        [
+          "report_kind",
+          "VARCHAR"
+        ],
+        [
+          "report_title",
+          "VARCHAR"
+        ],
+        [
+          "report_date",
+          "DATE"
+        ],
+        [
+          "submitted_date",
+          "DATE"
+        ],
+        [
+          "amendment_status",
+          "VARCHAR"
+        ],
+        [
+          "amendment_number",
+          "INTEGER"
+        ],
+        [
+          "original_candidate_ids",
+          "VARCHAR[]"
+        ],
+        [
+          "amendment_link_status",
+          "VARCHAR"
+        ],
+        [
+          "parse_status",
+          "VARCHAR"
+        ],
+        [
+          "filer_heading",
+          "VARCHAR"
+        ],
+        [
+          "filed_at_raw",
+          "VARCHAR"
+        ],
+        [
+          "transaction_count",
+          "BIGINT"
+        ],
+        [
+          "search_sha256",
+          "VARCHAR"
+        ],
+        [
+          "search_start",
+          "BIGINT"
+        ],
+        [
+          "search_row",
+          "BIGINT"
+        ],
+        [
+          "raw_search_cells_json",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Retained Senate eFD Periodic Transaction Report listings and filing observations for declared calendar filing year 2025 (167 reports: 146 parsed electronic PTRs and 21 explicit unsupported_paper observations). Original and amended reports remain separate without replacement semantics, and annual reports are outside this selection.",
+      "dimensions": [
+        {
+          "id": "filing-year",
+          "kind": "year",
+          "label": "Senate eFD filing year",
+          "meaning": "Declared calendar filing year searched in the public Senate eFD Periodic Transaction Report index.",
+          "fields": [
+            "filing_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-dates",
+          "kind": "date",
+          "label": "Report dates",
+          "meaning": "Report dates recorded on Senate eFD Periodic Transaction Report listings (2024-01 through 2025-12).",
+          "fields": [
+            "report_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "submitted-dates",
+          "kind": "date",
+          "label": "Submitted dates",
+          "meaning": "Filing submission dates recorded on Senate eFD Periodic Transaction Report listings.",
+          "fields": [
+            "submitted_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "report-kind",
+          "kind": "category",
+          "label": "Report delivery kind",
+          "meaning": "Whether each retained Senate PTR listing is an electronic report (electronic) or an image/paper filing (paper).",
+          "fields": [
+            "report_kind"
+          ]
+        },
+        {
+          "id": "parse-status",
+          "kind": "category",
+          "label": "Report parse status",
+          "meaning": "Whether the PTR body was parsed (parsed) or retained as an explicit unsupported paper observation (unsupported_paper).",
+          "fields": [
+            "parse_status"
+          ]
+        },
+        {
+          "id": "amendment-status",
+          "kind": "category",
+          "label": "Amendment status",
+          "meaning": "Whether each Senate PTR listing is an original filing (none) or a numbered/unnumbered amendment.",
+          "fields": [
+            "amendment_status"
+          ]
+        },
+        {
+          "id": "amendment-link-status",
+          "kind": "category",
+          "label": "Amendment link status",
+          "meaning": "Resolution status of literal name/date candidate parent matching for amendments (not_applicable, unresolved, or ambiguous).",
+          "fields": [
+            "amendment_link_status"
+          ]
+        }
+      ]
+    },
+    "senate_disclosure_transactions": {
+      "family": "senate-disclosures",
+      "schema": [
+        [
+          "filing_year",
+          "INTEGER"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "row_number",
+          "BIGINT"
+        ],
+        [
+          "row_position",
+          "BIGINT"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "transaction_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "owner",
+          "VARCHAR"
+        ],
+        [
+          "ticker",
+          "VARCHAR"
+        ],
+        [
+          "ticker_raw",
+          "VARCHAR"
+        ],
+        [
+          "asset_name",
+          "VARCHAR"
+        ],
+        [
+          "asset_type",
+          "VARCHAR"
+        ],
+        [
+          "transaction_type",
+          "VARCHAR"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_lower_usd",
+          "BIGINT"
+        ],
+        [
+          "amount_upper_usd",
+          "BIGINT"
+        ],
+        [
+          "lower_inclusive",
+          "BOOLEAN"
+        ],
+        [
+          "amount_parse_status",
+          "VARCHAR"
+        ],
+        [
+          "comment",
+          "VARCHAR"
+        ],
+        [
+          "comment_raw",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Transactions parsed from retained electronic Senate eFD Periodic Transaction Reports (975 rows across 146 parsed 2025 electronic filings; 21 unsupported paper reports contribute no transaction rows). Statutory dollar ranges are preserved with explicit bounds, and amended filings remain separate observations.",
+      "dimensions": [
+        {
+          "id": "filing-year",
+          "kind": "year",
+          "label": "Senate eFD filing year",
+          "meaning": "Declared calendar filing year of the parent Senate eFD Periodic Transaction Report.",
+          "fields": [
+            "filing_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Reported asset transaction dates parsed from retained electronic Senate Periodic Transaction Reports.",
+          "fields": [
+            "transaction_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-dates",
+          "kind": "inherited",
+          "label": "Parent report dates",
+          "meaning": "Report date inherited from the matching senate_disclosure_reports row by report_id.",
+          "fields": [],
+          "parent": {
+            "table": "senate_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-dates",
+            "kind": "date",
+            "label": "Parent report dates",
+            "meaning": "Report date inherited from senate_disclosure_reports by report_id.",
+            "fields": [
+              "report_date"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "transaction-type",
+          "kind": "category",
+          "label": "Transaction type",
+          "meaning": "Reported transaction action (Purchase, Sale (Full), Sale (Partial), Exchange).",
+          "fields": [
+            "transaction_type"
+          ]
+        },
+        {
+          "id": "asset-type",
+          "kind": "category",
+          "label": "Asset type",
+          "meaning": "Reported asset category (Stock, Municipal Security, Corporate Bond, Non-Public Stock, Cryptocurrency, Other).",
+          "fields": [
+            "asset_type"
+          ]
+        },
+        {
+          "id": "owner",
+          "kind": "category",
+          "label": "Reported owner",
+          "meaning": "Disclosed owner category for each reported transaction (Self, Spouse, Joint, Child).",
+          "fields": [
+            "owner"
+          ]
+        },
+        {
+          "id": "amount-parse-status",
+          "kind": "category",
+          "label": "Amount parse status",
+          "meaning": "Parsing status of the reported statutory dollar bracket (closed_range).",
+          "fields": [
+            "amount_parse_status"
+          ]
+        }
+      ]
+    },
+    "crs_report_files": {
+      "family": "crs-report-files",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "metadata_update_date",
+          "VARCHAR"
+        ],
+        [
+          "metadata_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "rendition",
+          "VARCHAR"
+        ],
+        [
+          "source_family",
+          "VARCHAR"
+        ],
+        [
+          "publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "version_binding",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "resolved_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "body_state",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "capture_receipt_key",
+          "VARCHAR"
+        ],
+        [
+          "capture_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "association_receipt_key",
+          "VARCHAR"
+        ],
+        [
+          "association_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "association_kind",
+          "VARCHAR"
+        ],
+        [
+          "error",
+          "VARCHAR"
+        ],
+        [
+          "provenance_basis",
+          "VARCHAR"
+        ],
+        [
+          "original_receipts_json",
+          "VARCHAR"
+        ],
+        [
+          "content_identity_state",
+          "VARCHAR"
+        ],
+        [
+          "content_report_id",
+          "VARCHAR"
+        ],
+        [
+          "content_publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "qualified_publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "file_validation_basis",
+          "VARCHAR"
+        ],
+        [
+          "text_content",
+          "VARCHAR"
+        ],
+        [
+          "text_state",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ],
+        [
+          "text_input_sha256",
+          "VARCHAR"
+        ],
+        [
+          "text_processor",
+          "VARCHAR"
+        ],
+        [
+          "text_processor_sha256",
+          "VARCHAR"
+        ],
+        [
+          "provider_version",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "page_count",
+          "BIGINT"
+        ],
+        [
+          "capture_receipt_entry",
+          "BIGINT"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Receipt-verified Congressional Research Service report file observations linked to qualified crs_reports metadata revisions. Numbered PDF locators establish a publisher edition; mutable HTML remains an unbound observation, embedded text is pinned to its original digest and processor without OCR, and footer mismatches withhold qualified version and usable text. Retained files do not establish complete CRS edition history.",
+      "dimensions": [
+        {
+          "id": "metadata-update-dates",
+          "kind": "date",
+          "label": "CRS metadata update dates",
+          "meaning": "CRS publisher metadata update timestamp linked from the qualified crs_reports revision (distinct from file capture time).",
+          "fields": [
+            "metadata_update_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "rendition-and-binding",
+          "kind": "category",
+          "label": "File rendition and version binding",
+          "meaning": "File format (pdf or html) paired with version-binding strength (e.g., numbered-pdf-locator vs unbound mutable HTML).",
+          "fields": [
+            "rendition",
+            "version_binding"
+          ]
+        },
+        {
+          "id": "source-family",
+          "kind": "category",
+          "label": "CRS report series",
+          "meaning": "CRS report prefix series (such as IN, IF, R, RL, LSB) recorded on retained files.",
+          "fields": [
+            "source_family"
+          ]
+        },
+        {
+          "id": "body-and-text-state",
+          "kind": "category",
+          "label": "Body and text extraction state",
+          "meaning": "Retained file body state paired with embedded PDF text extraction state.",
+          "fields": [
+            "body_state",
+            "text_state"
+          ]
+        },
+        {
+          "id": "content-identity-state",
+          "kind": "category",
+          "label": "Footer identity check",
+          "meaning": "Whether the printed report ID and version footer matched the declared metadata revision (matching-explicit-footer) or withheld qualification.",
+          "fields": [
+            "content_identity_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained CRS report file cohort",
+          "meaning": "Explicitly selected numbered CRS PDFs and offered HTML observations; does not establish complete CRS corpus or edition history.",
+          "fields": []
         }
       ]
     }
