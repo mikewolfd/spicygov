@@ -349,6 +349,59 @@ class PublishedOnlyRoute(unittest.TestCase):
             self.assertEqual((rows_dims['transaction-dates']['placedRows'], rows_dims['transaction-dates']['unplacedRows']), (1, 1))
             self.assertEqual(rows_dims['row-kind']['buckets'], {'["subtotal"]': 1, '["transaction"]': 1})
 
+    def test_courtlistener_bankruptcy_dockets_definition_and_source_date_literals(self):
+        import duckdb, pathlib, tempfile
+        import coverage_scan
+        defs = builder.definitions()
+        self.assertIn('courtlistener_bankruptcy_dockets', defs)
+        policy = defs['courtlistener_bankruptcy_dockets']
+        self.assertEqual(policy['family'], 'courtlistener-bankruptcy-dockets')
+        self.assertEqual(len(policy['schema']), 20)
+        self.assertIn("court_id LIKE '%b'", policy['note'])
+        self.assertIn('65,365', policy['note'])
+
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / 'courtlistener_bankruptcy_dockets.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE b ({cols})')
+                conn.execute(
+                    "INSERT INTO b (cl_docket_id, court_id, docket_number, docket_number_core, pacer_case_id, "
+                    "case_name, case_name_short, case_name_full, date_filed, date_terminated, "
+                    "assigned_to_id, assigned_to_str, referred_to_id, referred_to_str, blocked, date_blocked, "
+                    "date_created, date_modified, dump_date, source_sha256) VALUES "
+                    "('1', 'flmb', '18-001', '18001', '101', 'A', '', '', DATE '2018-04-12', DATE '2019-06-01', "
+                    "'5016', 'Judge A', NULL, '', TRUE, DATE '2018-05-01', "
+                    "TIMESTAMPTZ '2018-04-13 00:00:00+00', TIMESTAMPTZ '2019-06-02 00:00:00+00', '2022-09-19', 'sha256:abc'), "
+                    "('2', 'mspb', NULL, '', 'null', 'B', '', '', DATE '2079-11-23', DATE '0205-02-25', "
+                    "NULL, '', NULL, '', FALSE, NULL, "
+                    "TIMESTAMPTZ '2019-01-01 00:00:00+00', TIMESTAMPTZ '2019-01-02 00:00:00+00', '2022-09-19', 'sha256:abc'), "
+                    "('3', 'neb', '', '', 'undefined', 'C', '', '', NULL, NULL, "
+                    "NULL, '', NULL, '', TRUE, DATE '2022-09-19', "
+                    "TIMESTAMPTZ '2022-09-19 00:00:00+00', TIMESTAMPTZ '2022-09-19 00:00:00+00', '2022-09-19', 'sha256:abc')"
+                )
+                conn.execute('COPY b TO ? (FORMAT PARQUET)', [str(path)])
+            table = {
+                'family': 'courtlistener-bankruptcy-dockets', 'kind': 'generation',
+                'columns': policy['schema'], 'rows': 3,
+                'publishedAt': '2026-11-28T09:33:28Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': 3, 'byteSize': path.stat().st_size}],
+            }
+            builder.validate_plan({'courtlistener_bankruptcy_dockets': table}, {'courtlistener_bankruptcy_dockets': dict(policy)})
+            res = coverage_scan.scan_table('courtlistener_bankruptcy_dockets', table, policy)
+            dims = {d['id']: d for d in res['dimensions']}
+            self.assertEqual((dims['docket-filing-dates']['placedRows'], dims['docket-filing-dates']['unplacedRows']), (2, 1))
+            self.assertEqual(dims['docket-filing-dates']['anomalies']['sourceLiteralReviewBuckets'], {'2079-11': 1})
+            self.assertEqual(dims['docket-filing-dates']['anomalies']['reviewYearBounds'], [1900, 2022])
+            self.assertEqual((dims['docket-termination-dates']['placedRows'], dims['docket-termination-dates']['unplacedRows']), (2, 1))
+            self.assertEqual(dims['docket-termination-dates']['anomalies']['sourceLiteralReviewBuckets'], {'0205-02': 1})
+            self.assertEqual(dims['docket-blocked-dates']['buckets'], {'2018-05': 1, '2022-09': 1})
+            self.assertEqual(dims['courtlistener-bulk-editions']['buckets'], {'["2022-09-19"]': 3})
+            # Schema drift refusal
+            drifted = {**table, 'columns': policy['schema'][:-1]}
+            with self.assertRaises(ValueError):
+                builder.validate_plan({'courtlistener_bankruptcy_dockets': drifted}, {'courtlistener_bankruptcy_dockets': dict(policy)})
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,6 +14,7 @@ SCAN = 900
 # tables are the largest published single files (up to 3.4 GB).
 SCAN_BY_TABLE = {'comments': 7200, 'fec_receipts': 3600, 'court_opinions': 2700,
                  'court_citation_map': 2700, 'court_citations': 2700, 'court_parentheticals': 2700,
+                 'courtlistener_bankruptcy_dockets': 2700,
                  'documents': 1500, 'document_attributes': 1500, 'comment_periods': 1500,
                  'federal_register': 1500, 'fr_docket_links': 1500}
 

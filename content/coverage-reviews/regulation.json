@@ -3,7 +3,7 @@
   "version": 1,
   "scope": "Every non-FEC/non-Congress assigned public table including reconciled supplementary rulemaking/comments outputs",
   "reviewedAt": "2026-10-17T17:31:41.772905+00:00",
-  "tableCount": 132,
+  "tableCount": 133,
   "inventory": "/tmp/spicygov-coverage-audit-20261005/regulation/tables.json",
   "completeTableEnumeration": true,
   "tables": [
@@ -42749,6 +42749,207 @@
         "qualification": "Live R2 cms-part-b-associations generation sha256:1e6aa62e verified (3,485 non-additive rows across 799 HCPCS codes for 2024 Medicare Part B; spending_allocation_status=not_allocated_in_source on all 3,485 rows; 74 blank manufacturer_name cells)."
       },
       "reviewNote": "2026-11-28 (ss-mb8j): Added coverage definition and review against live cms-part-b-associations generation sha256:1e6aa62e with explicit non-additive manufacturer association semantics."
+    },
+    {
+      "tableId": "courtlistener_bankruptcy_dockets",
+      "family": "courtlistener-bankruptcy-dockets",
+      "schema": [
+        [
+          "cl_docket_id",
+          "VARCHAR"
+        ],
+        [
+          "court_id",
+          "VARCHAR"
+        ],
+        [
+          "docket_number",
+          "VARCHAR"
+        ],
+        [
+          "docket_number_core",
+          "VARCHAR"
+        ],
+        [
+          "pacer_case_id",
+          "VARCHAR"
+        ],
+        [
+          "case_name",
+          "VARCHAR"
+        ],
+        [
+          "case_name_short",
+          "VARCHAR"
+        ],
+        [
+          "case_name_full",
+          "VARCHAR"
+        ],
+        [
+          "date_filed",
+          "DATE"
+        ],
+        [
+          "date_terminated",
+          "DATE"
+        ],
+        [
+          "assigned_to_id",
+          "VARCHAR"
+        ],
+        [
+          "assigned_to_str",
+          "VARCHAR"
+        ],
+        [
+          "referred_to_id",
+          "VARCHAR"
+        ],
+        [
+          "referred_to_str",
+          "VARCHAR"
+        ],
+        [
+          "blocked",
+          "BOOLEAN"
+        ],
+        [
+          "date_blocked",
+          "DATE"
+        ],
+        [
+          "date_created",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "date_modified",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "dump_date",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "docket-filing-dates",
+          "kind": "date",
+          "label": "Docket filing dates",
+          "meaning": "Case filing dates recorded in CourtListener's one-off 2022-09-19 bankruptcy dockets export. Missing dates remain unplaced; clerical literal years outside 1900\u20132022 remain visible and flagged for review rather than corrected.",
+          "fields": [
+            "date_filed"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2022
+          ]
+        },
+        {
+          "id": "docket-termination-dates",
+          "kind": "date",
+          "label": "Docket termination dates",
+          "meaning": "Case termination dates recorded in CourtListener's 2022-09-19 bankruptcy dockets export. Missing dates remain unplaced; clerical literal years outside 1900\u20132022 remain visible and flagged for review rather than corrected.",
+          "fields": [
+            "date_terminated"
+          ],
+          "special": "source-date-literals",
+          "reviewYearBounds": [
+            1900,
+            2022
+          ]
+        },
+        {
+          "id": "docket-blocked-dates",
+          "kind": "date",
+          "label": "Docket blocked dates",
+          "meaning": "Dates CourtListener marked dockets blocked from search indexing (2013-10 through 2022-09 in this export). Missing dates remain unplaced.",
+          "fields": [
+            "date_blocked"
+          ]
+        },
+        {
+          "id": "courtlistener-bulk-editions",
+          "kind": "category",
+          "label": "CourtListener bulk editions",
+          "meaning": "Export edition date (2022-09-19) of this archival one-off CourtListener bankruptcy dockets dump.",
+          "fields": [
+            "dump_date"
+          ]
+        }
+      ],
+      "evidence": {
+        "artifact": "https://data.spicygov.ai/generations/courtlistener-bankruptcy-dockets/b8b4f11fb229f943608a0de7b9e06d7f9318f298162f230935410926c09e6a9d/artifact.json",
+        "members": [
+          {
+            "url": "https://data.spicygov.ai/generations/courtlistener-bankruptcy-dockets/b8b4f11fb229f943608a0de7b9e06d7f9318f298162f230935410926c09e6a9d/courtlistener_bankruptcy_dockets.parquet",
+            "expectedRows": 34653306
+          }
+        ],
+        "expectedRows": 34653306,
+        "probedTotals": [
+          34653306
+        ],
+        "reconciled": true,
+        "probeSummary": {
+          "date_filed": {
+            "total": 34653306,
+            "reconciled": true,
+            "nullOrEmpty": 75389,
+            "min": "1871-10-12",
+            "max": "2079-11-23"
+          },
+          "date_terminated": {
+            "total": 34653306,
+            "reconciled": true,
+            "nullOrEmpty": 821225,
+            "min": "0205-02-25",
+            "max": "2097-02-13"
+          },
+          "date_blocked": {
+            "total": 34653306,
+            "reconciled": true,
+            "nullOrEmpty": 72227,
+            "min": "2013-10-29",
+            "max": "2022-09-19"
+          },
+          "dump_date": {
+            "total": 34653306,
+            "reconciled": true,
+            "nullOrEmpty": 0,
+            "distinct": 1,
+            "min": "2022-09-19",
+            "max": "2022-09-19"
+          }
+        },
+        "codeRefs": [
+          {
+            "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/pipelines/courtlistener_bankruptcy_dockets.py",
+            "line": 1
+          },
+          {
+            "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/src/spicy_regs/transforms/build_courtlistener_bankruptcy_dockets.py",
+            "line": 1
+          },
+          {
+            "path": "/Users/mikewolfd/Work/spicy-stack/spicy-regs/docs/tables/courtlistener_bankruptcy_dockets.md",
+            "line": 1
+          }
+        ],
+        "parents": {},
+        "limits": [
+          "Archival one-off 2022-09-19 CourtListener export; no cases filed or updated after 2022-09-19 appear.",
+          "Publisher selection used court_id LIKE '%b', so 65,365 non-bankruptcy rows across neb, mspb, pactcomplcolumb, paorphctcolumb, and nyoytermctalb are retained alongside 34,587,941 rows from 94 federal bankruptcy courts, while all 8 Bankruptcy Appellate Panels (FBP) are absent.",
+          "docket_number keeps 2,598 SQL NULLs distinct from 4,241 empty strings; pacer_case_id retains 6 literal strings ('null', 'undefined'); referred_to_id is 100% NULL and referred_to_str is 100% empty string in this export.",
+          "Clerical source date outliers (e.g. date_filed 1871-10-12 and 2079-11-23; date_terminated 0205-02-25 and 2097-02-13) are preserved verbatim and flagged via reviewYearBounds [1900, 2022]."
+        ],
+        "additionalProbes": {}
+      }
     }
   ],
   "scannerRequirements": [
