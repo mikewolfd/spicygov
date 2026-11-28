@@ -1762,8 +1762,24 @@
           "VARCHAR"
         ],
         [
-          "native_location_json",
+          "text_status",
           "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "native_element",
+          "BIGINT"
+        ],
+        [
+          "native_line",
+          "BIGINT"
+        ],
+        [
+          "native_column",
+          "BIGINT"
         ]
       ],
       "classification": "selected-observations",
@@ -1962,6 +1978,72 @@
           },
           "special": "collection-scopes"
         }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "subrecord_pointer",
+          "VARCHAR"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "text_kind",
+          "VARCHAR"
+        ],
+        [
+          "text",
+          "VARCHAR"
+        ],
+        [
+          "native_location_json",
+          "VARCHAR"
+        ]
       ]
     },
     "fec_agency_reports": {
@@ -3361,6 +3443,213 @@
           "VARCHAR"
         ],
         [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "query_completeness",
+          "VARCHAR"
+        ],
+        [
+          "registry_scope_status",
+          "VARCHAR"
+        ],
+        [
+          "response_field",
+          "VARCHAR"
+        ],
+        [
+          "response_field_role",
+          "VARCHAR"
+        ],
+        [
+          "value_status",
+          "VARCHAR"
+        ],
+        [
+          "api_version",
+          "VARCHAR"
+        ],
+        [
+          "parsing_status",
+          "VARCHAR"
+        ],
+        [
+          "page",
+          "BIGINT"
+        ],
+        [
+          "per_page",
+          "BIGINT"
+        ],
+        [
+          "reported_count",
+          "BIGINT"
+        ],
+        [
+          "reported_pages",
+          "BIGINT"
+        ],
+        [
+          "observed_count",
+          "BIGINT"
+        ],
+        [
+          "is_count_exact",
+          "BOOLEAN"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "registry_scope_status_query_completeness",
+          "kind": "category",
+          "fields": [
+            "registry_scope_status",
+            "query_completeness"
+          ],
+          "label": "API scope controls",
+          "meaning": "The saved request’s scope and completeness status. This does not establish a complete, current registry."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
           "value_mapping_version",
           "VARCHAR"
         ],
@@ -3480,91 +3769,6 @@
           "source_cycle",
           "INTEGER"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "registry_scope_status_query_completeness",
-          "kind": "category",
-          "fields": [
-            "registry_scope_status",
-            "query_completeness"
-          ],
-          "label": "API scope controls",
-          "meaning": "The saved request’s scope and completeness status. This does not establish a complete, current registry."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_audit_findings": {
@@ -4273,6 +4477,365 @@
           "VARCHAR"
         ],
         [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "party_full",
+          "VARCHAR"
+        ],
+        [
+          "office",
+          "VARCHAR"
+        ],
+        [
+          "office_full",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "district",
+          "VARCHAR"
+        ],
+        [
+          "candidate_status",
+          "VARCHAR"
+        ],
+        [
+          "incumbent_challenge",
+          "VARCHAR"
+        ],
+        [
+          "incumbent_challenge_full",
+          "VARCHAR"
+        ],
+        [
+          "cycles_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
+          "election_years_json",
+          "VARCHAR"
+        ],
+        [
+          "election_years_status",
+          "VARCHAR"
+        ],
+        [
+          "election_districts_json",
+          "VARCHAR"
+        ],
+        [
+          "election_districts_status",
+          "VARCHAR"
+        ],
+        [
+          "inactive_election_years_json",
+          "VARCHAR"
+        ],
+        [
+          "inactive_election_years_status",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "original_result_pointer",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id_status",
+          "VARCHAR"
+        ],
+        [
+          "query_completeness",
+          "VARCHAR"
+        ],
+        [
+          "district_number",
+          "BIGINT"
+        ],
+        [
+          "active_through",
+          "INTEGER"
+        ],
+        [
+          "candidate_inactive",
+          "BOOLEAN"
+        ],
+        [
+          "has_raised_funds",
+          "BOOLEAN"
+        ],
+        [
+          "federal_funds_flag",
+          "BOOLEAN"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "last_f2_date",
+          "DATE"
+        ],
+        [
+          "district_number_raw",
+          "VARCHAR"
+        ],
+        [
+          "district_number_status",
+          "VARCHAR"
+        ],
+        [
+          "active_through_raw",
+          "VARCHAR"
+        ],
+        [
+          "active_through_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_inactive_raw",
+          "VARCHAR"
+        ],
+        [
+          "candidate_inactive_status",
+          "VARCHAR"
+        ],
+        [
+          "has_raised_funds_raw",
+          "VARCHAR"
+        ],
+        [
+          "has_raised_funds_status",
+          "VARCHAR"
+        ],
+        [
+          "federal_funds_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "federal_funds_flag_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f2_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f2_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "cycles_json",
+          "kind": "list",
+          "fields": [
+            "cycles_json"
+          ],
+          "label": "Election cycles",
+          "meaning": "Election cycles stated by the API. Missing fields, blank values, and empty lists remain distinct.",
+          "syntax": "year"
+        },
+        {
+          "id": "election_years_json",
+          "kind": "list",
+          "fields": [
+            "election_years_json"
+          ],
+          "label": "Election years",
+          "meaning": "Election years stated by the source for this candidate record.",
+          "syntax": "year"
+        },
+        {
+          "id": "inactive_election_years_json",
+          "kind": "list",
+          "fields": [
+            "inactive_election_years_json"
+          ],
+          "label": "Inactive election years",
+          "meaning": "Inactive election years stated by the API.",
+          "syntax": "year"
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
           "value_mapping_version",
           "VARCHAR"
         ],
@@ -4436,111 +4999,6 @@
           "source_cycle",
           "INTEGER"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "cycles_json",
-          "kind": "list",
-          "fields": [
-            "cycles_json"
-          ],
-          "label": "Election cycles",
-          "meaning": "Election cycles stated by the API. Missing fields, blank values, and empty lists remain distinct.",
-          "syntax": "year"
-        },
-        {
-          "id": "election_years_json",
-          "kind": "list",
-          "fields": [
-            "election_years_json"
-          ],
-          "label": "Election years",
-          "meaning": "Election years stated by the source for this candidate record.",
-          "syntax": "year"
-        },
-        {
-          "id": "inactive_election_years_json",
-          "kind": "list",
-          "fields": [
-            "inactive_election_years_json"
-          ],
-          "label": "Inactive election years",
-          "meaning": "Inactive election years stated by the API.",
-          "syntax": "year"
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_collection_selection": {
@@ -4744,6 +5202,232 @@
           "VARCHAR"
         ],
         [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "history_scope_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "street_1",
+          "VARCHAR"
+        ],
+        [
+          "street_2",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "filing_frequency",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "connected_organization_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "cycle",
+          "INTEGER"
+        ],
+        [
+          "cycle_raw",
+          "VARCHAR"
+        ],
+        [
+          "cycle_status",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "cycle",
+          "kind": "year",
+          "fields": [
+            "cycle"
+          ],
+          "label": "Cycle",
+          "meaning": "The history source’s cycle value as recorded. Original text is preserved; no replacement year is inferred."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
           "value_mapping_version",
           "VARCHAR"
         ],
@@ -4899,10 +5583,305 @@
           "native_fields",
           "STRUCT(CMTE_ID VARCHAR, CMTE_NM VARCHAR, TRES_NM VARCHAR, CMTE_ST1 VARCHAR, CMTE_ST2 VARCHAR, CMTE_CITY VARCHAR, CMTE_ST VARCHAR, CMTE_ZIP VARCHAR, CMTE_DSGN VARCHAR, CMTE_TP VARCHAR, CMTE_PTY_AFFILIATION VARCHAR, CMTE_FILING_FREQ VARCHAR, ORG_TP VARCHAR, CONNECTED_ORG_NM VARCHAR, CAND_ID VARCHAR)"
         ]
+      ]
+    },
+    "fec_committee_observations": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_type_full",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "designation_full",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "party_full",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "organization_type_full",
+          "VARCHAR"
+        ],
+        [
+          "filing_frequency",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "original_result_pointer",
+          "VARCHAR"
+        ],
+        [
+          "query_completeness",
+          "VARCHAR"
+        ],
+        [
+          "registry_scope_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_id_status",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_city",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_first_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_last_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_middle_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_phone_number",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_prefix",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_state",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_street1",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_street2",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_suffix",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_title",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_zip",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_list_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_list_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "first_f1_date",
+          "DATE"
+        ],
+        [
+          "last_f1_date",
+          "DATE"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
       ],
       "classification": "selected-observations",
       "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
       "dimensions": [
+        {
+          "id": "first_file_date",
+          "kind": "date",
+          "fields": [
+            "first_file_date"
+          ],
+          "label": "First file date",
+          "meaning": "First filing date stated in the saved API profile. It is not calculated from filings held here."
+        },
+        {
+          "id": "last_file_date",
+          "kind": "date",
+          "fields": [
+            "last_file_date"
+          ],
+          "label": "Last file date",
+          "meaning": "Latest filing date stated in the saved API profile. The corresponding filing may not be held here."
+        },
         {
           "id": "source_cycle",
           "kind": "year",
@@ -4913,13 +5892,14 @@
           "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
         },
         {
-          "id": "cycle",
-          "kind": "year",
+          "id": "cycles_json",
+          "kind": "list",
           "fields": [
-            "cycle"
+            "cycles_json"
           ],
-          "label": "Cycle",
-          "meaning": "The history source’s cycle value as recorded. Original text is preserved; no replacement year is inferred."
+          "label": "Election cycles",
+          "meaning": "Election cycles stated by the API. Missing fields, blank values, and empty lists remain distinct.",
+          "syntax": "year"
         },
         {
           "id": "snapshot",
@@ -4983,11 +5963,8 @@
           },
           "special": "collection-scopes"
         }
-      ]
-    },
-    "fec_committee_observations": {
-      "family": "fec-query",
-      "schema": [
+      ],
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -5172,109 +6149,6 @@
           "source_cycle",
           "INTEGER"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "first_file_date",
-          "kind": "date",
-          "fields": [
-            "first_file_date"
-          ],
-          "label": "First file date",
-          "meaning": "First filing date stated in the saved API profile. It is not calculated from filings held here."
-        },
-        {
-          "id": "last_file_date",
-          "kind": "date",
-          "fields": [
-            "last_file_date"
-          ],
-          "label": "Last file date",
-          "meaning": "Latest filing date stated in the saved API profile. The corresponding filing may not be held here."
-        },
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "cycles_json",
-          "kind": "list",
-          "fields": [
-            "cycles_json"
-          ],
-          "label": "Election cycles",
-          "meaning": "Election cycles stated by the API. Missing fields, blank values, and empty lists remain distinct.",
-          "syntax": "year"
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_communication_costs": {
@@ -8314,10 +9188,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -8326,7 +9196,19 @@
           "VARCHAR"
         ],
         [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
           "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -8335,14 +9217,6 @@
         ],
         [
           "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
-          "VARCHAR"
-        ],
-        [
-          "current_record_status",
           "VARCHAR"
         ],
         [
@@ -8589,11 +9463,506 @@
             "meaning": "Source filing’s literal stated coverage interval; unmatched or invalid periods remain unplaced."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "native_field_states_json",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_filing_record_id",
+          "VARCHAR"
+        ],
+        [
+          "target_filing_key",
+          "VARCHAR"
+        ],
+        [
+          "native_target_file_number",
+          "VARCHAR"
+        ],
+        [
+          "relation_type",
+          "VARCHAR"
+        ],
+        [
+          "target_resolution_status",
+          "VARCHAR"
+        ],
+        [
+          "replacement_mode",
+          "VARCHAR"
+        ],
+        [
+          "membership_completeness",
+          "VARCHAR"
+        ],
+        [
+          "reference_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ]
       ]
     },
     "fec_filing_report_observations": {
       "family": "fec-query",
       "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "value_mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "correction_operation",
+          "VARCHAR"
+        ],
+        [
+          "correction_applicability_status",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "currency",
+          "VARCHAR"
+        ],
+        [
+          "amount_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "definition_set_id",
+          "VARCHAR"
+        ],
+        [
+          "declared_format_version",
+          "VARCHAR"
+        ],
+        [
+          "filing_header_record_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_header_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "submission_conformance_status",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "reporting_committee_id",
+          "VARCHAR"
+        ],
+        [
+          "reporting_candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_last_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_first_name",
+          "VARCHAR"
+        ],
+        [
+          "report_code",
+          "VARCHAR"
+        ],
+        [
+          "election_code",
+          "VARCHAR"
+        ],
+        [
+          "account_name",
+          "VARCHAR"
+        ],
+        [
+          "account_native_id",
+          "VARCHAR"
+        ],
+        [
+          "transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "definition_applicability_status",
+          "VARCHAR"
+        ],
+        [
+          "report_record_role",
+          "VARCHAR"
+        ],
+        [
+          "aggregation_status",
+          "VARCHAR"
+        ],
+        [
+          "period_start_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_start_status",
+          "VARCHAR"
+        ],
+        [
+          "period_end_raw",
+          "VARCHAR"
+        ],
+        [
+          "period_end_status",
+          "VARCHAR"
+        ],
+        [
+          "signed_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "signed_date_status",
+          "VARCHAR"
+        ],
+        [
+          "election_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "election_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_amendment_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "source_amendment_date_status",
+          "VARCHAR"
+        ],
+        [
+          "effective_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "effective_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ],
+        [
+          "signed_date",
+          "DATE"
+        ],
+        [
+          "election_date",
+          "DATE"
+        ],
+        [
+          "source_amendment_date",
+          "DATE"
+        ],
+        [
+          "effective_date",
+          "DATE"
+        ],
+        [
+          "reported_measures",
+          "STRUCT(native_position INTEGER, native_label VARCHAR, definition_cell VARCHAR, raw_value VARCHAR, \"value\" DECIMAL(38,9), value_status VARCHAR, quantity_kind VARCHAR, measure_role VARCHAR, period_basis VARCHAR)[]"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "period_start",
+          "kind": "date",
+          "fields": [
+            "period_start"
+          ],
+          "label": "Period start",
+          "meaning": "The start of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "period_end",
+          "kind": "date",
+          "fields": [
+            "period_end"
+          ],
+          "label": "Period end",
+          "meaning": "The end of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "signed_date",
+          "kind": "date",
+          "fields": [
+            "signed_date"
+          ],
+          "label": "Signed date",
+          "meaning": "The signature date on the reported form. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "election_date",
+          "kind": "date",
+          "fields": [
+            "election_date"
+          ],
+          "label": "Election date",
+          "meaning": "The source-stated election date. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "source_amendment_date",
+          "kind": "date",
+          "fields": [
+            "source_amendment_date"
+          ],
+          "label": "Source amendment date",
+          "meaning": "The date of amendment stated in the source form. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "effective_date",
+          "kind": "date",
+          "fields": [
+            "effective_date"
+          ],
+          "label": "Effective date",
+          "meaning": "The effective date stated on the source form. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "period_start_period_end",
+          "kind": "interval",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "label": "Stated report period",
+          "meaning": "The period the source report or metric covers. It does not show when data was collected in each month."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -8846,6 +10215,131 @@
           "reported_measures",
           "STRUCT(native_position INTEGER, native_label VARCHAR, definition_cell VARCHAR, raw_value VARCHAR, \"value\" DECIMAL(38,9), value_status VARCHAR, quantity_kind VARCHAR, measure_role VARCHAR, period_basis VARCHAR)[]"
         ]
+      ]
+    },
+    "fec_filing_text_observations": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "definition_set_id",
+          "VARCHAR"
+        ],
+        [
+          "declared_format_version",
+          "VARCHAR"
+        ],
+        [
+          "filing_header_record_id",
+          "VARCHAR"
+        ],
+        [
+          "filing_header_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "submission_conformance_status",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "reporting_committee_id",
+          "VARCHAR"
+        ],
+        [
+          "transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "back_reference_transaction_id",
+          "VARCHAR"
+        ],
+        [
+          "back_reference_form_name",
+          "VARCHAR"
+        ],
+        [
+          "source_amendment_code",
+          "VARCHAR"
+        ],
+        [
+          "text_record_kind",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "text_fragments",
+          "STRUCT(field_position INTEGER, source_column VARCHAR, source_pointer VARCHAR, \"text\" VARCHAR, text_status VARCHAR, body_reference_json VARCHAR)[]"
+        ]
       ],
       "classification": "selected-observations",
       "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
@@ -8858,70 +10352,6 @@
           ],
           "label": "Source election cycle",
           "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "period_start",
-          "kind": "date",
-          "fields": [
-            "period_start"
-          ],
-          "label": "Period start",
-          "meaning": "The start of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "period_end",
-          "kind": "date",
-          "fields": [
-            "period_end"
-          ],
-          "label": "Period end",
-          "meaning": "The end of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "signed_date",
-          "kind": "date",
-          "fields": [
-            "signed_date"
-          ],
-          "label": "Signed date",
-          "meaning": "The signature date on the reported form. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "election_date",
-          "kind": "date",
-          "fields": [
-            "election_date"
-          ],
-          "label": "Election date",
-          "meaning": "The source-stated election date. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "source_amendment_date",
-          "kind": "date",
-          "fields": [
-            "source_amendment_date"
-          ],
-          "label": "Source amendment date",
-          "meaning": "The date of amendment stated in the source form. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "effective_date",
-          "kind": "date",
-          "fields": [
-            "effective_date"
-          ],
-          "label": "Effective date",
-          "meaning": "The effective date stated on the source form. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "period_start_period_end",
-          "kind": "interval",
-          "fields": [
-            "period_start",
-            "period_end"
-          ],
-          "label": "Stated report period",
-          "meaning": "The period the source report or metric covers. It does not show when data was collected in each month."
         },
         {
           "id": "snapshot",
@@ -8984,12 +10414,45 @@
             "meaning": "Selected collection grain; unknown periods stay explicit."
           },
           "special": "collection-scopes"
+        },
+        {
+          "id": "related_retained_report_periods",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Related retained filing periods",
+          "meaning": "Report periods from filings with this row’s exact collection, header, and source-file hash. Repeated supporting records do not increase counts. These periods do not date the transaction or text itself.",
+          "special": "related-filing-periods",
+          "parent": {
+            "table": "fec_filing_report_observations",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ],
+              [
+                "filing_header_record_id",
+                "filing_header_record_id"
+              ],
+              [
+                "source_sha256",
+                "source_sha256"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "related_retained_report_periods",
+            "kind": "interval",
+            "fields": [
+              "period_start",
+              "period_end"
+            ],
+            "label": "Related retained filing periods",
+            "meaning": "Exact related report periods; no fabricated controlling filing."
+          }
         }
-      ]
-    },
-    "fec_filing_text_observations": {
-      "family": "fec-query",
-      "schema": [
+      ],
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -9134,10 +10597,410 @@
           "text_fragments",
           "STRUCT(field_position INTEGER, source_column VARCHAR, source_pointer VARCHAR, \"text\" VARCHAR, text_status VARCHAR, body_reference_json VARCHAR)[]"
         ]
+      ]
+    },
+    "fec_filings": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "report_number",
+          "VARCHAR"
+        ],
+        [
+          "source_record_identifier",
+          "VARCHAR"
+        ],
+        [
+          "native_filer_id",
+          "VARCHAR"
+        ],
+        [
+          "filer_name",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "form_category",
+          "VARCHAR"
+        ],
+        [
+          "document_description",
+          "VARCHAR"
+        ],
+        [
+          "document_type",
+          "VARCHAR"
+        ],
+        [
+          "document_type_full",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "report_type_full",
+          "VARCHAR"
+        ],
+        [
+          "means_filed",
+          "VARCHAR"
+        ],
+        [
+          "beginning_image_number",
+          "VARCHAR"
+        ],
+        [
+          "ending_image_number",
+          "VARCHAR"
+        ],
+        [
+          "fec_file_id",
+          "VARCHAR"
+        ],
+        [
+          "amendment_indicator",
+          "VARCHAR"
+        ],
+        [
+          "amendment_version",
+          "VARCHAR"
+        ],
+        [
+          "amendment_number",
+          "VARCHAR"
+        ],
+        [
+          "office",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "fec_url",
+          "VARCHAR"
+        ],
+        [
+          "csv_url",
+          "VARCHAR"
+        ],
+        [
+          "html_url",
+          "VARCHAR"
+        ],
+        [
+          "pdf_url",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "filer_entity_type",
+          "VARCHAR"
+        ],
+        [
+          "filer_id_status",
+          "VARCHAR"
+        ],
+        [
+          "reporting_committee_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id_status",
+          "VARCHAR"
+        ],
+        [
+          "pdf_body_status",
+          "VARCHAR"
+        ],
+        [
+          "linked_original_body_status",
+          "VARCHAR"
+        ],
+        [
+          "query_completeness",
+          "VARCHAR"
+        ],
+        [
+          "amendment_chain_json",
+          "VARCHAR"
+        ],
+        [
+          "amendment_scope_status",
+          "VARCHAR"
+        ],
+        [
+          "financial_fields_status",
+          "VARCHAR"
+        ],
+        [
+          "receipt_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "receipt_date_status",
+          "VARCHAR"
+        ],
+        [
+          "filed_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "filed_date_status",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_date_status",
+          "VARCHAR"
+        ],
+        [
+          "coverage_end_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "coverage_end_date_status",
+          "VARCHAR"
+        ],
+        [
+          "update_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "update_date_status",
+          "VARCHAR"
+        ],
+        [
+          "load_timestamp_raw",
+          "VARCHAR"
+        ],
+        [
+          "load_timestamp_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "receipt_date",
+          "DATE"
+        ],
+        [
+          "filed_date",
+          "DATE"
+        ],
+        [
+          "coverage_start_date",
+          "DATE"
+        ],
+        [
+          "coverage_end_date",
+          "DATE"
+        ],
+        [
+          "update_date",
+          "DATE"
+        ],
+        [
+          "load_timestamp",
+          "DATE"
+        ],
+        [
+          "pages",
+          "BIGINT"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "reported_cycle",
+          "INTEGER"
+        ],
+        [
+          "election_year",
+          "INTEGER"
+        ],
+        [
+          "is_amended",
+          "BOOLEAN"
+        ],
+        [
+          "most_recent",
+          "BOOLEAN"
+        ],
+        [
+          "pages_raw",
+          "VARCHAR"
+        ],
+        [
+          "pages_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle_raw",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle_status",
+          "VARCHAR"
+        ],
+        [
+          "election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "is_amended_raw",
+          "VARCHAR"
+        ],
+        [
+          "is_amended_status",
+          "VARCHAR"
+        ],
+        [
+          "most_recent_raw",
+          "VARCHAR"
+        ],
+        [
+          "most_recent_status",
+          "VARCHAR"
+        ]
       ],
       "classification": "selected-observations",
       "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
       "dimensions": [
+        {
+          "id": "report_year",
+          "kind": "year",
+          "fields": [
+            "report_year"
+          ],
+          "label": "Report year",
+          "meaning": "The filing or report’s stated year, separate from election cycles and transaction dates."
+        },
+        {
+          "id": "reported_cycle",
+          "kind": "year",
+          "fields": [
+            "reported_cycle"
+          ],
+          "label": "Reported election cycle",
+          "meaning": "The cycle stated in the record itself, separate from the cycle of the selected source files or requests."
+        },
+        {
+          "id": "election_year",
+          "kind": "year",
+          "fields": [
+            "election_year"
+          ],
+          "label": "Election year",
+          "meaning": "The source’s election year, separate from the source cycle, fiscal year, and collection date."
+        },
         {
           "id": "source_cycle",
           "kind": "year",
@@ -9146,6 +11009,70 @@
           ],
           "label": "Source election cycle",
           "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "receipt_date",
+          "kind": "date",
+          "fields": [
+            "receipt_date"
+          ],
+          "label": "Receipt date",
+          "meaning": "The filing receipt date stated by the source. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "filed_date",
+          "kind": "date",
+          "fields": [
+            "filed_date"
+          ],
+          "label": "Filed date",
+          "meaning": "The source-stated filing date. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "coverage_start_date",
+          "kind": "date",
+          "fields": [
+            "coverage_start_date"
+          ],
+          "label": "Coverage start date",
+          "meaning": "The start of the filing coverage period. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "coverage_end_date",
+          "kind": "date",
+          "fields": [
+            "coverage_end_date"
+          ],
+          "label": "Coverage end date",
+          "meaning": "The end of the filing coverage period. Missing or unreadable source dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "update_date",
+          "kind": "date",
+          "fields": [
+            "update_date"
+          ],
+          "label": "Source update date (freshness)",
+          "meaning": "The source’s update date, not evidence that the record is the latest version. Missing or unreadable dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "load_timestamp",
+          "kind": "date",
+          "fields": [
+            "load_timestamp"
+          ],
+          "label": "Source load date (freshness)",
+          "meaning": "The date the source says it loaded the record. The original timestamp is preserved. Missing or unreadable dates stay unknown; collection time is not used."
+        },
+        {
+          "id": "coverage_start_date_coverage_end_date",
+          "kind": "interval",
+          "fields": [
+            "coverage_start_date",
+            "coverage_end_date"
+          ],
+          "label": "Filing coverage period",
+          "meaning": "The report period stated by the source for each filing."
         },
         {
           "id": "snapshot",
@@ -9208,48 +11135,9 @@
             "meaning": "Selected collection grain; unknown periods stay explicit."
           },
           "special": "collection-scopes"
-        },
-        {
-          "id": "related_retained_report_periods",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Related retained filing periods",
-          "meaning": "Report periods from filings with this row’s exact collection, header, and source-file hash. Repeated supporting records do not increase counts. These periods do not date the transaction or text itself.",
-          "special": "related-filing-periods",
-          "parent": {
-            "table": "fec_filing_report_observations",
-            "mode": "same-generation",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ],
-              [
-                "filing_header_record_id",
-                "filing_header_record_id"
-              ],
-              [
-                "source_sha256",
-                "source_sha256"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "related_retained_report_periods",
-            "kind": "interval",
-            "fields": [
-              "period_start",
-              "period_end"
-            ],
-            "label": "Related retained filing periods",
-            "meaning": "Exact related report periods; no fabricated controlling filing."
-          }
         }
-      ]
-    },
-    "fec_filings": {
-      "family": "fec-query",
-      "schema": [
+      ],
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -9570,109 +11458,175 @@
           "load_timestamp",
           "DATE"
         ]
+      ]
+    },
+    "fec_historical_ie_statistics": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at_json",
+          "VARCHAR"
+        ],
+        [
+          "worksheet_name",
+          "VARCHAR"
+        ],
+        [
+          "row_grain",
+          "VARCHAR"
+        ],
+        [
+          "population",
+          "VARCHAR"
+        ],
+        [
+          "methodology_text",
+          "VARCHAR"
+        ],
+        [
+          "current_total_status",
+          "VARCHAR"
+        ],
+        [
+          "reporting_native_id",
+          "VARCHAR"
+        ],
+        [
+          "reporting_name",
+          "VARCHAR"
+        ],
+        [
+          "filer_type",
+          "VARCHAR"
+        ],
+        [
+          "candidate_native_id",
+          "VARCHAR"
+        ],
+        [
+          "support_oppose",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "amendment_indicator",
+          "VARCHAR"
+        ],
+        [
+          "image_number",
+          "VARCHAR"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "amount_formula",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "reported_date_status",
+          "VARCHAR"
+        ],
+        [
+          "worksheet_ordinal",
+          "INTEGER"
+        ],
+        [
+          "worksheet_row",
+          "INTEGER"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,9)"
+        ],
+        [
+          "reported_date",
+          "DATE"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ]
       ],
       "classification": "selected-observations",
       "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
       "dimensions": [
         {
-          "id": "report_year",
-          "kind": "year",
-          "fields": [
-            "report_year"
-          ],
-          "label": "Report year",
-          "meaning": "The filing or report’s stated year, separate from election cycles and transaction dates."
-        },
-        {
-          "id": "reported_cycle",
-          "kind": "year",
-          "fields": [
-            "reported_cycle"
-          ],
-          "label": "Reported election cycle",
-          "meaning": "The cycle stated in the record itself, separate from the cycle of the selected source files or requests."
-        },
-        {
-          "id": "election_year",
-          "kind": "year",
-          "fields": [
-            "election_year"
-          ],
-          "label": "Election year",
-          "meaning": "The source’s election year, separate from the source cycle, fiscal year, and collection date."
-        },
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "receipt_date",
+          "id": "reported_date",
           "kind": "date",
           "fields": [
-            "receipt_date"
+            "reported_date"
           ],
-          "label": "Receipt date",
-          "meaning": "The filing receipt date stated by the source. Missing or unreadable source dates stay unknown; collection time is not used."
+          "label": "Reported date",
+          "meaning": "The date stated for this historical/context observation. Missing or unreadable source dates stay unknown; collection time is not used."
         },
         {
-          "id": "filed_date",
+          "id": "period_start",
           "kind": "date",
           "fields": [
-            "filed_date"
+            "period_start"
           ],
-          "label": "Filed date",
-          "meaning": "The source-stated filing date. Missing or unreadable source dates stay unknown; collection time is not used."
+          "label": "Period start",
+          "meaning": "The start of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
         },
         {
-          "id": "coverage_start_date",
+          "id": "period_end",
           "kind": "date",
           "fields": [
-            "coverage_start_date"
+            "period_end"
           ],
-          "label": "Coverage start date",
-          "meaning": "The start of the filing coverage period. Missing or unreadable source dates stay unknown; collection time is not used."
+          "label": "Period end",
+          "meaning": "The end of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
         },
         {
-          "id": "coverage_end_date",
-          "kind": "date",
-          "fields": [
-            "coverage_end_date"
-          ],
-          "label": "Coverage end date",
-          "meaning": "The end of the filing coverage period. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "update_date",
-          "kind": "date",
-          "fields": [
-            "update_date"
-          ],
-          "label": "Source update date (freshness)",
-          "meaning": "The source’s update date, not evidence that the record is the latest version. Missing or unreadable dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "load_timestamp",
-          "kind": "date",
-          "fields": [
-            "load_timestamp"
-          ],
-          "label": "Source load date (freshness)",
-          "meaning": "The date the source says it loaded the record. The original timestamp is preserved. Missing or unreadable dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "coverage_start_date_coverage_end_date",
+          "id": "period_start_period_end",
           "kind": "interval",
           "fields": [
-            "coverage_start_date",
-            "coverage_end_date"
+            "period_start",
+            "period_end"
           ],
-          "label": "Filing coverage period",
-          "meaning": "The report period stated by the source for each filing."
+          "label": "Stated report period",
+          "meaning": "The period the source report or metric covers. It does not show when data was collected in each month."
         },
         {
           "id": "snapshot",
@@ -9736,11 +11690,8 @@
           },
           "special": "collection-scopes"
         }
-      ]
-    },
-    "fec_historical_ie_statistics": {
-      "family": "fec-query",
-      "schema": [
+      ],
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -9885,109 +11836,6 @@
           "period_end",
           "DATE"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "reported_date",
-          "kind": "date",
-          "fields": [
-            "reported_date"
-          ],
-          "label": "Reported date",
-          "meaning": "The date stated for this historical/context observation. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "period_start",
-          "kind": "date",
-          "fields": [
-            "period_start"
-          ],
-          "label": "Period start",
-          "meaning": "The start of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "period_end",
-          "kind": "date",
-          "fields": [
-            "period_end"
-          ],
-          "label": "Period end",
-          "meaning": "The end of the source-defined reporting period. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "period_start_period_end",
-          "kind": "interval",
-          "fields": [
-            "period_start",
-            "period_end"
-          ],
-          "label": "Stated report period",
-          "meaning": "The period the source report or metric covers. It does not show when data was collected in each month."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_inaugural_donations": {
@@ -11904,15 +13752,15 @@
           "VARCHAR"
         ],
         [
-          "reported_cycle",
+          "reported_cycle_status",
           "VARCHAR"
         ],
         [
-          "pending_status",
+          "is_pending_status",
           "VARCHAR"
         ],
         [
-          "published_status",
+          "is_published_status",
           "VARCHAR"
         ],
         [
@@ -11962,6 +13810,106 @@
         [
           "currency",
           "VARCHAR"
+        ],
+        [
+          "challenge_outcome_status",
+          "VARCHAR"
+        ],
+        [
+          "civil_penalty_payment_status_status",
+          "VARCHAR"
+        ],
+        [
+          "report_type_status",
+          "VARCHAR"
+        ],
+        [
+          "mur_type_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_description_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_designation_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_type_status",
+          "VARCHAR"
+        ],
+        [
+          "rm_id_status",
+          "VARCHAR"
+        ],
+        [
+          "rm_number_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
+        ],
+        [
+          "is_open_for_comment_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle",
+          "INTEGER"
+        ],
+        [
+          "is_pending",
+          "BOOLEAN"
+        ],
+        [
+          "is_published",
+          "BOOLEAN"
+        ],
+        [
+          "challenge_outcome",
+          "VARCHAR"
+        ],
+        [
+          "civil_penalty_payment_status",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "mur_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_description",
+          "VARCHAR"
+        ],
+        [
+          "committee_designation",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "rm_id",
+          "VARCHAR"
+        ],
+        [
+          "rm_number",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "is_open_for_comment",
+          "BOOLEAN"
         ],
         [
           "final_determination_amount",
@@ -12144,6 +14092,204 @@
             "meaning": "Explicit administrative-fine filing-date or loan-incurred-date request bounds. Only stated endpoints count; no intermediate observations, whole-year coverage or election cycle is inferred."
           }
         }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "matter_id",
+          "VARCHAR"
+        ],
+        [
+          "matter_record_id",
+          "VARCHAR"
+        ],
+        [
+          "query_completeness",
+          "VARCHAR"
+        ],
+        [
+          "matter_type",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "native_matter_id",
+          "VARCHAR"
+        ],
+        [
+          "native_document_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "title_status",
+          "VARCHAR"
+        ],
+        [
+          "description",
+          "VARCHAR"
+        ],
+        [
+          "description_status",
+          "VARCHAR"
+        ],
+        [
+          "status",
+          "VARCHAR"
+        ],
+        [
+          "status_status",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_url_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "audit_id",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle",
+          "VARCHAR"
+        ],
+        [
+          "pending_status",
+          "VARCHAR"
+        ],
+        [
+          "published_status",
+          "VARCHAR"
+        ],
+        [
+          "current_state_status",
+          "VARCHAR"
+        ],
+        [
+          "collection_states_json",
+          "VARCHAR"
+        ],
+        [
+          "native_facts_json",
+          "VARCHAR"
+        ],
+        [
+          "final_determination_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "final_determination_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "payment_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "payment_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "reason_to_believe_fine_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "reason_to_believe_fine_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "treasury_referral_amount_status",
+          "VARCHAR"
+        ],
+        [
+          "treasury_referral_amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "currency",
+          "VARCHAR"
+        ],
+        [
+          "final_determination_amount",
+          "DECIMAL(38,9)"
+        ],
+        [
+          "payment_amount",
+          "DECIMAL(38,9)"
+        ],
+        [
+          "reason_to_believe_fine_amount",
+          "DECIMAL(38,9)"
+        ],
+        [
+          "treasury_referral_amount",
+          "DECIMAL(38,9)"
+        ]
       ]
     },
     "fec_legal_parties": {
@@ -13935,10 +16081,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -13947,23 +16089,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -14098,6 +16236,124 @@
           },
           "special": "collection-scopes"
         }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "native_field_states_json",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "image_url",
+          "VARCHAR"
+        ],
+        [
+          "lobbyist_indicator",
+          "VARCHAR"
+        ],
+        [
+          "committee_id_status",
+          "VARCHAR"
+        ],
+        [
+          "lobbyist_status",
+          "VARCHAR"
+        ],
+        [
+          "image_body_status",
+          "VARCHAR"
+        ],
+        [
+          "filed_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "filed_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "filed_date",
+          "DATE"
+        ],
+        [
+          "is_lobbyist",
+          "BOOLEAN"
+        ]
       ]
     },
     "fec_oversight_recommendations": {
@@ -14430,6 +16686,552 @@
           "VARCHAR"
         ],
         [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "history_scope_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "organization_type_full",
+          "VARCHAR"
+        ],
+        [
+          "street_1",
+          "VARCHAR"
+        ],
+        [
+          "street_2",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_full",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_city",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_1",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_2",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_middle",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_phone",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_prefix",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_state",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_street_1",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_street_2",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_suffix",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_title",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_zip",
+          "VARCHAR"
+        ],
+        [
+          "custodian_city",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_middle",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_full",
+          "VARCHAR"
+        ],
+        [
+          "custodian_phone",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_prefix",
+          "VARCHAR"
+        ],
+        [
+          "custodian_state",
+          "VARCHAR"
+        ],
+        [
+          "custodian_street_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_street_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_suffix",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_title",
+          "VARCHAR"
+        ],
+        [
+          "custodian_zip",
+          "VARCHAR"
+        ],
+        [
+          "email",
+          "VARCHAR"
+        ],
+        [
+          "fax",
+          "VARCHAR"
+        ],
+        [
+          "website",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "leadership_pac",
+          "VARCHAR"
+        ],
+        [
+          "lobbyist_registrant_pac",
+          "VARCHAR"
+        ],
+        [
+          "party_type",
+          "VARCHAR"
+        ],
+        [
+          "party_type_full",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "designation_full",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_type_full",
+          "VARCHAR"
+        ],
+        [
+          "filing_frequency",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "party_full",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "former_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "cycle",
+          "INTEGER"
+        ],
+        [
+          "qualifying_date",
+          "DATE"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "last_f1_date",
+          "DATE"
+        ],
+        [
+          "last_cycle_has_financial",
+          "INTEGER"
+        ],
+        [
+          "last_cycle_has_activity",
+          "INTEGER"
+        ],
+        [
+          "is_active",
+          "BOOLEAN"
+        ],
+        [
+          "convert_to_pac_flag",
+          "BOOLEAN"
+        ],
+        [
+          "former_candidate_election_year",
+          "INTEGER"
+        ],
+        [
+          "first_f1_date",
+          "DATE"
+        ],
+        [
+          "cycle_raw",
+          "VARCHAR"
+        ],
+        [
+          "cycle_status",
+          "VARCHAR"
+        ],
+        [
+          "qualifying_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "qualifying_date_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_financial_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_financial_status",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_activity_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_activity_status",
+          "VARCHAR"
+        ],
+        [
+          "is_active_raw",
+          "VARCHAR"
+        ],
+        [
+          "is_active_status",
+          "VARCHAR"
+        ],
+        [
+          "convert_to_pac_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "convert_to_pac_flag_status",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_financial_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_financial_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_activity_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_activity_status",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_status",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "cycle",
+          "kind": "year",
+          "fields": [
+            "cycle"
+          ],
+          "label": "Cycle",
+          "meaning": "The history source’s cycle value as recorded. Original text is preserved; no replacement year is inferred."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
           "value_mapping_version",
           "VARCHAR"
         ],
@@ -14537,90 +17339,6 @@
           "native_fields",
           "STRUCT(idx VARCHAR, \"cycle\" VARCHAR, committee_id VARCHAR, \"name\" VARCHAR, treasurer_name VARCHAR, treasurer_text VARCHAR, organization_type VARCHAR, organization_type_full VARCHAR, street_1 VARCHAR, street_2 VARCHAR, city VARCHAR, state VARCHAR, state_full VARCHAR, zip VARCHAR, treasurer_city VARCHAR, treasurer_name_1 VARCHAR, treasurer_name_2 VARCHAR, treasurer_name_middle VARCHAR, treasurer_phone VARCHAR, treasurer_name_prefix VARCHAR, treasurer_state VARCHAR, treasurer_street_1 VARCHAR, treasurer_street_2 VARCHAR, treasurer_name_suffix VARCHAR, treasurer_name_title VARCHAR, treasurer_zip VARCHAR, custodian_city VARCHAR, custodian_name_1 VARCHAR, custodian_name_2 VARCHAR, custodian_name_middle VARCHAR, custodian_name_full VARCHAR, custodian_phone VARCHAR, custodian_name_prefix VARCHAR, custodian_state VARCHAR, custodian_street_1 VARCHAR, custodian_street_2 VARCHAR, custodian_name_suffix VARCHAR, custodian_name_title VARCHAR, custodian_zip VARCHAR, email VARCHAR, fax VARCHAR, website VARCHAR, form_type VARCHAR, leadership_pac VARCHAR, lobbyist_registrant_pac VARCHAR, party_type VARCHAR, party_type_full VARCHAR, qualifying_date VARCHAR, first_file_date VARCHAR, last_file_date VARCHAR, last_f1_date VARCHAR, designation VARCHAR, designation_full VARCHAR, committee_type VARCHAR, committee_type_full VARCHAR, filing_frequency VARCHAR, party VARCHAR, party_full VARCHAR, cycles VARCHAR, candidate_ids VARCHAR, affiliated_committee_name VARCHAR, last_cycle_has_financial VARCHAR, cycles_has_financial VARCHAR, last_cycle_has_activity VARCHAR, cycles_has_activity VARCHAR, is_active VARCHAR, sponsor_candidate_ids VARCHAR, convert_to_pac_flag VARCHAR, former_committee_name VARCHAR, former_candidate_id VARCHAR, former_candidate_name VARCHAR, former_candidate_election_year VARCHAR, first_f1_date VARCHAR)"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "cycle",
-          "kind": "year",
-          "fields": [
-            "cycle"
-          ],
-          "label": "Cycle",
-          "meaning": "The history source’s cycle value as recorded. Original text is preserved; no replacement year is inferred."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_quality_notices": {
@@ -14663,10 +17381,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -14675,23 +17389,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -14826,6 +17536,124 @@
           },
           "special": "collection-scopes"
         }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "native_field_states_json",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "filed_committee_type",
+          "VARCHAR"
+        ],
+        [
+          "filings_url",
+          "VARCHAR"
+        ],
+        [
+          "committee_id_status",
+          "VARCHAR"
+        ],
+        [
+          "notice_kind",
+          "VARCHAR"
+        ],
+        [
+          "notice_scope",
+          "VARCHAR"
+        ],
+        [
+          "exclusion_status",
+          "VARCHAR"
+        ],
+        [
+          "first_receipt_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_receipt_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "first_receipt_date",
+          "DATE"
+        ]
       ]
     },
     "fec_receipts": {
@@ -15691,6 +18519,338 @@
           "VARCHAR"
         ],
         [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "selection_evidence_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_name",
+          "VARCHAR"
+        ],
+        [
+          "committee_street_1",
+          "VARCHAR"
+        ],
+        [
+          "committee_street_2",
+          "VARCHAR"
+        ],
+        [
+          "committee_city",
+          "VARCHAR"
+        ],
+        [
+          "committee_state",
+          "VARCHAR"
+        ],
+        [
+          "committee_zip",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "filed_committee_type",
+          "VARCHAR"
+        ],
+        [
+          "filed_committee_designation",
+          "VARCHAR"
+        ],
+        [
+          "filing_frequency",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "committee_email",
+          "VARCHAR"
+        ],
+        [
+          "committee_web_url",
+          "VARCHAR"
+        ],
+        [
+          "beginning_image_number",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_name",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "party_code",
+          "VARCHAR"
+        ],
+        [
+          "office",
+          "VARCHAR"
+        ],
+        [
+          "office_code",
+          "VARCHAR"
+        ],
+        [
+          "office_state",
+          "VARCHAR"
+        ],
+        [
+          "office_state_code",
+          "VARCHAR"
+        ],
+        [
+          "office_district",
+          "VARCHAR"
+        ],
+        [
+          "candidate_city",
+          "VARCHAR"
+        ],
+        [
+          "candidate_state",
+          "VARCHAR"
+        ],
+        [
+          "candidate_zip",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_id_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id_status",
+          "VARCHAR"
+        ],
+        [
+          "affiliation_status",
+          "VARCHAR"
+        ],
+        [
+          "receipt_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "receipt_date_status",
+          "VARCHAR"
+        ],
+        [
+          "source_cycle",
+          "INTEGER"
+        ],
+        [
+          "receipt_date",
+          "DATE"
+        ],
+        [
+          "election_year",
+          "INTEGER"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "election_year",
+          "kind": "year",
+          "fields": [
+            "election_year"
+          ],
+          "label": "Election year",
+          "meaning": "The source’s election year, separate from the source cycle, fiscal year, and collection date."
+        },
+        {
+          "id": "report_year",
+          "kind": "year",
+          "fields": [
+            "report_year"
+          ],
+          "label": "Report year",
+          "meaning": "The filing or report’s stated year, separate from election cycles and transaction dates."
+        },
+        {
+          "id": "source_cycle",
+          "kind": "year",
+          "fields": [
+            "source_cycle"
+          ],
+          "label": "Source election cycle",
+          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
+        },
+        {
+          "id": "receipt_date",
+          "kind": "date",
+          "fields": [
+            "receipt_date"
+          ],
+          "label": "Receipt date",
+          "meaning": "Receipt date as filed. Form 2 uses the report year; Form 1 uses the two-digit-year rule. Two-digit years resolve between 1975 and the file’s collection year. In-range typos may remain. Original values and parse status explain unknown dates; collection time never replaces the date."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "publishedSchema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "identity_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "mapping_status",
+          "VARCHAR"
+        ],
+        [
+          "mapping_reason_json",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
           "source_pointer",
           "VARCHAR"
         ],
@@ -15874,108 +19034,6 @@
           "receipt_date",
           "DATE"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "election_year",
-          "kind": "year",
-          "fields": [
-            "election_year"
-          ],
-          "label": "Election year",
-          "meaning": "The source’s election year, separate from the source cycle, fiscal year, and collection date."
-        },
-        {
-          "id": "report_year",
-          "kind": "year",
-          "fields": [
-            "report_year"
-          ],
-          "label": "Report year",
-          "meaning": "The filing or report’s stated year, separate from election cycles and transaction dates."
-        },
-        {
-          "id": "source_cycle",
-          "kind": "year",
-          "fields": [
-            "source_cycle"
-          ],
-          "label": "Source election cycle",
-          "meaning": "Election cycle established by the selected source files or requests. It is separate from transaction dates, candidate election years, and fiscal years."
-        },
-        {
-          "id": "receipt_date",
-          "kind": "date",
-          "fields": [
-            "receipt_date"
-          ],
-          "label": "Receipt date",
-          "meaning": "Receipt date as filed. Form 2 uses the report year; Form 1 uses the two-digit-year rule. Two-digit years resolve between 1975 and the file’s collection year. In-range typos may remain. Original values and parse status explain unknown dates; collection time never replaces the date."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_report_metrics": {
@@ -16458,433 +19516,6 @@
         }
       ]
     },
-    "fec_research_context_dispositions": {
-      "family": "fec-query",
-      "schema": [
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_status",
-          "VARCHAR"
-        ],
-        [
-          "mapping_reason",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_fact_count",
-          "VARCHAR"
-        ],
-        [
-          "outputs_json",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "mapping_status_mapping_reason",
-          "kind": "category",
-          "fields": [
-            "mapping_status",
-            "mapping_reason"
-          ],
-          "label": "Context mapping results",
-          "meaning": "The recorded reason each saved context record was mapped or left unmapped."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
-      ]
-    },
-    "fec_research_document_observations": {
-      "family": "fec-query",
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "document_native_id",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "description",
-          "VARCHAR"
-        ],
-        [
-          "canonical_url",
-          "VARCHAR"
-        ],
-        [
-          "source_publisher",
-          "VARCHAR"
-        ],
-        [
-          "source_created_at",
-          "VARCHAR"
-        ],
-        [
-          "source_updated_at",
-          "VARCHAR"
-        ],
-        [
-          "original_extension",
-          "VARCHAR"
-        ],
-        [
-          "body_status",
-          "VARCHAR"
-        ],
-        [
-          "fec_relationship_status",
-          "VARCHAR"
-        ],
-        [
-          "native_metadata_json",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "source_created_at",
-          "kind": "date",
-          "fields": [
-            "source_created_at"
-          ],
-          "label": "Source metadata creation date",
-          "meaning": "When the publisher created this metadata record. This is not the document’s event date or filing date."
-        },
-        {
-          "id": "source_updated_at",
-          "kind": "date",
-          "fields": [
-            "source_updated_at"
-          ],
-          "label": "Source update date (freshness)",
-          "meaning": "When the publisher updated this metadata record. This shows metadata freshness, not event dates or proof of the latest version."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
-      ]
-    },
-    "fec_research_filing_feed_items": {
-      "family": "fec-query",
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "link",
-          "VARCHAR"
-        ],
-        [
-          "guid",
-          "VARCHAR"
-        ],
-        [
-          "published_at_raw",
-          "VARCHAR"
-        ],
-        [
-          "description",
-          "VARCHAR"
-        ],
-        [
-          "native_fields_json",
-          "VARCHAR"
-        ],
-        [
-          "source_parts_json",
-          "VARCHAR"
-        ],
-        [
-          "current_record_status",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "published_at_raw",
-          "kind": "date",
-          "fields": [
-            "published_at_raw"
-          ],
-          "label": "Feed publication date",
-          "meaning": "When the saved feed item was published, separate from filing receipt dates and report periods.",
-          "syntax": "rfc2822"
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
-      ]
-    },
     "fec_research_meeting_observations": {
       "family": "fec-query",
       "schema": [
@@ -16913,14 +19544,6 @@
           "VARCHAR"
         ],
         [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
           "observed_at_json",
           "VARCHAR"
         ],
@@ -16946,10 +19569,6 @@
         ],
         [
           "links_json",
-          "VARCHAR"
-        ],
-        [
-          "native_cells_json",
           "VARCHAR"
         ],
         [
@@ -17036,153 +19655,8 @@
           },
           "special": "collection-scopes"
         }
-      ]
-    },
-    "fec_research_response_outcomes": {
-      "family": "fec-query",
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "profile_refusal",
-          "VARCHAR"
-        ],
-        [
-          "query_completeness",
-          "VARCHAR"
-        ],
-        [
-          "payload_shape",
-          "VARCHAR"
-        ],
-        [
-          "outcome_status",
-          "VARCHAR"
-        ],
-        [
-          "native_payload_json",
-          "VARCHAR"
-        ],
-        [
-          "observed_payload_records",
-          "INTEGER"
-        ]
       ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "outcome_status_profile_refusal_query_completeness",
-          "kind": "category",
-          "fields": [
-            "outcome_status",
-            "profile_refusal",
-            "query_completeness"
-          ],
-          "label": "Retained request results",
-          "meaning": "Results of saved requests, including refused and incomplete responses. Zero observed records alone does not establish a successful empty result."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
-      ]
-    },
-    "fec_research_source_pages": {
-      "family": "fec-query",
-      "schema": [
+      "publishedSchema": [
         [
           "record_id",
           "VARCHAR"
@@ -17220,184 +19694,19 @@
           "VARCHAR"
         ],
         [
-          "page_type",
+          "meeting_type",
           "VARCHAR"
         ],
         [
-          "title",
+          "title_raw",
           "VARCHAR"
         ],
         [
-          "text",
+          "reported_status",
           "VARCHAR"
         ],
         [
-          "content_scope",
-          "VARCHAR"
-        ],
-        [
-          "links_json",
-          "VARCHAR"
-        ],
-        [
-          "times_json",
-          "VARCHAR"
-        ],
-        [
-          "headings_json",
-          "VARCHAR"
-        ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "page_type_content_scope",
-          "kind": "category",
-          "fields": [
-            "page_type",
-            "content_scope"
-          ],
-          "label": "Retained source pages",
-          "meaning": "The kinds of saved pages and the information each page covers. Dates on a page do not date all of its content."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
-      ]
-    },
-    "fec_retained_csv_observations": {
-      "family": "fec-query",
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "observation_type",
-          "VARCHAR"
-        ],
-        [
-          "reporting_committee_id",
-          "VARCHAR"
-        ],
-        [
-          "reporting_committee_name",
-          "VARCHAR"
-        ],
-        [
-          "counterparty_name",
-          "VARCHAR"
-        ],
-        [
-          "transaction_id",
-          "VARCHAR"
-        ],
-        [
-          "native_sub_id",
-          "VARCHAR"
-        ],
-        [
-          "amount_raw",
-          "VARCHAR"
-        ],
-        [
-          "amount_status",
-          "VARCHAR"
-        ],
-        [
-          "date_raw",
+          "dates_json",
           "VARCHAR"
         ],
         [
@@ -17405,108 +19714,21 @@
           "VARCHAR"
         ],
         [
-          "native_fields_json",
+          "links_json",
           "VARCHAR"
         ],
         [
-          "native_row_locator_json",
+          "native_cells_json",
           "VARCHAR"
         ],
         [
-          "coverage_status",
-          "VARCHAR"
+          "table_ordinal",
+          "INTEGER"
         ],
         [
-          "current_total_status",
-          "VARCHAR"
-        ],
-        [
-          "amount",
-          "DECIMAL(38,9)"
-        ],
-        [
-          "reported_date",
-          "DATE"
-        ],
-        [
-          "source_row_ordinal",
+          "table_row",
           "INTEGER"
         ]
-      ],
-      "classification": "selected-observations",
-      "note": "Shows the published records and the exact files or requests selected. A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
-      "dimensions": [
-        {
-          "id": "reported_date",
-          "kind": "date",
-          "fields": [
-            "reported_date"
-          ],
-          "label": "Reported date",
-          "meaning": "The date stated for this historical/context observation. Missing or unreadable source dates stay unknown; collection time is not used."
-        },
-        {
-          "id": "snapshot",
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Published release",
-          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
-        },
-        {
-          "id": "retained_source_cycles",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected source cycles",
-          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope_cycle",
-            "kind": "year",
-            "fields": [
-              "requested_scope_json"
-            ],
-            "label": "Retained source cycles",
-            "meaning": "Exact selected source cycle, not full FEC history."
-          },
-          "special": "collection-cycle"
-        },
-        {
-          "id": "selected_source_scopes",
-          "kind": "inherited",
-          "fields": [],
-          "label": "Selected files and requests",
-          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
-          "parent": {
-            "table": "fec_collections",
-            "mode": "recorded-parent",
-            "keys": [
-              [
-                "collection_id",
-                "collection_id"
-              ]
-            ]
-          },
-          "dimension": {
-            "id": "scope",
-            "kind": "category",
-            "fields": [
-              "source_family",
-              "requested_scope_json"
-            ],
-            "label": "Selected source scopes",
-            "meaning": "Selected collection grain; unknown periods stay explicit."
-          },
-          "special": "collection-scopes"
-        }
       ]
     },
     "fec_source_catalog": {
@@ -19494,7 +21716,7 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Selected retained OpenFEC committee relationship occurrences (200 committees from explicit retained pages). Disclosures do not prove ownership, transfers, or candidate authorization; relationship effective dates are not supplied, and retrieval/filing timestamps are not relationship dates.",
+      "note": "Retained OpenFEC committee relationship occurrences across explicit retained committee pages (27,763 profiles in live generation sha256:6b4677f0; 18 rows with blank/null designation remain unplaced in committee-designation). Disclosures do not prove ownership, transfers, or candidate authorization; relationship effective dates are not supplied, and retrieval/filing timestamps are not relationship dates.",
       "dimensions": [
         {
           "id": "committee-designation",
@@ -19527,7 +21749,7 @@
           "id": "retained-snapshot",
           "kind": "snapshot",
           "label": "Retained committee profile snapshot",
-          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "meaning": "Explicit retained OpenFEC committee pages (27,763 rows in live generation sha256:6b4677f0); does not establish a full committee census or relationship effective dates.",
           "fields": []
         }
       ]
@@ -20138,11 +22360,19 @@
           "VARCHAR"
         ],
         [
+          "office",
+          "VARCHAR"
+        ],
+        [
           "state",
           "VARCHAR"
         ],
         [
           "state_raw",
+          "VARCHAR"
+        ],
+        [
+          "district",
           "VARCHAR"
         ],
         [
@@ -20231,23 +22461,32 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Reviewed official FEC Federal Elections workbook Senate results (2022 edition), preserving primaries, runoffs, general elections, unexpired terms, ballot lines, zero votes, and ranked-choice voting rounds. Combined-party witnesses repeat across ballot lines and rounds overlap, so rows must never be summed without filtering by stage and vote_basis.",
+      "note": "Reviewed official FEC Federal Elections workbook results (2016–2024 Presidential; 2016–2022 U.S. Senate and U.S. House; interpretation_version fec-federal-election-results/2), preserving primaries, runoffs, general elections, unexpired terms, ballot lines, electoral votes, zero votes, and ranked-choice rounds. Combined-party witnesses, totals, electoral votes, and rounds overlap, so rows must never be summed without filtering by office, stage, row_kind, and vote_basis.",
       "dimensions": [
         {
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "meaning": "Federal election cycle of the reviewed official FEC Federal Elections workbook editions (2016–2024 Presidential; 2016–2022 U.S. Senate and U.S. House).",
           "fields": [
             "source_cycle"
           ],
           "syntax": "year"
         },
         {
+          "id": "office",
+          "kind": "category",
+          "label": "Federal office",
+          "meaning": "Federal office contested (president, senate, or house) across reviewed official FEC Federal Elections workbook editions.",
+          "fields": [
+            "office"
+          ]
+        },
+        {
           "id": "stage-and-basis",
           "kind": "category",
           "label": "Election stage and vote basis",
-          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total, electoral_vote).",
           "fields": [
             "stage",
             "vote_basis"
@@ -20257,7 +22496,7 @@
           "id": "row-kind",
           "kind": "category",
           "label": "Workbook row kind",
-          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "meaning": "Role of each workbook row (candidate, party_total, contest_total, state_total, or national_total).",
           "fields": [
             "row_kind"
           ]
@@ -20274,8 +22513,8 @@
         {
           "id": "seat-term",
           "kind": "category",
-          "label": "Senate seat term",
-          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "label": "Seat term",
+          "meaning": "Whether the contest was for a full term, an unexpired term, or not_applicable (e.g. Presidential rows).",
           "fields": [
             "seat_term"
           ]
@@ -20323,13 +22562,13 @@
         ]
       ],
       "classification": "source-scope-and-observed-records",
-      "note": "Literal physical rows across all 11 worksheets of the retained official 2022 FEC Federal Elections workbook, including House results, Senate results, special elections, party tables, and publication notes. Only the reviewed Senate worksheet is interpreted in fec_election_results.",
+      "note": "Literal physical rows across all 60 worksheets of the retained official 2016–2024 FEC Federal Elections workbooks (reader_version fec-election-workbook/2), including Presidential, Senate, House, special-election appendices, party tables, and publication notes. Overlapping summary and appendix sheets remain literal.",
       "dimensions": [
         {
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "meaning": "Federal election cycle of the retained official FEC Federal Elections workbook editions (2016–2024).",
           "fields": [
             "source_cycle"
           ],
@@ -20343,6 +22582,362 @@
           "fields": [
             "source_sheet"
           ]
+        }
+      ]
+    },
+    "fec_reference_source_pages": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at_json",
+          "VARCHAR"
+        ],
+        [
+          "page_type",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "text",
+          "VARCHAR"
+        ],
+        [
+          "content_scope",
+          "VARCHAR"
+        ],
+        [
+          "content_status",
+          "VARCHAR"
+        ],
+        [
+          "links_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Retained FEC source documentation pages with build-extracted body text (content_status = body_extracted). Failed captures and 6 visually reviewed HTTP-200 pages with unsupported body boundaries are recorded as exclusions in fec_original_selection.json (ss-j4vz). A missing period stays unknown unless a successful, complete request confirms no results for its exact filters.",
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "page_type_content_scope",
+          "kind": "category",
+          "fields": [
+            "page_type",
+            "content_scope"
+          ],
+          "label": "Retained source pages",
+          "meaning": "The kinds of saved FEC source-documentation pages and the information scope each page covers. Dates printed on a page do not date all of its content."
+        },
+        {
+          "id": "content_status",
+          "kind": "category",
+          "fields": [
+            "content_status"
+          ],
+          "label": "Page extraction status",
+          "meaning": "Page body disposition (body_extracted); captures failing HTTP < 400 checks or lacking supported body boundaries are excluded via fec_original_selection.json rather than emitted as rows."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ]
+    },
+    "fec_reference_filing_feed_items": {
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at_json",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "link",
+          "VARCHAR"
+        ],
+        [
+          "guid",
+          "VARCHAR"
+        ],
+        [
+          "published_at_raw",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_filer_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "source_label_status",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_raw",
+          "VARCHAR"
+        ],
+        [
+          "coverage_end_raw",
+          "VARCHAR"
+        ],
+        [
+          "parsing_status",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_date",
+          "DATE"
+        ],
+        [
+          "coverage_end_date",
+          "DATE"
+        ],
+        [
+          "published_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ]
+      ],
+      "classification": "selected-observations",
+      "note": "Retained original FEC filing RSS feed items keyed by guid within each capture. A feed item is not a resolved filing submission or a complete current filing population; coverage dates and publication timestamps are build-parsed with literal source strings preserved.",
+      "dimensions": [
+        {
+          "id": "published_at",
+          "kind": "date",
+          "fields": [
+            "published_at"
+          ],
+          "syntax": "iso",
+          "label": "Feed publication date",
+          "meaning": "Build-parsed UTC feed publication instant from exact four-digit-year GMT RSS timestamps, separate from filing receipt dates and report periods; unparseable timestamps remain unplaced and literal in published_at_raw."
+        },
+        {
+          "id": "coverage_period",
+          "kind": "interval",
+          "fields": [
+            "coverage_start_date",
+            "coverage_end_date"
+          ],
+          "syntax": "iso",
+          "label": "Reported coverage period",
+          "meaning": "Build-parsed CoverageFrom through CoverageThrough date span stated in the RSS feed item; items lacking valid MM/DD/YYYY coverage dates remain unplaced."
+        },
+        {
+          "id": "source_label_status",
+          "kind": "category",
+          "fields": [
+            "source_label_status"
+          ],
+          "label": "Filer label classification",
+          "meaning": "Whether the RSS feed CommitteeId label held a committee ID, candidate ID, missing value, or unsupported spelling."
+        },
+        {
+          "id": "parsing_status",
+          "kind": "category",
+          "fields": [
+            "parsing_status"
+          ],
+          "label": "Feed parsing status",
+          "meaning": "Distinguishes parsed RSS dates and identifiers from missing, null, empty, or unsupported source spellings."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
         }
       ]
     }

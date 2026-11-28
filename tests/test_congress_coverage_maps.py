@@ -644,5 +644,101 @@ class CongressCoverageTests(unittest.TestCase):
                 self.assertEqual(d['placedRows'], 1, f'{tid}.{d["id"]}')
                 self.assertEqual(d['unplacedRows'], 0, f'{tid}.{d["id"]}')
 
+    def test_senate_disclosures_crs_report_files_and_scaled_house_disclosures(self):
+        import importlib.util
+        import coverage_scan
+        root_dir = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location('coverage_builder', root_dir / 'scripts/build-coverage-maps.py')
+        builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
+        defs = builder.definitions()
+
+        for tid, fam in (
+            ('senate_disclosure_reports', 'senate-disclosures'),
+            ('senate_disclosure_transactions', 'senate-disclosures'),
+            ('crs_report_files', 'crs-report-files'),
+            ('house_disclosure_filings', 'house-disclosures'),
+            ('house_disclosure_reports', 'house-disclosures'),
+            ('house_disclosure_pages', 'house-disclosures'),
+            ('house_disclosure_transactions', 'house-disclosures'),
+            ('house_disclosure_amendment_links', 'house-disclosures'),
+        ):
+            self.assertEqual(defs[tid]['family'], fam)
+
+        def make_tbl(name, family, insert_sql):
+            policy = defs[name]
+            path = self.root / f'{name}.parquet'
+            cols = ', '.join(f'"{n}" {t}' for n, t in policy['schema'])
+            with duckdb.connect() as conn:
+                conn.execute(f'CREATE TABLE t ({cols})')
+                conn.execute(insert_sql)
+                conn.execute('COPY t TO ? (FORMAT PARQUET)', [str(path)])
+            raw = path.read_bytes()
+            rows = int(self.conn.execute('SELECT count(*) FROM read_parquet(?)', [str(path)]).fetchone()[0])
+            return policy, path, {
+                'family': family, 'kind': 'generation', 'columns': policy['schema'],
+                'rows': rows, 'publishedAt': '2026-11-28T05:56:20Z', '_coverageAsOfMonth': '2026-11',
+                'members': [{'key': path.name, 'url': str(path), 'rows': rows, 'byteSize': len(raw)}],
+            }
+
+        sdr_pol, sdr_path, sdr_tbl = make_tbl(
+            'senate_disclosure_reports', 'senate-disclosures',
+            "INSERT INTO t (filing_year, report_id, report_kind, report_date, submitted_date, amendment_status, amendment_link_status, parse_status) VALUES "
+            "(2025, 'r1', 'electronic', DATE '2025-04-10', DATE '2025-04-12', 'none', 'not_applicable', 'parsed'), "
+            "(2025, 'r2', 'paper', DATE '2025-06-01', DATE '2025-06-02', 'numbered', 'unresolved', 'unsupported_paper')"
+        )
+        builder.validate_plan({'senate_disclosure_reports': sdr_tbl}, {'senate_disclosure_reports': dict(sdr_pol)})
+        sdr_dims = {d['id']: d for d in coverage_scan.scan_table('senate_disclosure_reports', sdr_tbl, sdr_pol)['dimensions']}
+        self.assertEqual(sdr_dims['filing-year']['buckets'], {'2025': 2})
+        self.assertEqual(sdr_dims['report-dates']['buckets'], {'2025-04': 1, '2025-06': 1})
+        self.assertEqual(sdr_dims['report-kind']['buckets'], {'["electronic"]': 1, '["paper"]': 1})
+        self.assertEqual(sdr_dims['parse-status']['buckets'], {'["parsed"]': 1, '["unsupported_paper"]': 1})
+
+        class SameGenSenate:
+            def parent(self_inner, child_id, child, relation):
+                return {
+                    'family': 'senate-disclosures', 'artifactDigest': 'sha256:' + 'a' * 64,
+                    'tableId': 'senate_disclosure_reports', 'recordUrl': 'local://artifact.json',
+                    'members': sdr_tbl['members'], 'urls': [str(sdr_path)], 'rows': sdr_tbl['rows'],
+                }
+
+        sdt_pol, sdt_path, sdt_tbl = make_tbl(
+            'senate_disclosure_transactions', 'senate-disclosures',
+            "INSERT INTO t (filing_year, report_id, transaction_date, owner, asset_type, transaction_type, amount_parse_status) VALUES "
+            "(2025, 'r1', DATE '2025-03-18', 'Spouse', 'Stock', 'Purchase', 'closed_range'), "
+            "(2025, 'orphan', DATE '2024-12-01', 'Self', 'Municipal Security', 'Sale (Full)', 'closed_range')"
+        )
+        builder.validate_plan({'senate_disclosure_transactions': sdt_tbl}, {'senate_disclosure_transactions': dict(sdt_pol)})
+        sdt_dims = {d['id']: d for d in coverage_scan._measure(
+            self.conn, 'senate_disclosure_transactions', sdt_tbl, [str(sdt_path)], sdt_pol, SameGenSenate(),
+        )}
+        self.assertEqual(sdt_dims['transaction-dates']['buckets'], {'2024-12': 1, '2025-03': 1})
+        self.assertEqual((sdt_dims['parent-report-dates']['matchedRows'], sdt_dims['parent-report-dates']['unmatchedRows']), (1, 1))
+        self.assertEqual(sdt_dims['parent-report-dates']['buckets'], {'2025-04': 1})
+        self.assertEqual(sdt_dims['transaction-type']['buckets'], {'["Purchase"]': 1, '["Sale (Full)"]': 1})
+
+        crf_pol, _, crf_tbl = make_tbl(
+            'crs_report_files', 'crs-report-files',
+            "INSERT INTO t (report_id, metadata_update_date, rendition, source_family, version_binding, body_state, content_identity_state, text_state) VALUES "
+            "('IN12418', '2026-09-19T16:37:49Z', 'pdf', 'IN', 'numbered-pdf-locator', 'ok', 'matching-explicit-footer', 'ok')"
+        )
+        builder.validate_plan({'crs_report_files': crf_tbl}, {'crs_report_files': dict(crf_pol)})
+        crf_dims = {d['id']: d for d in coverage_scan.scan_table('crs_report_files', crf_tbl, crf_pol)['dimensions']}
+        self.assertEqual(crf_dims['metadata-update-dates']['buckets'], {'2026-09': 1})
+        self.assertEqual(crf_dims['rendition-and-binding']['buckets'], {'["pdf","numbered-pdf-locator"]': 1})
+        self.assertEqual(crf_dims['body-and-text-state']['buckets'], {'["ok","ok"]': 1})
+        self.assertEqual(crf_dims['content-identity-state']['buckets'], {'["matching-explicit-footer"]': 1})
+        self.assertEqual(crf_dims['retained-snapshot']['granularity'], 'snapshot')
+
+        hdt_pol, _, hdt_tbl = make_tbl(
+            'house_disclosure_transactions', 'house-disclosures',
+            "INSERT INTO t (transaction_id, action_raw, filing_status_raw, amount_status, transaction_date, notification_date) VALUES "
+            "('t1', 'E', 'New', 'reported_exclusive_lower_bound', DATE '2024-05-01', DATE '2024-05-15'), "
+            "('t2', 'P', 'Amended', 'unparsed', DATE '2025-01-10', DATE '2025-01-20')"
+        )
+        builder.validate_plan({'house_disclosure_transactions': hdt_tbl}, {'house_disclosure_transactions': dict(hdt_pol)})
+        hdt_dims = {d['id']: d for d in coverage_scan.scan_table('house_disclosure_transactions', hdt_tbl, hdt_pol)['dimensions']}
+        self.assertEqual(hdt_dims['action-type']['buckets'], {'["E"]': 1, '["P"]': 1})
+        self.assertEqual(hdt_dims['amount-status']['buckets'], {'["reported_exclusive_lower_bound"]': 1, '["unparsed"]': 1})
+
 
 if __name__=='__main__':unittest.main()

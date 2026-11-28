@@ -92,6 +92,7 @@ export function groupFor(id: string) {
       "section_diff_items",
       "public_activity_events",
       "crs_reports",
+      "crs_report_files",
       "press_releases",
       "report_sections",
       "record_issues",
@@ -99,6 +100,13 @@ export function groupFor(id: string) {
       "nominations",
       "house_activity_reports",
       "house_communications",
+      "house_disclosure_amendment_links",
+      "house_disclosure_filings",
+      "house_disclosure_pages",
+      "house_disclosure_reports",
+      "house_disclosure_transactions",
+      "senate_disclosure_reports",
+      "senate_disclosure_transactions",
     ].includes(id)
   )
     return "Congress";

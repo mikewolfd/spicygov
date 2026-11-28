@@ -7392,8 +7392,24 @@
           "VARCHAR"
         ],
         [
-          "native_location_json",
+          "text_status",
           "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "native_element",
+          "BIGINT"
+        ],
+        [
+          "native_line",
+          "BIGINT"
+        ],
+        [
+          "native_column",
+          "BIGINT"
         ]
       ],
       "publication": {
@@ -8473,7 +8489,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_agency_reports",
@@ -10635,10 +10652,6 @@
           "VARCHAR"
         ],
         [
-          "value_mapping_version",
-          "VARCHAR"
-        ],
-        [
           "mapping_status",
           "VARCHAR"
         ],
@@ -10675,31 +10688,7 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
           "VARCHAR"
         ],
         [
@@ -10715,23 +10704,11 @@
           "VARCHAR"
         ],
         [
-          "original_result_pointer",
-          "VARCHAR"
-        ],
-        [
           "query_completeness",
           "VARCHAR"
         ],
         [
           "registry_scope_status",
-          "VARCHAR"
-        ],
-        [
-          "native_metadata_json",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
           "VARCHAR"
         ],
         [
@@ -10743,12 +10720,40 @@
           "VARCHAR"
         ],
         [
-          "value_json",
+          "value_status",
           "VARCHAR"
         ],
         [
-          "value_status",
+          "api_version",
           "VARCHAR"
+        ],
+        [
+          "parsing_status",
+          "VARCHAR"
+        ],
+        [
+          "page",
+          "BIGINT"
+        ],
+        [
+          "per_page",
+          "BIGINT"
+        ],
+        [
+          "reported_count",
+          "BIGINT"
+        ],
+        [
+          "reported_pages",
+          "BIGINT"
+        ],
+        [
+          "observed_count",
+          "BIGINT"
+        ],
+        [
+          "is_count_exact",
+          "BOOLEAN"
         ],
         [
           "source_cycle",
@@ -10863,7 +10868,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_audit_findings",
@@ -11711,10 +11717,6 @@
           "VARCHAR"
         ],
         [
-          "value_mapping_version",
-          "VARCHAR"
-        ],
-        [
           "mapping_status",
           "VARCHAR"
         ],
@@ -11751,31 +11753,7 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
           "VARCHAR"
         ],
         [
@@ -11831,7 +11809,15 @@
           "VARCHAR"
         ],
         [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
           "election_years_json",
+          "VARCHAR"
+        ],
+        [
+          "election_years_status",
           "VARCHAR"
         ],
         [
@@ -11839,7 +11825,15 @@
           "VARCHAR"
         ],
         [
+          "election_districts_status",
+          "VARCHAR"
+        ],
+        [
           "inactive_election_years_json",
+          "VARCHAR"
+        ],
+        [
+          "inactive_election_years_status",
           "VARCHAR"
         ],
         [
@@ -11863,11 +11857,99 @@
           "VARCHAR"
         ],
         [
-          "native_metadata_json",
+          "district_number",
+          "BIGINT"
+        ],
+        [
+          "active_through",
+          "INTEGER"
+        ],
+        [
+          "candidate_inactive",
+          "BOOLEAN"
+        ],
+        [
+          "has_raised_funds",
+          "BOOLEAN"
+        ],
+        [
+          "federal_funds_flag",
+          "BOOLEAN"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "last_f2_date",
+          "DATE"
+        ],
+        [
+          "district_number_raw",
           "VARCHAR"
         ],
         [
-          "native_field_states_json",
+          "district_number_status",
+          "VARCHAR"
+        ],
+        [
+          "active_through_raw",
+          "VARCHAR"
+        ],
+        [
+          "active_through_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_inactive_raw",
+          "VARCHAR"
+        ],
+        [
+          "candidate_inactive_status",
+          "VARCHAR"
+        ],
+        [
+          "has_raised_funds_raw",
+          "VARCHAR"
+        ],
+        [
+          "has_raised_funds_status",
+          "VARCHAR"
+        ],
+        [
+          "federal_funds_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "federal_funds_flag_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f2_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f2_date_status",
           "VARCHAR"
         ],
         [
@@ -12084,7 +12166,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_collection_selection",
@@ -12288,10 +12371,6 @@
           "VARCHAR"
         ],
         [
-          "value_mapping_version",
-          "VARCHAR"
-        ],
-        [
           "mapping_status",
           "VARCHAR"
         ],
@@ -12328,31 +12407,7 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
           "VARCHAR"
         ],
         [
@@ -12361,10 +12416,6 @@
         ],
         [
           "source_url",
-          "VARCHAR"
-        ],
-        [
-          "capture_json",
           "VARCHAR"
         ],
         [
@@ -12377,10 +12428,6 @@
         ],
         [
           "committee_id",
-          "VARCHAR"
-        ],
-        [
-          "cycle",
           "VARCHAR"
         ],
         [
@@ -12440,8 +12487,16 @@
           "VARCHAR"
         ],
         [
-          "native_fields",
-          "STRUCT(CMTE_ID VARCHAR, CMTE_NM VARCHAR, TRES_NM VARCHAR, CMTE_ST1 VARCHAR, CMTE_ST2 VARCHAR, CMTE_CITY VARCHAR, CMTE_ST VARCHAR, CMTE_ZIP VARCHAR, CMTE_DSGN VARCHAR, CMTE_TP VARCHAR, CMTE_PTY_AFFILIATION VARCHAR, CMTE_FILING_FREQ VARCHAR, ORG_TP VARCHAR, CONNECTED_ORG_NM VARCHAR, CAND_ID VARCHAR)"
+          "cycle",
+          "INTEGER"
+        ],
+        [
+          "cycle_raw",
+          "VARCHAR"
+        ],
+        [
+          "cycle_status",
+          "VARCHAR"
         ]
       ],
       "publication": {
@@ -12701,7 +12756,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_committee_observations",
@@ -12718,10 +12774,6 @@
         ],
         [
           "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "value_mapping_version",
           "VARCHAR"
         ],
         [
@@ -12761,31 +12813,7 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
           "VARCHAR"
         ],
         [
@@ -12841,22 +12869,6 @@
           "VARCHAR"
         ],
         [
-          "first_file_date",
-          "VARCHAR"
-        ],
-        [
-          "last_file_date",
-          "VARCHAR"
-        ],
-        [
-          "cycles_json",
-          "VARCHAR"
-        ],
-        [
-          "candidate_ids_json",
-          "VARCHAR"
-        ],
-        [
           "source_url",
           "VARCHAR"
         ],
@@ -12877,15 +12889,147 @@
           "VARCHAR"
         ],
         [
-          "native_metadata_json",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
-          "VARCHAR"
-        ],
-        [
           "committee_id_status",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_city",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_first_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_last_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_middle_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_name",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_phone_number",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_prefix",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_state",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_street1",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_street2",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_suffix",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_title",
+          "VARCHAR"
+        ],
+        [
+          "designated_agent_zip",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_list_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_list_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "first_f1_date",
+          "DATE"
+        ],
+        [
+          "last_f1_date",
+          "DATE"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_status",
           "VARCHAR"
         ],
         [
@@ -14898,7 +15042,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_communication_costs",
@@ -22617,10 +22762,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -22629,7 +22770,19 @@
           "VARCHAR"
         ],
         [
+          "source_representation_role",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
           "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -22638,14 +22791,6 @@
         ],
         [
           "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
-          "VARCHAR"
-        ],
-        [
-          "current_record_status",
           "VARCHAR"
         ],
         [
@@ -22836,7 +22981,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_filing_report_observations",
@@ -23086,10 +23232,6 @@
         [
           "effective_date",
           "DATE"
-        ],
-        [
-          "native_fields",
-          "STRUCT(\"position\" INTEGER, definition_label VARCHAR, definition_cell VARCHAR, presence VARCHAR, raw_value VARCHAR, body_reference_json VARCHAR)[]"
         ],
         [
           "reported_measures",
@@ -24084,7 +24226,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_filing_text_observations",
@@ -24101,10 +24244,6 @@
         ],
         [
           "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "value_mapping_version",
           "VARCHAR"
         ],
         [
@@ -24144,15 +24283,11 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
           "VARCHAR"
         ],
         [
@@ -24161,18 +24296,6 @@
         ],
         [
           "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
-          "VARCHAR"
-        ],
-        [
-          "source_namespace",
           "VARCHAR"
         ],
         [
@@ -24226,10 +24349,6 @@
         [
           "source_cycle",
           "INTEGER"
-        ],
-        [
-          "native_fields",
-          "STRUCT(\"position\" INTEGER, definition_label VARCHAR, definition_cell VARCHAR, presence VARCHAR, raw_value VARCHAR, body_reference_json VARCHAR)[]"
         ],
         [
           "text_fragments",
@@ -24376,7 +24495,8 @@
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness.",
         "No intrinsic record date. A filing-period axis needs an exact scoped association to its filing header/report observation; source_cycle alone is not a substitute for report period."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_filings",
@@ -24420,10 +24540,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -24432,23 +24548,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -24504,18 +24616,6 @@
           "VARCHAR"
         ],
         [
-          "report_year",
-          "VARCHAR"
-        ],
-        [
-          "reported_cycle",
-          "VARCHAR"
-        ],
-        [
-          "election_year",
-          "VARCHAR"
-        ],
-        [
           "means_filed",
           "VARCHAR"
         ],
@@ -24541,18 +24641,6 @@
         ],
         [
           "amendment_number",
-          "VARCHAR"
-        ],
-        [
-          "is_amended",
-          "VARCHAR"
-        ],
-        [
-          "most_recent",
-          "VARCHAR"
-        ],
-        [
-          "pages",
           "VARCHAR"
         ],
         [
@@ -24585,6 +24673,14 @@
         ],
         [
           "pdf_url",
+          "VARCHAR"
+        ],
+        [
+          "filing_key",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
           "VARCHAR"
         ],
         [
@@ -24702,6 +24798,78 @@
         [
           "load_timestamp",
           "DATE"
+        ],
+        [
+          "pages",
+          "BIGINT"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "reported_cycle",
+          "INTEGER"
+        ],
+        [
+          "election_year",
+          "INTEGER"
+        ],
+        [
+          "is_amended",
+          "BOOLEAN"
+        ],
+        [
+          "most_recent",
+          "BOOLEAN"
+        ],
+        [
+          "pages_raw",
+          "VARCHAR"
+        ],
+        [
+          "pages_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle_raw",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle_status",
+          "VARCHAR"
+        ],
+        [
+          "election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "is_amended_raw",
+          "VARCHAR"
+        ],
+        [
+          "is_amended_status",
+          "VARCHAR"
+        ],
+        [
+          "most_recent_raw",
+          "VARCHAR"
+        ],
+        [
+          "most_recent_status",
+          "VARCHAR"
         ]
       ],
       "publication": {
@@ -25445,7 +25613,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_historical_ie_statistics",
@@ -25477,27 +25646,11 @@
           "VARCHAR"
         ],
         [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
           "observed_at_json",
           "VARCHAR"
         ],
         [
           "worksheet_name",
-          "VARCHAR"
-        ],
-        [
-          "worksheet_member",
-          "VARCHAR"
-        ],
-        [
-          "worksheet_sha256",
           "VARCHAR"
         ],
         [
@@ -25566,10 +25719,6 @@
         ],
         [
           "reported_date_status",
-          "VARCHAR"
-        ],
-        [
-          "native_cells_json",
           "VARCHAR"
         ],
         [
@@ -25852,7 +26001,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_inaugural_donations",
@@ -29550,15 +29700,15 @@
           "VARCHAR"
         ],
         [
-          "reported_cycle",
+          "reported_cycle_status",
           "VARCHAR"
         ],
         [
-          "pending_status",
+          "is_pending_status",
           "VARCHAR"
         ],
         [
-          "published_status",
+          "is_published_status",
           "VARCHAR"
         ],
         [
@@ -29608,6 +29758,106 @@
         [
           "currency",
           "VARCHAR"
+        ],
+        [
+          "challenge_outcome_status",
+          "VARCHAR"
+        ],
+        [
+          "civil_penalty_payment_status_status",
+          "VARCHAR"
+        ],
+        [
+          "report_type_status",
+          "VARCHAR"
+        ],
+        [
+          "mur_type_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_description_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_designation_status",
+          "VARCHAR"
+        ],
+        [
+          "committee_type_status",
+          "VARCHAR"
+        ],
+        [
+          "rm_id_status",
+          "VARCHAR"
+        ],
+        [
+          "rm_number_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
+        ],
+        [
+          "is_open_for_comment_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_cycle",
+          "INTEGER"
+        ],
+        [
+          "is_pending",
+          "BOOLEAN"
+        ],
+        [
+          "is_published",
+          "BOOLEAN"
+        ],
+        [
+          "challenge_outcome",
+          "VARCHAR"
+        ],
+        [
+          "civil_penalty_payment_status",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "mur_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_description",
+          "VARCHAR"
+        ],
+        [
+          "committee_designation",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "rm_id",
+          "VARCHAR"
+        ],
+        [
+          "rm_number",
+          "VARCHAR"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "is_open_for_comment",
+          "BOOLEAN"
         ],
         [
           "final_determination_amount",
@@ -30189,7 +30439,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_legal_parties",
@@ -33144,10 +33395,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -33156,23 +33403,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -33780,7 +34023,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_oversight_recommendations",
@@ -34149,10 +34393,6 @@
           "VARCHAR"
         ],
         [
-          "value_mapping_version",
-          "VARCHAR"
-        ],
-        [
           "mapping_status",
           "VARCHAR"
         ],
@@ -34189,31 +34429,7 @@
           "VARCHAR"
         ],
         [
-          "correction_operation",
-          "VARCHAR"
-        ],
-        [
-          "correction_applicability_status",
-          "VARCHAR"
-        ],
-        [
           "current_record_status",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "currency",
-          "VARCHAR"
-        ],
-        [
-          "amount_kind",
           "VARCHAR"
         ],
         [
@@ -34222,10 +34438,6 @@
         ],
         [
           "source_url",
-          "VARCHAR"
-        ],
-        [
-          "capture_json",
           "VARCHAR"
         ],
         [
@@ -34241,20 +34453,392 @@
           "VARCHAR"
         ],
         [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name",
+          "VARCHAR"
+        ],
+        [
+          "organization_type",
+          "VARCHAR"
+        ],
+        [
+          "organization_type_full",
+          "VARCHAR"
+        ],
+        [
+          "street_1",
+          "VARCHAR"
+        ],
+        [
+          "street_2",
+          "VARCHAR"
+        ],
+        [
+          "city",
+          "VARCHAR"
+        ],
+        [
+          "state",
+          "VARCHAR"
+        ],
+        [
+          "state_full",
+          "VARCHAR"
+        ],
+        [
+          "zip",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_city",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_1",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_2",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_middle",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_phone",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_prefix",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_state",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_street_1",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_street_2",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_suffix",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_name_title",
+          "VARCHAR"
+        ],
+        [
+          "treasurer_zip",
+          "VARCHAR"
+        ],
+        [
+          "custodian_city",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_middle",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_full",
+          "VARCHAR"
+        ],
+        [
+          "custodian_phone",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_prefix",
+          "VARCHAR"
+        ],
+        [
+          "custodian_state",
+          "VARCHAR"
+        ],
+        [
+          "custodian_street_1",
+          "VARCHAR"
+        ],
+        [
+          "custodian_street_2",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_suffix",
+          "VARCHAR"
+        ],
+        [
+          "custodian_name_title",
+          "VARCHAR"
+        ],
+        [
+          "custodian_zip",
+          "VARCHAR"
+        ],
+        [
+          "email",
+          "VARCHAR"
+        ],
+        [
+          "fax",
+          "VARCHAR"
+        ],
+        [
+          "website",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "leadership_pac",
+          "VARCHAR"
+        ],
+        [
+          "lobbyist_registrant_pac",
+          "VARCHAR"
+        ],
+        [
+          "party_type",
+          "VARCHAR"
+        ],
+        [
+          "party_type_full",
+          "VARCHAR"
+        ],
+        [
+          "designation",
+          "VARCHAR"
+        ],
+        [
+          "designation_full",
+          "VARCHAR"
+        ],
+        [
+          "committee_type",
+          "VARCHAR"
+        ],
+        [
+          "committee_type_full",
+          "VARCHAR"
+        ],
+        [
+          "filing_frequency",
+          "VARCHAR"
+        ],
+        [
+          "party",
+          "VARCHAR"
+        ],
+        [
+          "party_full",
+          "VARCHAR"
+        ],
+        [
+          "affiliated_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "former_committee_name",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_name",
+          "VARCHAR"
+        ],
+        [
           "cycle",
+          "INTEGER"
+        ],
+        [
+          "qualifying_date",
+          "DATE"
+        ],
+        [
+          "first_file_date",
+          "DATE"
+        ],
+        [
+          "last_file_date",
+          "DATE"
+        ],
+        [
+          "last_f1_date",
+          "DATE"
+        ],
+        [
+          "last_cycle_has_financial",
+          "INTEGER"
+        ],
+        [
+          "last_cycle_has_activity",
+          "INTEGER"
+        ],
+        [
+          "is_active",
+          "BOOLEAN"
+        ],
+        [
+          "convert_to_pac_flag",
+          "BOOLEAN"
+        ],
+        [
+          "former_candidate_election_year",
+          "INTEGER"
+        ],
+        [
+          "first_f1_date",
+          "DATE"
+        ],
+        [
+          "cycle_raw",
           "VARCHAR"
         ],
         [
-          "derivation_json",
+          "cycle_status",
           "VARCHAR"
         ],
         [
-          "raw_copy_fields",
-          "VARCHAR[]"
+          "qualifying_date_raw",
+          "VARCHAR"
         ],
         [
-          "native_fields",
-          "STRUCT(idx VARCHAR, \"cycle\" VARCHAR, committee_id VARCHAR, \"name\" VARCHAR, treasurer_name VARCHAR, treasurer_text VARCHAR, organization_type VARCHAR, organization_type_full VARCHAR, street_1 VARCHAR, street_2 VARCHAR, city VARCHAR, state VARCHAR, state_full VARCHAR, zip VARCHAR, treasurer_city VARCHAR, treasurer_name_1 VARCHAR, treasurer_name_2 VARCHAR, treasurer_name_middle VARCHAR, treasurer_phone VARCHAR, treasurer_name_prefix VARCHAR, treasurer_state VARCHAR, treasurer_street_1 VARCHAR, treasurer_street_2 VARCHAR, treasurer_name_suffix VARCHAR, treasurer_name_title VARCHAR, treasurer_zip VARCHAR, custodian_city VARCHAR, custodian_name_1 VARCHAR, custodian_name_2 VARCHAR, custodian_name_middle VARCHAR, custodian_name_full VARCHAR, custodian_phone VARCHAR, custodian_name_prefix VARCHAR, custodian_state VARCHAR, custodian_street_1 VARCHAR, custodian_street_2 VARCHAR, custodian_name_suffix VARCHAR, custodian_name_title VARCHAR, custodian_zip VARCHAR, email VARCHAR, fax VARCHAR, website VARCHAR, form_type VARCHAR, leadership_pac VARCHAR, lobbyist_registrant_pac VARCHAR, party_type VARCHAR, party_type_full VARCHAR, qualifying_date VARCHAR, first_file_date VARCHAR, last_file_date VARCHAR, last_f1_date VARCHAR, designation VARCHAR, designation_full VARCHAR, committee_type VARCHAR, committee_type_full VARCHAR, filing_frequency VARCHAR, party VARCHAR, party_full VARCHAR, cycles VARCHAR, candidate_ids VARCHAR, affiliated_committee_name VARCHAR, last_cycle_has_financial VARCHAR, cycles_has_financial VARCHAR, last_cycle_has_activity VARCHAR, cycles_has_activity VARCHAR, is_active VARCHAR, sponsor_candidate_ids VARCHAR, convert_to_pac_flag VARCHAR, former_committee_name VARCHAR, former_candidate_id VARCHAR, former_candidate_name VARCHAR, former_candidate_election_year VARCHAR, first_f1_date VARCHAR)"
+          "qualifying_date_status",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_file_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_financial_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_financial_status",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_activity_raw",
+          "VARCHAR"
+        ],
+        [
+          "last_cycle_has_activity_status",
+          "VARCHAR"
+        ],
+        [
+          "is_active_raw",
+          "VARCHAR"
+        ],
+        [
+          "is_active_status",
+          "VARCHAR"
+        ],
+        [
+          "convert_to_pac_flag_raw",
+          "VARCHAR"
+        ],
+        [
+          "convert_to_pac_flag_status",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "former_candidate_election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "first_f1_date_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_status",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "candidate_ids_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_financial_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_financial_status",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_activity_json",
+          "VARCHAR"
+        ],
+        [
+          "cycles_has_activity_status",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_json",
+          "VARCHAR"
+        ],
+        [
+          "sponsor_candidate_ids_status",
+          "VARCHAR"
         ]
       ],
       "publication": {
@@ -34439,7 +35023,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_quality_notices",
@@ -34483,10 +35068,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -34495,23 +35076,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -35028,7 +35605,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_receipts",
@@ -36739,10 +37317,6 @@
           "VARCHAR"
         ],
         [
-          "source_pointer",
-          "VARCHAR"
-        ],
-        [
           "source_authority",
           "VARCHAR"
         ],
@@ -36751,23 +37325,19 @@
           "VARCHAR"
         ],
         [
-          "source_namespace",
-          "VARCHAR"
-        ],
-        [
-          "filing_key",
-          "VARCHAR"
-        ],
-        [
-          "filing_link_status",
-          "VARCHAR"
-        ],
-        [
-          "native_field_states_json",
+          "source_representation_role",
           "VARCHAR"
         ],
         [
           "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "source_namespace",
+          "VARCHAR"
+        ],
+        [
+          "source_pointer",
           "VARCHAR"
         ],
         [
@@ -36883,14 +37453,6 @@
           "VARCHAR"
         ],
         [
-          "election_year",
-          "VARCHAR"
-        ],
-        [
-          "report_year",
-          "VARCHAR"
-        ],
-        [
           "form_type",
           "VARCHAR"
         ],
@@ -36921,6 +37483,30 @@
         [
           "receipt_date",
           "DATE"
+        ],
+        [
+          "election_year",
+          "INTEGER"
+        ],
+        [
+          "report_year",
+          "INTEGER"
+        ],
+        [
+          "election_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "election_year_status",
+          "VARCHAR"
+        ],
+        [
+          "report_year_raw",
+          "VARCHAR"
+        ],
+        [
+          "report_year_status",
+          "VARCHAR"
         ]
       ],
       "publication": {
@@ -37367,7 +37953,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      ],
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_report_metrics",
@@ -38966,1481 +39553,6 @@
       ]
     },
     {
-      "tableId": "fec_research_context_dispositions",
-      "family": "fec-query",
-      "rows": 1517,
-      "schema": [
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_status",
-          "VARCHAR"
-        ],
-        [
-          "mapping_reason",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_fact_count",
-          "VARCHAR"
-        ],
-        [
-          "outputs_json",
-          "VARCHAR"
-        ]
-      ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:84beae61c60123900bb69c82a2f8a696ee91e84c9973568d287365c212fd5ab2",
-        "byteSize": 91123,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One explicit mapping disposition for a retained collection context.",
-      "dictionaryCoverage": "Sampled. Supported observations from selected retained source documentation, response, research and statistical contexts. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {},
-        "collectionLinks": {
-          "matchedRows": 1517,
-          "unmatchedRows": 0,
-          "totalRows": 1517,
-          "expectedRows": 1517,
-          "usedCollections": 1517,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 1517,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_ie": 4,
-            "fec_archive_quality": 1260,
-            "fec_access": 230,
-            "fec_agency_reports": 22,
-            "fec_reports": 1
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 1516,
-            "refused": 1
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": null,
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_research_context_dispositions.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 113,
-          "text": "\"fec_research_context_dispositions\": DISPOSITION_SCHEMA,"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_research_context_dispositions",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness."
-      ]
-    },
-    {
-      "tableId": "fec_research_document_observations",
-      "family": "fec-query",
-      "rows": 9493,
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "document_native_id",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "description",
-          "VARCHAR"
-        ],
-        [
-          "canonical_url",
-          "VARCHAR"
-        ],
-        [
-          "source_publisher",
-          "VARCHAR"
-        ],
-        [
-          "source_created_at",
-          "VARCHAR"
-        ],
-        [
-          "source_updated_at",
-          "VARCHAR"
-        ],
-        [
-          "original_extension",
-          "VARCHAR"
-        ],
-        [
-          "body_status",
-          "VARCHAR"
-        ],
-        [
-          "fec_relationship_status",
-          "VARCHAR"
-        ],
-        [
-          "native_metadata_json",
-          "VARCHAR"
-        ]
-      ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:e3d56e7018a759bed4dab7efdba7a224151ad417c4f89162c6e6b616e1fd038a",
-        "byteSize": 2213109,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One source document/case-reference metadata occurrence in retained context.",
-      "dictionaryCoverage": "Sampled. Supported observations from retained court-case/report references and third-party DocumentCloud metadata. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "date",
-          "fields": [
-            "source_created_at"
-          ],
-          "label": "Source created at",
-          "meaning": "Creation time stated by the research publisher; not a date of the underlying FEC event.",
-          "precision": "day or timestamp bucketed to month",
-          "conditions": "Valid ISO date/timestamp only; NULL/unparseable values stay unplaced.",
-          "probe": {
-            "kind": "structured-or-literal-probe",
-            "topValues": [
-              [
-                "2024-07-23T15:21:26.096Z",
-                18
-              ],
-              [
-                "2024-07-23T15:20:52.202Z",
-                17
-              ],
-              [
-                "2025-03-24T03:49:40.145Z",
-                15
-              ],
-              [
-                "2024-07-23T13:48:48.864Z",
-                15
-              ],
-              [
-                "2024-07-23T16:21:31.394Z",
-                14
-              ],
-              [
-                "2024-07-23T17:21:01.034Z",
-                14
-              ],
-              [
-                "2024-07-23T16:21:26.937Z",
-                14
-              ],
-              [
-                "2024-07-23T15:21:12.272Z",
-                13
-              ],
-              [
-                "2024-07-23T16:21:29.908Z",
-                13
-              ],
-              [
-                "2025-03-24T03:49:40.827Z",
-                13
-              ],
-              [
-                "2024-07-23T17:20:59.655Z",
-                12
-              ],
-              [
-                "2024-07-23T13:48:30.593Z",
-                12
-              ],
-              [
-                "2024-07-23T14:23:52.694Z",
-                12
-              ],
-              [
-                "2024-07-23T13:49:24.608Z",
-                11
-              ],
-              [
-                "2024-07-23T16:21:29.909Z",
-                11
-              ],
-              [
-                "2024-07-23T17:21:21.849Z",
-                11
-              ],
-              [
-                "2024-03-11T12:24:27.432Z",
-                11
-              ],
-              [
-                "2024-07-23T18:21:08.444Z",
-                11
-              ],
-              [
-                "2024-07-23T17:20:58.339Z",
-                11
-              ],
-              [
-                "2024-12-06T16:36:16.949Z",
-                11
-              ],
-              [
-                "2024-03-11T12:24:47.947Z",
-                11
-              ],
-              [
-                "2024-07-23T14:24:24.012Z",
-                11
-              ],
-              [
-                "2024-03-09T19:28:12.219Z",
-                10
-              ],
-              [
-                "2024-07-23T16:21:24.331Z",
-                10
-              ],
-              [
-                "2024-07-23T16:21:31.393Z",
-                10
-              ],
-              [
-                "2024-07-23T16:21:24.332Z",
-                10
-              ],
-              [
-                "2024-03-09T19:28:14.152Z",
-                10
-              ],
-              [
-                "2024-07-23T13:48:32.175Z",
-                10
-              ],
-              [
-                "2024-07-23T14:23:38.216Z",
-                10
-              ],
-              [
-                "2024-07-23T17:20:59.656Z",
-                9
-              ],
-              [
-                "2024-07-23T17:21:21.848Z",
-                9
-              ],
-              [
-                "2024-07-23T15:21:27.648Z",
-                9
-              ],
-              [
-                "2025-03-24T03:49:40.146Z",
-                8
-              ],
-              [
-                "2024-07-23T13:49:24.607Z",
-                8
-              ],
-              [
-                "2024-07-23T14:10:31.476Z",
-                8
-              ],
-              [
-                "2024-12-06T16:36:13.468Z",
-                8
-              ],
-              [
-                "2025-03-24T03:49:40.828Z",
-                8
-              ],
-              [
-                "2024-07-23T15:21:12.273Z",
-                8
-              ],
-              [
-                "2024-07-23T16:21:26.938Z",
-                8
-              ],
-              [
-                "2024-05-03T16:22:10.758Z",
-                8
-              ],
-              [
-                "2024-07-23T14:24:24.011Z",
-                8
-              ],
-              [
-                "2024-07-23T13:49:26.016Z",
-                7
-              ],
-              [
-                "2024-12-06T16:36:10.692Z",
-                7
-              ],
-              [
-                "2024-04-12T14:19:36.505Z",
-                7
-              ],
-              [
-                "2024-04-26T16:21:45.826Z",
-                7
-              ],
-              [
-                "2023-08-29T20:37:54.694Z",
-                6
-              ],
-              [
-                "2024-07-23T13:48:30.594Z",
-                6
-              ],
-              [
-                "2024-07-23T17:20:58.340Z",
-                6
-              ],
-              [
-                "2024-07-23T14:24:07.319Z",
-                6
-              ],
-              [
-                "2024-12-06T16:36:10.693Z",
-                6
-              ],
-              [
-                "2024-07-23T14:23:38.215Z",
-                6
-              ],
-              [
-                "2025-03-24T03:44:03.857Z",
-                6
-              ],
-              [
-                "2025-03-24T05:22:13.987Z",
-                6
-              ],
-              [
-                "2026-09-01T00:26:03.765Z",
-                6
-              ],
-              [
-                "2024-04-12T14:19:36.504Z",
-                6
-              ],
-              [
-                "2024-07-23T14:23:39.468Z",
-                6
-              ],
-              [
-                "2024-05-03T16:22:10.757Z",
-                6
-              ],
-              [
-                "2024-07-23T15:21:27.647Z",
-                6
-              ],
-              [
-                "2024-03-09T19:28:14.153Z",
-                5
-              ],
-              [
-                "2025-03-24T03:44:03.856Z",
-                5
-              ],
-              [
-                "2024-04-26T16:21:41.880Z",
-                5
-              ],
-              [
-                "2025-03-24T03:49:38.090Z",
-                5
-              ],
-              [
-                "2024-03-09T19:28:08.948Z",
-                5
-              ],
-              [
-                "2024-07-23T14:24:25.222Z",
-                5
-              ],
-              [
-                "2023-11-02T21:52:37.737Z",
-                5
-              ],
-              [
-                "2024-04-26T16:21:45.825Z",
-                5
-              ],
-              [
-                "2024-11-25T15:59:37.429Z",
-                5
-              ],
-              [
-                "2026-09-01T00:26:03.766Z",
-                5
-              ],
-              [
-                "2026-09-01T00:26:02.551Z",
-                5
-              ],
-              [
-                "2024-05-03T16:22:12.580Z",
-                5
-              ],
-              [
-                "2024-07-23T15:20:53.621Z",
-                4
-              ],
-              [
-                "2024-12-06T16:36:16.950Z",
-                4
-              ],
-              [
-                "2024-07-23T17:21:01.035Z",
-                4
-              ],
-              [
-                "2017-07-25T18:52:53.788Z",
-                4
-              ],
-              [
-                "2019-12-09T14:33:35.069Z",
-                4
-              ],
-              [
-                "2013-12-06T19:34:39.616Z",
-                4
-              ],
-              [
-                "2021-11-12T15:12:57.074Z",
-                4
-              ],
-              [
-                "2015-07-15T14:07:48.173Z",
-                4
-              ],
-              [
-                "2015-08-04T20:37:35.374Z",
-                4
-              ],
-              [
-                "2024-03-11T12:24:27.434Z",
-                4
-              ],
-              [
-                "2024-07-23T13:48:17.079Z",
-                4
-              ],
-              [
-                "2016-01-02T05:00:36.344Z",
-                4
-              ],
-              [
-                "2024-07-23T14:23:39.469Z",
-                4
-              ],
-              [
-                "2024-07-23T13:49:05.710Z",
-                4
-              ],
-              [
-                "2025-03-24T03:54:14.070Z",
-                4
-              ],
-              [
-                "2021-02-12T22:35:00.806Z",
-                4
-              ],
-              [
-                "2019-07-23T15:49:31.627Z",
-                4
-              ],
-              [
-                "2020-05-27T14:33:02.150Z",
-                4
-              ],
-              [
-                "2024-12-06T16:36:13.467Z",
-                4
-              ],
-              [
-                "2024-07-23T14:23:26.837Z",
-                4
-              ],
-              [
-                "2026-07-17T16:48:15.212Z",
-                4
-              ],
-              [
-                "2019-07-29T14:33:55.182Z",
-                4
-              ],
-              [
-                "2015-07-15T14:07:46.941Z",
-                4
-              ],
-              [
-                "2020-01-06T14:38:25.359Z",
-                4
-              ],
-              [
-                "2024-02-17T00:37:07.586Z",
-                4
-              ],
-              [
-                "2026-09-01T00:26:02.552Z",
-                4
-              ],
-              [
-                "2015-07-15T14:07:46.628Z",
-                4
-              ],
-              [
-                "2024-03-11T12:24:30.585Z",
-                4
-              ],
-              [
-                "2015-08-31T20:00:32.982Z",
-                4
-              ],
-              [
-                "2016-01-02T05:06:36.954Z",
-                4
-              ],
-              [
-                "2016-04-06T15:36:07.188Z",
-                4
-              ],
-              [
-                "2015-08-31T20:00:01.195Z",
-                4
-              ],
-              [
-                "2024-07-23T15:20:52.201Z",
-                4
-              ],
-              [
-                "2021-03-02T15:59:28.541Z",
-                4
-              ],
-              [
-                "2019-12-16T19:44:47.150Z",
-                4
-              ],
-              [
-                "2024-03-13T16:43:54.823Z",
-                4
-              ],
-              [
-                "2019-03-01T18:47:16.658Z",
-                4
-              ],
-              [
-                "2015-07-30T15:54:24.242Z",
-                4
-              ],
-              [
-                "2025-03-24T05:28:06.403Z",
-                4
-              ],
-              [
-                "2021-02-16T18:38:43.228Z",
-                4
-              ],
-              [
-                "2022-05-16T19:22:32.685Z",
-                4
-              ],
-              [
-                "2025-03-24T05:21:41.559Z",
-                3
-              ],
-              [
-                "2021-04-12T16:36:34.549Z",
-                3
-              ],
-              [
-                "2024-07-23T16:21:24.330Z",
-                3
-              ],
-              [
-                "2026-07-09T19:06:07.911Z",
-                3
-              ],
-              [
-                "2024-06-05T12:48:05.662Z",
-                3
-              ],
-              [
-                "2023-09-15T20:05:51.808Z",
-                3
-              ],
-              [
-                "2025-03-24T03:54:14.069Z",
-                3
-              ],
-              [
-                "2021-03-05T20:34:36.453Z",
-                3
-              ],
-              [
-                "2022-08-22T09:40:05.784Z",
-                3
-              ]
-            ],
-            "coveredRows": 807,
-            "completeDistinct": false
-          }
-        },
-        {
-          "kind": "date",
-          "fields": [
-            "source_updated_at"
-          ],
-          "label": "Source updated at",
-          "meaning": "Update time stated by the research publisher; not a current-version selection rule.",
-          "precision": "day or timestamp bucketed to month",
-          "conditions": "Valid ISO date/timestamp only; NULL/unparseable values stay unplaced.",
-          "probe": {
-            "kind": "structured-or-literal-probe",
-            "topValues": [
-              [
-                "2024-07-24T18:17:11.143Z",
-                460
-              ],
-              [
-                "2023-05-06T17:45:55.710Z",
-                20
-              ],
-              [
-                "2024-04-29T19:19:59.395Z",
-                14
-              ],
-              [
-                "2023-05-06T17:19:23.934Z",
-                11
-              ],
-              [
-                "2024-07-25T16:29:07.776Z",
-                10
-              ],
-              [
-                "2023-05-06T17:05:39.658Z",
-                10
-              ],
-              [
-                "2025-05-06T05:17:53.701Z",
-                9
-              ],
-              [
-                "2023-05-06T17:15:10.665Z",
-                9
-              ],
-              [
-                "2023-09-19T16:28:09.337Z",
-                8
-              ],
-              [
-                "2023-05-06T17:16:06.793Z",
-                7
-              ],
-              [
-                "2025-11-28T12:30:35.495Z",
-                7
-              ],
-              [
-                "2023-09-19T16:36:47.697Z",
-                7
-              ],
-              [
-                "2023-05-06T17:17:14.086Z",
-                7
-              ],
-              [
-                "2023-05-06T17:39:21.497Z",
-                6
-              ],
-              [
-                "2023-05-06T17:14:37.990Z",
-                6
-              ],
-              [
-                "2023-05-06T17:20:26.658Z",
-                6
-              ],
-              [
-                "2023-05-06T17:15:23.073Z",
-                6
-              ],
-              [
-                "2020-11-10T19:07:59.556Z",
-                6
-              ],
-              [
-                "2020-12-15T17:04:44.588Z",
-                6
-              ],
-              [
-                "2023-05-06T17:21:19.308Z",
-                5
-              ],
-              [
-                "2021-12-22T00:02:32.410Z",
-                5
-              ],
-              [
-                "2020-12-15T17:04:39.758Z",
-                5
-              ],
-              [
-                "2023-02-03T21:58:17.679Z",
-                5
-              ],
-              [
-                "2026-02-14T08:04:00.012Z",
-                5
-              ],
-              [
-                "2023-05-06T17:15:37.502Z",
-                5
-              ],
-              [
-                "2023-05-06T17:21:57.913Z",
-                5
-              ],
-              [
-                "2023-05-06T17:11:05.791Z",
-                5
-              ],
-              [
-                "2020-12-15T17:03:51.736Z",
-                5
-              ],
-              [
-                "2020-12-15T17:03:46.150Z",
-                5
-              ],
-              [
-                "2020-11-10T19:07:59.555Z",
-                4
-              ],
-              [
-                "2023-05-06T17:16:47.062Z",
-                4
-              ],
-              [
-                "2021-01-13T01:31:19.997Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:41.905Z",
-                4
-              ],
-              [
-                "2024-04-05T15:49:16.684Z",
-                4
-              ],
-              [
-                "2020-11-10T19:07:56.050Z",
-                4
-              ],
-              [
-                "2022-07-06T00:05:43.277Z",
-                4
-              ],
-              [
-                "2020-11-11T21:56:56.008Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:39.637Z",
-                4
-              ],
-              [
-                "2021-01-13T01:43:12.562Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:41.917Z",
-                4
-              ],
-              [
-                "2021-01-13T01:00:20.715Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:37.168Z",
-                4
-              ],
-              [
-                "2021-01-13T01:07:37.693Z",
-                4
-              ],
-              [
-                "2020-12-22T21:28:24.878Z",
-                4
-              ],
-              [
-                "2021-01-13T01:00:25.771Z",
-                4
-              ],
-              [
-                "2020-11-11T21:57:11.411Z",
-                4
-              ],
-              [
-                "2025-01-06T09:26:15.022Z",
-                4
-              ],
-              [
-                "2021-02-12T22:36:07.180Z",
-                4
-              ],
-              [
-                "2021-01-13T00:57:57.820Z",
-                4
-              ],
-              [
-                "2020-11-11T21:56:56.001Z",
-                4
-              ],
-              [
-                "2021-01-13T01:11:28.154Z",
-                4
-              ],
-              [
-                "2021-01-13T01:19:40.885Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:54.301Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:37.213Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:37.179Z",
-                4
-              ],
-              [
-                "2021-01-13T00:56:01.016Z",
-                4
-              ],
-              [
-                "2021-02-16T18:39:53.558Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:41.910Z",
-                4
-              ],
-              [
-                "2021-01-13T01:46:27.465Z",
-                4
-              ],
-              [
-                "2021-01-13T01:40:35.222Z",
-                4
-              ],
-              [
-                "2020-12-15T17:03:46.151Z",
-                4
-              ],
-              [
-                "2020-12-11T16:04:16.330Z",
-                4
-              ],
-              [
-                "2022-05-16T19:22:41.152Z",
-                4
-              ],
-              [
-                "2021-01-13T01:44:27.606Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:37.160Z",
-                4
-              ],
-              [
-                "2021-01-13T01:23:23.207Z",
-                4
-              ],
-              [
-                "2020-12-22T21:26:13.360Z",
-                4
-              ],
-              [
-                "2025-01-06T09:26:13.825Z",
-                4
-              ],
-              [
-                "2023-05-06T17:13:16.695Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:41.913Z",
-                4
-              ],
-              [
-                "2021-01-13T00:55:36.481Z",
-                4
-              ],
-              [
-                "2021-01-13T01:09:19.993Z",
-                4
-              ],
-              [
-                "2020-09-24T13:24:49.384Z",
-                4
-              ],
-              [
-                "2021-03-02T18:14:11.230Z",
-                4
-              ],
-              [
-                "2021-11-12T15:13:27.296Z",
-                4
-              ],
-              [
-                "2020-11-10T20:20:37.183Z",
-                4
-              ],
-              [
-                "2026-07-17T16:52:01.480Z",
-                4
-              ],
-              [
-                "2020-11-05T16:53:43.743Z",
-                4
-              ],
-              [
-                "2020-11-11T21:56:56.012Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.201Z",
-                3
-              ],
-              [
-                "2020-11-10T19:08:00.591Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:39.803Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:54.230Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:54.305Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:48.805Z",
-                3
-              ],
-              [
-                "2024-07-02T02:08:32.050Z",
-                3
-              ],
-              [
-                "2020-11-11T21:56:56.010Z",
-                3
-              ],
-              [
-                "2020-12-15T17:03:19.759Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:54.304Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:41.923Z",
-                3
-              ],
-              [
-                "2020-11-10T19:08:00.597Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.145Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:41.909Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:48.711Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:48.733Z",
-                3
-              ],
-              [
-                "2020-11-10T19:08:00.596Z",
-                3
-              ],
-              [
-                "2020-11-11T21:56:56.002Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:39.636Z",
-                3
-              ],
-              [
-                "2020-11-09T16:12:25.652Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:41.882Z",
-                3
-              ],
-              [
-                "2020-11-10T19:08:00.592Z",
-                3
-              ],
-              [
-                "2020-10-21T13:51:13.476Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:48.772Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.269Z",
-                3
-              ],
-              [
-                "2020-11-11T21:56:55.997Z",
-                3
-              ],
-              [
-                "2020-12-15T17:04:25.482Z",
-                3
-              ],
-              [
-                "2020-11-11T21:56:56.023Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.165Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.211Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.225Z",
-                3
-              ],
-              [
-                "2020-11-10T19:08:00.595Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.182Z",
-                3
-              ],
-              [
-                "2020-11-11T21:56:56.016Z",
-                3
-              ],
-              [
-                "2023-05-06T18:00:39.808Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:37.229Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:39.730Z",
-                3
-              ],
-              [
-                "2021-01-11T19:45:03.420Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:39.748Z",
-                3
-              ],
-              [
-                "2020-11-10T20:20:39.660Z",
-                3
-              ],
-              [
-                "2025-03-04T22:14:55.946Z",
-                3
-              ]
-            ],
-            "coveredRows": 987,
-            "completeDistinct": false
-          }
-        },
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {},
-        "collectionLinks": {
-          "matchedRows": 9493,
-          "unmatchedRows": 0,
-          "totalRows": 9493,
-          "expectedRows": 9493,
-          "usedCollections": 380,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 9493,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_archive_quality": 9493
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 380
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": null,
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_research_document_observations.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 111,
-          "text": "\"fec_research_document_observations\": RESEARCH_DOCUMENT_SCHEMA,"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_research_document_observations",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness."
-      ]
-    },
-    {
-      "tableId": "fec_research_filing_feed_items",
-      "family": "fec-query",
-      "rows": 794,
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "link",
-          "VARCHAR"
-        ],
-        [
-          "guid",
-          "VARCHAR"
-        ],
-        [
-          "published_at_raw",
-          "VARCHAR"
-        ],
-        [
-          "description",
-          "VARCHAR"
-        ],
-        [
-          "native_fields_json",
-          "VARCHAR"
-        ],
-        [
-          "source_parts_json",
-          "VARCHAR"
-        ],
-        [
-          "current_record_status",
-          "VARCHAR"
-        ]
-      ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:e5a0c8ce6d3c80f64c6ed4c72a2f4b280b8d41a075ca4ec40b5504ad337683d0",
-        "byteSize": 145187,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One RSS item occurrence in a captured source feed.",
-      "dictionaryCoverage": "Sampled. Supported observations from retained FEC filing RSS item metadata. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "date",
-          "fields": [
-            "published_at_raw"
-          ],
-          "label": "Feed publication date",
-          "meaning": "Timestamp of the retained feed item, not a filing receipt date or report period.",
-          "precision": "RFC 2822 timestamp",
-          "conditions": "Use a strict RFC 2822 parser, retaining malformed dates as unplaced. These selected feeds do not establish full filing history.",
-          "probe": {
-            "parser": "RFC 2822 email.utils.parsedate_to_datetime",
-            "buckets": {
-              "2026-09": 794
-            },
-            "unplacedRows": 0,
-            "totalRows": 794
-          }
-        },
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {},
-        "collectionLinks": {
-          "matchedRows": 794,
-          "unmatchedRows": 0,
-          "totalRows": 794,
-          "expectedRows": 794,
-          "usedCollections": 9,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 794,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_access": 794
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 9
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": {
-          "published_at_raw": {
-            "parser": "RFC 2822 email.utils.parsedate_to_datetime",
-            "buckets": {
-              "2026-09": 794
-            },
-            "unplacedRows": 0,
-            "totalRows": 794
-          }
-        },
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_research_filing_feed_items.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 108,
-          "text": "\"fec_research_filing_feed_items\": RSS_SCHEMA,"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_research_filing_feed_items",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness."
-      ]
-    },
-    {
       "tableId": "fec_research_meeting_observations",
       "family": "fec-query",
       "rows": 60,
@@ -40470,14 +39582,6 @@
           "VARCHAR"
         ],
         [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
           "observed_at_json",
           "VARCHAR"
         ],
@@ -40503,10 +39607,6 @@
         ],
         [
           "links_json",
-          "VARCHAR"
-        ],
-        [
-          "native_cells_json",
           "VARCHAR"
         ],
         [
@@ -40770,615 +39870,8 @@
       "limitations": [
         "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
         "No selected-source count or date bucket establishes all-history completeness."
-      ]
-    },
-    {
-      "tableId": "fec_research_response_outcomes",
-      "family": "fec-query",
-      "rows": 42,
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "profile_refusal",
-          "VARCHAR"
-        ],
-        [
-          "query_completeness",
-          "VARCHAR"
-        ],
-        [
-          "payload_shape",
-          "VARCHAR"
-        ],
-        [
-          "outcome_status",
-          "VARCHAR"
-        ],
-        [
-          "native_payload_json",
-          "VARCHAR"
-        ],
-        [
-          "observed_payload_records",
-          "INTEGER"
-        ]
       ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:283b39235c50414b47f91f0afb03288cfcbe036f23ad6e9c1799801ece1b1b40",
-        "byteSize": 20279,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One retained response/context outcome observation.",
-      "dictionaryCoverage": "Sampled. Supported observations from selected rejected, empty or otherwise limited OpenFEC contexts. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "request-outcome",
-          "fields": [
-            "outcome_status",
-            "profile_refusal",
-            "query_completeness",
-            "observed_payload_records"
-          ],
-          "label": "Retained request results",
-          "meaning": "Retained query-result dispositions. Zero observed records alone never qualifies successful empty response.",
-          "conditions": "Preserve refusal reason and exact request filters/capture; 42 current observations unqualified.",
-          "probe": [
-            [
-              "refused_native_observation_not_qualified_empty_success",
-              "retained observation timestamp missing",
-              "not-asserted",
-              0,
-              6
-            ],
-            [
-              "refused_native_observation_not_qualified_empty_success",
-              "retained observation timestamp missing",
-              "not-asserted",
-              null,
-              1
-            ],
-            [
-              "refused_native_observation_not_qualified_empty_success",
-              "capture explicitly records HTTP refusal",
-              "not-asserted",
-              null,
-              8
-            ],
-            [
-              "refused_native_observation_not_qualified_empty_success",
-              "FEC credentials must be supplied separately, never in a URL",
-              "not-asserted",
-              1,
-              27
-            ]
-          ]
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {},
-        "collectionLinks": {
-          "matchedRows": 42,
-          "unmatchedRows": 0,
-          "totalRows": 42,
-          "expectedRows": 42,
-          "usedCollections": 42,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 42,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_access": 42
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 42
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": null,
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_research_response_outcomes.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 107,
-          "text": "\"fec_research_response_outcomes\": RESPONSE_SCHEMA,"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_research_response_outcomes",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness."
-      ]
-    },
-    {
-      "tableId": "fec_research_source_pages",
-      "family": "fec-query",
-      "rows": 30,
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "page_type",
-          "VARCHAR"
-        ],
-        [
-          "title",
-          "VARCHAR"
-        ],
-        [
-          "text",
-          "VARCHAR"
-        ],
-        [
-          "content_scope",
-          "VARCHAR"
-        ],
-        [
-          "links_json",
-          "VARCHAR"
-        ],
-        [
-          "times_json",
-          "VARCHAR"
-        ],
-        [
-          "headings_json",
-          "VARCHAR"
-        ]
-      ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:8c7809c596f1a8c8b12fda7b4dd1732497e77785ed169827fa16f3f2e3a85e09",
-        "byteSize": 77979,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One supported source-documentation page observation from retained context.",
-      "dictionaryCoverage": "Sampled. Supported observations from retained form pages and other useful structured source documentation. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {},
-        "collectionLinks": {
-          "matchedRows": 30,
-          "unmatchedRows": 0,
-          "totalRows": 30,
-          "expectedRows": 30,
-          "usedCollections": 30,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 30,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_access": 25,
-            "fec_archive_quality": 1,
-            "fec_agency_reports": 4
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 30
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": null,
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_research_source_pages.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 106,
-          "text": "\"fec_research_source_pages\": SOURCE_PAGE_SCHEMA,"
-        },
-        {
-          "path": "src/spicy_regs/transforms/fec_identity_receipts.py",
-          "line": 131,
-          "text": "if table == \"fec_research_source_pages\" and row.get(\"content_status\") != \"body_extracted\":"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_research_source_pages",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness.",
-        "times_json holds arbitrary native page time elements; they do not establish when the page or its subject data was published. Use selected page inventory and capture freshness."
-      ]
-    },
-    {
-      "tableId": "fec_retained_csv_observations",
-      "family": "fec-query",
-      "rows": 33,
-      "schema": [
-        [
-          "record_id",
-          "VARCHAR"
-        ],
-        [
-          "mapping_version",
-          "VARCHAR"
-        ],
-        [
-          "collection_id",
-          "VARCHAR"
-        ],
-        [
-          "source_authority",
-          "VARCHAR"
-        ],
-        [
-          "source_url",
-          "VARCHAR"
-        ],
-        [
-          "source_sha256",
-          "VARCHAR"
-        ],
-        [
-          "context_sha256",
-          "VARCHAR"
-        ],
-        [
-          "source_context_pointer",
-          "VARCHAR"
-        ],
-        [
-          "observed_at_json",
-          "VARCHAR"
-        ],
-        [
-          "observation_type",
-          "VARCHAR"
-        ],
-        [
-          "reporting_committee_id",
-          "VARCHAR"
-        ],
-        [
-          "reporting_committee_name",
-          "VARCHAR"
-        ],
-        [
-          "counterparty_name",
-          "VARCHAR"
-        ],
-        [
-          "transaction_id",
-          "VARCHAR"
-        ],
-        [
-          "native_sub_id",
-          "VARCHAR"
-        ],
-        [
-          "amount_raw",
-          "VARCHAR"
-        ],
-        [
-          "amount_status",
-          "VARCHAR"
-        ],
-        [
-          "date_raw",
-          "VARCHAR"
-        ],
-        [
-          "date_status",
-          "VARCHAR"
-        ],
-        [
-          "native_fields_json",
-          "VARCHAR"
-        ],
-        [
-          "native_row_locator_json",
-          "VARCHAR"
-        ],
-        [
-          "coverage_status",
-          "VARCHAR"
-        ],
-        [
-          "current_total_status",
-          "VARCHAR"
-        ],
-        [
-          "amount",
-          "DECIMAL(38,9)"
-        ],
-        [
-          "reported_date",
-          "DATE"
-        ],
-        [
-          "source_row_ordinal",
-          "INTEGER"
-        ]
-      ],
-      "publication": {
-        "artifact": "https://data.spicygov.ai/generations/fec-query/784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300/artifact.json",
-        "tableSha256": "sha256:90ff31d04d4839ba969fa41c502d4032af0eaaae9469d9d06e9b57bbe9f505bb",
-        "byteSize": 29320,
-        "members": null,
-        "artifactGeneration": "784b23da0ea9ee7807e09715d38508cd8e0cd654af1047ae6a5b1fc63efb7300",
-        "collectionInput": {
-          "url": "https://data.spicygov.ai/generations/fec-observations/9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0/fec_collections.parquet",
-          "sha256": "sha256:d4dc3c8e71800fef6599d676b9b5ee2843d829eebc887d59d4bf500476f7d5b0",
-          "generation": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-          "rows": 9178,
-          "owner": "https://data.spicygov.ai/generations/fec-query/d76de786fccdd502efc8f20b65cc38863cce0084defad63770fb1f2b997a3153/artifact.json"
-        }
-      },
-      "grain": "One physical CSV row exposed by retained collection context.",
-      "dictionaryCoverage": "Sampled. Supported observations from supported retained CSV context rows with exact native fields and addresses. The retained selection is explicit in fec_collections and its source-generation evidence; this declaration does not establish complete FEC history or current publication.",
-      "recommendedDimensions": [
-        {
-          "kind": "date",
-          "fields": [
-            "reported_date"
-          ],
-          "label": "Reported date",
-          "meaning": "Date parsed from the date stated for this historical/context observation. NULL requires the source value and conversion status; capture time is not substituted.",
-          "precision": "day or timestamp bucketed to month",
-          "conditions": "Valid ISO date/timestamp only; NULL/unparseable values stay unplaced.",
-          "probe": {
-            "kind": "month",
-            "buckets": {
-              "2019-03": 1,
-              "2019-09": 3,
-              "2019-07": 2,
-              "2020-05": 1,
-              "2024-11": 3,
-              "2024-02": 3,
-              "2024-05": 1,
-              "2023-12": 5,
-              "2024-08": 1,
-              "2023-11": 1,
-              "2019-06": 3,
-              "2019-04": 1,
-              "2024-12": 1,
-              "2024-01": 5,
-              "2024-10": 2
-            },
-            "unplacedRows": 0,
-            "totalRows": 33,
-            "precision": "ISO date/timestamp only"
-          }
-        },
-        {
-          "kind": "collection-scope",
-          "fields": [
-            "collection_id"
-          ],
-          "label": "Selected source scope",
-          "meaning": "Exact retained collection/request bounds and dispositions, separately from the date of a returned record. Capture timestamps describe freshness only.",
-          "precision": "explicit bulk-directory cycle, tableFieldMapping cycle, literal query filters and selected member bounds; unknown when unstated",
-          "inheritance": {
-            "parent": "fec_collections",
-            "sourceGeneration": "sha256:9c289dfec822ff7e54f9d5719276579452a7b35cad573e701a51e0a15c2a06c0",
-            "generationPolicy": "Per-witness sealed pin for evidence; explicit source_generation_pin must equal selected parent for other pinned rows; otherwise producing release parent after carried-forward resolution.",
-            "keys": [
-              "collection_id"
-            ],
-            "conditions": "Parent collection IDs unique, selected artifact and member hashes/counts bound. Keep unmatched rows and missing scope visible; no-row attempts only through exact producer selection, not emitted rows."
-          }
-        },
-        {
-          "kind": "snapshot",
-          "fields": [],
-          "label": "Selected release",
-          "meaning": "This coverage refers to the exact published table bytes and selected inputs. It is not the date range of source records.",
-          "conditions": "Invalidate if publication artifact, schema, member hash/row count or producing-release input pins differ."
-        }
-      ],
-      "nonTemporalReason": null,
-      "probes": {
-        "status": "complete",
-        "direct": {
-          "reported_date": {
-            "kind": "month",
-            "buckets": {
-              "2019-03": 1,
-              "2019-09": 3,
-              "2019-07": 2,
-              "2020-05": 1,
-              "2024-11": 3,
-              "2024-02": 3,
-              "2024-05": 1,
-              "2023-12": 5,
-              "2024-08": 1,
-              "2023-11": 1,
-              "2019-06": 3,
-              "2019-04": 1,
-              "2024-12": 1,
-              "2024-01": 5,
-              "2024-10": 2
-            },
-            "unplacedRows": 0,
-            "totalRows": 33,
-            "precision": "ISO date/timestamp only"
-          }
-        },
-        "collectionLinks": {
-          "matchedRows": 33,
-          "unmatchedRows": 0,
-          "totalRows": 33,
-          "expectedRows": 33,
-          "usedCollections": 3,
-          "bulkOrExplicitMappingCycleRows": {},
-          "rowsWithNoSingleCollectionCycle": 33,
-          "ambiguousCycleRows": 0,
-          "sourceFamilyRows": {
-            "fec_archive_quality": 33
-          },
-          "outcomesOfUsedCollections": {
-            "selection_context": 3
-          },
-          "limits": "These are emitted-row links. This summary does not assign zero-output attempts to this table and does not verify original source bytes or every per-witness locator."
-        },
-        "special": null,
-        "inheritance": null,
-        "rawPath": "/tmp/spicygov-coverage-audit-20261005/fec/fec_retained_csv_observations.json"
-      },
-      "producerReferences": [
-        {
-          "path": "src/spicy_regs/transforms/fec_research_context.py",
-          "line": 110,
-          "text": "\"fec_retained_csv_observations\": CSV_SCHEMA,"
-        }
-      ],
-      "dictionaryReference": {
-        "snapshot": "explorer-metadata.v1.json",
-        "table": "fec_retained_csv_observations",
-        "sourceRevision": "d18bd17cf3fcfe648f51cff22c6b0cc21ec5a8ce"
-      },
-      "limitations": [
-        "Current source schema is authoritative; newer local producer receipt layout cannot be assumed published.",
-        "No selected-source count or date bucket establishes all-history completeness."
-      ]
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Aligned schema to sealed 50-table fec-query cutover generation sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816 (with pre-cutover publishedSchema preserved for seamless transition); reviewed coverage dimensions remain valid across both schemas."
     },
     {
       "tableId": "fec_source_catalog",
@@ -44143,7 +42636,7 @@
           "id": "retained-snapshot",
           "kind": "snapshot",
           "label": "Retained committee profile snapshot",
-          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "meaning": "Explicit retained OpenFEC committee pages (27,763 rows in live generation sha256:6b4677f0); does not establish a full committee census or relationship effective dates.",
           "fields": []
         }
       ],
@@ -44179,20 +42672,20 @@
           "id": "retained-snapshot",
           "kind": "snapshot",
           "label": "Retained committee profile snapshot",
-          "meaning": "Explicit retained OpenFEC committee pages (200 rows); does not establish a full committee census or relationship effective dates.",
+          "meaning": "Explicit retained OpenFEC committee pages (27,763 rows in live generation sha256:6b4677f0); does not establish a full committee census or relationship effective dates.",
           "fields": []
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
-        "publishedAt": "2026-11-27T02:55:53Z",
-        "rows": 200,
-        "byteSize": 63763,
-        "memberSha256": "sha256:6e7b1b855d2877e4ce41110db0b6b1afe886da65893bd3ea8f2105a7f90a6396",
-        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (200 retained committee profiles)."
+        "artifactDigest": "sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b196c33a313a28ce917d33032a4840af6e71684987a5886952ef9ac87b5662c2",
+        "publishedAt": "2026-11-27T22:45:28Z",
+        "rows": 27763,
+        "byteSize": 6658656,
+        "memberSha256": "sha256:85efd14ed5000f1a7a0ed1941f90d14af4f60aa911c75194f5db1b03bd6a618b",
+        "qualification": "Live R2 fec-research-profiles generation sha256:6b4677f0 verified (27,763 rows: P 11,491, U 10,846, J 1,918, B 1,692, D 1,050, A 748, NULL 18; policy fec-disclosed-relationships/1)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+      "reviewNote": "2026-11-28 (ss-44um): Verified coverage definition and refreshed review evidence against live fec-research-profiles generation sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c."
     },
     {
       "tableId": "fec_contribution_profiles",
@@ -44390,15 +42883,15 @@
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
-        "publishedAt": "2026-11-27T02:55:53Z",
-        "rows": 2,
-        "byteSize": 21753,
-        "memberSha256": "sha256:b2bff581af960771aa542c76fcaa325168658c706cb095d4fbd9bb7b1a92181b",
-        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (2 reconciled contribution-family profiles)."
+        "artifactDigest": "sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b196c33a313a28ce917d33032a4840af6e71684987a5886952ef9ac87b5662c2",
+        "publishedAt": "2026-11-27T22:45:28Z",
+        "rows": 18,
+        "byteSize": 28862,
+        "memberSha256": "sha256:4fcbdf0eb2dde82a3ca04eb1bb368dc427985fc0b6f6406033668915bb35b7af",
+        "qualification": "Live R2 fec-research-profiles generation sha256:6b4677f0 verified (18 profiles across cycles 2022, 2024, 2026: 9 individual and 9 pac; reconciled to official selected reports)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+      "reviewNote": "2026-11-28 (ss-44um): Verified coverage definition and refreshed review evidence against live fec-research-profiles generation sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c."
     },
     {
       "tableId": "fec_contribution_decisions",
@@ -44628,15 +43121,15 @@
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
-        "publishedAt": "2026-11-27T02:55:53Z",
-        "rows": 404,
-        "byteSize": 99391,
-        "memberSha256": "sha256:0a285018e68dd081d9a5bfdcb23e6d75fcf6b1ebbd842a41205e5f9cc031e7ca",
-        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (404 contribution decisions)."
+        "artifactDigest": "sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b196c33a313a28ce917d33032a4840af6e71684987a5886952ef9ac87b5662c2",
+        "publishedAt": "2026-11-27T22:45:28Z",
+        "rows": 30335,
+        "byteSize": 5556913,
+        "memberSha256": "sha256:72236095a54801836abc06cf5a97b76b22a55dc6d6e2796cdee9f8b2ded5a82d",
+        "qualification": "Live R2 fec-research-profiles generation sha256:6b4677f0 verified (30,335 observations across cycles 2022, 2024, 2026: 30,225 included, 110 excluded; 30,317 within_report_coverage, 18 outside_report_coverage)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+      "reviewNote": "2026-11-28 (ss-44um): Verified coverage definition and refreshed review evidence against live fec-research-profiles generation sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c."
     },
     {
       "tableId": "fec_outside_spending_profiles",
@@ -44794,15 +43287,15 @@
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
-        "publishedAt": "2026-11-27T02:55:53Z",
-        "rows": 2,
-        "byteSize": 12501,
-        "memberSha256": "sha256:15683f223f2411e0e3351e20729962e1f803681a3815ed3fd410462d6ae30842",
-        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (2 candidate outside-spending profiles)."
+        "artifactDigest": "sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b196c33a313a28ce917d33032a4840af6e71684987a5886952ef9ac87b5662c2",
+        "publishedAt": "2026-11-27T22:45:28Z",
+        "rows": 98,
+        "byteSize": 25404,
+        "memberSha256": "sha256:d52b3eba659d31603099ab5e1867c00c5c4d7411326c0b9aa6aabc476127543c",
+        "qualification": "Live R2 fec-research-profiles generation sha256:6b4677f0 verified (98 candidate/cycle/support-oppose profiles across cycles 2020, 2022, 2024, 2026: 50 S and 48 O)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+      "reviewNote": "2026-11-28 (ss-44um): Verified coverage definition and refreshed review evidence against live fec-research-profiles generation sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c."
     },
     {
       "tableId": "fec_outside_spending_spenders",
@@ -44968,15 +43461,15 @@
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:6b6d5422e52ffa5866f2a7f90c0f06ac02cc1aae7913179f865d29a684e6611f",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:bc6562229e7006734f38200c307786118085a4c1b60718d45af6d8e7c2dd0223",
-        "publishedAt": "2026-11-27T02:55:53Z",
-        "rows": 73,
-        "byteSize": 17891,
-        "memberSha256": "sha256:a08dbc0d93f57b5a5d8554cd3bf083c228f8092b9352cd91ca072aacdc18fa4d",
-        "qualification": "Live R2 fec-research-profiles generation Parquet verified against publication.v2.json (73 spender totals)."
+        "artifactDigest": "sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:b196c33a313a28ce917d33032a4840af6e71684987a5886952ef9ac87b5662c2",
+        "publishedAt": "2026-11-27T22:45:28Z",
+        "rows": 2401,
+        "byteSize": 159446,
+        "memberSha256": "sha256:e56916e329badc965056d09e593db0e9911ebb2405182a1964fce4a914028d7c",
+        "qualification": "Live R2 fec-research-profiles generation sha256:6b4677f0 verified (2,401 spender rows across cycles 2020, 2022, 2024, 2026: 1,998 fec_committee and 403 fec_form5_filer; 1,658 S and 743 O)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-research-profiles generation Parquet."
+      "reviewNote": "2026-11-28 (ss-44um): Verified coverage definition and refreshed review evidence against live fec-research-profiles generation sha256:6b4677f09c6ad760e9638400f3f87c58bd09640b0f254cf685552877a1b5ba1c."
     },
     {
       "tableId": "fec_election_results",
@@ -45011,11 +43504,19 @@
           "VARCHAR"
         ],
         [
+          "office",
+          "VARCHAR"
+        ],
+        [
           "state",
           "VARCHAR"
         ],
         [
           "state_raw",
+          "VARCHAR"
+        ],
+        [
+          "district",
           "VARCHAR"
         ],
         [
@@ -45108,17 +43609,26 @@
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "meaning": "Federal election cycle of the reviewed official FEC Federal Elections workbook editions (2016–2024 Presidential; 2016–2022 U.S. Senate and U.S. House).",
           "fields": [
             "source_cycle"
           ],
           "syntax": "year"
         },
         {
+          "id": "office",
+          "kind": "category",
+          "label": "Federal office",
+          "meaning": "Federal office contested (president, senate, or house) across reviewed official FEC Federal Elections workbook editions.",
+          "fields": [
+            "office"
+          ]
+        },
+        {
           "id": "stage-and-basis",
           "kind": "category",
           "label": "Election stage and vote basis",
-          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total, electoral_vote).",
           "fields": [
             "stage",
             "vote_basis"
@@ -45128,7 +43638,7 @@
           "id": "row-kind",
           "kind": "category",
           "label": "Workbook row kind",
-          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "meaning": "Role of each workbook row (candidate, party_total, contest_total, state_total, or national_total).",
           "fields": [
             "row_kind"
           ]
@@ -45145,8 +43655,8 @@
         {
           "id": "seat-term",
           "kind": "category",
-          "label": "Senate seat term",
-          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "label": "Seat term",
+          "meaning": "Whether the contest was for a full term, an unexpired term, or not_applicable (e.g. Presidential rows).",
           "fields": [
             "seat_term"
           ]
@@ -45157,17 +43667,26 @@
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the reviewed official FEC Federal Elections workbook edition (2022 Senate sheet).",
+          "meaning": "Federal election cycle of the reviewed official FEC Federal Elections workbook editions (2016–2024 Presidential; 2016–2022 U.S. Senate and U.S. House).",
           "fields": [
             "source_cycle"
           ],
           "syntax": "year"
         },
         {
+          "id": "office",
+          "kind": "category",
+          "label": "Federal office",
+          "meaning": "Federal office contested (president, senate, or house) across reviewed official FEC Federal Elections workbook editions.",
+          "fields": [
+            "office"
+          ]
+        },
+        {
           "id": "stage-and-basis",
           "kind": "category",
           "label": "Election stage and vote basis",
-          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total).",
+          "meaning": "Election stage (primary, primary_runoff, general, general_runoff) paired with vote basis (ballot_line, ranked_choice_round, combined_party_witness, reported_total, electoral_vote).",
           "fields": [
             "stage",
             "vote_basis"
@@ -45177,7 +43696,7 @@
           "id": "row-kind",
           "kind": "category",
           "label": "Workbook row kind",
-          "meaning": "Role of each Senate workbook row (candidate, party_total, or contest_total).",
+          "meaning": "Role of each workbook row (candidate, party_total, contest_total, state_total, or national_total).",
           "fields": [
             "row_kind"
           ]
@@ -45194,23 +43713,23 @@
         {
           "id": "seat-term",
           "kind": "category",
-          "label": "Senate seat term",
-          "meaning": "Whether the Senate contest was for a full six-year term or an unexpired term.",
+          "label": "Seat term",
+          "meaning": "Whether the contest was for a full term, an unexpired term, or not_applicable (e.g. Presidential rows).",
           "fields": [
             "seat_term"
           ]
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:f76768276a271725a3722b3737759de1cadaa5b54d40fc5f27cec1570b941fe7",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:5ffc90e61c7f5f6ffbadc1b4444790aa669b5bf217d819821f4c34679da201ef",
-        "publishedAt": "2026-11-27T02:57:37Z",
-        "rows": 4968,
-        "byteSize": 234234,
-        "memberSha256": "sha256:dc8597507b96d868504f472a48451b9cc157d555ce8be6928ea3d78c4ffdbb35",
-        "qualification": "Live R2 fec-election-results generation Parquet verified against publication.v2.json (4,968 reviewed 2022 Senate rows)."
+        "artifactDigest": "sha256:f12738acda050a435400ae72b5b3b31a541d39fc0bc54c924e42da51fa63b298",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:c219e8c59ba6844de41f407b8ca546fdfbe8f646eb10b3a011f82475b979148c",
+        "publishedAt": "2026-11-28T01:46:56Z",
+        "rows": 108137,
+        "byteSize": 5333530,
+        "memberSha256": "sha256:de82d0169dbf84e4a986ec3c696478ed0f5070542faead46ac5ead1648f813de",
+        "qualification": "Live R2 fec-election-results generation sha256:f12738ac verified (108,137 rows across 2016–2024 Presidential and 2016–2022 Senate/House; includes office & district columns, electoral_vote, state_total, national_total, and fec-federal-election-results/2 + fec-election-workbook/2)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-election-results generation Parquet."
+      "reviewNote": "2026-11-28 (ss-kmso): Updated schema (added office and district), added office dimension, and refreshed evidence against live multi-cycle fec-election-results generation sha256:f12738ac."
     },
     {
       "tableId": "fec_election_workbook_rows",
@@ -45258,7 +43777,7 @@
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "meaning": "Federal election cycle of the retained official FEC Federal Elections workbook editions (2016–2024).",
           "fields": [
             "source_cycle"
           ],
@@ -45279,7 +43798,7 @@
           "id": "source-cycles",
           "kind": "year",
           "label": "Election cycles",
-          "meaning": "Federal election year/cycle of the retained official FEC Federal Elections workbook (2022).",
+          "meaning": "Federal election cycle of the retained official FEC Federal Elections workbook editions (2016–2024).",
           "fields": [
             "source_cycle"
           ],
@@ -45296,15 +43815,567 @@
         }
       ],
       "evidence": {
-        "artifactDigest": "sha256:f76768276a271725a3722b3737759de1cadaa5b54d40fc5f27cec1570b941fe7",
-        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:5ffc90e61c7f5f6ffbadc1b4444790aa669b5bf217d819821f4c34679da201ef",
-        "publishedAt": "2026-11-27T02:57:37Z",
-        "rows": 6070,
-        "byteSize": 697919,
-        "memberSha256": "sha256:2ca6a7d8c8a63db2498914e56ba440eacc79dcc5c8b87ad9aad04e98a2941212",
-        "qualification": "Live R2 fec-election-results generation Parquet verified against publication.v2.json (6,070 literal rows across 11 sheets)."
+        "artifactDigest": "sha256:f12738acda050a435400ae72b5b3b31a541d39fc0bc54c924e42da51fa63b298",
+        "logicalId": "urn:spicy:artifact:spicy-regs-rollup-generation:c219e8c59ba6844de41f407b8ca546fdfbe8f646eb10b3a011f82475b979148c",
+        "publishedAt": "2026-11-28T01:46:56Z",
+        "rows": 33538,
+        "byteSize": 6004904,
+        "memberSha256": "sha256:726a053ffb2c4c896a69524a7268507766e8046c83a58b62ef3f4e0a5fe72f46",
+        "qualification": "Live R2 fec-election-results generation sha256:f12738ac verified (33,538 physical rows across 60 worksheets: 2016 18 sheets/13,742 rows, 2018 11/5,979, 2020 19/7,672, 2022 11/6,070, 2024 1/75)."
       },
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live fec-election-results generation Parquet."
+      "reviewNote": "2026-11-28 (ss-kmso): Refreshed coverage note and evidence against live multi-cycle fec-election-results generation sha256:f12738ac."
+    },
+    {
+      "tableId": "fec_reference_source_pages",
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at_json",
+          "VARCHAR"
+        ],
+        [
+          "page_type",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "text",
+          "VARCHAR"
+        ],
+        [
+          "content_scope",
+          "VARCHAR"
+        ],
+        [
+          "content_status",
+          "VARCHAR"
+        ],
+        [
+          "links_json",
+          "VARCHAR"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "page_type_content_scope",
+          "kind": "category",
+          "fields": [
+            "page_type",
+            "content_scope"
+          ],
+          "label": "Retained source pages",
+          "meaning": "The kinds of saved FEC source-documentation pages and the information scope each page covers. Dates printed on a page do not date all of its content."
+        },
+        {
+          "id": "content_status",
+          "kind": "category",
+          "fields": [
+            "content_status"
+          ],
+          "label": "Page extraction status",
+          "meaning": "Page body disposition (body_extracted); captures failing HTTP < 400 checks or lacking supported body boundaries are excluded via fec_original_selection.json rather than emitted as rows."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "page_type_content_scope",
+          "kind": "category",
+          "fields": [
+            "page_type",
+            "content_scope"
+          ],
+          "label": "Retained source pages",
+          "meaning": "The kinds of saved FEC source-documentation pages and the information scope each page covers. Dates printed on a page do not date all of its content."
+        },
+        {
+          "id": "content_status",
+          "kind": "category",
+          "fields": [
+            "content_status"
+          ],
+          "label": "Page extraction status",
+          "meaning": "Page body disposition (body_extracted); captures failing HTTP < 400 checks or lacking supported body boundaries are excluded via fec_original_selection.json rather than emitted as rows."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816",
+        "selectedObservationsPin": "sha256:2e3d7f6dc55359145a4dd9079bd489e7d337c6976a1c33644ad92b810ed4a237",
+        "qualification": "Sealed 50-table fec-query cutover generation (ss-j9k3 / ss-42nr / ss-j4vz) replacing legacy fec_research_source_pages; schema verified against spicy-regs docs/tables/fec_reference_source_pages.md and native Parquet builder output."
+      },
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Added coverage definition and review for fec_reference_source_pages aligned with the sealed 50-table fec-query generation."
+    },
+    {
+      "tableId": "fec_reference_filing_feed_items",
+      "family": "fec-query",
+      "schema": [
+        [
+          "record_id",
+          "VARCHAR"
+        ],
+        [
+          "mapping_version",
+          "VARCHAR"
+        ],
+        [
+          "collection_id",
+          "VARCHAR"
+        ],
+        [
+          "source_authority",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at_json",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "link",
+          "VARCHAR"
+        ],
+        [
+          "guid",
+          "VARCHAR"
+        ],
+        [
+          "published_at_raw",
+          "VARCHAR"
+        ],
+        [
+          "current_record_status",
+          "VARCHAR"
+        ],
+        [
+          "reported_filer_id",
+          "VARCHAR"
+        ],
+        [
+          "committee_id",
+          "VARCHAR"
+        ],
+        [
+          "candidate_id",
+          "VARCHAR"
+        ],
+        [
+          "source_label_status",
+          "VARCHAR"
+        ],
+        [
+          "filing_id",
+          "VARCHAR"
+        ],
+        [
+          "form_type",
+          "VARCHAR"
+        ],
+        [
+          "report_type",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_raw",
+          "VARCHAR"
+        ],
+        [
+          "coverage_end_raw",
+          "VARCHAR"
+        ],
+        [
+          "parsing_status",
+          "VARCHAR"
+        ],
+        [
+          "filing_link_status",
+          "VARCHAR"
+        ],
+        [
+          "coverage_start_date",
+          "DATE"
+        ],
+        [
+          "coverage_end_date",
+          "DATE"
+        ],
+        [
+          "published_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ]
+      ],
+      "dimensions": [
+        {
+          "id": "published_at",
+          "kind": "date",
+          "fields": [
+            "published_at"
+          ],
+          "syntax": "iso",
+          "label": "Feed publication date",
+          "meaning": "Build-parsed UTC feed publication instant from exact four-digit-year GMT RSS timestamps, separate from filing receipt dates and report periods; unparseable timestamps remain unplaced and literal in published_at_raw."
+        },
+        {
+          "id": "coverage_period",
+          "kind": "interval",
+          "fields": [
+            "coverage_start_date",
+            "coverage_end_date"
+          ],
+          "syntax": "iso",
+          "label": "Reported coverage period",
+          "meaning": "Build-parsed CoverageFrom through CoverageThrough date span stated in the RSS feed item; items lacking valid MM/DD/YYYY coverage dates remain unplaced."
+        },
+        {
+          "id": "source_label_status",
+          "kind": "category",
+          "fields": [
+            "source_label_status"
+          ],
+          "label": "Filer label classification",
+          "meaning": "Whether the RSS feed CommitteeId label held a committee ID, candidate ID, missing value, or unsupported spelling."
+        },
+        {
+          "id": "parsing_status",
+          "kind": "category",
+          "fields": [
+            "parsing_status"
+          ],
+          "label": "Feed parsing status",
+          "meaning": "Distinguishes parsed RSS dates and identifiers from missing, null, empty, or unsupported source spellings."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "recommendedDimensions": [
+        {
+          "id": "published_at",
+          "kind": "date",
+          "fields": [
+            "published_at"
+          ],
+          "syntax": "iso",
+          "label": "Feed publication date",
+          "meaning": "Build-parsed UTC feed publication instant from exact four-digit-year GMT RSS timestamps, separate from filing receipt dates and report periods; unparseable timestamps remain unplaced and literal in published_at_raw."
+        },
+        {
+          "id": "coverage_period",
+          "kind": "interval",
+          "fields": [
+            "coverage_start_date",
+            "coverage_end_date"
+          ],
+          "syntax": "iso",
+          "label": "Reported coverage period",
+          "meaning": "Build-parsed CoverageFrom through CoverageThrough date span stated in the RSS feed item; items lacking valid MM/DD/YYYY coverage dates remain unplaced."
+        },
+        {
+          "id": "source_label_status",
+          "kind": "category",
+          "fields": [
+            "source_label_status"
+          ],
+          "label": "Filer label classification",
+          "meaning": "Whether the RSS feed CommitteeId label held a committee ID, candidate ID, missing value, or unsupported spelling."
+        },
+        {
+          "id": "parsing_status",
+          "kind": "category",
+          "fields": [
+            "parsing_status"
+          ],
+          "label": "Feed parsing status",
+          "meaning": "Distinguishes parsed RSS dates and identifiers from missing, null, empty, or unsupported source spellings."
+        },
+        {
+          "id": "snapshot",
+          "kind": "snapshot",
+          "fields": [],
+          "label": "Published release",
+          "meaning": "The published files and selected inputs used for this table. This is a release, not a range of record dates."
+        },
+        {
+          "id": "retained_source_cycles",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected source cycles",
+          "meaning": "Election cycles stated by the saved collection’s bulk directory or source-table mapping. Unstated cycles stay unknown; individual records may have dates outside the cycle.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope_cycle",
+            "kind": "year",
+            "fields": [
+              "requested_scope_json"
+            ],
+            "label": "Retained source cycles",
+            "meaning": "Exact selected source cycle, not full FEC history."
+          },
+          "special": "collection-cycle"
+        },
+        {
+          "id": "selected_source_scopes",
+          "kind": "inherited",
+          "fields": [],
+          "label": "Selected files and requests",
+          "meaning": "Saved request addresses, selected files, and exact filters. Inventory entries, refused requests, and confirmed empty results are kept separate. Paging and security settings are omitted.",
+          "parent": {
+            "table": "fec_collections",
+            "mode": "recorded-parent",
+            "keys": [
+              [
+                "collection_id",
+                "collection_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "scope",
+            "kind": "category",
+            "fields": [
+              "source_family",
+              "requested_scope_json"
+            ],
+            "label": "Selected source scopes",
+            "meaning": "Selected collection grain; unknown periods stay explicit."
+          },
+          "special": "collection-scopes"
+        }
+      ],
+      "evidence": {
+        "candidateArtifactDigest": "sha256:ef498ab0d4a9de2e1413862330c872b9d54bd97b1f9b08fc5201f628bc270816",
+        "selectedObservationsPin": "sha256:2e3d7f6dc55359145a4dd9079bd489e7d337c6976a1c33644ad92b810ed4a237",
+        "qualification": "Sealed 50-table fec-query cutover generation (ss-j9k3 / ss-42nr) replacing legacy fec_research_filing_feed_items; schema verified against spicy-regs docs/tables/fec_reference_filing_feed_items.md and native Parquet builder output."
+      },
+      "reviewNote": "2026-11-28 (ss-j9k3 / ss-42nr): Added coverage definition and review for fec_reference_filing_feed_items aligned with the sealed 50-table fec-query generation."
     }
   ],
   "completenessFollowup": {

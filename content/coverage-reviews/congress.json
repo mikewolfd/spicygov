@@ -13,6 +13,7 @@
     "committee-reports",
     "committee-rosters",
     "congress-sessions",
+    "crs-report-files",
     "crs-reports",
     "historical-vetoes",
     "house-communications",
@@ -28,11 +29,12 @@
     "roll-call-votes",
     "scorecard-analysis",
     "scorecards",
+    "senate-disclosures",
     "senate-expenditures",
     "table3-history",
     "treaties"
   ],
-  "tableCount": 106,
+  "tableCount": 109,
   "everyAssignedTableEnumerated": true,
   "fullCountsReconciled": true,
   "claimBoundary": "This review measures retained presence and source scope, not the completeness of publisher acquisition.",
@@ -60929,12 +60931,12 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
-        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
-        "sha256": "sha256:3b3d342c67684cab0397b31ce514ca88f8a3a19f36bd763dba8a18bf9b3b9a50",
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c/artifact.json",
+        "artifactDigest": "sha256:053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c",
+        "sha256": "sha256:1fae962c93eb428c2eaf095f358b2563bede374a2b342fd28786d4e4edff20ca",
         "members": [],
-        "rows": 2935,
-        "byteSize": 261122,
+        "rows": 42254,
+        "byteSize": 3627992,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -60942,7 +60944,7 @@
           "id": "index-year",
           "kind": "year",
           "label": "House index year",
-          "meaning": "Annual House Clerk financial disclosure index year (2025FD.zip). Reflects one declared retained index snapshot.",
+          "meaning": "Annual House Clerk financial disclosure index year across retained 2008\u20132026 index archives.",
           "fields": [
             "index_year"
           ],
@@ -60952,7 +60954,7 @@
           "id": "filing-dates",
           "kind": "date",
           "label": "Index filing dates",
-          "meaning": "Filing dates parsed from the House Clerk annual disclosure index; rows with blank filing dates remain unplaced.",
+          "meaning": "Filing dates parsed verbatim from the House Clerk annual disclosure indexes; blank dates remain unplaced and literal source year typos are preserved without silent alteration.",
           "fields": [
             "filing_date"
           ],
@@ -60962,7 +60964,7 @@
           "id": "filing-type",
           "kind": "category",
           "label": "Filing type code",
-          "meaning": "House Clerk filing category code (e.g., C candidate, X extension, P periodic transaction report, O annual, D duplicate/new filer, A amendment).",
+          "meaning": "House Clerk filing category code across retained indexes (C, O, P, X, A, D, W, T, H, G, E, B, R).",
           "fields": [
             "filing_type"
           ]
@@ -60984,7 +60986,7 @@
         "filing-type",
         "filing-date-status"
       ],
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+      "reviewNote": "2026-11-28 (ss-x3ji): Refreshed coverage notes and publication evidence for scaled house-disclosures generation sha256:053b67c8 (complete 2008\u20132026 annual indexes: 42,254 filings; 41,543 parsed dates, 711 blank)."
     },
     {
       "tableId": "house_disclosure_reports",
@@ -61068,12 +61070,12 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
-        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
-        "sha256": "sha256:419a69b17637677c261c829983e2a804bc9acfc3c8b0561a9339c4148a2f8efc",
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c/artifact.json",
+        "artifactDigest": "sha256:053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c",
+        "sha256": "sha256:79c6925e79bdc681b441bdc3fe55242ea28da2f2c3c088a0344064d3223a9a4c",
         "members": [],
-        "rows": 8,
-        "byteSize": 9484,
+        "rows": 8358,
+        "byteSize": 1116460,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -61081,7 +61083,7 @@
           "id": "index-year",
           "kind": "year",
           "label": "House index year",
-          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2025).",
+          "meaning": "House Clerk financial disclosure index year for each retained Periodic Transaction Report PDF (2013\u20132026).",
           "fields": [
             "index_year"
           ],
@@ -61130,7 +61132,7 @@
         "parent-filing-dates",
         "extraction-status"
       ],
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+      "reviewNote": "2026-11-28 (ss-x3ji): Refreshed coverage notes and publication evidence for scaled house-disclosures generation sha256:053b67c8 (8,358 retained 2013\u20132026 PTR reports: 1,999 native_layout, 6,359 refused)."
     },
     {
       "tableId": "house_disclosure_pages",
@@ -61174,12 +61176,12 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
-        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
-        "sha256": "sha256:0789c6cc7dab48c373837c251bbd5a0f318e6c7cc512fd44cc4e4ec672fa45e3",
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c/artifact.json",
+        "artifactDigest": "sha256:053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c",
+        "sha256": "sha256:c3d9c8fa154eff857226c3c9e2e4ed1910631eefcb8b2896deecc7deb08faac8",
         "members": [],
-        "rows": 103,
-        "byteSize": 25987,
+        "rows": 21655,
+        "byteSize": 3012666,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -61214,7 +61216,7 @@
           "id": "page-status",
           "kind": "category",
           "label": "PDF page status",
-          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid) or was an unsupported image-only page (unsupported_image_page).",
+          "meaning": "Whether each retained PTR PDF page had a qualified native text grid (native_grid), native supplement text (native_supplement), unsupported native layout (unsupported_native_layout), or was an image-only page (unsupported_image_page).",
           "fields": [
             "page_status"
           ]
@@ -61225,7 +61227,7 @@
         "parent-report-index-year",
         "page-status"
       ],
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+      "reviewNote": "2026-11-28 (ss-x3ji): Refreshed coverage notes and publication evidence for scaled house-disclosures generation sha256:053b67c8 (21,655 visited pages across 8,358 PTR PDFs)."
     },
     {
       "tableId": "house_disclosure_transactions",
@@ -61349,12 +61351,12 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
-        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
-        "sha256": "sha256:36a9a0baaf118c72ba790660f5e13a190bef57f1be9e63d3907842245830b44b",
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c/artifact.json",
+        "artifactDigest": "sha256:053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c",
+        "sha256": "sha256:c8cafa2bf8b1f5b0656a6f43fe3d48e20d578eaadd5bdff73ad8931ce7a85c9c",
         "members": [],
-        "rows": 738,
-        "byteSize": 257208,
+        "rows": 20834,
+        "byteSize": 8105259,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -61382,7 +61384,7 @@
           "id": "action-type",
           "kind": "category",
           "label": "Transaction action",
-          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale).",
+          "meaning": "Verbatim transaction action code printed on each PTR row (P purchase, S sale, S (partial) partial sale, E exchange).",
           "fields": [
             "action_raw"
           ]
@@ -61400,7 +61402,7 @@
           "id": "amount-status",
           "kind": "category",
           "label": "Amount representation status",
-          "meaning": "Whether transaction amounts are represented as statutory dollar ranges (reported_range).",
+          "meaning": "Representation status of transaction amounts (reported_range, unparsed, or reported_exclusive_lower_bound).",
           "fields": [
             "amount_status"
           ]
@@ -61414,7 +61416,7 @@
         "filing-status",
         "amount-status"
       ],
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+      "reviewNote": "2026-11-28 (ss-x3ji): Refreshed coverage notes and publication evidence for scaled house-disclosures generation sha256:053b67c8 (20,834 native 2022\u20132026 transactions across 1,999 parsed reports)."
     },
     {
       "tableId": "house_disclosure_amendment_links",
@@ -61486,12 +61488,12 @@
         ]
       ],
       "publication": {
-        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d/artifact.json",
-        "artifactDigest": "sha256:d2c3cf18fc54a75da00c413fd82eacdf56ca6edc284cd2e4d4591ca2f2c0158d",
-        "sha256": "sha256:074e3137d67b2f020cbfbd4a14ffdf512dee339d634a775b81e25fcc2f6c9d82",
+        "artifactUrl": "https://data.spicygov.ai/generations/house-disclosures/053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c/artifact.json",
+        "artifactDigest": "sha256:053b67c831f324bcf8b1b07e6f57801be34a36a52ea30406ee4bb85f9fbaab3c",
+        "sha256": "sha256:eb1b70c0a2c891a1bc0c5034ce16b728db896da9364e246295cf53474baa23ae",
         "members": [],
         "rows": 1,
-        "byteSize": 9607,
+        "byteSize": 9604,
         "memberCount": 1
       },
       "recommendedDimensions": [
@@ -61537,7 +61539,7 @@
         "original-report-index-year",
         "link-status"
       ],
-      "reviewNote": "2026-11-27 (ss-wjvp / ss-7va3): Coverage definition and review added against live house-disclosures generation Parquet."
+      "reviewNote": "2026-11-28 (ss-x3ji): Refreshed publication evidence for scaled house-disclosures generation sha256:053b67c8 (1 reviewed amendment link)."
     },
     {
       "tableId": "table3_historical_records",
@@ -64119,6 +64121,625 @@
         "category"
       ],
       "reviewNote": "2026-11-27: Coverage definition and review added against live cbo-data generation Parquet."
+    },
+    {
+      "tableId": "senate_disclosure_reports",
+      "family": "senate-disclosures",
+      "schema": [
+        [
+          "filing_year",
+          "INTEGER"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "first_name",
+          "VARCHAR"
+        ],
+        [
+          "last_name",
+          "VARCHAR"
+        ],
+        [
+          "filer_label",
+          "VARCHAR"
+        ],
+        [
+          "report_kind",
+          "VARCHAR"
+        ],
+        [
+          "report_title",
+          "VARCHAR"
+        ],
+        [
+          "report_date",
+          "DATE"
+        ],
+        [
+          "submitted_date",
+          "DATE"
+        ],
+        [
+          "amendment_status",
+          "VARCHAR"
+        ],
+        [
+          "amendment_number",
+          "INTEGER"
+        ],
+        [
+          "original_candidate_ids",
+          "VARCHAR[]"
+        ],
+        [
+          "amendment_link_status",
+          "VARCHAR"
+        ],
+        [
+          "parse_status",
+          "VARCHAR"
+        ],
+        [
+          "filer_heading",
+          "VARCHAR"
+        ],
+        [
+          "filed_at_raw",
+          "VARCHAR"
+        ],
+        [
+          "transaction_count",
+          "BIGINT"
+        ],
+        [
+          "search_sha256",
+          "VARCHAR"
+        ],
+        [
+          "search_start",
+          "BIGINT"
+        ],
+        [
+          "search_row",
+          "BIGINT"
+        ],
+        [
+          "raw_search_cells_json",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/senate-disclosures/7c636dca6dbaa3c8dcf86c8209d6143618faa12d0b5742270102d4ad34f971a0/artifact.json",
+        "artifactDigest": "sha256:7c636dca6dbaa3c8dcf86c8209d6143618faa12d0b5742270102d4ad34f971a0",
+        "sha256": "sha256:abca8038ee76895d2c871e520410a3039c76b0104baa1a67137f60c702f781e2",
+        "members": [],
+        "rows": 167,
+        "byteSize": 52122,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "filing-year",
+          "kind": "year",
+          "label": "Senate eFD filing year",
+          "meaning": "Declared calendar filing year searched in the public Senate eFD Periodic Transaction Report index.",
+          "fields": [
+            "filing_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "report-dates",
+          "kind": "date",
+          "label": "Report dates",
+          "meaning": "Report dates recorded on Senate eFD Periodic Transaction Report listings (2024-01 through 2025-12).",
+          "fields": [
+            "report_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "submitted-dates",
+          "kind": "date",
+          "label": "Submitted dates",
+          "meaning": "Filing submission dates recorded on Senate eFD Periodic Transaction Report listings.",
+          "fields": [
+            "submitted_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "report-kind",
+          "kind": "category",
+          "label": "Report delivery kind",
+          "meaning": "Whether each retained Senate PTR listing is an electronic report (electronic) or an image/paper filing (paper).",
+          "fields": [
+            "report_kind"
+          ]
+        },
+        {
+          "id": "parse-status",
+          "kind": "category",
+          "label": "Report parse status",
+          "meaning": "Whether the PTR body was parsed (parsed) or retained as an explicit unsupported paper observation (unsupported_paper).",
+          "fields": [
+            "parse_status"
+          ]
+        },
+        {
+          "id": "amendment-status",
+          "kind": "category",
+          "label": "Amendment status",
+          "meaning": "Whether each Senate PTR listing is an original filing (none) or a numbered/unnumbered amendment.",
+          "fields": [
+            "amendment_status"
+          ]
+        },
+        {
+          "id": "amendment-link-status",
+          "kind": "category",
+          "label": "Amendment link status",
+          "meaning": "Resolution status of literal name/date candidate parent matching for amendments (not_applicable, unresolved, or ambiguous).",
+          "fields": [
+            "amendment_link_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.senate_disclosure_reports",
+      "executableDimensions": [
+        "filing-year",
+        "report-dates",
+        "submitted-dates",
+        "report-kind",
+        "parse-status",
+        "amendment-status",
+        "amendment-link-status"
+      ],
+      "reviewNote": "2026-11-28 (ss-iw09): Added coverage definition and review against live senate-disclosures generation sha256:7c636dca (167 reports: 146 electronic/parsed, 21 paper/unsupported_paper)."
+    },
+    {
+      "tableId": "senate_disclosure_transactions",
+      "family": "senate-disclosures",
+      "schema": [
+        [
+          "filing_year",
+          "INTEGER"
+        ],
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "report_sha256",
+          "VARCHAR"
+        ],
+        [
+          "row_number",
+          "BIGINT"
+        ],
+        [
+          "row_position",
+          "BIGINT"
+        ],
+        [
+          "source_locator",
+          "VARCHAR"
+        ],
+        [
+          "transaction_date",
+          "DATE"
+        ],
+        [
+          "transaction_date_raw",
+          "VARCHAR"
+        ],
+        [
+          "owner",
+          "VARCHAR"
+        ],
+        [
+          "ticker",
+          "VARCHAR"
+        ],
+        [
+          "ticker_raw",
+          "VARCHAR"
+        ],
+        [
+          "asset_name",
+          "VARCHAR"
+        ],
+        [
+          "asset_type",
+          "VARCHAR"
+        ],
+        [
+          "transaction_type",
+          "VARCHAR"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_lower_usd",
+          "BIGINT"
+        ],
+        [
+          "amount_upper_usd",
+          "BIGINT"
+        ],
+        [
+          "lower_inclusive",
+          "BOOLEAN"
+        ],
+        [
+          "amount_parse_status",
+          "VARCHAR"
+        ],
+        [
+          "comment",
+          "VARCHAR"
+        ],
+        [
+          "comment_raw",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/senate-disclosures/7c636dca6dbaa3c8dcf86c8209d6143618faa12d0b5742270102d4ad34f971a0/artifact.json",
+        "artifactDigest": "sha256:7c636dca6dbaa3c8dcf86c8209d6143618faa12d0b5742270102d4ad34f971a0",
+        "sha256": "sha256:b1a58b012ebfe6d25cfe373beaed55378c65fe83264429123f09fd3fd36c060f",
+        "members": [],
+        "rows": 975,
+        "byteSize": 89552,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "filing-year",
+          "kind": "year",
+          "label": "Senate eFD filing year",
+          "meaning": "Declared calendar filing year of the parent Senate eFD Periodic Transaction Report.",
+          "fields": [
+            "filing_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "transaction-dates",
+          "kind": "date",
+          "label": "Transaction dates",
+          "meaning": "Reported asset transaction dates parsed from retained electronic Senate Periodic Transaction Reports.",
+          "fields": [
+            "transaction_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "parent-report-dates",
+          "kind": "inherited",
+          "label": "Parent report dates",
+          "meaning": "Report date inherited from the matching senate_disclosure_reports row by report_id.",
+          "fields": [],
+          "parent": {
+            "table": "senate_disclosure_reports",
+            "mode": "same-generation",
+            "keys": [
+              [
+                "report_id",
+                "report_id"
+              ]
+            ]
+          },
+          "dimension": {
+            "id": "parent-report-dates",
+            "kind": "date",
+            "label": "Parent report dates",
+            "meaning": "Report date inherited from senate_disclosure_reports by report_id.",
+            "fields": [
+              "report_date"
+            ],
+            "syntax": "iso"
+          }
+        },
+        {
+          "id": "transaction-type",
+          "kind": "category",
+          "label": "Transaction type",
+          "meaning": "Reported transaction action (Purchase, Sale (Full), Sale (Partial), Exchange).",
+          "fields": [
+            "transaction_type"
+          ]
+        },
+        {
+          "id": "asset-type",
+          "kind": "category",
+          "label": "Asset type",
+          "meaning": "Reported asset category (Stock, Municipal Security, Corporate Bond, Non-Public Stock, Cryptocurrency, Other).",
+          "fields": [
+            "asset_type"
+          ]
+        },
+        {
+          "id": "owner",
+          "kind": "category",
+          "label": "Reported owner",
+          "meaning": "Disclosed owner category for each reported transaction (Self, Spouse, Joint, Child).",
+          "fields": [
+            "owner"
+          ]
+        },
+        {
+          "id": "amount-parse-status",
+          "kind": "category",
+          "label": "Amount parse status",
+          "meaning": "Parsing status of the reported statutory dollar bracket (closed_range).",
+          "fields": [
+            "amount_parse_status"
+          ]
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.senate_disclosure_transactions",
+      "executableDimensions": [
+        "filing-year",
+        "transaction-dates",
+        "parent-report-dates",
+        "transaction-type",
+        "asset-type",
+        "owner",
+        "amount-parse-status"
+      ],
+      "reviewNote": "2026-11-28 (ss-iw09): Added coverage definition and review against live senate-disclosures generation sha256:7c636dca (975 electronic transactions across 2023-01 to 2025-12)."
+    },
+    {
+      "tableId": "crs_report_files",
+      "family": "crs-report-files",
+      "schema": [
+        [
+          "report_id",
+          "VARCHAR"
+        ],
+        [
+          "metadata_update_date",
+          "VARCHAR"
+        ],
+        [
+          "metadata_source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "rendition",
+          "VARCHAR"
+        ],
+        [
+          "source_family",
+          "VARCHAR"
+        ],
+        [
+          "publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "version_binding",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "resolved_url",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "body_state",
+          "VARCHAR"
+        ],
+        [
+          "capture_id",
+          "VARCHAR"
+        ],
+        [
+          "captured_at",
+          "VARCHAR"
+        ],
+        [
+          "capture_receipt_key",
+          "VARCHAR"
+        ],
+        [
+          "capture_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "association_receipt_key",
+          "VARCHAR"
+        ],
+        [
+          "association_receipt_sha256",
+          "VARCHAR"
+        ],
+        [
+          "association_kind",
+          "VARCHAR"
+        ],
+        [
+          "error",
+          "VARCHAR"
+        ],
+        [
+          "provenance_basis",
+          "VARCHAR"
+        ],
+        [
+          "original_receipts_json",
+          "VARCHAR"
+        ],
+        [
+          "content_identity_state",
+          "VARCHAR"
+        ],
+        [
+          "content_report_id",
+          "VARCHAR"
+        ],
+        [
+          "content_publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "qualified_publisher_version",
+          "VARCHAR"
+        ],
+        [
+          "file_validation_basis",
+          "VARCHAR"
+        ],
+        [
+          "text_content",
+          "VARCHAR"
+        ],
+        [
+          "text_state",
+          "VARCHAR"
+        ],
+        [
+          "text_sha256",
+          "VARCHAR"
+        ],
+        [
+          "text_input_sha256",
+          "VARCHAR"
+        ],
+        [
+          "text_processor",
+          "VARCHAR"
+        ],
+        [
+          "text_processor_sha256",
+          "VARCHAR"
+        ],
+        [
+          "provider_version",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "page_count",
+          "BIGINT"
+        ],
+        [
+          "capture_receipt_entry",
+          "BIGINT"
+        ]
+      ],
+      "publication": {
+        "artifactUrl": "https://data.spicygov.ai/generations/crs-report-files/706a821d3e442348f65f5ddd8ca6905c38d919b6c5b923a488ebf43dd125b4ba/artifact.json",
+        "artifactDigest": "sha256:706a821d3e442348f65f5ddd8ca6905c38d919b6c5b923a488ebf43dd125b4ba",
+        "sha256": "sha256:f6be765a6ba0f5575aa03420ccf607953a56ee080bbe1aa7acecec5cccd10ca7",
+        "members": [],
+        "rows": 1,
+        "byteSize": 19556,
+        "memberCount": 1
+      },
+      "recommendedDimensions": [
+        {
+          "id": "metadata-update-dates",
+          "kind": "date",
+          "label": "CRS metadata update dates",
+          "meaning": "CRS publisher metadata update timestamp linked from the qualified crs_reports revision (distinct from file capture time).",
+          "fields": [
+            "metadata_update_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "rendition-and-binding",
+          "kind": "category",
+          "label": "File rendition and version binding",
+          "meaning": "File format (pdf or html) paired with version-binding strength (e.g., numbered-pdf-locator vs unbound mutable HTML).",
+          "fields": [
+            "rendition",
+            "version_binding"
+          ]
+        },
+        {
+          "id": "source-family",
+          "kind": "category",
+          "label": "CRS report series",
+          "meaning": "CRS report prefix series (such as IN, IF, R, RL, LSB) recorded on retained files.",
+          "fields": [
+            "source_family"
+          ]
+        },
+        {
+          "id": "body-and-text-state",
+          "kind": "category",
+          "label": "Body and text extraction state",
+          "meaning": "Retained file body state paired with embedded PDF text extraction state.",
+          "fields": [
+            "body_state",
+            "text_state"
+          ]
+        },
+        {
+          "id": "content-identity-state",
+          "kind": "category",
+          "label": "Footer identity check",
+          "meaning": "Whether the printed report ID and version footer matched the declared metadata revision (matching-explicit-footer) or withheld qualification.",
+          "fields": [
+            "content_identity_state"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained CRS report file cohort",
+          "meaning": "Explicitly selected numbered CRS PDFs and offered HTML observations; does not establish complete CRS corpus or edition history.",
+          "fields": []
+        }
+      ],
+      "executableDefinition": "content/coverage-definitions/congress.json#tables.crs_report_files",
+      "executableDimensions": [
+        "metadata-update-dates",
+        "rendition-and-binding",
+        "source-family",
+        "body-and-text-state",
+        "content-identity-state",
+        "retained-snapshot"
+      ],
+      "reviewNote": "2026-11-28 (ss-0qiq): Added coverage definition and review against live crs-report-files generation sha256:706a821d (1 verified numbered PDF row: IN12418 v6, body_state=ok, text_state=ok, matching-explicit-footer)."
     }
   ],
   "implementationValidation": {

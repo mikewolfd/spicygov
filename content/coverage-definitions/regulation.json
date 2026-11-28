@@ -13742,6 +13742,923 @@
           ]
         }
       ]
+    },
+    "foreign_assistance_observations": {
+      "family": "foreign-assistance",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "recipient_code",
+          "VARCHAR"
+        ],
+        [
+          "recipient_name",
+          "VARCHAR"
+        ],
+        [
+          "recipient_scope",
+          "VARCHAR"
+        ],
+        [
+          "region_id",
+          "VARCHAR"
+        ],
+        [
+          "region_name",
+          "VARCHAR"
+        ],
+        [
+          "income_group_acronym",
+          "VARCHAR"
+        ],
+        [
+          "income_group_name",
+          "VARCHAR"
+        ],
+        [
+          "fiscal_period",
+          "VARCHAR"
+        ],
+        [
+          "period_start",
+          "DATE"
+        ],
+        [
+          "period_end",
+          "DATE"
+        ],
+        [
+          "measure_id",
+          "VARCHAR"
+        ],
+        [
+          "measure",
+          "VARCHAR"
+        ],
+        [
+          "dollar_basis",
+          "VARCHAR"
+        ],
+        [
+          "amount",
+          "DECIMAL(38,6)"
+        ],
+        [
+          "amount_raw",
+          "VARCHAR"
+        ],
+        [
+          "amount_status",
+          "VARCHAR"
+        ],
+        [
+          "unit",
+          "VARCHAR"
+        ],
+        [
+          "constant_dollar_base_year",
+          "INTEGER"
+        ],
+        [
+          "reporting_status",
+          "VARCHAR"
+        ],
+        [
+          "agency_scope",
+          "VARCHAR"
+        ],
+        [
+          "program_scope",
+          "VARCHAR"
+        ],
+        [
+          "source_record_id",
+          "VARCHAR"
+        ],
+        [
+          "source_ordinal",
+          "BIGINT"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_cells_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Reported U.S. foreign assistance country, regional, and global fiscal-period summary observations from explicitly retained ForeignAssistance.gov country-summary CSV snapshots (91,528 rows across 2 retained snapshots, 45,764 rows each; FY1946\u2013FY2026 plus the 1976 Transition Quarter 1976tq). Rows span distinct non-additive financial measures (Obligations, Disbursements, Appropriated and Planned, President\u2019s Budget Requests), current vs constant dollar bases, recipient scopes, and snapshots, so amounts must never be summed without filtering to one snapshot, measure, dollar_basis, and recipient_scope. Agency/program identities and the constant-dollar base year are not supplied.",
+      "dimensions": [
+        {
+          "id": "fiscal-period-span",
+          "kind": "interval",
+          "label": "Fiscal period calendar span",
+          "meaning": "Calendar span of each federal fiscal period (period_start through period_end), covering FY1946 (1945-07-01) through FY2026 (2026-09-30) including the 1976 Transition Quarter.",
+          "fields": [
+            "period_start",
+            "period_end"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "fiscal-period",
+          "kind": "category",
+          "label": "Fiscal period label",
+          "meaning": "Publisher-reported fiscal period label (1946\u20132026 plus 1976tq for the 1976 Transition Quarter).",
+          "fields": [
+            "fiscal_period"
+          ]
+        },
+        {
+          "id": "measure-and-basis",
+          "kind": "category",
+          "label": "Financial measure and dollar basis",
+          "meaning": "Distinct foreign assistance financial measure paired with dollar basis (current vs constant). Never sum across measures or dollar bases.",
+          "fields": [
+            "measure",
+            "dollar_basis"
+          ]
+        },
+        {
+          "id": "recipient-scope",
+          "kind": "category",
+          "label": "Recipient scope",
+          "meaning": "Distinguishes country_or_area recipients from regional and global program aggregates.",
+          "fields": [
+            "recipient_scope"
+          ]
+        },
+        {
+          "id": "snapshot-id",
+          "kind": "category",
+          "label": "Retained summary snapshot",
+          "meaning": "SHA-256 identity of each retained country-summary snapshot; multiple snapshots remain separate and non-additive.",
+          "fields": [
+            "snapshot_id"
+          ]
+        }
+      ]
+    },
+    "foreign_assistance_snapshots": {
+      "family": "foreign-assistance",
+      "schema": [
+        [
+          "snapshot_id",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "TIMESTAMP WITH TIME ZONE"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_bytes",
+          "BIGINT"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "dictionary_sha256",
+          "VARCHAR"
+        ],
+        [
+          "dictionary_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_row_count",
+          "BIGINT"
+        ],
+        [
+          "publisher_release_date",
+          "DATE"
+        ],
+        [
+          "coverage",
+          "VARCHAR"
+        ],
+        [
+          "source_scope_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Retained ForeignAssistance.gov country-summary CSV capture selections and separately pinned official data dictionary receipts (2 snapshots, 22,882 source rows each). Capture time (observed_at) is kept separate from publisher_release_date (unplaced when unsupplied by the upstream CSV), and absent keys in later snapshots remain unobserved rather than inferred deleted or zero.",
+      "dimensions": [
+        {
+          "id": "publisher-release-dates",
+          "kind": "date",
+          "label": "Publisher release dates",
+          "meaning": "Explicit publisher release date when supplied by the source; remains unplaced when the upstream CSV omits a release date (capture time is never substituted).",
+          "fields": [
+            "publisher_release_date"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained summary snapshots",
+          "meaning": "Explicitly captured complete country-summary distributions and pinned official dictionary receipts (2 snapshots).",
+          "fields": []
+        }
+      ]
+    },
+    "white_house_action_versions": {
+      "family": "white-house-actions",
+      "schema": [
+        [
+          "action_version_id",
+          "VARCHAR"
+        ],
+        [
+          "source_url",
+          "VARCHAR"
+        ],
+        [
+          "native_post_id",
+          "VARCHAR"
+        ],
+        [
+          "title",
+          "VARCHAR"
+        ],
+        [
+          "document_type",
+          "VARCHAR"
+        ],
+        [
+          "categories_json",
+          "VARCHAR"
+        ],
+        [
+          "listing_url",
+          "VARCHAR"
+        ],
+        [
+          "listing_sha256",
+          "VARCHAR"
+        ],
+        [
+          "listing_record_index",
+          "VARCHAR"
+        ],
+        [
+          "published_time",
+          "VARCHAR"
+        ],
+        [
+          "display_time",
+          "VARCHAR"
+        ],
+        [
+          "modified_time",
+          "VARCHAR"
+        ],
+        [
+          "modified_time_status",
+          "VARCHAR"
+        ],
+        [
+          "body_text",
+          "VARCHAR"
+        ],
+        [
+          "body_html",
+          "VARCHAR"
+        ],
+        [
+          "body_selector",
+          "VARCHAR"
+        ],
+        [
+          "source_sha256",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "parser_version",
+          "VARCHAR"
+        ],
+        [
+          "official_match_status",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Explicitly selected White House action-page HTML versions within a declared publication-date window (4 versions in live generation sha256:adb93e13, Nominations & Appointments). Changed HTML remains a separate version; official_match_status remains unresolved unless exact URL/digest equivalence is established, and this cohort does not establish historical completeness or current legal effect.",
+      "dimensions": [
+        {
+          "id": "published-dates",
+          "kind": "date",
+          "label": "Page publication dates",
+          "meaning": "Literal publication timestamp stated on the retained White House action page (distinct from capture time).",
+          "fields": [
+            "published_time"
+          ],
+          "syntax": "iso"
+        },
+        {
+          "id": "modified-dates",
+          "kind": "date",
+          "label": "Page modification dates",
+          "meaning": "Stated modification timestamp on retained White House action pages when modified_time_status is stated.",
+          "fields": [
+            "modified_time"
+          ],
+          "syntax": "iso",
+          "conditions": [
+            {
+              "field": "modified_time_status",
+              "values": [
+                "stated"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "document-type",
+          "kind": "category",
+          "label": "White House document category",
+          "meaning": "Native White House action category label (e.g., Nominations & Appointments).",
+          "fields": [
+            "document_type"
+          ]
+        },
+        {
+          "id": "official-match-status",
+          "kind": "category",
+          "label": "Official-document match status",
+          "meaning": "Whether an exact official-document equivalence was established or remains unresolved.",
+          "fields": [
+            "official_match_status"
+          ]
+        },
+        {
+          "id": "parser-version",
+          "kind": "category",
+          "label": "HTML parser version",
+          "meaning": "Version of the White House HTML parser used to extract each retained action version.",
+          "fields": [
+            "parser_version"
+          ]
+        }
+      ]
+    },
+    "census_geocoder_lookups": {
+      "family": "census-geocoder",
+      "schema": [
+        [
+          "lookup_id",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "benchmark",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "request_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "response_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "address",
+          "VARCHAR"
+        ],
+        [
+          "input_x",
+          "VARCHAR"
+        ],
+        [
+          "input_y",
+          "VARCHAR"
+        ],
+        [
+          "candidate_count",
+          "INTEGER"
+        ],
+        [
+          "response_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Bounded single-record U.S. Census Geocoder lookup requests and verbatim JSON responses (4 lookups in live generation sha256:1d004a05: 2 onelineaddress, 2 coordinates; 2 matched, 2 unmatched; benchmark Public_AR_Census2020, vintage Census2020_Census2020). Makes no national completeness, current congressional district, ACS estimate, batch, or ZIP-centroid claim.",
+      "dimensions": [
+        {
+          "id": "lookup-kind",
+          "kind": "category",
+          "label": "Geocoder lookup kind",
+          "meaning": "Single-record lookup mode submitted to the Census Geocoder (onelineaddress or coordinates).",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "benchmark-vintage",
+          "kind": "category",
+          "label": "Census benchmark and vintage",
+          "meaning": "Declared Census Geocoder address benchmark paired with geography vintage (Public_AR_Census2020 / Census2020_Census2020).",
+          "fields": [
+            "benchmark",
+            "vintage"
+          ]
+        },
+        {
+          "id": "lookup-outcome",
+          "kind": "category",
+          "label": "Lookup outcome",
+          "meaning": "Whether the Census Geocoder returned a geography match (matched) or explicitly returned no match (unmatched).",
+          "fields": [
+            "outcome"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained geocoder lookup cohort",
+          "meaning": "Explicit single-record Census 2020 lookup observations; capture time is not a geographic validity date.",
+          "fields": []
+        }
+      ]
+    },
+    "census_geocoder_geographies": {
+      "family": "census-geocoder",
+      "schema": [
+        [
+          "lookup_id",
+          "VARCHAR"
+        ],
+        [
+          "kind",
+          "VARCHAR"
+        ],
+        [
+          "benchmark",
+          "VARCHAR"
+        ],
+        [
+          "vintage",
+          "VARCHAR"
+        ],
+        [
+          "outcome",
+          "VARCHAR"
+        ],
+        [
+          "reason",
+          "VARCHAR"
+        ],
+        [
+          "request_url",
+          "VARCHAR"
+        ],
+        [
+          "observed_at",
+          "VARCHAR"
+        ],
+        [
+          "response_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "candidate_index",
+          "INTEGER"
+        ],
+        [
+          "unique_assignment",
+          "BOOLEAN"
+        ],
+        [
+          "matched_address",
+          "VARCHAR"
+        ],
+        [
+          "x",
+          "VARCHAR"
+        ],
+        [
+          "y",
+          "VARCHAR"
+        ],
+        [
+          "layer",
+          "VARCHAR"
+        ],
+        [
+          "geoid",
+          "VARCHAR"
+        ],
+        [
+          "name",
+          "VARCHAR"
+        ],
+        [
+          "state_code",
+          "VARCHAR"
+        ],
+        [
+          "county_code",
+          "VARCHAR"
+        ],
+        [
+          "county_geoid",
+          "VARCHAR"
+        ],
+        [
+          "tract_code",
+          "VARCHAR"
+        ],
+        [
+          "block_code",
+          "VARCHAR"
+        ],
+        [
+          "json_pointer",
+          "VARCHAR"
+        ],
+        [
+          "geography_json",
+          "VARCHAR"
+        ],
+        [
+          "geography_authority",
+          "VARCHAR"
+        ],
+        [
+          "geography_source_sha256",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Native geography layers returned by matched U.S. Census Geocoder lookups (22 rows across 11 Census2020 geography layers in live generation sha256:1d004a05), preserving leading-zero GEOIDs, candidate index, and unique-assignment flags. Reflects only the declared Census2020 vintage and bounded lookup cohort.",
+      "dimensions": [
+        {
+          "id": "lookup-kind",
+          "kind": "category",
+          "label": "Geocoder lookup kind",
+          "meaning": "Single-record lookup mode (onelineaddress or coordinates) that returned each geography row.",
+          "fields": [
+            "kind"
+          ]
+        },
+        {
+          "id": "benchmark-vintage",
+          "kind": "category",
+          "label": "Census benchmark and vintage",
+          "meaning": "Declared Census Geocoder benchmark paired with geography vintage.",
+          "fields": [
+            "benchmark",
+            "vintage"
+          ]
+        },
+        {
+          "id": "geography-layer",
+          "kind": "category",
+          "label": "Census geography layer",
+          "meaning": "Returned Census geography layer (States, Counties, Census Tracts, Census Blocks, 116th Congressional Districts, etc.).",
+          "fields": [
+            "layer"
+          ]
+        },
+        {
+          "id": "unique-assignment",
+          "kind": "category",
+          "label": "Unique candidate assignment",
+          "meaning": "Whether the lookup returned a single unambiguous candidate assignment (true) or multiple candidates (false).",
+          "fields": [
+            "unique_assignment"
+          ]
+        },
+        {
+          "id": "geography-authority",
+          "kind": "category",
+          "label": "Geography identifier authority",
+          "meaning": "Pinned authority governing Census geography identifier interpretation.",
+          "fields": [
+            "geography_authority"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained geocoder geography cohort",
+          "meaning": "Explicitly returned Census2020 geography candidates for the retained lookup cohort.",
+          "fields": []
+        }
+      ]
+    },
+    "cms_part_b_drug_use_information": {
+      "family": "cms-part-b-associations",
+      "schema": [
+        [
+          "drug_use_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "hcpcs_code",
+          "VARCHAR"
+        ],
+        [
+          "drug_description",
+          "VARCHAR"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "drug_uses",
+          "VARCHAR"
+        ],
+        [
+          "drug_use_status",
+          "VARCHAR"
+        ],
+        [
+          "value_states_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "source_row_number",
+          "INTEGER"
+        ],
+        [
+          "source_workbook_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_workbook_url",
+          "VARCHAR"
+        ],
+        [
+          "source_resources_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Literal HCPCS-level brand/generic display names and clinical drug-use summaries from the CMS Medicare Part B supporting Drug Use Information worksheet (799 rows for benefit year 2024: 623 summary_provided, 176 not_available; 1:1 with cms_part_b_drug_spending on benefit_year and hcpcs_code). Literal CMS markers (*) and clinical disclaimer notes are retained verbatim.",
+      "dimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Medicare Part B benefit year",
+          "meaning": "Selected CMS Medicare Part B benefit year of the pinned supporting workbook (2024).",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "drug-use-status",
+          "kind": "category",
+          "label": "Drug use summary availability",
+          "meaning": "Whether the CMS supporting worksheet provided a clinical drug-use summary (summary_provided) or reported none available (not_available).",
+          "fields": [
+            "drug_use_status"
+          ]
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "CMS workbook worksheet",
+          "meaning": "Source worksheet name in the pinned CMS Part B supporting workbook (Drug Use Information).",
+          "fields": [
+            "source_sheet"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained Part B drug-use workbook",
+          "meaning": "Explicitly selected CMS Part B supporting Drug Use Information worksheet linked to the pinned Part B spending release.",
+          "fields": []
+        }
+      ]
+    },
+    "cms_part_b_manufacturer_associations": {
+      "family": "cms-part-b-associations",
+      "schema": [
+        [
+          "association_id",
+          "VARCHAR"
+        ],
+        [
+          "program",
+          "VARCHAR"
+        ],
+        [
+          "benefit_year",
+          "INTEGER"
+        ],
+        [
+          "hcpcs_code",
+          "VARCHAR"
+        ],
+        [
+          "drug_description",
+          "VARCHAR"
+        ],
+        [
+          "brand_name",
+          "VARCHAR"
+        ],
+        [
+          "generic_name",
+          "VARCHAR"
+        ],
+        [
+          "manufacturer_name",
+          "VARCHAR"
+        ],
+        [
+          "spending_allocation_status",
+          "VARCHAR"
+        ],
+        [
+          "value_states_json",
+          "VARCHAR"
+        ],
+        [
+          "source_sheet",
+          "VARCHAR"
+        ],
+        [
+          "source_row_number",
+          "INTEGER"
+        ],
+        [
+          "source_workbook_sha256",
+          "VARCHAR"
+        ],
+        [
+          "source_workbook_url",
+          "VARCHAR"
+        ],
+        [
+          "source_resources_url",
+          "VARCHAR"
+        ],
+        [
+          "source_release_logical_id",
+          "VARCHAR"
+        ],
+        [
+          "source_release_digest",
+          "VARCHAR"
+        ],
+        [
+          "source_selection_json",
+          "VARCHAR"
+        ],
+        [
+          "source_locator_json",
+          "VARCHAR"
+        ],
+        [
+          "raw_row_json",
+          "VARCHAR"
+        ]
+      ],
+      "classification": "source-scope-and-observed-records",
+      "note": "Non-additive HCPCS-to-brand, generic, and manufacturer association rows from the CMS Medicare Part B supporting Manufacturer Summary worksheet (3,485 rows across 799 HCPCS codes for benefit year 2024; 74 rows carry blank manufacturer_name in CMS\u2019s workbook; spending_allocation_status = not_allocated_in_source for all rows). Many-to-one with cms_part_b_drug_spending on (benefit_year, hcpcs_code) \u2014 kept separate so manufacturer multiplicity never inflates spending totals; never sum Part B spending across a flat join to this table.",
+      "dimensions": [
+        {
+          "id": "benefit-year",
+          "kind": "year",
+          "label": "Medicare Part B benefit year",
+          "meaning": "Selected CMS Medicare Part B benefit year of the pinned supporting workbook (2024).",
+          "fields": [
+            "benefit_year"
+          ],
+          "syntax": "year"
+        },
+        {
+          "id": "spending-allocation-status",
+          "kind": "category",
+          "label": "Manufacturer spending allocation status",
+          "meaning": "Explicit non-additive guard (not_allocated_in_source): CMS does not allocate HCPCS spending across associated manufacturers; never sum spending across a flat join.",
+          "fields": [
+            "spending_allocation_status"
+          ]
+        },
+        {
+          "id": "source-sheet",
+          "kind": "category",
+          "label": "CMS workbook worksheet",
+          "meaning": "Source worksheet name in the pinned CMS Part B supporting workbook (Manufacturer Summary).",
+          "fields": [
+            "source_sheet"
+          ]
+        },
+        {
+          "id": "retained-snapshot",
+          "kind": "snapshot",
+          "label": "Retained Part B manufacturer associations",
+          "meaning": "Explicitly selected CMS Part B Manufacturer Summary worksheet (3,485 non-additive association rows across 799 HCPCS codes); manufacturer multiplicity must not be joined into spending sums.",
+          "fields": []
+        }
+      ]
     }
   }
 }
