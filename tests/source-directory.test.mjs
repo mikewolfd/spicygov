@@ -427,9 +427,17 @@ test('duplicate request previews combine only matching endpoints, selections and
   assert.equal(preview.observations[1].status, 404);
 });
 
-test('bill comparisons and classifications stay under Congress in the shared catalog taxonomy', async () => {
+test('bill comparisons, CRS files, and congressional disclosures stay under Congress in the shared catalog taxonomy', async () => {
   const {groupFor} = await module('lib/catalog.ts');
-  for (const id of ['diff_summaries', 'financial_changes', 'section_classifications']) assert.equal(groupFor(id), 'Congress');
+  for (const id of [
+    'diff_summaries', 'financial_changes', 'section_classifications', 'crs_report_files',
+    'house_disclosure_filings', 'house_disclosure_reports', 'house_disclosure_pages',
+    'house_disclosure_transactions', 'house_disclosure_amendment_links',
+    'senate_disclosure_reports', 'senate_disclosure_transactions',
+  ]) assert.equal(groupFor(id), 'Congress');
+  for (const id of ['fec_reference_source_pages', 'fec_reference_filing_feed_items']) {
+    assert.equal(groupFor(id), 'Elections');
+  }
 });
 
 test('request grouping preserves unknown dates and orders timestamps by instant', async () => {

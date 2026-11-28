@@ -24,7 +24,8 @@ export function dimensionPeriodSummary(dimension: CoverageDimension, context?: {
   const historicalMeaning = (context?.tableId === 'bill_versions' && dimension.id === 'printing-dates' && field === 'version_date')
     || (context?.tableId === 'public_activity_events' && dimension.id === 'printing-source-dates' && field === 'occurred_at')
     ? 'printing'
-    : context?.tableId === 'fec_disbursements' && dimension.id === 'transaction_date' && field === 'transaction_date'
+    : (context?.tableId === 'fec_disbursements' && dimension.id === 'transaction_date' && field === 'transaction_date')
+      || (context?.tableId === 'house_disclosure_transactions' && dimension.id === 'transaction-dates' && field === 'transaction_date')
       ? 'transaction' : undefined;
   if (historicalMeaning && dimension.kind === 'date' && dimension.granularity === 'month' && checkedDay) {
     const checkedMonth = checkedDay.slice(0, 7);
